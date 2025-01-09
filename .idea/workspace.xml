@@ -9,49 +9,7 @@
     <option name="autoReloadType" value="NONE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="75873d2f-1eb7-4929-8e54-820ff8f48247" name="Changes" comment="SE puenden filtrar los articulos del modulo sac por familias y subfamilias">
-      <change beforePath="$PROJECT_DIR$/app" beforeDir="false" afterPath="$PROJECT_DIR$/app" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/build/intermediates/incremental/debug/mergeDebugResources/compile-file-map.properties" beforeDir="false" afterPath="$PROJECT_DIR$/app/build/intermediates/incremental/debug/mergeDebugResources/compile-file-map.properties" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/build/intermediates/incremental/debug/packageDebugResources/compile-file-map.properties" beforeDir="false" afterPath="$PROJECT_DIR$/app/build/intermediates/incremental/debug/packageDebugResources/compile-file-map.properties" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/build/intermediates/linked_resources_binary_format/debug/processDebugResources/linked-resources-binary-format-debug.ap_" beforeDir="false" afterPath="$PROJECT_DIR$/app/build/intermediates/linked_resources_binary_format/debug/processDebugResources/linked-resources-binary-format-debug.ap_" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/build/intermediates/manifest_merge_blame_file/debug/processDebugMainManifest/manifest-merger-blame-debug-report.txt" beforeDir="false" afterPath="$PROJECT_DIR$/app/build/intermediates/manifest_merge_blame_file/debug/processDebugMainManifest/manifest-merger-blame-debug-report.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/build/intermediates/merged_manifest/debug/processDebugMainManifest/AndroidManifest.xml" beforeDir="false" afterPath="$PROJECT_DIR$/app/build/intermediates/merged_manifest/debug/processDebugMainManifest/AndroidManifest.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/build/intermediates/merged_manifests/debug/processDebugManifest/AndroidManifest.xml" beforeDir="false" afterPath="$PROJECT_DIR$/app/build/intermediates/merged_manifests/debug/processDebugManifest/AndroidManifest.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/build/intermediates/packaged_manifests/debug/processDebugManifestForPackage/AndroidManifest.xml" beforeDir="false" afterPath="$PROJECT_DIR$/app/build/intermediates/packaged_manifests/debug/processDebugManifestForPackage/AndroidManifest.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/build/intermediates/project_dex_archive/debug/dexBuilderDebug/out/com/soportereal/invefacon/funciones_de_interfaces/RutasUiKt$NavHostPantallasMenuPrincipal$1$4$1.dex" beforeDir="false" afterPath="$PROJECT_DIR$/app/build/intermediates/project_dex_archive/debug/dexBuilderDebug/out/com/soportereal/invefacon/funciones_de_interfaces/RutasUiKt$NavHostPantallasMenuPrincipal$1$4$1.dex" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/build/intermediates/project_dex_archive/debug/dexBuilderDebug/out/com/soportereal/invefacon/funciones_de_interfaces/RutasUiKt$NavHostPantallasModuloSac$1$5.dex" beforeDir="false" afterPath="$PROJECT_DIR$/app/build/intermediates/project_dex_archive/debug/dexBuilderDebug/out/com/soportereal/invefacon/funciones_de_interfaces/RutasUiKt$NavHostPantallasModuloSac$1$5.dex" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/build/intermediates/project_dex_archive/debug/dexBuilderDebug/out/com/soportereal/invefacon/funciones_de_interfaces/RutasUiKt$NavHostPrincipal$1$1$6$1.dex" beforeDir="false" afterPath="$PROJECT_DIR$/app/build/intermediates/project_dex_archive/debug/dexBuilderDebug/out/com/soportereal/invefacon/funciones_de_interfaces/RutasUiKt$NavHostPrincipal$1$1$6$1.dex" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/build/intermediates/project_dex_archive/debug/dexBuilderDebug/out/com/soportereal/invefacon/funciones_de_interfaces/RutasUiKt$NavHostPrincipal$1$1$6.dex" beforeDir="false" afterPath="$PROJECT_DIR$/app/build/intermediates/project_dex_archive/debug/dexBuilderDebug/out/com/soportereal/invefacon/funciones_de_interfaces/RutasUiKt$NavHostPrincipal$1$1$6.dex" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/build/intermediates/project_dex_archive/debug/dexBuilderDebug/out/com/soportereal/invefacon/interfaces/compact/inicio_sesion/InterfazInicioSesionCompactKt$IniciarInterfazInicioSesionCompact$3$7$1$1$15.dex" beforeDir="false" afterPath="$PROJECT_DIR$/app/build/intermediates/project_dex_archive/debug/dexBuilderDebug/out/com/soportereal/invefacon/interfaces/compact/inicio_sesion/InterfazInicioSesionCompactKt$IniciarInterfazInicioSesionCompact$3$7$1$1$15.dex" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/build/intermediates/project_dex_archive/debug/dexBuilderDebug/out/com/soportereal/invefacon/interfaces/compact/pantallas_principales/InterfazInicioKt$InterfazInicio$8$4$1$1$1$1.dex" beforeDir="false" afterPath="$PROJECT_DIR$/app/build/intermediates/project_dex_archive/debug/dexBuilderDebug/out/com/soportereal/invefacon/interfaces/compact/pantallas_principales/InterfazInicioKt$InterfazInicio$8$4$1$1$1$1.dex" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/build/intermediates/project_dex_archive/debug/dexBuilderDebug/out/com/soportereal/invefacon/interfaces/compact/pantallas_principales/InterfazMenuPrincipalCompactKt.dex" beforeDir="false" afterPath="$PROJECT_DIR$/app/build/intermediates/project_dex_archive/debug/dexBuilderDebug/out/com/soportereal/invefacon/interfaces/compact/pantallas_principales/InterfazMenuPrincipalCompactKt.dex" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/build/intermediates/project_dex_archive/debug/dexBuilderDebug/out/com/soportereal/invefacon/interfaces/large/sac/IntefazSacComandaLargeKt$InterfazSacComandaLarge$5$14$2$invoke$$inlined$items$default$1.dex" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/build/intermediates/project_dex_archive/debug/dexBuilderDebug/out/com/soportereal/invefacon/interfaces/large/sac/IntefazSacComandaLargeKt$InterfazSacComandaLarge$5$3.dex" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/build/intermediates/project_dex_archive/debug/dexBuilderDebug/out/com/soportereal/invefacon/interfaces/large/sac/InterfazModuloSacLargeKt$InterfazModuloSacLarge$2$1.dex" beforeDir="false" afterPath="$PROJECT_DIR$/app/build/intermediates/project_dex_archive/debug/dexBuilderDebug/out/com/soportereal/invefacon/interfaces/large/sac/InterfazModuloSacLargeKt$InterfazModuloSacLarge$2$1.dex" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/build/tmp/kotlin-classes/debug/com/soportereal/invefacon/interfaces/compact/inicio_sesion/InterfazInicioSesionCompactKt$IniciarInterfazInicioSesionCompact$$inlined$ConstraintLayout$1.class" beforeDir="false" afterPath="$PROJECT_DIR$/app/build/tmp/kotlin-classes/debug/com/soportereal/invefacon/interfaces/compact/inicio_sesion/InterfazInicioSesionCompactKt$IniciarInterfazInicioSesionCompact$$inlined$ConstraintLayout$1.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/build/tmp/kotlin-classes/debug/com/soportereal/invefacon/interfaces/compact/inicio_sesion/InterfazInicioSesionCompactKt$IniciarInterfazInicioSesionCompact$3$7$1$1$11.class" beforeDir="false" afterPath="$PROJECT_DIR$/app/build/tmp/kotlin-classes/debug/com/soportereal/invefacon/interfaces/compact/inicio_sesion/InterfazInicioSesionCompactKt$IniciarInterfazInicioSesionCompact$3$7$1$1$11.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/build/tmp/kotlin-classes/debug/com/soportereal/invefacon/interfaces/compact/inicio_sesion/InterfazInicioSesionCompactKt$IniciarInterfazInicioSesionCompact$3$9.class" beforeDir="false" afterPath="$PROJECT_DIR$/app/build/tmp/kotlin-classes/debug/com/soportereal/invefacon/interfaces/compact/inicio_sesion/InterfazInicioSesionCompactKt$IniciarInterfazInicioSesionCompact$3$9.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/build/tmp/kotlin-classes/debug/com/soportereal/invefacon/interfaces/compact/modulos/clientes/InterfazInformacionClienteKt$IniciarInterfazInformacionCliente$7$1.class" beforeDir="false" afterPath="$PROJECT_DIR$/app/build/tmp/kotlin-classes/debug/com/soportereal/invefacon/interfaces/compact/modulos/clientes/InterfazInformacionClienteKt$IniciarInterfazInformacionCliente$7$1.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/build/tmp/kotlin-classes/debug/com/soportereal/invefacon/interfaces/compact/modulos/clientes/InterfazInformacionClienteKt$IniciarInterfazInformacionCliente$7$8$1$2$1$1$1.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/build/tmp/kotlin-classes/debug/com/soportereal/invefacon/interfaces/compact/pantallas_principales/InterfazInicioKt$IniciarInterfazInicio$1.class" beforeDir="false" afterPath="$PROJECT_DIR$/app/build/tmp/kotlin-classes/debug/com/soportereal/invefacon/interfaces/compact/pantallas_principales/InterfazInicioKt$IniciarInterfazInicio$1.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/build/tmp/kotlin-classes/debug/com/soportereal/invefacon/interfaces/compact/pantallas_principales/InterfazInicioKt$InterfazInicio$8$4$1$1$1$7.class" beforeDir="false" afterPath="$PROJECT_DIR$/app/build/tmp/kotlin-classes/debug/com/soportereal/invefacon/interfaces/compact/pantallas_principales/InterfazInicioKt$InterfazInicio$8$4$1$1$1$7.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/build/tmp/kotlin-classes/debug/com/soportereal/invefacon/interfaces/compact/pantallas_principales/InterfazInicioKt$InterfazInicio$8$4$1$2$1$1.class" beforeDir="false" afterPath="$PROJECT_DIR$/app/build/tmp/kotlin-classes/debug/com/soportereal/invefacon/interfaces/compact/pantallas_principales/InterfazInicioKt$InterfazInicio$8$4$1$2$1$1.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/build/tmp/kotlin-classes/debug/com/soportereal/invefacon/interfaces/compact/pantallas_principales/InterfazMenuPrincipalCompactKt$NavegacionInferior$1$1$9.class" beforeDir="false" afterPath="$PROJECT_DIR$/app/build/tmp/kotlin-classes/debug/com/soportereal/invefacon/interfaces/compact/pantallas_principales/InterfazMenuPrincipalCompactKt$NavegacionInferior$1$1$9.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/build/tmp/kotlin-classes/debug/com/soportereal/invefacon/interfaces/large/sac/IntefazSacComandaLargeKt$InterfazSacComandaLarge$5$14$2$invoke$$inlined$items$default$3.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/build/tmp/kotlin-classes/debug/com/soportereal/invefacon/interfaces/large/sac/IntefazSacComandaLargeKt$InterfazSacComandaLarge$7$2.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/build/tmp/kotlin-classes/debug/com/soportereal/invefacon/interfaces/large/sac/InterfazModuloSacLargeKt$InterfazModuloSacLarge$3$13.class" beforeDir="false" afterPath="$PROJECT_DIR$/app/build/tmp/kotlin-classes/debug/com/soportereal/invefacon/interfaces/large/sac/InterfazModuloSacLargeKt$InterfazModuloSacLarge$3$13.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/build/tmp/kotlin-classes/debug/com/soportereal/invefacon/interfaces/large/sac/InterfazModuloSacLargeKt$InterfazModuloSacLarge$3$9$1$1$1.class" beforeDir="false" afterPath="$PROJECT_DIR$/app/build/tmp/kotlin-classes/debug/com/soportereal/invefacon/interfaces/large/sac/InterfazModuloSacLargeKt$InterfazModuloSacLarge$3$9$1$1$1.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/build/tmp/kotlin-classes/debug/com/soportereal/invefacon/interfaces/large/sac/InterfazModuloSacLargeKt$InterfazModuloSacLarge$3$9$1$4.class" beforeDir="false" afterPath="$PROJECT_DIR$/app/build/tmp/kotlin-classes/debug/com/soportereal/invefacon/interfaces/large/sac/InterfazModuloSacLargeKt$InterfazModuloSacLarge$3$9$1$4.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/debug/app-debug.apk" beforeDir="false" afterPath="$PROJECT_DIR$/app/debug/app-debug.apk" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/java/com/soportereal/invefacon/funciones_de_interfaces/RutasUi.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/com/soportereal/invefacon/funciones_de_interfaces/RutasUi.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/java/com/soportereal/invefacon/interfaces/compact/inicio_sesion/InterfazInicioSesionCompact.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/com/soportereal/invefacon/interfaces/compact/inicio_sesion/InterfazInicioSesionCompact.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/java/com/soportereal/invefacon/interfaces/compact/modulos/clientes/InterfazInformacionCliente.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/com/soportereal/invefacon/interfaces/compact/modulos/clientes/InterfazInformacionCliente.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/java/com/soportereal/invefacon/interfaces/compact/modulos/sac/InterfazModuloSac.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/com/soportereal/invefacon/interfaces/compact/modulos/sac/InterfazModuloSac.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/java/com/soportereal/invefacon/interfaces/compact/pantallas_principales/InterfazInicio.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/com/soportereal/invefacon/interfaces/compact/pantallas_principales/InterfazInicio.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/java/com/soportereal/invefacon/interfaces/compact/pantallas_principales/InterfazMenuPrincipalCompact.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/com/soportereal/invefacon/interfaces/compact/pantallas_principales/InterfazMenuPrincipalCompact.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/java/com/soportereal/invefacon/interfaces/large/sac/IntefazSacComandaLarge.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/com/soportereal/invefacon/interfaces/large/sac/IntefazSacComandaLarge.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/java/com/soportereal/invefacon/interfaces/large/sac/ProcesarDatosModuloSac.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/com/soportereal/invefacon/interfaces/large/sac/ProcesarDatosModuloSac.kt" afterDir="false" />
-    </list>
+    <list default="true" id="75873d2f-1eb7-4929-8e54-820ff8f48247" name="Changes" comment="SE puenden filtrar los articulos del modulo sac por familias y subfamilias" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -147,12 +105,12 @@
   <component name="GitHubPullRequestSearchHistory">{
   &quot;lastFilter&quot;: {}
 }</component>
-  <component name="GithubPullRequestsUISettings">{
-  &quot;selectedUrlAndAccountId&quot;: {
-    &quot;url&quot;: &quot;https://github.com/YeslerLo/Invefacon-App.git&quot;,
-    &quot;accountId&quot;: &quot;748d1fe8-9135-48dc-8729-3e2a00bb409e&quot;
+  <component name="GithubPullRequestsUISettings"><![CDATA[{
+  "selectedUrlAndAccountId": {
+    "url": "https://github.com/YeslerLo/Invefacon-App-Movil",
+    "accountId": "748d1fe8-9135-48dc-8729-3e2a00bb409e"
   }
-}</component>
+}]]></component>
   <component name="HighlightingSettingsPerFile">
     <setting file="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/androidx.activity/activity/1.9.3/f03633494401aa419966552d45ed3efb0bbd99e8/activity-1.9.3-sources.jar!/androidx/activity/EdgeToEdge.kt" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/app/src/main/java/com/soportereal/invefacon/interfaces/compact/inicio_sesion/InterfazInicioSesionCompact.kt" root0="FORCE_HIGHLIGHTING" />
@@ -570,7 +528,15 @@
       <option name="project" value="LOCAL" />
       <updated>1735858174466</updated>
     </task>
-    <option name="localTasksCounter" value="35" />
+    <task id="LOCAL-00035" summary="SE puenden filtrar los articulos del modulo sac por familias y subfamilias">
+      <option name="closed" value="true" />
+      <created>1736454060716</created>
+      <option name="number" value="00035" />
+      <option name="presentableId" value="LOCAL-00035" />
+      <option name="project" value="LOCAL" />
+      <updated>1736454060716</updated>
+    </task>
+    <option name="localTasksCounter" value="36" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
