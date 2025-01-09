@@ -9,7 +9,7 @@
     <option name="autoReloadType" value="NONE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="75873d2f-1eb7-4929-8e54-820ff8f48247" name="Changes" comment="SE puenden filtrar los articulos del modulo sac por familias y subfamilias" />
+    <list default="true" id="75873d2f-1eb7-4929-8e54-820ff8f48247" name="Changes" comment="cambio" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -558,7 +558,15 @@
       <option name="project" value="LOCAL" />
       <updated>1736458563510</updated>
     </task>
-    <option name="localTasksCounter" value="39" />
+    <task id="LOCAL-00039" summary="cambio">
+      <option name="closed" value="true" />
+      <created>1736462116948</created>
+      <option name="number" value="00039" />
+      <option name="presentableId" value="LOCAL-00039" />
+      <option name="project" value="LOCAL" />
+      <updated>1736462116948</updated>
+    </task>
+    <option name="localTasksCounter" value="40" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -600,7 +608,8 @@
     <MESSAGE value="Se creo el lazyColum para poder ver las mesas disponibles" />
     <MESSAGE value="Se completo la interfaz de SAC ya se puede filtrar las mesas y ver las activas" />
     <MESSAGE value="SE puenden filtrar los articulos del modulo sac por familias y subfamilias" />
-    <option name="LAST_COMMIT_MESSAGE" value="SE puenden filtrar los articulos del modulo sac por familias y subfamilias" />
+    <MESSAGE value="cambio" />
+    <option name="LAST_COMMIT_MESSAGE" value="cambio" />
     <option name="GROUP_MULTIFILE_MERGE_BY_DIRECTORY" value="true" />
   </component>
 </project>
