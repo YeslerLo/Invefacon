@@ -1,6 +1,10 @@
-# Ignorar carpetas de construcción
-/build
-/.idea
-
-# No ignorar la carpeta app
-!/app/
+*.iml
+.idea/
+.gradle/
+build/
+local.properties
+*.log
+*.keystore
+*.apk
+*.ap_
+.DS_Store
