@@ -16,6 +16,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -32,17 +34,21 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshots.SnapshotStateMap
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
@@ -65,12 +71,10 @@ import com.soportereal.invefacon.R
 import com.soportereal.invefacon.funciones_de_interfaces.RutasPantallasModuloSac
 import com.soportereal.invefacon.interfaces.compact.FuncionesParaAdaptarContenidoCompact
 import com.soportereal.invefacon.interfaces.compact.inicio_sesion.ocultarTeclado
+import com.soportereal.invefacon.interfaces.compact.modulos.clientes.AgregarTextFieldMultifuncional
 import com.soportereal.invefacon.interfaces.compact.pantallas_principales.estadoRespuestaApi
 import com.soportereal.invefacon.interfaces.compact.pantallas_principales.objetoEstadoPantallaCarga
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 import java.util.Locale
 
 
@@ -102,6 +106,11 @@ fun InterfazModuloSacLarge(
     var iniciarCreacionNuevaMesa by remember { mutableStateOf(false) }
     var isPrimeraVezCargando by remember { mutableStateOf(true) }
     var isCargandoMesas by remember { mutableStateOf(true) }
+    var iniciarMenuMesaComandada by remember { mutableStateOf(false) }
+    var mesaActual by remember { mutableStateOf(Mesa()) }
+    var subCuentaSeleccionada by remember { mutableStateOf("Juntos") }
+    val opcionesSubCuentas: SnapshotStateMap<String, String> = remember { mutableStateMapOf() }
+    opcionesSubCuentas["Juntos"]="Juntos"
 
     LaunchedEffect(iniciarCreacionNuevaMesa) {
         if (iniciarCreacionNuevaMesa){
@@ -134,7 +143,8 @@ fun InterfazModuloSacLarge(
                         cantidadSubcuentas = datoMesa.getString("cantidad_subcuentas"),
                         tiempo = if(!datoMesa.isNull("minutos")) datoMesa.getInt("minutos") else 0,
                         total = datoMesa.getString("monto"),
-                        estado = datoMesa.getString("CodEstado")
+                        estado = datoMesa.getString("CodEstado"),
+                        salon = datoMesa.getString("salon")
                     )
                     listaMesas.add(mesa)
                 }
@@ -168,9 +178,6 @@ fun InterfazModuloSacLarge(
             }
         }
     }
-
-
-
 
     ConstraintLayout(
         modifier = Modifier
@@ -402,7 +409,12 @@ fun InterfazModuloSacLarge(
                             verticalAlignment = Alignment.Top
                         ) {
                             rowItems.forEach { mesa ->
-                                BxContendorDatosMesa(mesa, navControllerPantallasModuloSac)
+                                BxContendorDatosMesa(
+                                    datosMesa = mesa,
+                                    navControllerPantallasModuloSac = navControllerPantallasModuloSac,
+                                    iniciarMenuDetalleComanda = { valor-> iniciarMenuMesaComandada=valor},
+                                    mesaSeleccionada = {datosMesaActual-> mesaActual= datosMesaActual }
+                                )
                                 Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(12)))
                             }
 
@@ -577,6 +589,7 @@ fun InterfazModuloSacLarge(
 
         }
     }
+
     if(iniciarMenuCrearMesa) {
         AlertDialog(
             modifier = Modifier.background(Color.White),
@@ -754,13 +767,201 @@ fun InterfazModuloSacLarge(
             }
         )
     }
+
+    if(iniciarMenuMesaComandada) {
+
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black.copy(alpha = 0.5f))
+                .clickable(enabled = false) {},
+            contentAlignment = Alignment.Center
+        ){
+            Surface(
+                modifier = Modifier
+                    .align(Alignment.Center)
+                    .wrapContentWidth()
+                    .wrapContentHeight()
+                    .align(Alignment.Center),
+                shape = RoundedCornerShape(16.dp),
+                color = MaterialTheme.colorScheme.surface
+            )  {
+                Box(
+                    modifier = Modifier.padding(objetoAdaptardor.ajustarAltura(24))
+                ){
+                    Column(
+                        verticalArrangement = Arrangement.Center,
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                    ) {
+                        Text(
+                            "Articulos Comandados ${mesaActual.nombre}",
+                            fontFamily = fontAksharPrincipal,
+                            fontWeight = FontWeight.Medium,
+                            fontSize = objetoAdaptardor.ajustarFont(27),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            textAlign = TextAlign.Center,
+                            color = Color.Black,
+                        )
+                        Box(
+                            contentAlignment = Alignment.Center
+                        ){
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.Center
+                            ) {
+                                Row(
+                                    horizontalArrangement = Arrangement.Center,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        "Sub-Cuentas: ",
+                                        fontFamily = fontAksharPrincipal,
+                                        fontWeight = FontWeight.Medium,
+                                        fontSize = objetoAdaptardor.ajustarFont(22),
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis,
+                                        textAlign = TextAlign.Center,
+                                        color = Color.Black
+                                    )
+
+                                    Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(8)))
+
+                                    AgregarTextFieldMultifuncional(
+                                        label = "Sub-Cuentas",
+                                        opciones = opcionesSubCuentas,
+                                        contieneOpciones = true,
+                                        nuevoValor = {nuevoValor-> subCuentaSeleccionada=nuevoValor},
+                                        valor = opcionesSubCuentas[subCuentaSeleccionada]?:"Juntos",
+                                        isUltimo = true,
+                                        tomarAnchoMaximo = false,
+                                        medidaAncho = 180
+                                    )
+                                }
+
+
+                            }
+                        }
+                        Box(
+                            contentAlignment = Alignment.Center
+                        ){
+                            Row{
+                                Button(
+                                    onClick = {
+                                        iniciarMenuCrearMesa=false
+                                    },
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor =Color(0xFF244BC0), // Color de fondo del botón
+                                        contentColor = Color.White,
+                                        disabledContainerColor = Color.Red,
+                                        disabledContentColor = Color.White
+                                    )
+                                ) {
+                                    Text(
+                                        "Mover Mesa",
+                                        fontFamily = fontAksharPrincipal,
+                                        fontWeight = FontWeight.Medium,
+                                        fontSize = objetoAdaptardor.ajustarFont(17),
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis,
+                                        textAlign = TextAlign.Center,
+                                        color = Color.White
+                                    )
+                                }
+
+                                Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(8)))
+
+                                Button(
+                                    onClick = {
+                                        iniciarMenuCrearMesa=false
+                                    },
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor =Color(0xFF244BC0), // Color de fondo del botón
+                                        contentColor = Color.White,
+                                        disabledContainerColor = Color.Red,
+                                        disabledContentColor = Color.White
+                                    )
+                                ) {
+                                    Text(
+                                        "Pedir Cuenta",
+                                        fontFamily = fontAksharPrincipal,
+                                        fontWeight = FontWeight.Medium,
+                                        fontSize = objetoAdaptardor.ajustarFont(17),
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis,
+                                        textAlign = TextAlign.Center,
+                                        color = Color.White
+                                    )
+                                }
+
+                                Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(8)))
+
+                                Button(
+                                    onClick = {
+                                        iniciarMenuMesaComandada=false
+                                    },
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = Color(0xFFFF5722), // Color de fondo del botón
+                                        contentColor = Color.White,
+                                        disabledContainerColor = Color(0xFFFF5722),
+                                        disabledContentColor = Color.White
+                                    )
+                                ) {
+                                    Text(
+                                        "Quitar mesa",
+                                        fontFamily = fontAksharPrincipal,
+                                        fontWeight = FontWeight.Medium,
+                                        fontSize = objetoAdaptardor.ajustarFont(17),
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis,
+                                        textAlign = TextAlign.Center,
+                                        color = Color.White
+                                    )
+                                }
+
+                                Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(8)))
+
+                                Button(
+                                    onClick = {
+                                        iniciarMenuCrearMesa=false
+                                    },
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = Color.Red, // Color de fondo del botón
+                                        contentColor = Color.White,
+                                        disabledContainerColor = Color.Red,
+                                        disabledContentColor = Color.White
+                                    )
+                                ) {
+                                    Text(
+                                        "Salir",
+                                        fontFamily = fontAksharPrincipal,
+                                        fontWeight = FontWeight.Medium,
+                                        fontSize = objetoAdaptardor.ajustarFont(17),
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis,
+                                        textAlign = TextAlign.Center,
+                                        color = Color.White
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+
+
+            }
+        }
+    }
+
 }
 
 
 @Composable
 internal fun BxContendorDatosMesa(
     datosMesa: Mesa,
-    navControllerPantallasModuloSac:NavController?
+    navControllerPantallasModuloSac:NavController?,
+    iniciarMenuDetalleComanda: (Boolean)->Unit,
+    mesaSeleccionada: (Mesa)->Unit
 ){
     val configuration = LocalConfiguration.current
     val dpAnchoPantalla = configuration.screenWidthDp
@@ -769,15 +970,22 @@ internal fun BxContendorDatosMesa(
     val objetoAdaptardor= FuncionesParaAdaptarContenidoCompact(dpAltoPantalla, dpAnchoPantalla, dpFontPantalla)
     val fontAksharPrincipal = FontFamily(Font(R.font.akshar_medium))
     var iniciarPantallaSacComanda by remember { mutableStateOf(false) }
+    mesaSeleccionada(datosMesa)
 
     LaunchedEffect(iniciarPantallaSacComanda) {
-        if (iniciarPantallaSacComanda){
+        if (iniciarPantallaSacComanda && datosMesa.estado!="null"){
             objetoEstadoPantallaCarga.cambiarEstadoMenuPrincipal(true)
+            iniciarMenuDetalleComanda(false)
             delay(500)
-            navControllerPantallasModuloSac?.navigate(RutasPantallasModuloSac.PantallaSacComanda.ruta+"/"+datosMesa.nombre){
+            navControllerPantallasModuloSac?.navigate(RutasPantallasModuloSac.PantallaSacComanda.ruta+"/"+datosMesa.nombre+"/"+datosMesa.salon){
                 restoreState= true
                 launchSingleTop=true
             }
+        }
+        if (iniciarPantallaSacComanda && datosMesa.estado=="null"){
+            iniciarMenuDetalleComanda(true)
+
+           iniciarPantallaSacComanda=false
         }
     }
 
@@ -786,11 +994,8 @@ internal fun BxContendorDatosMesa(
             .height(objetoAdaptardor.ajustarAltura(165))
             .width(objetoAdaptardor.ajustarAncho(55))
             .clickable {
-                CoroutineScope(Dispatchers.IO).launch {
-                    iniciarPantallaSacComanda = true
-                }
+                iniciarPantallaSacComanda = true
             }
-
             .shadow(
                 elevation = objetoAdaptardor.ajustarAltura(7),
                 shape = RoundedCornerShape(objetoAdaptardor.ajustarAltura(20))

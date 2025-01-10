@@ -898,11 +898,11 @@ fun InterfazSacComandaLarge(
                                     label = "Sub-Cuentas",
                                     opciones = opcionesSubCuentas,
                                     contieneOpciones = true,
-                                    nuevoValor = {nuevoValor-> subCuentaSeleccionada=nuevoValor},
-                                    valor = opcionesSubCuentas[subCuentaSeleccionada]?:"Juntos",
-                                    isUltimo = true,
-                                    tomarAnchoMaximo = false,
-                                    medidaAncho = 180
+                                nuevoValor = {nuevoValor-> subCuentaSeleccionada=nuevoValor},
+                                valor = opcionesSubCuentas[subCuentaSeleccionada]?:"Juntos",
+                                isUltimo = true,
+                                tomarAnchoMaximo = false,
+                                medidaAncho = 180
                                 )
                                 Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(8)))
                                 IconButton(
