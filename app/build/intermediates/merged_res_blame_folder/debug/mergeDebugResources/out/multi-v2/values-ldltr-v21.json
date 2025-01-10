@@ -1,0 +1,19 @@
+{
+    "logs": [
+        {
+            "outputFile": "com.soportereal.invefacon.app-mergeDebugResources-65:/values-ldltr-v21/values-ldltr-v21.xml",
+            "map": [
+                {
+                    "source": "C:\\Users\\Yesler\\.gradle\\caches\\transforms-4\\456c43d9e2c99d1f6199e22b5f3f43c0\\transformed\\appcompat-1.6.1\\res\\values-ldltr-v21\\values-ldltr-v21.xml",
+                    "from": {
+                        "startLines": "2",
+                        "startColumns": "4",
+                        "startOffsets": "55",
+                        "endColumns": "112",
+                        "endOffsets": "163"
+                    }
+                }
+            ]
+        }
+    ]
+}
