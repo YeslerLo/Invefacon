@@ -9,7 +9,14 @@
     <option name="autoReloadType" value="NONE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="75873d2f-1eb7-4929-8e54-820ff8f48247" name="Changes" comment="cambio" />
+    <list default="true" id="75873d2f-1eb7-4929-8e54-820ff8f48247" name="Changes" comment="cambio">
+      <change beforePath="$PROJECT_DIR$/.gradle/file-system.probe" beforeDir="false" afterPath="$PROJECT_DIR$/.gradle/file-system.probe" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_Update_at_05_12_2024_16_52__Changes_.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_Update_at_05_12_2024_16_52__Changes_.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/gradle/libs.versions.toml" beforeDir="false" afterPath="$PROJECT_DIR$/gradle/libs.versions.toml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/local.properties" beforeDir="false" afterPath="$PROJECT_DIR$/local.properties" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -104,12 +111,12 @@
   <component name="GitHubPullRequestSearchHistory">{
   &quot;lastFilter&quot;: {}
 }</component>
-  <component name="GithubPullRequestsUISettings">{
-  &quot;selectedUrlAndAccountId&quot;: {
-    &quot;url&quot;: &quot;https://github.com/YeslerLo/Invefacon.git&quot;,
-    &quot;accountId&quot;: &quot;7d4b2b2d-31c4-4a19-b200-bfe1ad28442b&quot;
+  <component name="GithubPullRequestsUISettings"><![CDATA[{
+  "selectedUrlAndAccountId": {
+    "url": "https://github.com/YeslerLo/Invefacon.git",
+    "accountId": "fddaccb8-114b-46cb-8259-af2314447421"
   }
-}</component>
+}]]></component>
   <component name="HighlightingSettingsPerFile">
     <setting file="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/androidx.activity/activity/1.9.3/f03633494401aa419966552d45ed3efb0bbd99e8/activity-1.9.3-sources.jar!/androidx/activity/EdgeToEdge.kt" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/app/src/main/java/com/soportereal/invefacon/interfaces/compact/inicio_sesion/InterfazInicioSesionCompact.kt" root0="FORCE_HIGHLIGHTING" />
@@ -128,39 +135,43 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;ASKED_MARK_IGNORED_FILES_AS_EXCLUDED&quot;: &quot;true&quot;,
-    &quot;AnalyzeApkAction.lastApkPath&quot;: &quot;C:/Users/Yesler/AndroidStudioProjects/Invefacon/app/debug/app-debug.apk&quot;,
-    &quot;Android App.app.executor&quot;: &quot;Android Profiler Group#1&quot;,
-    &quot;ApkExportedModule&quot;: &quot;Invefacon.app&quot;,
-    &quot;BundleExportedModule&quot;: &quot;Invefacon.app&quot;,
-    &quot;ExportApk.ApkPathForInvefacon.app&quot;: &quot;C:\\Users\\Yesler\\AndroidStudioProjects\\Invefacon\\app&quot;,
-    &quot;ExportBundle.BundlePathForInvefacon.app&quot;: &quot;C:\\Users\\Yesler\\AndroidStudioProjects\\Invefacon\\app&quot;,
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.cidr.known.project.marker&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.readMode.enableVisualFormatting&quot;: &quot;true&quot;,
-    &quot;cf.first.check.clang-format&quot;: &quot;false&quot;,
-    &quot;cidr.known.project.marker&quot;: &quot;true&quot;,
-    &quot;com.google.services.firebase.aqiPopupShown&quot;: &quot;true&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;master&quot;,
-    &quot;ignore.virus.scanning.warn.message&quot;: &quot;true&quot;,
-    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
-    &quot;last_opened_file_path&quot;: &quot;C:/Users/Yesler/AndroidStudioProjects/Invefacon&quot;,
-    &quot;project.structure.last.edited&quot;: &quot;Dependencies&quot;,
-    &quot;project.structure.proportion&quot;: &quot;0.17&quot;,
-    &quot;project.structure.side.proportion&quot;: &quot;0.2&quot;,
-    &quot;settings.editor.selected.configurable&quot;: &quot;project.propVCSSupport.DirectoryMappings&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "ASKED_MARK_IGNORED_FILES_AS_EXCLUDED": "true",
+    "AnalyzeApkAction.lastApkPath": "C:/Users/Yesler/AndroidStudioProjects/Invefacon/app/debug/app-debug.apk",
+    "Android App.app.executor": "Android Profiler Group#1",
+    "ApkExportedModule": "Invefacon.app",
+    "BundleExportedModule": "Invefacon.app",
+    "ExportApk.ApkPathForInvefacon.app": "C:\\Users\\Yesler\\AndroidStudioProjects\\Invefacon\\app",
+    "ExportBundle.BundlePathForInvefacon.app": "C:\\Users\\Yesler\\AndroidStudioProjects\\Invefacon\\app",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.cidr.known.project.marker": "true",
+    "RunOnceActivity.readMode.enableVisualFormatting": "true",
+    "android.gradle.sync.needed": "true",
+    "cf.first.check.clang-format": "false",
+    "cidr.known.project.marker": "true",
+    "com.google.services.firebase.aqiPopupShown": "true",
+    "git-widget-placeholder": "master",
+    "ignore.virus.scanning.warn.message": "true",
+    "kotlin-language-version-configured": "true",
+    "last_opened_file_path": "C:/Users/Yesler/AndroidStudioProjects/Invefacon",
+    "project.structure.last.edited": "Dependencies",
+    "project.structure.proportion": "0.17",
+    "project.structure.side.proportion": "0.2",
+    "settings.editor.selected.configurable": "project.propVCSSupport.DirectoryMappings"
   },
-  &quot;keyToStringList&quot;: {
-    &quot;ExportApk.BuildVariants&quot;: [
-      &quot;debug&quot;
+  "keyToStringList": {
+    "ExportApk.BuildVariants": [
+      "debug"
     ],
-    &quot;kotlin-gradle-user-dirs&quot;: [
-      &quot;C:\\Users\\Yesler\\.gradle&quot;
+    "kotlin-gradle-user-dirs": [
+      "C:\\Users\\yesle\\.gradle"
     ]
   }
-}</component>
+}]]></component>
+  <component name="PsdUISettings">
+    <option name="LAST_EDITED_BUILD_TYPE" value="release" />
+  </component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
       <recent name="C:\Users\USER\AndroidStudioProjects\Invefacon\app\src\main\res\drawable" />
