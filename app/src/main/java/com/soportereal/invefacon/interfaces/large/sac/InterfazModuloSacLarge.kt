@@ -33,6 +33,7 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -43,6 +44,7 @@ import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -106,11 +108,13 @@ fun InterfazModuloSacLarge(
     var iniciarCreacionNuevaMesa by remember { mutableStateOf(false) }
     var isPrimeraVezCargando by remember { mutableStateOf(true) }
     var isCargandoMesas by remember { mutableStateOf(true) }
-    var iniciarMenuMesaComandada by remember { mutableStateOf(false) }
+    var iniciarMenuMesaComandada by remember { mutableStateOf(true) }
     var mesaActual by remember { mutableStateOf(Mesa()) }
     var subCuentaSeleccionada by remember { mutableStateOf("Juntos") }
     val opcionesSubCuentas: SnapshotStateMap<String, String> = remember { mutableStateMapOf() }
     opcionesSubCuentas["Juntos"]="Juntos"
+    val productosSeleccionados = remember { mutableStateListOf<ArticulosSeleccionadosSac>() }
+    val lazyStateArticulosSeleccionados= rememberLazyListState()
 
     LaunchedEffect(iniciarCreacionNuevaMesa) {
         if (iniciarCreacionNuevaMesa){
@@ -803,45 +807,54 @@ fun InterfazModuloSacLarge(
                             textAlign = TextAlign.Center,
                             color = Color.Black,
                         )
+                        Row(
+                            horizontalArrangement = Arrangement.Center,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                                Text(
+                                    "Sub-Cuentas: ",
+                                    fontFamily = fontAksharPrincipal,
+                                    fontWeight = FontWeight.Medium,
+                                    fontSize = objetoAdaptardor.ajustarFont(22),
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    textAlign = TextAlign.Center,
+                                    color = Color.Black
+                                )
+
+                                Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(8)))
+
+                                AgregarTextFieldMultifuncional(
+                                    label = "Sub-Cuentas",
+                                    opciones = opcionesSubCuentas,
+                                    contieneOpciones = true,
+                                    nuevoValor = {nuevoValor-> subCuentaSeleccionada=nuevoValor},
+                                    valor = opcionesSubCuentas[subCuentaSeleccionada]?:"Juntos",
+                                    isUltimo = true,
+                                    tomarAnchoMaximo = false,
+                                    medidaAncho = 180
+                                )
+                            }
                         Box(
+                            modifier = Modifier.height(objetoAdaptardor.ajustarAltura(350)),
                             contentAlignment = Alignment.Center
                         ){
-                            Column(
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                verticalArrangement = Arrangement.Center
+                            LazyColumn(
+                                state = lazyStateArticulosSeleccionados,
+                                modifier = Modifier.fillMaxHeight()
                             ) {
-                                Row(
-                                    horizontalArrangement = Arrangement.Center,
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Text(
-                                        "Sub-Cuentas: ",
-                                        fontFamily = fontAksharPrincipal,
-                                        fontWeight = FontWeight.Medium,
-                                        fontSize = objetoAdaptardor.ajustarFont(22),
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis,
-                                        textAlign = TextAlign.Center,
-                                        color = Color.Black
-                                    )
-
-                                    Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(8)))
-
-                                    AgregarTextFieldMultifuncional(
-                                        label = "Sub-Cuentas",
-                                        opciones = opcionesSubCuentas,
-                                        contieneOpciones = true,
-                                        nuevoValor = {nuevoValor-> subCuentaSeleccionada=nuevoValor},
-                                        valor = opcionesSubCuentas[subCuentaSeleccionada]?:"Juntos",
-                                        isUltimo = true,
-                                        tomarAnchoMaximo = false,
-                                        medidaAncho = 180
-                                    )
+                                items(productosSeleccionados){producto->
+                                    if (producto.subCuenta==subCuentaSeleccionada){
+                                        AgregarBxContendorArticuloComandado(producto)
+                                        HorizontalDivider(
+                                            thickness = 2.dp,
+                                            color = Color.Black
+                                        )
+                                    }
                                 }
-
-
                             }
                         }
+
                         Box(
                             contentAlignment = Alignment.Center
                         ){
@@ -952,6 +965,11 @@ fun InterfazModuloSacLarge(
             }
         }
     }
+
+}
+
+@Composable
+fun AgregarBxContendorArticuloComandado(producto: ArticulosSeleccionadosSac) {
 
 }
 
