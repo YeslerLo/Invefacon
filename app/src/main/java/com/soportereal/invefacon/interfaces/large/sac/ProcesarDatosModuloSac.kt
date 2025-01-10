@@ -10,7 +10,6 @@ class ProcesarDatosModuloSac(apiToken: String){
     private val objetoFuncionesHttpInvefacon= FuncionesHttp(servidorUrl = "https://invefacon.com", apiToken = apiToken)
     suspend fun obtenerListaMesas(mesa: String=""): JSONObject?{
 
-        println("Lo logre jhajajajajajaj")
         val formBody = MultipartBody.Builder().setType(MultipartBody.FORM)
             .addFormDataPart("mesa",mesa)
             .build()
