@@ -422,7 +422,8 @@ fun NavHostPantallasModuloSac(
                         apiToken,
                         navControllerPantallasModuloSac,
                         systemUiController,
-                        navControllerPantallasModulos
+                        navControllerPantallasModulos,
+                        nombreEmpresa
                     )
                 }
             }

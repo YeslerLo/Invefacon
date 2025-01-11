@@ -133,6 +133,7 @@ fun InterfazSacComandaLarge(
     var isVentanaAgregarArticuloActiva by remember { mutableStateOf(false) }
     var actualizarSubTotal by remember { mutableStateOf(false) }
     var iniciarComandaSubCuenta by remember { mutableStateOf(false) }
+    val coroutineScope = rememberCoroutineScope()
 
     LaunchedEffect(actualizarSubTotal, isMontoServicioActivo, subCuentaSeleccionada) {
         montoSubtotal="0.00"
@@ -284,6 +285,247 @@ fun InterfazSacComandaLarge(
         }
     }
 
+    fun agregarOActualizarProducto(nuevoProducto: ArticulosSeleccionadosSac) {
+
+        // Buscar un producto existente en la lista por su 'codigo'
+        val productoExistente = productosSeleccionados.find { it.codigo == nuevoProducto.codigo && it.subCuenta== nuevoProducto.subCuenta}
+        val index = productosSeleccionados.indexOfFirst { it.codigo == nuevoProducto.codigo && it.subCuenta== nuevoProducto.subCuenta }
+
+        if (productoExistente != null) {
+            // Si el producto ya existe, actualizar su cantidad
+            productoExistente.cantidad += nuevoProducto.cantidad
+
+            // Si la cantidad es cero o negativa, eliminar el producto de la lista
+            if (productoExistente.cantidad <= 0) {
+                productosSeleccionados.remove(productoExistente)
+            } else {
+                productoExistente.calcularMontoTotal()
+            }
+        } else {
+            // Si el producto no existe, agregarlo a la lista
+            nuevoProducto.calcularMontoTotal()
+            productosSeleccionados.add(nuevoProducto)
+        }
+
+        // Refrescar la lista de productos seleccionados (esto asegura que la UI se actualice correctamente)
+        val productos = productosSeleccionados.toList()
+        productosSeleccionados.clear()
+        productosSeleccionados.addAll(productos)
+        coroutineScope.launch {
+            lazyStateArticulosSeleccionados.animateScrollToItem(if (index!=-1)index else productosSeleccionados.size)
+        }
+        actualizarSubTotal=true
+    }
+
+    @Composable
+    fun AgregarBxContendorArticuloAgregado(
+        articulo: ArticulosSeleccionadosSac
+    ){
+        Box(
+            modifier = Modifier
+                .width(objetoAdaptardor.ajustarAncho(260))
+                .background(Color(0xFFF6F6F6))
+        ){
+            Column {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(6)))
+                    Text(
+                        articulo.nombre,
+                        fontFamily = fontAksharPrincipal,
+                        fontWeight = FontWeight.Medium,
+                        fontSize = objetoAdaptardor.ajustarFont(16),
+                        overflow = TextOverflow.Ellipsis,
+                        textAlign = TextAlign.Start,
+                        modifier = Modifier.width(objetoAdaptardor.ajustarAncho(165)).padding(2.dp)
+                    )
+                    Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(4)))
+                    Box{
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+
+                            IconButton(
+                                onClick = {
+                                    val articuloSeleccionado = ArticulosSeleccionadosSac(
+                                        nombre = articulo.nombre,
+                                        codigo = articulo.codigo,
+                                        precioUnitario = articulo.precioUnitario,
+                                        cantidad = -1,
+                                        subCuenta = articulo.subCuenta
+                                    )
+                                    agregarOActualizarProducto(articuloSeleccionado)
+                                },
+                                modifier = Modifier.size(objetoAdaptardor.ajustarAltura(22))
+                            ) {
+                                Icon(
+                                    imageVector = if(articulo.cantidad==1) Icons.Filled.Delete else Icons.Filled.RemoveCircle,
+                                    contentDescription = "Basurero",
+                                    tint = if(articulo.cantidad==1)Color.Red else Color.Black,
+                                    modifier = Modifier.size(objetoAdaptardor.ajustarAltura(22))
+                                )
+                            }
+
+                            Text(
+                                articulo.cantidad.toString(),
+                                fontFamily = fontAksharPrincipal,
+                                fontWeight = FontWeight.Medium,
+                                fontSize = objetoAdaptardor.ajustarFont(16),
+                                overflow = TextOverflow.Ellipsis,
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier.width(objetoAdaptardor.ajustarAncho(35)).padding(2.dp)
+                            )
+                            IconButton(
+                                onClick = {
+                                    val articuloSeleccionado = ArticulosSeleccionadosSac(
+                                        nombre = articulo.nombre,
+                                        codigo = articulo.codigo,
+                                        precioUnitario = articulo.precioUnitario,
+                                        cantidad = 1,
+                                        subCuenta = articulo.subCuenta
+                                    )
+                                    agregarOActualizarProducto(articuloSeleccionado)
+                                },
+                                modifier = Modifier.size(objetoAdaptardor.ajustarAltura(22))
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Filled.AddCircle,
+                                    contentDescription = "Basurero",
+                                    tint = Color.Black,
+                                    modifier = Modifier.size(objetoAdaptardor.ajustarAltura(22))
+                                )
+                            }
+                        }
+                    }
+                    Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(6)))
+                }
+                HorizontalDivider()
+                Row {
+                    Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(6)))
+                    Text(
+                        articulo.anotacion,
+                        fontFamily = fontAksharPrincipal,
+                        fontWeight = FontWeight.Light,
+                        fontSize = objetoAdaptardor.ajustarFont(14),
+                        overflow = TextOverflow.Ellipsis,
+                        textAlign = TextAlign.Start,
+                        modifier = Modifier.width(objetoAdaptardor.ajustarAncho(185)).padding(2.dp),
+                        color = Color.DarkGray
+                    )
+                    Text(
+                        "\u20A1 "+String.format(Locale.US, "%,.2f", articulo.montoTotal.toString().replace(",", "").toDouble()),
+                        fontFamily = fontAksharPrincipal,
+                        fontWeight = FontWeight.Light,
+                        fontSize = objetoAdaptardor.ajustarFont(16),
+                        overflow = TextOverflow.Ellipsis,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.width(objetoAdaptardor.ajustarAncho(75)).padding(2.dp)
+                    )
+                }
+            }
+        }
+    }
+
+
+    @Composable
+    fun AgregarBxContenedorArticulos(
+        articulo: ArticuloSac
+    ){
+        Card(
+            modifier = Modifier
+                .height(objetoAdaptardor.ajustarAltura(123))
+                .width(objetoAdaptardor.ajustarAncho(123))
+                .clickable {
+                    articuloActualSeleccionado= articulo
+                    isVentanaAgregarArticuloActiva=true
+                }
+                .shadow(
+                    elevation = objetoAdaptardor.ajustarAltura(7),
+                    shape = RoundedCornerShape(objetoAdaptardor.ajustarAltura(16))
+                ),
+            shape = RoundedCornerShape(objetoAdaptardor.ajustarAltura(16)),
+            colors = CardDefaults.cardColors(containerColor = Color.White)
+        ) {
+            Column {
+                Box(
+                    modifier = Modifier
+                        .height(objetoAdaptardor.ajustarAltura(123))
+                        .width(objetoAdaptardor.ajustarAncho(123)),
+                    contentAlignment = Alignment.BottomCenter
+                ) {
+                    SubcomposeAsyncImage(
+                        model = "https://invefacon.com/img/$nombreEmpresa/articulos/${articulo.codigo}.png",
+                        contentDescription = "Imagen Articulo",
+                        modifier = Modifier
+                            .fillMaxSize(),
+                        contentScale = ContentScale.FillBounds,
+                        loading = {
+                            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center){
+                                CircularProgressIndicator(
+                                    color = Color(0xFF244BC0),
+                                    modifier = Modifier.size(objetoAdaptardor.ajustarAltura(50))
+                                )
+                            }
+                        },
+                        error = {
+                            Image(
+                                modifier = Modifier
+                                    .fillMaxSize(),
+                                painter = painterResource(id = R.drawable.sin_imagen),
+                                contentDescription = "Descripción de la imagen",
+                                contentScale = ContentScale.FillBounds
+                            )
+                        }
+                    )
+                    Column(
+                        verticalArrangement = Arrangement.Bottom,
+                        modifier = Modifier.fillMaxSize()
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .width(objetoAdaptardor.ajustarAncho(133))
+                                .background(Color.Black.copy(alpha = 0.5f)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(2)))
+                            Text(
+                                articulo.nombre,
+                                fontFamily = fontAksharPrincipal,
+                                fontWeight = FontWeight.Light,
+                                fontSize = objetoAdaptardor.ajustarFont(16),
+                                overflow = TextOverflow.Ellipsis,
+                                textAlign = TextAlign.Center,
+                                color = Color.White,
+                                modifier = Modifier.width(objetoAdaptardor.ajustarAncho(100))
+                            )
+                        }
+
+                        // Espaciador con weight para adaptarse dinámicamente
+                        Spacer(modifier = Modifier.weight(1f))
+
+                        Box(
+                            modifier = Modifier
+                                .height(objetoAdaptardor.ajustarAltura(24))
+                                .width(objetoAdaptardor.ajustarAncho(133))
+                                .background(Color.Black.copy(alpha = 0.5f)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                "\u20A1 "+String.format(Locale.US, "%,.2f", articulo.precio.replace(",", "").toDouble()),
+                                fontFamily = fontAksharPrincipal,
+                                fontWeight = FontWeight.Light,
+                                fontSize = objetoAdaptardor.ajustarFont(18),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                textAlign = TextAlign.Center,
+                                color = Color.White
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     ConstraintLayout(
         modifier = Modifier
             .width(objetoAdaptardor.ajustarAncho(964))
@@ -295,249 +537,6 @@ fun InterfazSacComandaLarge(
         val (bxSuperior, bxContenedorArticulos, txfBarraBusqueda,
             bxContenerdorCuentasActivas, bxContenedorBotones,
             bxContenedorFamilias, bxContenedorSubFamilias) = createRefs()
-
-        val coroutineScope = rememberCoroutineScope()
-
-        fun agregarOActualizarProducto(nuevoProducto: ArticulosSeleccionadosSac) {
-
-            // Buscar un producto existente en la lista por su 'codigo'
-            val productoExistente = productosSeleccionados.find { it.codigo == nuevoProducto.codigo && it.subCuenta== nuevoProducto.subCuenta}
-            val index = productosSeleccionados.indexOfFirst { it.codigo == nuevoProducto.codigo && it.subCuenta== nuevoProducto.subCuenta }
-
-            if (productoExistente != null) {
-                // Si el producto ya existe, actualizar su cantidad
-                productoExistente.cantidad += nuevoProducto.cantidad
-
-                // Si la cantidad es cero o negativa, eliminar el producto de la lista
-                if (productoExistente.cantidad <= 0) {
-                    productosSeleccionados.remove(productoExistente)
-                } else {
-                    productoExistente.calcularMontoTotal()
-                }
-            } else {
-                // Si el producto no existe, agregarlo a la lista
-                nuevoProducto.calcularMontoTotal()
-                productosSeleccionados.add(nuevoProducto)
-            }
-
-            // Refrescar la lista de productos seleccionados (esto asegura que la UI se actualice correctamente)
-            val productos = productosSeleccionados.toList()
-            productosSeleccionados.clear()
-            productosSeleccionados.addAll(productos)
-            coroutineScope.launch {
-                lazyStateArticulosSeleccionados.animateScrollToItem(if (index!=-1)index else productosSeleccionados.size)
-            }
-            actualizarSubTotal=true
-        }
-
-        @Composable
-        fun AgregarBxContendorArticuloAgregado(
-            articulo: ArticulosSeleccionadosSac
-        ){
-            Box(
-                modifier = Modifier
-                    .width(objetoAdaptardor.ajustarAncho(260))
-                    .background(Color(0xFFF6F6F6))
-            ){
-                Column {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(6)))
-                        Text(
-                            articulo.nombre,
-                            fontFamily = fontAksharPrincipal,
-                            fontWeight = FontWeight.Medium,
-                            fontSize = objetoAdaptardor.ajustarFont(16),
-                            overflow = TextOverflow.Ellipsis,
-                            textAlign = TextAlign.Start,
-                            modifier = Modifier.width(objetoAdaptardor.ajustarAncho(165)).padding(2.dp)
-                        )
-                        Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(4)))
-                        Box{
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-
-                                IconButton(
-                                    onClick = {
-                                        val articuloSeleccionado = ArticulosSeleccionadosSac(
-                                            nombre = articulo.nombre,
-                                            codigo = articulo.codigo,
-                                            precioUnitario = articulo.precioUnitario,
-                                            cantidad = -1,
-                                            subCuenta = articulo.subCuenta
-                                        )
-                                        agregarOActualizarProducto(articuloSeleccionado)
-                                    },
-                                    modifier = Modifier.size(objetoAdaptardor.ajustarAltura(22))
-                                ) {
-                                    Icon(
-                                        imageVector = if(articulo.cantidad==1) Icons.Filled.Delete else Icons.Filled.RemoveCircle,
-                                        contentDescription = "Basurero",
-                                        tint = if(articulo.cantidad==1)Color.Red else Color.Black,
-                                        modifier = Modifier.size(objetoAdaptardor.ajustarAltura(22))
-                                    )
-                                }
-
-                                Text(
-                                    articulo.cantidad.toString(),
-                                    fontFamily = fontAksharPrincipal,
-                                    fontWeight = FontWeight.Medium,
-                                    fontSize = objetoAdaptardor.ajustarFont(16),
-                                    overflow = TextOverflow.Ellipsis,
-                                    textAlign = TextAlign.Center,
-                                    modifier = Modifier.width(objetoAdaptardor.ajustarAncho(35)).padding(2.dp)
-                                )
-                                IconButton(
-                                    onClick = {
-                                        val articuloSeleccionado = ArticulosSeleccionadosSac(
-                                            nombre = articulo.nombre,
-                                            codigo = articulo.codigo,
-                                            precioUnitario = articulo.precioUnitario,
-                                            cantidad = 1,
-                                            subCuenta = articulo.subCuenta
-                                        )
-                                        agregarOActualizarProducto(articuloSeleccionado)
-                                    },
-                                    modifier = Modifier.size(objetoAdaptardor.ajustarAltura(22))
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Filled.AddCircle,
-                                        contentDescription = "Basurero",
-                                        tint = Color.Black,
-                                        modifier = Modifier.size(objetoAdaptardor.ajustarAltura(22))
-                                    )
-                                }
-                            }
-                        }
-                        Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(6)))
-                    }
-                    HorizontalDivider()
-                    Row {
-                        Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(6)))
-                        Text(
-                            articulo.anotacion,
-                            fontFamily = fontAksharPrincipal,
-                            fontWeight = FontWeight.Light,
-                            fontSize = objetoAdaptardor.ajustarFont(14),
-                            overflow = TextOverflow.Ellipsis,
-                            textAlign = TextAlign.Start,
-                            modifier = Modifier.width(objetoAdaptardor.ajustarAncho(185)).padding(2.dp),
-                            color = Color.DarkGray
-                        )
-                        Text(
-                            "\u20A1 "+String.format(Locale.US, "%,.2f", articulo.montoTotal.toString().replace(",", "").toDouble()),
-                            fontFamily = fontAksharPrincipal,
-                            fontWeight = FontWeight.Light,
-                            fontSize = objetoAdaptardor.ajustarFont(16),
-                            overflow = TextOverflow.Ellipsis,
-                            textAlign = TextAlign.Center,
-                            modifier = Modifier.width(objetoAdaptardor.ajustarAncho(75)).padding(2.dp)
-                        )
-                    }
-                }
-            }
-        }
-
-
-        @Composable
-        fun AgregarBxContenedorArticulos(
-            articulo: ArticuloSac
-        ){
-            Card(
-                modifier = Modifier
-                    .height(objetoAdaptardor.ajustarAltura(123))
-                    .width(objetoAdaptardor.ajustarAncho(123))
-                    .clickable {
-                        articuloActualSeleccionado= articulo
-                        isVentanaAgregarArticuloActiva=true
-                    }
-                    .shadow(
-                        elevation = objetoAdaptardor.ajustarAltura(7),
-                        shape = RoundedCornerShape(objetoAdaptardor.ajustarAltura(16))
-                    ),
-                shape = RoundedCornerShape(objetoAdaptardor.ajustarAltura(16)),
-                colors = CardDefaults.cardColors(containerColor = Color.White)
-            ) {
-                Column {
-                    Box(
-                        modifier = Modifier
-                            .height(objetoAdaptardor.ajustarAltura(123))
-                            .width(objetoAdaptardor.ajustarAncho(123)),
-                        contentAlignment = Alignment.BottomCenter
-                    ) {
-                        SubcomposeAsyncImage(
-                            model = "https://invefacon.com/img/$nombreEmpresa/articulos/${articulo.codigo}.png",
-                            contentDescription = "Imagen Articulo",
-                            modifier = Modifier
-                                .fillMaxSize(),
-                            contentScale = ContentScale.FillBounds,
-                            loading = {
-                                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center){
-                                    CircularProgressIndicator(
-                                        color = Color(0xFF244BC0),
-                                        modifier = Modifier.size(objetoAdaptardor.ajustarAltura(50))
-                                    )
-                                }
-                            },
-                            error = {
-                                Image(
-                                    modifier = Modifier
-                                        .fillMaxSize(),
-                                    painter = painterResource(id = R.drawable.sin_imagen),
-                                    contentDescription = "Descripción de la imagen",
-                                    contentScale = ContentScale.FillBounds
-                                )
-                            }
-                        )
-                        Column(
-                            verticalArrangement = Arrangement.Bottom,
-                            modifier = Modifier.fillMaxSize()
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .width(objetoAdaptardor.ajustarAncho(133))
-                                    .background(Color.Black.copy(alpha = 0.5f)),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(2)))
-                                Text(
-                                    articulo.nombre,
-                                    fontFamily = fontAksharPrincipal,
-                                    fontWeight = FontWeight.Light,
-                                    fontSize = objetoAdaptardor.ajustarFont(16),
-                                    overflow = TextOverflow.Ellipsis,
-                                    textAlign = TextAlign.Center,
-                                    color = Color.White,
-                                    modifier = Modifier.width(objetoAdaptardor.ajustarAncho(100))
-                                )
-                            }
-
-                            // Espaciador con weight para adaptarse dinámicamente
-                            Spacer(modifier = Modifier.weight(1f))
-
-                            Box(
-                                modifier = Modifier
-                                    .height(objetoAdaptardor.ajustarAltura(24))
-                                    .width(objetoAdaptardor.ajustarAncho(133))
-                                    .background(Color.Black.copy(alpha = 0.5f)),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(
-                                    "\u20A1 "+String.format(Locale.US, "%,.2f", articulo.precio.replace(",", "").toDouble()),
-                                    fontFamily = fontAksharPrincipal,
-                                    fontWeight = FontWeight.Light,
-                                    fontSize = objetoAdaptardor.ajustarFont(18),
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis,
-                                    textAlign = TextAlign.Center,
-                                    color = Color.White
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-        }
 
         Box(
             modifier = Modifier

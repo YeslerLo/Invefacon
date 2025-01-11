@@ -49,6 +49,12 @@ class ProcesarDatosModuloSac(apiToken: String){
             .build()
         return objetoFuncionesHttpInvefacon.metodoPost(formBody = formBody, apiDirectorio = "apimovil/sac/crearComanda.php")
     }
+    suspend fun obtenerDatosMesaComandada(nombreMesa: String):JSONObject?{
+        val formBody = MultipartBody.Builder().setType(MultipartBody.FORM)
+            .addFormDataPart("Mesa",nombreMesa)
+            .build()
+        return objetoFuncionesHttpInvefacon.metodoPost(formBody = formBody, apiDirectorio = "apimovil/sac/detalleMesa.php")
+    }
 }
 
 data class Mesa(
@@ -60,6 +66,7 @@ data class Mesa(
     var estado: String= "",
     var salon: String= ""
 )
+
 data class ArticuloSac(
     var nombre: String="",
     var codigo: String= "",
@@ -91,5 +98,22 @@ data class ArticulosSeleccionadosSac(
 ){
     fun calcularMontoTotal() {
         montoTotal = (precioUnitario * cantidad)
+    }
+}
+data class ArticuloComandado(
+    val Consec: String,
+    val Cod_Articulo: String,
+    var Cantidad: Double,
+    val Precio: Double,
+    val Imp1: String,
+    val Imp2: String,
+    val Linea: String,
+    var SubCuenta: String,
+    val nombre: String,
+    var montoTotal: Double= 0.00,
+    var anotacion: String = "Sin Anotacion"
+){
+    fun calcularMontoTotal() {
+        montoTotal = (Precio*Cantidad)
     }
 }

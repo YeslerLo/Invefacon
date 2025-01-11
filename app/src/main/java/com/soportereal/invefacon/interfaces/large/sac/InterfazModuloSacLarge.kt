@@ -1,10 +1,12 @@
 package com.soportereal.invefacon.interfaces.large.sac
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -25,6 +27,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AddCircle
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.RemoveCircle
 import androidx.compose.material.icons.filled.RestaurantMenu
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.AlertDialog
@@ -35,6 +40,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
@@ -55,8 +61,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
@@ -68,6 +76,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.navigation.NavController
+import coil.compose.SubcomposeAsyncImage
 import com.google.accompanist.systemuicontroller.SystemUiController
 import com.soportereal.invefacon.R
 import com.soportereal.invefacon.funciones_de_interfaces.RutasPantallasModuloSac
@@ -85,7 +94,8 @@ fun InterfazModuloSacLarge(
     apiToken: String,
     navControllerPantallasModuloSac: NavController?,
     systemUiController: SystemUiController?,
-    navControllerPantallasModulos: NavController?
+    navControllerPantallasModulos: NavController?,
+    nombreEmpresa: String
 ){
     systemUiController?.setStatusBarColor(Color(0xFF244BC0))
     systemUiController?.setNavigationBarColor(Color.Black)
@@ -112,9 +122,20 @@ fun InterfazModuloSacLarge(
     var mesaActual by remember { mutableStateOf(Mesa()) }
     var subCuentaSeleccionada by remember { mutableStateOf("Juntos") }
     val opcionesSubCuentas: SnapshotStateMap<String, String> = remember { mutableStateMapOf() }
-    opcionesSubCuentas["Juntos"]="Juntos"
-    val productosSeleccionados = remember { mutableStateListOf<ArticulosSeleccionadosSac>() }
+    val articulosComandados = remember { mutableStateListOf<ArticuloComandado>() }
     val lazyStateArticulosSeleccionados= rememberLazyListState()
+
+    articulosComandados.add(ArticuloComandado(
+        Consec = "1185",
+        Cod_Articulo = "01040001",
+        Cantidad = 7.00,
+        Precio = 100.00,
+        Imp1 = "13.00",
+        Imp2 = ".00",
+        Linea = "2647",
+        SubCuenta = "Juntos",
+        nombre = "Hamburguesa con queso y papas"
+    ))
 
     LaunchedEffect(iniciarCreacionNuevaMesa) {
         if (iniciarCreacionNuevaMesa){
@@ -179,6 +200,222 @@ fun InterfazModuloSacLarge(
                 objetoEstadoPantallaCarga.cambiarEstadoMenuPrincipal(false)
                 isPrimeraVezCargando=false
                 isCargandoMesas=false
+            }
+        }
+    }
+
+    LaunchedEffect(iniciarMenuMesaComandada) {
+        if(iniciarMenuMesaComandada) {
+            objetoEstadoPantallaCarga.cambiarEstadoMenuPrincipal(true)
+            val result = objectoProcesadorDatosApi.obtenerDatosMesaComandada(mesaActual.nombre)
+            if (result != null) {
+                estadoRespuestaApi.cambiarEstadoRespuestaApi(
+                    mostrarSoloRespuestaError = true,
+                    datosRespuesta = result
+                )
+                val data = result.getJSONObject("data")
+                val subCuentas = data.getJSONArray("Subcuentas")
+                val articulos = data.getJSONArray("detalleSubcuenta")
+
+                for (i in 0 until subCuentas.length()) {
+                    opcionesSubCuentas[subCuentas[i].toString()] = subCuentas[i].toString()
+                }
+                subCuentaSeleccionada= subCuentas[0].toString()
+
+
+                for (i in 0 until articulos.length()) {
+                    val articulo = articulos.getJSONObject(i)
+                    val articuloComadado = ArticuloComandado(
+                        Consec = articulo.getString("Consec"),
+                        Cod_Articulo = articulo.getString("Cod_Articulo"),
+                        Cantidad = articulo.getDouble("Cantidad"),
+                        Precio = articulo.getDouble("Precio"),
+                        Imp1 = articulo.getString("Imp1"),
+                        Imp2 = articulo.getString("Imp2"),
+                        Linea = articulo.getString("Linea"),
+                        SubCuenta = articulo.getString("SubCuenta"),
+                        nombre= articulo.getString("nombreArticulo")
+                    )
+                    articulosComandados.add(articuloComadado)
+                }
+            }
+            objetoEstadoPantallaCarga.cambiarEstadoMenuPrincipal(false)
+        }
+    }
+
+    @Composable
+    fun AgregarBt(
+        text: String,
+        color: Long,
+        nuevoValorReasignado: (Boolean)->Unit,
+        nuevoValorOnClick: Boolean = false
+    ){
+        Button(
+            modifier = Modifier.height(objetoAdaptardor.ajustarAltura(30)),
+            onClick = {
+                nuevoValorReasignado(nuevoValorOnClick)
+            },
+            colors = ButtonDefaults.buttonColors(
+                containerColor =Color(color), // Color de fondo del botón
+                contentColor = Color.White,
+                disabledContainerColor = Color.Red,
+                disabledContentColor = Color.White
+            ), contentPadding = PaddingValues(0.dp)
+        ) {
+            Text(
+                text,
+                fontFamily = fontAksharPrincipal,
+                fontWeight = FontWeight.Medium,
+                fontSize = objetoAdaptardor.ajustarFont(15),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                textAlign = TextAlign.Center,
+                color = Color.White
+            )
+        }
+    }
+
+    @Composable
+    fun AgregarBxContenedorArticulosComandados(
+        articuloComandado: ArticuloComandado
+    ){
+//        val fontAksharPrincipal = FontFamily(Font(R.font.akshar_medium))
+//        val configuration = LocalConfiguration.current
+//        val dpAnchoPantalla = configuration.screenWidthDp
+//        val dpAltoPantalla = configuration.screenHeightDp
+//        val dpFontPantalla= configuration.fontScale
+//        val objetoAdaptardor= FuncionesParaAdaptarContenidoCompact(dpAltoPantalla, dpAnchoPantalla, dpFontPantalla, true)
+//
+//        val nombreEmpresa= "demoferre"
+
+        articuloComandado.calcularMontoTotal()
+        Box(
+            modifier = Modifier
+                .wrapContentWidth()
+                .background(Color(0xFFF6F6F6))
+        ){
+            Column {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .height(objetoAdaptardor.ajustarAltura(50))
+                            .width(objetoAdaptardor.ajustarAncho(50)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        SubcomposeAsyncImage(
+                            model = "https://invefacon.com/img/$nombreEmpresa/articulos/${articuloComandado.Cod_Articulo}.png",
+                            contentDescription = "Imagen Articulo",
+                            modifier = Modifier
+                                .fillMaxSize(),
+                            contentScale = ContentScale.FillBounds,
+                            loading = {
+                                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center){
+                                    CircularProgressIndicator(
+                                        color = Color(0xFF244BC0),
+                                        modifier = Modifier.size(objetoAdaptardor.ajustarAltura(20))
+                                    )
+                                }
+                            },
+                            error = {
+                                Image(
+                                    modifier = Modifier
+                                        .fillMaxSize(),
+                                    painter = painterResource(id = R.drawable.sin_imagen),
+                                    contentDescription = "Descripción de la imagen",
+                                    contentScale = ContentScale.FillBounds
+                                )
+                            }
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(6)))
+                    Text(
+                        articuloComandado.nombre,
+                        fontFamily = fontAksharPrincipal,
+                        fontWeight = FontWeight.Medium,
+                        fontSize = objetoAdaptardor.ajustarFont(18),
+                        overflow = TextOverflow.Ellipsis,
+                        textAlign = TextAlign.Start,
+                        modifier = Modifier.width(objetoAdaptardor.ajustarAncho(165)).padding(2.dp)
+                    )
+                    Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(4)))
+                    Box{
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            IconButton(
+                                onClick = {
+
+                                },
+                                modifier = Modifier.size(objetoAdaptardor.ajustarAltura(22))
+                            ) {
+                                Icon(
+                                    imageVector = if(articuloComandado.Cantidad.toInt() ==1) Icons.Filled.Delete else Icons.Filled.RemoveCircle,
+                                    contentDescription = "Basurero",
+                                    tint = if(articuloComandado.Cantidad.toInt() ==1)Color.Red else Color.Black,
+                                    modifier = Modifier.size(objetoAdaptardor.ajustarAltura(22))
+                                )
+                            }
+
+                            Text(
+                                articuloComandado.Cantidad.toString(),
+                                fontFamily = fontAksharPrincipal,
+                                fontWeight = FontWeight.Medium,
+                                fontSize = objetoAdaptardor.ajustarFont(18),
+                                overflow = TextOverflow.Ellipsis,
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier.width(objetoAdaptardor.ajustarAncho(35)).padding(2.dp)
+                            )
+                            IconButton(
+                                onClick = {
+                                },
+                                modifier = Modifier.size(objetoAdaptardor.ajustarAltura(22))
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Filled.AddCircle,
+                                    contentDescription = "Basurero",
+                                    tint = Color.Black,
+                                    modifier = Modifier.size(objetoAdaptardor.ajustarAltura(22))
+                                )
+                            }
+                        }
+                    }
+                    Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(6)))
+
+                    AgregarBt(
+                        text = "Mover",
+                        color = 0xFF244BC0,
+                        nuevoValorReasignado = {}
+                    )
+                    Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(6)))
+                    AgregarBt(
+                        text = "Editar",
+                        color = 0xFF244BC0,
+                        nuevoValorReasignado = {}
+                    )
+                }
+                HorizontalDivider()
+                Row {
+                    Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(6)))
+                    Text(
+                        "Sin Anotacion",
+                        fontFamily = fontAksharPrincipal,
+                        fontWeight = FontWeight.Light,
+                        fontSize = objetoAdaptardor.ajustarFont(16),
+                        overflow = TextOverflow.Ellipsis,
+                        textAlign = TextAlign.Start,
+                        modifier = Modifier.width(objetoAdaptardor.ajustarAncho(185)).padding(2.dp),
+                        color = Color.DarkGray
+                    )
+                    Text(
+                        "\u20A1 "+String.format(Locale.US, "%,.2f", articuloComandado.montoTotal.toString().replace(",", "").toDouble()),
+                        fontFamily = fontAksharPrincipal,
+                        fontWeight = FontWeight.Light,
+                        fontSize = objetoAdaptardor.ajustarFont(18),
+                        overflow = TextOverflow.Ellipsis,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.width(objetoAdaptardor.ajustarAncho(75)).padding(2.dp)
+                    )
+                }
             }
         }
     }
@@ -279,6 +516,7 @@ fun InterfazModuloSacLarge(
                 onDone = { ocultarTeclado(contexto) }
             )
         )
+
         Box(
             modifier = Modifier
                 .background(Color.White)
@@ -773,7 +1011,6 @@ fun InterfazModuloSacLarge(
     }
 
     if(iniciarMenuMesaComandada) {
-
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -795,7 +1032,7 @@ fun InterfazModuloSacLarge(
                 ){
                     Column(
                         verticalArrangement = Arrangement.Center,
-                        horizontalAlignment = Alignment.CenterHorizontally,
+                        horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Text(
                             "Articulos Comandados ${mesaActual.nombre}",
@@ -834,22 +1071,19 @@ fun InterfazModuloSacLarge(
                                     tomarAnchoMaximo = false,
                                     medidaAncho = 180
                                 )
-                            }
+                        }
                         Box(
-                            modifier = Modifier.height(objetoAdaptardor.ajustarAltura(350)),
+                            modifier = Modifier
+                                .height(objetoAdaptardor.ajustarAltura(350))
+                                .wrapContentWidth(),
                             contentAlignment = Alignment.Center
                         ){
                             LazyColumn(
                                 state = lazyStateArticulosSeleccionados,
-                                modifier = Modifier.fillMaxHeight()
                             ) {
-                                items(productosSeleccionados){producto->
-                                    if (producto.subCuenta==subCuentaSeleccionada){
-                                        AgregarBxContendorArticuloComandado(producto)
-                                        HorizontalDivider(
-                                            thickness = 2.dp,
-                                            color = Color.Black
-                                        )
+                                items(articulosComandados){ producto->
+                                    if (producto.SubCuenta==subCuentaSeleccionada){
+                                        AgregarBxContenedorArticulosComandados(producto)
                                     }
                                 }
                             }
@@ -859,103 +1093,39 @@ fun InterfazModuloSacLarge(
                             contentAlignment = Alignment.Center
                         ){
                             Row{
-                                Button(
-                                    onClick = {
-                                        iniciarMenuCrearMesa=false
-                                    },
-                                    colors = ButtonDefaults.buttonColors(
-                                        containerColor =Color(0xFF244BC0), // Color de fondo del botón
-                                        contentColor = Color.White,
-                                        disabledContainerColor = Color.Red,
-                                        disabledContentColor = Color.White
-                                    )
-                                ) {
-                                    Text(
-                                        "Mover Mesa",
-                                        fontFamily = fontAksharPrincipal,
-                                        fontWeight = FontWeight.Medium,
-                                        fontSize = objetoAdaptardor.ajustarFont(17),
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis,
-                                        textAlign = TextAlign.Center,
-                                        color = Color.White
-                                    )
-                                }
+                                AgregarBt(
+                                    text = "Mover Mesa",
+                                    color = 0xFF244BC0,
+                                    nuevoValorOnClick = false,
+                                    nuevoValorReasignado = {valor-> iniciarMenuMesaComandada= valor}
+                                )
 
                                 Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(8)))
 
-                                Button(
-                                    onClick = {
-                                        iniciarMenuCrearMesa=false
-                                    },
-                                    colors = ButtonDefaults.buttonColors(
-                                        containerColor =Color(0xFF244BC0), // Color de fondo del botón
-                                        contentColor = Color.White,
-                                        disabledContainerColor = Color.Red,
-                                        disabledContentColor = Color.White
-                                    )
-                                ) {
-                                    Text(
-                                        "Pedir Cuenta",
-                                        fontFamily = fontAksharPrincipal,
-                                        fontWeight = FontWeight.Medium,
-                                        fontSize = objetoAdaptardor.ajustarFont(17),
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis,
-                                        textAlign = TextAlign.Center,
-                                        color = Color.White
-                                    )
-                                }
+                                AgregarBt(
+                                    text = "Pedir Cuenta",
+                                    color = 0xFF244BC0,
+                                    nuevoValorOnClick = false,
+                                    nuevoValorReasignado = {valor-> iniciarMenuMesaComandada= valor}
+                                )
 
                                 Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(8)))
 
-                                Button(
-                                    onClick = {
-                                        iniciarMenuMesaComandada=false
-                                    },
-                                    colors = ButtonDefaults.buttonColors(
-                                        containerColor = Color(0xFFFF5722), // Color de fondo del botón
-                                        contentColor = Color.White,
-                                        disabledContainerColor = Color(0xFFFF5722),
-                                        disabledContentColor = Color.White
-                                    )
-                                ) {
-                                    Text(
-                                        "Quitar mesa",
-                                        fontFamily = fontAksharPrincipal,
-                                        fontWeight = FontWeight.Medium,
-                                        fontSize = objetoAdaptardor.ajustarFont(17),
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis,
-                                        textAlign = TextAlign.Center,
-                                        color = Color.White
-                                    )
-                                }
+                                AgregarBt(
+                                    text = "Quitar mesa",
+                                    color = 0xFFFF5722,
+                                    nuevoValorOnClick = false,
+                                    nuevoValorReasignado = {valor-> iniciarMenuMesaComandada= valor}
+                                )
 
                                 Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(8)))
 
-                                Button(
-                                    onClick = {
-                                        iniciarMenuCrearMesa=false
-                                    },
-                                    colors = ButtonDefaults.buttonColors(
-                                        containerColor = Color.Red, // Color de fondo del botón
-                                        contentColor = Color.White,
-                                        disabledContainerColor = Color.Red,
-                                        disabledContentColor = Color.White
-                                    )
-                                ) {
-                                    Text(
-                                        "Salir",
-                                        fontFamily = fontAksharPrincipal,
-                                        fontWeight = FontWeight.Medium,
-                                        fontSize = objetoAdaptardor.ajustarFont(17),
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis,
-                                        textAlign = TextAlign.Center,
-                                        color = Color.White
-                                    )
-                                }
+                                AgregarBt(
+                                    text = "Salir",
+                                    color = 0xFFE10000,
+                                    nuevoValorOnClick = false,
+                                    nuevoValorReasignado = {valor-> iniciarMenuMesaComandada= valor}
+                                )
                             }
                         }
                     }
@@ -968,10 +1138,7 @@ fun InterfazModuloSacLarge(
 
 }
 
-@Composable
-fun AgregarBxContendorArticuloComandado(producto: ArticulosSeleccionadosSac) {
 
-}
 
 
 @Composable
@@ -988,10 +1155,9 @@ internal fun BxContendorDatosMesa(
     val objetoAdaptardor= FuncionesParaAdaptarContenidoCompact(dpAltoPantalla, dpAnchoPantalla, dpFontPantalla)
     val fontAksharPrincipal = FontFamily(Font(R.font.akshar_medium))
     var iniciarPantallaSacComanda by remember { mutableStateOf(false) }
-    mesaSeleccionada(datosMesa)
 
     LaunchedEffect(iniciarPantallaSacComanda) {
-        if (iniciarPantallaSacComanda && datosMesa.estado!="null"){
+        if (iniciarPantallaSacComanda && datosMesa.estado=="null"){
             objetoEstadoPantallaCarga.cambiarEstadoMenuPrincipal(true)
             iniciarMenuDetalleComanda(false)
             delay(500)
@@ -1000,10 +1166,9 @@ internal fun BxContendorDatosMesa(
                 launchSingleTop=true
             }
         }
-        if (iniciarPantallaSacComanda && datosMesa.estado=="null"){
+        if (iniciarPantallaSacComanda && datosMesa.estado!="null"){
             iniciarMenuDetalleComanda(true)
-
-           iniciarPantallaSacComanda=false
+            iniciarPantallaSacComanda=false
         }
     }
 
@@ -1012,7 +1177,9 @@ internal fun BxContendorDatosMesa(
             .height(objetoAdaptardor.ajustarAltura(165))
             .width(objetoAdaptardor.ajustarAncho(55))
             .clickable {
+                mesaSeleccionada(datosMesa)
                 iniciarPantallaSacComanda = true
+
             }
             .shadow(
                 elevation = objetoAdaptardor.ajustarAltura(7),
@@ -1148,5 +1315,23 @@ internal fun BxContendorDatosMesa(
 private fun Preview(){
     val m= Mesa(idMesa = "1", estado = "2", nombre = "Mesa 1", total= "10000", tiempo = 45, cantidadSubcuentas = "1")
 //    BxContendorDatosMesa(m)
-    InterfazModuloSacLarge("", null, null, null)
+    InterfazModuloSacLarge("", null, null, null, "")
 }
+
+//@Preview
+//@Composable
+//private fun Preview2(){
+//    val articulo =  ArticuloComandado(
+//        Consec = "1185",
+//        Cod_Articulo = "01040001",
+//        Cantidad = 7.00,
+//        Precio = 100.00,
+//        Imp1 = "13.00",
+//        Imp2 = ".00",
+//        Linea = "2647",
+//        SubCuenta = "Yesler",
+//        nombre = "Hamburguesa con queso y papas"
+//    )
+//    AgregarBxContenedorArticulosComandados(articulo)
+//}
+
