@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -124,6 +125,7 @@ fun InterfazModuloSacLarge(
     val opcionesSubCuentas: SnapshotStateMap<String, String> = remember { mutableStateMapOf() }
     val articulosComandados = remember { mutableStateListOf<ArticuloComandado>() }
     val lazyStateArticulosSeleccionados= rememberLazyListState()
+    var iniciarPantallaSacComanda by remember { mutableStateOf(false) }
 
     articulosComandados.add(ArticuloComandado(
         Consec = "1185",
@@ -136,6 +138,17 @@ fun InterfazModuloSacLarge(
         SubCuenta = "Juntos",
         nombre = "Hamburguesa con queso y papas"
     ))
+
+    LaunchedEffect(iniciarPantallaSacComanda) {
+        if (iniciarPantallaSacComanda){
+            objetoEstadoPantallaCarga.cambiarEstadoMenuPrincipal(true)
+            delay(500)
+            navControllerPantallasModuloSac?.navigate(RutasPantallasModuloSac.PantallaSacComanda.ruta+"/"+mesaActual.nombre+"/"+mesaActual.salon){
+                restoreState= true
+                launchSingleTop=true
+            }
+        }
+    }
 
     LaunchedEffect(iniciarCreacionNuevaMesa) {
         if (iniciarCreacionNuevaMesa){
@@ -248,10 +261,15 @@ fun InterfazModuloSacLarge(
         text: String,
         color: Long,
         nuevoValorReasignado: (Boolean)->Unit,
-        nuevoValorOnClick: Boolean = false
+        nuevoValorOnClick: Boolean = false,
+        quitarPadInterno: Boolean = false
     ){
         Button(
-            modifier = Modifier.height(objetoAdaptardor.ajustarAltura(30)),
+            modifier = if (quitarPadInterno) {
+                Modifier.height(objetoAdaptardor.ajustarAltura(30))
+            } else {
+                Modifier
+            },
             onClick = {
                 nuevoValorReasignado(nuevoValorOnClick)
             },
@@ -260,7 +278,7 @@ fun InterfazModuloSacLarge(
                 contentColor = Color.White,
                 disabledContainerColor = Color.Red,
                 disabledContentColor = Color.White
-            ), contentPadding = PaddingValues(0.dp)
+            ),contentPadding = if (quitarPadInterno) PaddingValues(0.dp) else ButtonDefaults.ContentPadding
         ) {
             Text(
                 text,
@@ -291,8 +309,8 @@ fun InterfazModuloSacLarge(
         articuloComandado.calcularMontoTotal()
         Box(
             modifier = Modifier
-                .wrapContentWidth()
                 .background(Color(0xFFF6F6F6))
+                .width(objetoAdaptardor.ajustarAncho(430))
         ){
             Column {
                 Row(
@@ -384,13 +402,15 @@ fun InterfazModuloSacLarge(
                     AgregarBt(
                         text = "Mover",
                         color = 0xFF244BC0,
-                        nuevoValorReasignado = {}
+                        nuevoValorReasignado = {},
+                        quitarPadInterno = true
                     )
                     Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(6)))
                     AgregarBt(
                         text = "Editar",
                         color = 0xFF244BC0,
-                        nuevoValorReasignado = {}
+                        nuevoValorReasignado = {},
+                        quitarPadInterno = true
                     )
                 }
                 HorizontalDivider()
@@ -403,7 +423,7 @@ fun InterfazModuloSacLarge(
                         fontSize = objetoAdaptardor.ajustarFont(16),
                         overflow = TextOverflow.Ellipsis,
                         textAlign = TextAlign.Start,
-                        modifier = Modifier.width(objetoAdaptardor.ajustarAncho(185)).padding(2.dp),
+                        modifier = Modifier.width(objetoAdaptardor.ajustarAncho(300)).padding(2.dp),
                         color = Color.DarkGray
                     )
                     Text(
@@ -412,8 +432,8 @@ fun InterfazModuloSacLarge(
                         fontWeight = FontWeight.Light,
                         fontSize = objetoAdaptardor.ajustarFont(18),
                         overflow = TextOverflow.Ellipsis,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.width(objetoAdaptardor.ajustarAncho(75)).padding(2.dp)
+                        textAlign = TextAlign.End,
+                        modifier = Modifier.width(objetoAdaptardor.ajustarAncho(122)).padding(2.dp)
                     )
                 }
             }
@@ -1020,8 +1040,8 @@ fun InterfazModuloSacLarge(
         ){
             Surface(
                 modifier = Modifier
+                    .width(objetoAdaptardor.ajustarAncho(630))
                     .align(Alignment.Center)
-                    .wrapContentWidth()
                     .wrapContentHeight()
                     .align(Alignment.Center),
                 shape = RoundedCornerShape(16.dp),
@@ -1074,7 +1094,7 @@ fun InterfazModuloSacLarge(
                         }
                         Box(
                             modifier = Modifier
-                                .height(objetoAdaptardor.ajustarAltura(350))
+                                .heightIn(max = objetoAdaptardor.ajustarAltura(300))
                                 .wrapContentWidth(),
                             contentAlignment = Alignment.Center
                         ){
@@ -1088,11 +1108,32 @@ fun InterfazModuloSacLarge(
                                 }
                             }
                         }
+                        Box(
+                            contentAlignment = Alignment.CenterEnd,
+                            modifier = Modifier
+                                .height(objetoAdaptardor.ajustarAltura(50))
+                                .width(objetoAdaptardor.ajustarAncho(500))
+                        ){
+                            Text(
+                                "Total "+"\u20A1 "+"700",
+                                fontFamily = fontAksharPrincipal,
+                                fontWeight = FontWeight.Medium,
+                                fontSize = objetoAdaptardor.ajustarFont(25),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                textAlign = TextAlign.Center,
+                                color = Color.Black,
+                                )
+                        }
+
 
                         Box(
                             contentAlignment = Alignment.Center
                         ){
-                            Row{
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.Center
+                            ){
                                 AgregarBt(
                                     text = "Mover Mesa",
                                     color = 0xFF244BC0,
@@ -1121,6 +1162,15 @@ fun InterfazModuloSacLarge(
                                 Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(8)))
 
                                 AgregarBt(
+                                    text = "Agregar comanda",
+                                    color =  0xFF22B14C,
+                                    nuevoValorOnClick = true,
+                                    nuevoValorReasignado = {valor-> iniciarPantallaSacComanda= valor}
+                                )
+
+                                Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(8)))
+
+                                AgregarBt(
                                     text = "Salir",
                                     color = 0xFFE10000,
                                     nuevoValorOnClick = false,
@@ -1128,6 +1178,8 @@ fun InterfazModuloSacLarge(
                                 )
                             }
                         }
+
+
                     }
                 }
 
@@ -1333,5 +1385,4 @@ private fun Preview(){
 //        nombre = "Hamburguesa con queso y papas"
 //    )
 //    AgregarBxContenedorArticulosComandados(articulo)
-//}
-
+//}-
