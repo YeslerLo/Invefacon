@@ -51,6 +51,7 @@ import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableDoubleStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
@@ -87,6 +88,8 @@ import com.soportereal.invefacon.interfaces.compact.modulos.clientes.AgregarText
 import com.soportereal.invefacon.interfaces.compact.pantallas_principales.estadoRespuestaApi
 import com.soportereal.invefacon.interfaces.compact.pantallas_principales.objetoEstadoPantallaCarga
 import kotlinx.coroutines.delay
+import java.math.BigDecimal
+import java.math.RoundingMode
 import java.util.Locale
 
 
@@ -119,25 +122,15 @@ fun InterfazModuloSacLarge(
     var iniciarCreacionNuevaMesa by remember { mutableStateOf(false) }
     var isPrimeraVezCargando by remember { mutableStateOf(true) }
     var isCargandoMesas by remember { mutableStateOf(true) }
-    var iniciarMenuMesaComandada by remember { mutableStateOf(true) }
+    var iniciarMenuMesaComandada by remember { mutableStateOf(false) }
     var mesaActual by remember { mutableStateOf(Mesa()) }
     var subCuentaSeleccionada by remember { mutableStateOf("Juntos") }
     val opcionesSubCuentas: SnapshotStateMap<String, String> = remember { mutableStateMapOf() }
     val articulosComandados = remember { mutableStateListOf<ArticuloComandado>() }
     val lazyStateArticulosSeleccionados= rememberLazyListState()
     var iniciarPantallaSacComanda by remember { mutableStateOf(false) }
-
-    articulosComandados.add(ArticuloComandado(
-        Consec = "1185",
-        Cod_Articulo = "01040001",
-        Cantidad = 7.00,
-        Precio = 100.00,
-        Imp1 = "13.00",
-        Imp2 = ".00",
-        Linea = "2647",
-        SubCuenta = "Juntos",
-        nombre = "Hamburguesa con queso y papas"
-    ))
+    var montoTotalComandado by remember { mutableDoubleStateOf(0.00) }
+    var iniciarCalculoMontos by remember { mutableStateOf(false) }
 
     LaunchedEffect(iniciarPantallaSacComanda) {
         if (iniciarPantallaSacComanda){
@@ -219,6 +212,7 @@ fun InterfazModuloSacLarge(
 
     LaunchedEffect(iniciarMenuMesaComandada) {
         if(iniciarMenuMesaComandada) {
+            println(mesaActual)
             objetoEstadoPantallaCarga.cambiarEstadoMenuPrincipal(true)
             val result = objectoProcesadorDatosApi.obtenerDatosMesaComandada(mesaActual.nombre)
             if (result != null) {
@@ -238,11 +232,25 @@ fun InterfazModuloSacLarge(
 
                 for (i in 0 until articulos.length()) {
                     val articulo = articulos.getJSONObject(i)
+                    val precioUnitario = BigDecimal(articulo.getDouble("Precio"))
+                        .setScale(2, RoundingMode.DOWN)
+                        .toDouble()
+                    val iva = BigDecimal(precioUnitario*0.13)
+                        .setScale(2, RoundingMode.DOWN)
+                        .toDouble()
+                    val impuestoServicio = BigDecimal(precioUnitario*0.1)
+                        .setScale(2, RoundingMode.DOWN)
+                        .toDouble()
+
+                    val precioFinal = BigDecimal(precioUnitario+iva+impuestoServicio)
+                        .setScale(0, RoundingMode.HALF_UP)
+                        .toDouble()
+
                     val articuloComadado = ArticuloComandado(
                         Consec = articulo.getString("Consec"),
                         Cod_Articulo = articulo.getString("Cod_Articulo"),
-                        Cantidad = articulo.getDouble("Cantidad"),
-                        Precio = articulo.getDouble("Precio"),
+                        Cantidad = articulo.getInt("Cantidad"),
+                        Precio = precioFinal,
                         Imp1 = articulo.getString("Imp1"),
                         Imp2 = articulo.getString("Imp2"),
                         Linea = articulo.getString("Linea"),
@@ -253,15 +261,33 @@ fun InterfazModuloSacLarge(
                 }
             }
             objetoEstadoPantallaCarga.cambiarEstadoMenuPrincipal(false)
+            iniciarCalculoMontos= true
         }
     }
+
+    LaunchedEffect(iniciarCalculoMontos, subCuentaSeleccionada) {
+        if (iniciarCalculoMontos){
+            montoTotalComandado=0.00
+            articulosComandados.forEach{articuloComandado ->
+                if (articuloComandado.SubCuenta.uppercase()==subCuentaSeleccionada.uppercase()){
+                    articuloComandado.calcularMontoTotal()
+                    montoTotalComandado+=articuloComandado.montoTotal
+                }
+            }
+            montoTotalComandado= BigDecimal(montoTotalComandado)
+                .setScale(2, RoundingMode.HALF_UP) // Redondea al entero más cercano
+                .toDouble()
+            iniciarCalculoMontos= false
+        }
+    }
+
+
 
     @Composable
     fun AgregarBt(
         text: String,
         color: Long,
-        nuevoValorReasignado: (Boolean)->Unit,
-        nuevoValorOnClick: Boolean = false,
+        onClick: (Boolean)->Unit,
         quitarPadInterno: Boolean = false
     ){
         Button(
@@ -271,7 +297,7 @@ fun InterfazModuloSacLarge(
                 Modifier
             },
             onClick = {
-                nuevoValorReasignado(nuevoValorOnClick)
+                onClick(true)
             },
             colors = ButtonDefaults.buttonColors(
                 containerColor =Color(color), // Color de fondo del botón
@@ -297,14 +323,6 @@ fun InterfazModuloSacLarge(
     fun AgregarBxContenedorArticulosComandados(
         articuloComandado: ArticuloComandado
     ){
-//        val fontAksharPrincipal = FontFamily(Font(R.font.akshar_medium))
-//        val configuration = LocalConfiguration.current
-//        val dpAnchoPantalla = configuration.screenWidthDp
-//        val dpAltoPantalla = configuration.screenHeightDp
-//        val dpFontPantalla= configuration.fontScale
-//        val objetoAdaptardor= FuncionesParaAdaptarContenidoCompact(dpAltoPantalla, dpAnchoPantalla, dpFontPantalla, true)
-//
-//        val nombreEmpresa= "demoferre"
 
         articuloComandado.calcularMontoTotal()
         Box(
@@ -402,14 +420,14 @@ fun InterfazModuloSacLarge(
                     AgregarBt(
                         text = "Mover",
                         color = 0xFF244BC0,
-                        nuevoValorReasignado = {},
+                        onClick = {},
                         quitarPadInterno = true
                     )
                     Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(6)))
                     AgregarBt(
                         text = "Editar",
                         color = 0xFF244BC0,
-                        nuevoValorReasignado = {},
+                        onClick = {},
                         quitarPadInterno = true
                     )
                 }
@@ -910,14 +928,7 @@ fun InterfazModuloSacLarge(
                                 unfocusedPlaceholderColor = Color(0xFF5B5B5B),
                                 focusedBorderColor =  Color(0xFF5B5B5B),
                                 unfocusedBorderColor = Color(0xFF5B5B5B)
-                            ),
-//                            keyboardOptions = KeyboardOptions.Default.copy(
-//                                    imeAction = ImeAction.Go
-//                                    ),
-//                            keyboardActions = KeyboardActions(
-//                                onGo = {
-//                                }
-//                            )
+                            )
                         )
 
                         // Spacer separador de componente
@@ -961,14 +972,7 @@ fun InterfazModuloSacLarge(
                                 unfocusedPlaceholderColor = Color(0xFF5B5B5B),
                                 focusedBorderColor =  Color(0xFF5B5B5B),
                                 unfocusedBorderColor = Color(0xFF5B5B5B)
-                            ),
-//                            keyboardOptions = KeyboardOptions.Default.copy(
-//                                    imeAction = ImeAction.Go
-//                                    ),
-//                            keyboardActions = KeyboardActions(
-//                                onGo = {
-//                                }
-//                            )
+                            )
                         )
 
                         // Spacer separador de componente
@@ -1041,14 +1045,14 @@ fun InterfazModuloSacLarge(
             Surface(
                 modifier = Modifier
                     .width(objetoAdaptardor.ajustarAncho(630))
-                    .align(Alignment.Center)
                     .wrapContentHeight()
                     .align(Alignment.Center),
                 shape = RoundedCornerShape(16.dp),
                 color = MaterialTheme.colorScheme.surface
             )  {
                 Box(
-                    modifier = Modifier.padding(objetoAdaptardor.ajustarAltura(24))
+                    modifier = Modifier.padding(objetoAdaptardor.ajustarAltura(24)),
+                    contentAlignment = Alignment.Center
                 ){
                     Column(
                         verticalArrangement = Arrangement.Center,
@@ -1085,7 +1089,10 @@ fun InterfazModuloSacLarge(
                                     label = "Sub-Cuentas",
                                     opciones = opcionesSubCuentas,
                                     contieneOpciones = true,
-                                    nuevoValor = {nuevoValor-> subCuentaSeleccionada=nuevoValor},
+                                    nuevoValor = { nuevoValor->
+                                        subCuentaSeleccionada=nuevoValor
+                                        iniciarCalculoMontos=true
+                                    },
                                     valor = opcionesSubCuentas[subCuentaSeleccionada]?:"Juntos",
                                     isUltimo = true,
                                     tomarAnchoMaximo = false,
@@ -1102,7 +1109,7 @@ fun InterfazModuloSacLarge(
                                 state = lazyStateArticulosSeleccionados,
                             ) {
                                 items(articulosComandados){ producto->
-                                    if (producto.SubCuenta==subCuentaSeleccionada){
+                                    if (producto.SubCuenta.uppercase()==subCuentaSeleccionada.uppercase()){
                                         AgregarBxContenedorArticulosComandados(producto)
                                     }
                                 }
@@ -1115,7 +1122,7 @@ fun InterfazModuloSacLarge(
                                 .width(objetoAdaptardor.ajustarAncho(500))
                         ){
                             Text(
-                                "Total "+"\u20A1 "+"700",
+                                "Total \u20A1 $montoTotalComandado",
                                 fontFamily = fontAksharPrincipal,
                                 fontWeight = FontWeight.Medium,
                                 fontSize = objetoAdaptardor.ajustarFont(25),
@@ -1137,8 +1144,7 @@ fun InterfazModuloSacLarge(
                                 AgregarBt(
                                     text = "Mover Mesa",
                                     color = 0xFF244BC0,
-                                    nuevoValorOnClick = false,
-                                    nuevoValorReasignado = {valor-> iniciarMenuMesaComandada= valor}
+                                    onClick = { iniciarMenuMesaComandada= false}
                                 )
 
                                 Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(8)))
@@ -1146,8 +1152,7 @@ fun InterfazModuloSacLarge(
                                 AgregarBt(
                                     text = "Pedir Cuenta",
                                     color = 0xFF244BC0,
-                                    nuevoValorOnClick = false,
-                                    nuevoValorReasignado = {valor-> iniciarMenuMesaComandada= valor}
+                                    onClick = { iniciarMenuMesaComandada= false}
                                 )
 
                                 Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(8)))
@@ -1155,8 +1160,7 @@ fun InterfazModuloSacLarge(
                                 AgregarBt(
                                     text = "Quitar mesa",
                                     color = 0xFFFF5722,
-                                    nuevoValorOnClick = false,
-                                    nuevoValorReasignado = {valor-> iniciarMenuMesaComandada= valor}
+                                    onClick = { iniciarMenuMesaComandada= false}
                                 )
 
                                 Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(8)))
@@ -1164,8 +1168,7 @@ fun InterfazModuloSacLarge(
                                 AgregarBt(
                                     text = "Agregar comanda",
                                     color =  0xFF22B14C,
-                                    nuevoValorOnClick = true,
-                                    nuevoValorReasignado = {valor-> iniciarPantallaSacComanda= valor}
+                                    onClick = { iniciarPantallaSacComanda= true}
                                 )
 
                                 Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(8)))
@@ -1173,8 +1176,12 @@ fun InterfazModuloSacLarge(
                                 AgregarBt(
                                     text = "Salir",
                                     color = 0xFFE10000,
-                                    nuevoValorOnClick = false,
-                                    nuevoValorReasignado = {valor-> iniciarMenuMesaComandada= valor}
+                                    onClick = {
+                                        iniciarMenuMesaComandada= false
+                                        mesaActual= Mesa()
+                                        articulosComandados.clear()
+                                        opcionesSubCuentas.clear()
+                                    }
                                 )
                             }
                         }

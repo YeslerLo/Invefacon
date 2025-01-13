@@ -40,12 +40,11 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
-import androidx.compose.material3.Switch
-import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableDoubleStateOf
 import androidx.compose.runtime.mutableStateListOf
@@ -58,7 +57,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.SnapshotStateMap
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
@@ -86,6 +84,8 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.json.JSONArray
 import org.json.JSONObject
+import java.math.BigDecimal
+import java.math.RoundingMode
 import java.util.Locale
 
 @Composable
@@ -109,10 +109,7 @@ fun InterfazSacComandaLarge(
     val objetoAdaptardor= FuncionesParaAdaptarContenidoCompact(dpAltoPantalla, dpAnchoPantalla, dpFontPantalla, true)
     var datosIngresadosBarraBusqueda by rememberSaveable  { mutableStateOf("") }
     var isMontoServicioActivo by rememberSaveable  { mutableStateOf(false) }
-    var montoSubtotal by rememberSaveable  { mutableStateOf("0.0") }
-    var montoIva by rememberSaveable  { mutableStateOf("0.0") }
-    var montoServicio by rememberSaveable  { mutableStateOf("0.0") }
-    var montoTotal by rememberSaveable  { mutableStateOf("0.0") }
+    var montoTotal by rememberSaveable  { mutableStateOf(0.00) }
     var listaArticulosActuales by remember { mutableStateOf<List<ArticuloSac>>(emptyList()) }
     val lazyStateArticulos= rememberLazyListState()
     val lazyStateFamilias= rememberLazyListState()
@@ -123,29 +120,29 @@ fun InterfazSacComandaLarge(
     var familiaActualSeleccionada by remember { mutableStateOf(FamiliaSac()) }
     var subFamiliaActualSeleccionada by remember { mutableStateOf(SubFamiliaSac()) }
     var isCargandoArticulos by remember { mutableStateOf(true) }
-    val productosSeleccionados = remember { mutableStateListOf<ArticulosSeleccionadosSac>() }
+    val articulosSeleccionados = remember { mutableStateListOf<ArticulosSeleccionadosSac>() }
     var subCuentaSeleccionada by remember { mutableStateOf("Juntos") }
     val opcionesSubCuentas: SnapshotStateMap<String, String> = remember { mutableStateMapOf() }
-    opcionesSubCuentas["Juntos"]="Juntos"
     var nombreNuevaSubCuenta by remember { mutableStateOf("") }
-    var IniciarMenuAgregarSubCuenta by remember { mutableStateOf(false) }
+    var iniciarMenuAgregarSubCuenta by remember { mutableStateOf(false) }
     var articuloActualSeleccionado by remember { mutableStateOf(ArticuloSac()) }
-    var isVentanaAgregarArticuloActiva by remember { mutableStateOf(false) }
-    var actualizarSubTotal by remember { mutableStateOf(false) }
+    var iniciarVentanaAgregarArticulo by remember { mutableStateOf(false) }
+    var actualizarMontos by remember { mutableStateOf(false) }
     var iniciarComandaSubCuenta by remember { mutableStateOf(false) }
     val coroutineScope = rememberCoroutineScope()
+    val regresarPantallaAnterior by estadoRespuestaApi.regresarPantallaAnterior.collectAsState()
 
-    LaunchedEffect(actualizarSubTotal, isMontoServicioActivo, subCuentaSeleccionada) {
-        montoSubtotal="0.00"
-        for (i in 0 until productosSeleccionados.size){
-            if (productosSeleccionados[i].subCuenta==subCuentaSeleccionada){
-                montoSubtotal=(montoSubtotal.toDouble()+productosSeleccionados[i].montoTotal).toString()
+    LaunchedEffect(actualizarMontos) {
+        montoTotal= 0.00
+        articulosSeleccionados.forEach{ articulo->
+            if (articulo.subCuenta==subCuentaSeleccionada){
+                montoTotal+= articulo.montoTotal
             }
         }
-        montoIva= (montoSubtotal.toDouble()*0.13).toString()
-        montoServicio= (if (isMontoServicioActivo) montoSubtotal.toDouble()*0.10 else 0.0).toString()
-        montoTotal= (montoSubtotal.toDouble()+montoServicio.toDouble()+montoIva.toDouble()).toString()
-        actualizarSubTotal=false
+        montoTotal= BigDecimal(montoTotal)
+            .setScale(2, RoundingMode.HALF_UP) // Redondea al entero más cercano
+            .toDouble()
+        actualizarMontos=false
     }
 
     LaunchedEffect(Unit) {
@@ -199,10 +196,24 @@ fun InterfazSacComandaLarge(
 
                 for(i in 0 until datosArticulosSac.length()){
                     val datosArticulo= datosArticulosSac.getJSONObject(i)
-                    val articulo= ArticuloSac(
+                    val precioUnitario = BigDecimal(datosArticulo.getDouble("precioArticulo"))
+                        .setScale(2, RoundingMode.DOWN)
+                        .toDouble()
+                    val iva = BigDecimal(datosArticulo.getDouble("precioArticulo")*0.13)
+                        .setScale(2, RoundingMode.DOWN)
+                        .toDouble()
+                    val impuestoServicio = BigDecimal(datosArticulo.getDouble("precioArticulo")*0.1)
+                        .setScale(2, RoundingMode.DOWN)
+                        .toDouble()
+
+                    val precioFinal = BigDecimal(precioUnitario+iva+impuestoServicio)
+                        .setScale(0, RoundingMode.HALF_UP)
+                        .toDouble()
+
+                    val articulo = ArticuloSac(
                         nombre = datosArticulo.getString("nombreArticulo"),
                         codigo = datosArticulo.getString("Cod_Articulo"),
-                        precio = datosArticulo.getString("precioArticulo")
+                        precio = precioFinal
                     )
                     listaArticulos.add(articulo)
                 }
@@ -217,7 +228,7 @@ fun InterfazSacComandaLarge(
 
     LaunchedEffect(iniciarComandaSubCuenta) {
 
-        if (iniciarComandaSubCuenta && productosSeleccionados.isEmpty()){
+        if (iniciarComandaSubCuenta && articulosSeleccionados.isEmpty()){
             val jsonObject = JSONObject("""
                     {
                         "code": 400,
@@ -230,19 +241,20 @@ fun InterfazSacComandaLarge(
             iniciarComandaSubCuenta=false
         }
 
-        if(iniciarComandaSubCuenta && productosSeleccionados.isNotEmpty()){
+        if(iniciarComandaSubCuenta && articulosSeleccionados.isNotEmpty()){
             println("holaaa")
             objetoEstadoPantallaCarga.cambiarEstadoMenuPrincipal(true)
             val jsonComandaDetalle = JSONArray()
-            for( i in 0 until productosSeleccionados.size){
-                if (subCuentaSeleccionada==productosSeleccionados[i].subCuenta){
-                    val codigo= productosSeleccionados[i].codigo
-                    val cantidad= productosSeleccionados[i].cantidad
-                    val precio = productosSeleccionados[i].precioUnitario
+            val articulosAEliminar = mutableListOf<ArticulosSeleccionadosSac>()
+            articulosSeleccionados.forEach{articulo ->
+                if (subCuentaSeleccionada==articulo.subCuenta){
+                    val codigo=articulo.codigo
+                    val cantidad=articulo.cantidad
+                    val precio = articulo.precioUnitario
                     val imp1= "13.00"
                     val imp2 = if(isMontoServicioActivo) "10.00" else "0.00"
-                    val anotacion = productosSeleccionados[i].anotacion
-                    val subCuenta = productosSeleccionados[i].subCuenta
+                    val anotacion = articulo.anotacion
+                    val subCuenta = articulo.subCuenta
                     val jsonObject = JSONObject().apply {
                         put("codigo", codigo)
                         put("cantidad", cantidad)
@@ -253,11 +265,13 @@ fun InterfazSacComandaLarge(
                         put("subcuenta", subCuenta)
                     }
                     jsonComandaDetalle.put(jsonObject)
+                    articulosAEliminar.add(articulo)
                 }
-
-
             }
+
             if (jsonComandaDetalle.length()>0){
+                opcionesSubCuentas.remove(subCuentaSeleccionada)
+                articulosSeleccionados.removeAll(articulosAEliminar)
                 val result= objectoProcesadorDatosApi.comandarSubCuenta(
                     codUsuario = codUsuario,
                     salon = salon,
@@ -278,18 +292,29 @@ fun InterfazSacComandaLarge(
                 )
                 estadoRespuestaApi.cambiarEstadoRespuestaApi(mostrarRespuesta = true, datosRespuesta = jsonObject )
             }
-
             delay(100)
             objetoEstadoPantallaCarga.cambiarEstadoMenuPrincipal(false)
             iniciarComandaSubCuenta= false
         }
     }
 
+    LaunchedEffect(regresarPantallaAnterior) {
+        if (regresarPantallaAnterior && opcionesSubCuentas.size==0){
+            navControllerPantallasModuloSac?.popBackStack()
+            estadoRespuestaApi.cambiarEstadoRespuestaApi()
+        }
+
+        if (regresarPantallaAnterior && opcionesSubCuentas.size>0){
+            subCuentaSeleccionada= opcionesSubCuentas.keys.first()
+            estadoRespuestaApi.cambiarEstadoRespuestaApi()
+        }
+    }
+
     fun agregarOActualizarProducto(nuevoProducto: ArticulosSeleccionadosSac) {
 
         // Buscar un producto existente en la lista por su 'codigo'
-        val productoExistente = productosSeleccionados.find { it.codigo == nuevoProducto.codigo && it.subCuenta== nuevoProducto.subCuenta}
-        val index = productosSeleccionados.indexOfFirst { it.codigo == nuevoProducto.codigo && it.subCuenta== nuevoProducto.subCuenta }
+        val productoExistente = articulosSeleccionados.find { it.codigo == nuevoProducto.codigo && it.subCuenta== nuevoProducto.subCuenta}
+        val index = articulosSeleccionados.indexOfFirst { it.codigo == nuevoProducto.codigo && it.subCuenta== nuevoProducto.subCuenta }
 
         if (productoExistente != null) {
             // Si el producto ya existe, actualizar su cantidad
@@ -297,24 +322,24 @@ fun InterfazSacComandaLarge(
 
             // Si la cantidad es cero o negativa, eliminar el producto de la lista
             if (productoExistente.cantidad <= 0) {
-                productosSeleccionados.remove(productoExistente)
+                articulosSeleccionados.remove(productoExistente)
             } else {
                 productoExistente.calcularMontoTotal()
             }
         } else {
             // Si el producto no existe, agregarlo a la lista
             nuevoProducto.calcularMontoTotal()
-            productosSeleccionados.add(nuevoProducto)
+            articulosSeleccionados.add(nuevoProducto)
         }
 
         // Refrescar la lista de productos seleccionados (esto asegura que la UI se actualice correctamente)
-        val productos = productosSeleccionados.toList()
-        productosSeleccionados.clear()
-        productosSeleccionados.addAll(productos)
+        val productos = articulosSeleccionados.toList()
+        articulosSeleccionados.clear()
+        articulosSeleccionados.addAll(productos)
         coroutineScope.launch {
-            lazyStateArticulosSeleccionados.animateScrollToItem(if (index!=-1)index else productosSeleccionados.size)
+            lazyStateArticulosSeleccionados.animateScrollToItem(if (index!=-1)index else articulosSeleccionados.size)
         }
-        actualizarSubTotal=true
+        actualizarMontos=true
     }
 
     @Composable
@@ -436,7 +461,7 @@ fun InterfazSacComandaLarge(
                 .width(objetoAdaptardor.ajustarAncho(123))
                 .clickable {
                     articuloActualSeleccionado= articulo
-                    isVentanaAgregarArticuloActiva=true
+                    iniciarVentanaAgregarArticulo=true
                 }
                 .shadow(
                     elevation = objetoAdaptardor.ajustarAltura(7),
@@ -510,7 +535,7 @@ fun InterfazSacComandaLarge(
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
-                                "\u20A1 "+String.format(Locale.US, "%,.2f", articulo.precio.replace(",", "").toDouble()),
+                                "\u20A1 "+String.format(Locale.US, "%,.2f", articulo.precio.toString().replace(",", "").toDouble()),
                                 fontFamily = fontAksharPrincipal,
                                 fontWeight = FontWeight.Light,
                                 fontSize = objetoAdaptardor.ajustarFont(18),
@@ -879,7 +904,7 @@ fun InterfazSacComandaLarge(
                 Box(modifier = Modifier
                     .background(Color(0xFFF6F6F6))
                     .width(objetoAdaptardor.ajustarAncho(260))
-                    .height(objetoAdaptardor.ajustarAltura(320)),
+                    .height(objetoAdaptardor.ajustarAltura(390)),
                     contentAlignment = Alignment.TopCenter
                 ){
                     Column {
@@ -906,7 +931,7 @@ fun InterfazSacComandaLarge(
                                 Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(8)))
                                 IconButton(
                                     onClick = {
-                                        IniciarMenuAgregarSubCuenta=true
+                                        iniciarMenuAgregarSubCuenta=true
                                     }
                                 ) {
                                     Icon(
@@ -922,7 +947,7 @@ fun InterfazSacComandaLarge(
                         LazyColumn(
                             state = lazyStateArticulosSeleccionados
                         ) {
-                            items(productosSeleccionados){producto->
+                            items(articulosSeleccionados){ producto->
                                 if (producto.subCuenta==subCuentaSeleccionada){
                                     AgregarBxContendorArticuloAgregado(producto)
                                     HorizontalDivider(
@@ -941,39 +966,21 @@ fun InterfazSacComandaLarge(
                     modifier = Modifier
                         .background(Color(0xFFFAFAFA))
                         .width(objetoAdaptardor.ajustarAncho(260))
-                        .height(objetoAdaptardor.ajustarAltura(150))
+                        .height(objetoAdaptardor.ajustarAltura(70)),
+                    contentAlignment = Alignment.Center
                 ){
                     Column(
-                        modifier = Modifier.fillMaxSize()
+                        modifier = Modifier.fillMaxSize(),
+                        horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         AgregarBxContenerdorMontosCuenta(
-                            nombreCampo = "Aplicar impuesto de servicio (10.00%)",
-                            valor = isMontoServicioActivo,
-                            nuevoValor = {nuevoValor-> isMontoServicioActivo= nuevoValor},
-                            mostrarSwitch = true
-                        )
-                        AgregarBxContenerdorMontosCuenta(
-                            nombreCampo = "Subtotal",
-                            monto = montoSubtotal
-                        )
-                        AgregarBxContenerdorMontosCuenta(
-                            nombreCampo = "Servicio (10.00%)",
-                            monto = montoServicio
-                        )
-                        AgregarBxContenerdorMontosCuenta(
-                            nombreCampo = "IVA (13.00%)",
-                            monto = montoIva
-                        )
-                        AgregarBxContenerdorMontosCuenta(
                             nombreCampo = "Total",
-                            monto = montoTotal,
-                            isMontoTotal = true
+                            monto = montoTotal
                         )
                         Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(1)))
                         Button(
                             modifier = Modifier
-                                .width(objetoAdaptardor.ajustarAncho(255))
-                                .height(objetoAdaptardor.ajustarAltura(35)),
+                                .width(objetoAdaptardor.ajustarAncho(255)),
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = Color(0xFF244BC0), // Color de fondo del botón
                                 contentColor = Color.White,
@@ -990,7 +997,7 @@ fun InterfazSacComandaLarge(
                                     "Comandar",
                                     fontFamily = fontAksharPrincipal,
                                     fontWeight = FontWeight.Medium,
-                                    fontSize = objetoAdaptardor.ajustarFont(15),
+                                    fontSize = objetoAdaptardor.ajustarFont(18),
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis,
                                     textAlign = TextAlign.Center
@@ -1002,7 +1009,7 @@ fun InterfazSacComandaLarge(
             }
         }
 
-        if(IniciarMenuAgregarSubCuenta) {
+        if(iniciarMenuAgregarSubCuenta) {
             AlertDialog(
                 modifier = Modifier.background(Color.White),
                 containerColor = Color.White,
@@ -1080,7 +1087,7 @@ fun InterfazSacComandaLarge(
                                 }
                             """
                             )
-                            IniciarMenuAgregarSubCuenta=false
+                            iniciarMenuAgregarSubCuenta=false
                             nombreNuevaSubCuenta=""
                             estadoRespuestaApi.cambiarEstadoRespuestaApi(mostrarRespuesta = true, datosRespuesta = jsonObject)
                         },
@@ -1106,7 +1113,7 @@ fun InterfazSacComandaLarge(
                 dismissButton = {
                     Button(
                         onClick = {
-                            IniciarMenuAgregarSubCuenta=false
+                            iniciarMenuAgregarSubCuenta=false
                             nombreNuevaSubCuenta=""
                         },
                         colors = ButtonDefaults.buttonColors(
@@ -1131,7 +1138,7 @@ fun InterfazSacComandaLarge(
             )
         }
 
-        if (isVentanaAgregarArticuloActiva){
+        if (iniciarVentanaAgregarArticulo){
             var precioTotalArticulo by remember { mutableDoubleStateOf(0.00) }
             var cantidadArticulos by remember { mutableStateOf(1) }
             var anotacion by remember { mutableStateOf("") }
@@ -1334,7 +1341,7 @@ fun InterfazSacComandaLarge(
                                 subCuenta = subCuentaSeleccionada
                             )
                             agregarOActualizarProducto(articuloSeleccionado)
-                            isVentanaAgregarArticuloActiva=false
+                            iniciarVentanaAgregarArticulo=false
                         },
                         colors = ButtonDefaults.buttonColors(
                             containerColor = Color(0xFF244BC0), // Color de fondo del botón
@@ -1358,7 +1365,7 @@ fun InterfazSacComandaLarge(
                 dismissButton = {
                     Button(
                         onClick = {
-                            isVentanaAgregarArticuloActiva=false
+                            iniciarVentanaAgregarArticulo=false
                         },
                         colors = ButtonDefaults.buttonColors(
                             containerColor = Color.Red, // Color de fondo del botón
@@ -1387,11 +1394,7 @@ fun InterfazSacComandaLarge(
 @Composable
 internal fun AgregarBxContenerdorMontosCuenta(
     nombreCampo: String,
-    monto: String= "",
-    valor: Boolean = false,
-    mostrarSwitch: Boolean= false,
-    isMontoTotal: Boolean= false,
-    nuevoValor: ((Boolean) -> Unit)? = null
+    monto: Double = 0.00,
 ){
     val fontAksharPrincipal = FontFamily(Font(R.font.akshar_medium))
     val configuration = LocalConfiguration.current
@@ -1403,69 +1406,36 @@ internal fun AgregarBxContenerdorMontosCuenta(
     Box(modifier = Modifier
         .background(Color(0xFFFAFAFA))
         .width(objetoAdaptardor.ajustarAncho(260))
-        .height(objetoAdaptardor.ajustarAltura(22)),
+        .height(objetoAdaptardor.ajustarAltura(30)),
         contentAlignment = Alignment.Center
     ){
         Row(
             horizontalArrangement = Arrangement.Center,
             verticalAlignment = Alignment.CenterVertically
         ) {
+            Text(
+                nombreCampo,
+                fontFamily = fontAksharPrincipal,
+                fontWeight = FontWeight.Medium,
+                fontSize = objetoAdaptardor.ajustarFont(18),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                textAlign = TextAlign.Start,
+                modifier = Modifier.width(objetoAdaptardor.ajustarAncho(135)),
+                color = Color.Black
+            )
+            Text(
+                "\u20A1 "+String.format(Locale.US, "%,.2f", monto.toString().replace(",", "").toDouble()),
+                fontFamily = fontAksharPrincipal,
+                fontWeight = FontWeight.Medium,
+                fontSize = objetoAdaptardor.ajustarFont(22),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                textAlign = TextAlign.End,
+                modifier = Modifier.width(objetoAdaptardor.ajustarAncho(108)),
+                color =  Color.Black
+            )
 
-            if(mostrarSwitch){
-                Switch(
-                    checked = valor,
-                    onCheckedChange = { nuevoEstado ->
-                        nuevoValor?.invoke(nuevoEstado)
-                    },
-                    modifier = Modifier
-                        .scale(0.5f)
-                        .width(objetoAdaptardor.ajustarAncho(40))
-                    ,
-                    colors = SwitchDefaults.colors(
-                        checkedThumbColor = Color(0xFF244BC0),
-                        uncheckedThumbColor = Color.LightGray,
-                        checkedTrackColor = Color.White,
-                        uncheckedTrackColor = Color.White,
-                        uncheckedBorderColor = Color.LightGray,
-                        checkedBorderColor = Color.LightGray
-                    )
-                )
-
-                Text(
-                    nombreCampo,
-                    fontFamily = fontAksharPrincipal,
-                    fontWeight = FontWeight.Medium,
-                    fontSize = objetoAdaptardor.ajustarFont(15),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    textAlign = TextAlign.Start,
-                    modifier = Modifier.width(objetoAdaptardor.ajustarAncho(220)),
-                    color = Color.Black
-                )
-            }else{
-                Text(
-                    nombreCampo,
-                    fontFamily = fontAksharPrincipal,
-                    fontWeight = FontWeight.Medium,
-                    fontSize = objetoAdaptardor.ajustarFont(if (isMontoTotal) 17 else 15),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    textAlign = TextAlign.Start,
-                    modifier = Modifier.width(objetoAdaptardor.ajustarAncho(135)),
-                    color = if (isMontoTotal) Color.Black else Color(0xFF5B5B5B)
-                )
-                Text(
-                    "\u20A1 "+String.format(Locale.US, "%,.2f", monto.replace(",", "").toDouble()),
-                    fontFamily = fontAksharPrincipal,
-                    fontWeight = FontWeight.Medium,
-                    fontSize = objetoAdaptardor.ajustarFont(if (isMontoTotal) 17 else 15),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    textAlign = TextAlign.Start,
-                    modifier = Modifier.width(objetoAdaptardor.ajustarAncho(108)),
-                    color = if (isMontoTotal) Color.Black else Color(0xFF5B5B5B)
-                )
-            }
 
         }
 
@@ -1478,7 +1448,7 @@ internal fun AgregarBxContenerdorMontosCuenta(
 @Composable
 @Preview(widthDp = 964, heightDp = 523, showBackground = true)
 private fun Preview(){
-    val m= ArticuloSac("Hamburguesa con queso", "0001", "1000.00")
+    val m= ArticuloSac("Hamburguesa con queso", "0001", 1000.00)
 //    AgregarBxContenedorArticulos(m)
     InterfazSacComandaLarge(null, "", null, "", "", "", "")
 }

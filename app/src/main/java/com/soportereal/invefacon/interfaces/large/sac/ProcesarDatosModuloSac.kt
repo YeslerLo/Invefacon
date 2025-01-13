@@ -70,7 +70,7 @@ data class Mesa(
 data class ArticuloSac(
     var nombre: String="",
     var codigo: String= "",
-    var precio: String = ""
+    var precio: Double = 0.00
 )
 
 data class FamiliaSac(
@@ -90,20 +90,17 @@ data class ArticulosSeleccionadosSac(
     var anotacion: String = "",
     var cantidad: Int = 0,
     var precioUnitario: Double = 0.0,
-    var tieneIVA: Boolean = false,
-    var tieneImpuestoRestaurante:  Boolean = false,
-    var estado: Int = 0,
     var montoTotal : Double = 0.0,
     var subCuenta : String = ""
 ){
     fun calcularMontoTotal() {
-        montoTotal = (precioUnitario * cantidad)
+        montoTotal = (precioUnitario * cantidad.toDouble())
     }
 }
 data class ArticuloComandado(
     val Consec: String,
     val Cod_Articulo: String,
-    var Cantidad: Double,
+    var Cantidad: Int,
     val Precio: Double,
     val Imp1: String,
     val Imp2: String,
@@ -114,6 +111,6 @@ data class ArticuloComandado(
     var anotacion: String = "Sin Anotacion"
 ){
     fun calcularMontoTotal() {
-        montoTotal = (Precio*Cantidad)
+        montoTotal = (Precio*Cantidad.toDouble())
     }
 }
