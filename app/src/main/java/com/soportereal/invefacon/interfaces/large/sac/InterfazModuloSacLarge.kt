@@ -42,7 +42,6 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
@@ -134,11 +133,12 @@ fun InterfazModuloSacLarge(
     var montoTotalComandado by remember { mutableStateOf("\u20A1 "+"0.00") }
     var iniciarCalculoMontos by remember { mutableStateOf(false) }
     var iniciarVentanaEliminarArticulo by remember { mutableStateOf(false) }
+    var iniciarVentanaAgregarArticulo by remember { mutableStateOf(false) }
     var articuloActualSeleccionado by remember { mutableStateOf(ArticuloComandado()) }
     val actualizarArticulos by estadoRespuestaApi.estadoBtOk.collectAsState()
     var agregarArticulo by remember { mutableStateOf(false) }
-    var cantidadArticulosEliminar by remember { mutableIntStateOf(1) }
-    var motivoELiminarArticulo by remember { mutableStateOf("") }
+    var cantidadArticulos by remember { mutableIntStateOf(1) }
+    var anotacionComanda by remember { mutableStateOf("") }
     var eliminarArticulo by remember { mutableStateOf(false) }
     var quitarMesa by remember { mutableStateOf(false) }
     var pedirCuenta by remember { mutableStateOf(false) }
@@ -230,6 +230,8 @@ fun InterfazModuloSacLarge(
                     mostrarSoloRespuestaError = true,
                     datosRespuesta = result
                 )
+                println(result)
+
                 if (result.getString("code")== "200"){
                     val data = result.getJSONObject("data")
                     val subCuentas = data.getJSONArray("Subcuentas")
@@ -238,8 +240,8 @@ fun InterfazModuloSacLarge(
                     for (i in 0 until subCuentas.length()) {
                         opcionesSubCuentas[subCuentas[i].toString()] = subCuentas[i].toString()
                     }
-                    subCuentaSeleccionada= subCuentas[0].toString()
 
+                    subCuentaSeleccionada= subCuentas[0].toString()
 
                     for (i in 0 until articulos.length()) {
                         val articulo = articulos.getJSONObject(i)
@@ -283,15 +285,15 @@ fun InterfazModuloSacLarge(
     }
 
     LaunchedEffect(agregarArticulo, eliminarArticulo) {
-        if(agregarArticulo  || (eliminarArticulo&& motivoELiminarArticulo.isNotEmpty())){
+        if(agregarArticulo  || (eliminarArticulo&& anotacionComanda.isNotEmpty())){
             objetoEstadoPantallaCarga.cambiarEstadoMenuPrincipal(true)
             val jsonComandaDetalle = JSONArray()
             val codigo=articuloActualSeleccionado.Cod_Articulo
-            val cantidad= if (agregarArticulo) 1 else -cantidadArticulosEliminar
+            val cantidad= if (agregarArticulo) cantidadArticulos else -cantidadArticulos
             val precio = articuloActualSeleccionado.Precio
             val imp1= "13.00"
             val imp2 = "10.00"
-            val anotacion = if (agregarArticulo) "" else motivoELiminarArticulo
+            val anotacion = anotacionComanda
             val subCuenta = articuloActualSeleccionado.SubCuenta
             val jsonObject = JSONObject().apply {
                 put("codigo", codigo)
@@ -309,8 +311,9 @@ fun InterfazModuloSacLarge(
                 opcionesSubCuentas.clear()
                 subCuentaSeleccionada =""
                 iniciarVentanaEliminarArticulo=false
-                motivoELiminarArticulo= ""
-                cantidadArticulosEliminar= 1
+                iniciarVentanaAgregarArticulo=false
+                anotacionComanda= ""
+                cantidadArticulos= 1
                 val result= objectoProcesadorDatosApi.comandarSubCuenta_eliminarArticulos(
                     codUsuario = codUsuario,
                     salon = mesaActual.salon,
@@ -327,7 +330,7 @@ fun InterfazModuloSacLarge(
             agregarArticulo= false
         }
 
-        if(eliminarArticulo && motivoELiminarArticulo.isEmpty()){
+        if(eliminarArticulo && anotacionComanda.isEmpty()){
             val jsonObject = JSONObject("""
                     {
                         "code": 400,
@@ -489,7 +492,7 @@ fun InterfazModuloSacLarge(
                             IconButton(
                                 onClick = {
                                     articuloActualSeleccionado= articuloComandado
-                                    agregarArticulo= true
+                                    iniciarVentanaAgregarArticulo = true
                                 },
                                 modifier = Modifier.size(objetoAdaptardor.ajustarAltura(22))
                             ) {
@@ -522,23 +525,13 @@ fun InterfazModuloSacLarge(
                 Row {
                     Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(6)))
                     Text(
-                        "Sin Anotacion",
-                        fontFamily = fontAksharPrincipal,
-                        fontWeight = FontWeight.Light,
-                        fontSize = objetoAdaptardor.ajustarFont(16),
-                        overflow = TextOverflow.Ellipsis,
-                        textAlign = TextAlign.Start,
-                        modifier = Modifier.width(objetoAdaptardor.ajustarAncho(300)).padding(2.dp),
-                        color = Color.DarkGray
-                    )
-                    Text(
                         "\u20A1 "+String.format(Locale.US, "%,.2f", articuloComandado.montoTotal.toString().replace(",", "").toDouble()),
                         fontFamily = fontAksharPrincipal,
                         fontWeight = FontWeight.Light,
                         fontSize = objetoAdaptardor.ajustarFont(18),
                         overflow = TextOverflow.Ellipsis,
                         textAlign = TextAlign.End,
-                        modifier = Modifier.width(objetoAdaptardor.ajustarAncho(122)).padding(2.dp)
+                        modifier = Modifier.width(objetoAdaptardor.ajustarAncho(422)).padding(2.dp)
                     )
                 }
             }
@@ -683,34 +676,6 @@ fun InterfazModuloSacLarge(
                             textAlign = TextAlign.Center
                         )
                     }
-                }
-
-                Button(
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxHeight()
-                        .padding(objetoAdaptardor.ajustarAltura(4)),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFF244BC0), // Color de fondo del botón
-                        contentColor = Color.White,
-                        disabledContainerColor = Color(0xFF244BC0),
-                        disabledContentColor = Color.White
-                    ),
-                    elevation = ButtonDefaults.buttonElevation(defaultElevation = 5.dp),
-                    onClick = {}
-                ) {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center){
-                        Text(
-                            "Barra",
-                            fontFamily = fontAksharPrincipal,
-                            fontWeight = FontWeight.Medium,
-                            fontSize = objetoAdaptardor.ajustarFont(16),
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                            textAlign = TextAlign.Center
-                        )
-                    }
-
                 }
 
                 Button(
@@ -1136,7 +1101,7 @@ fun InterfazModuloSacLarge(
                     .wrapContentHeight()
                     .align(Alignment.Center),
                 shape = RoundedCornerShape(16.dp),
-                color = MaterialTheme.colorScheme.surface
+                color = Color.White
             )  {
                 Box(
                     modifier = Modifier.padding(objetoAdaptardor.ajustarAltura(24)),
@@ -1210,7 +1175,7 @@ fun InterfazModuloSacLarge(
                                 .width(objetoAdaptardor.ajustarAncho(500))
                         ){
                             Text(
-                                "Total \u20A1 $montoTotalComandado",
+                                "Total $montoTotalComandado",
                                 fontFamily = fontAksharPrincipal,
                                 fontWeight = FontWeight.Medium,
                                 fontSize = objetoAdaptardor.ajustarFont(25),
@@ -1218,9 +1183,8 @@ fun InterfazModuloSacLarge(
                                 overflow = TextOverflow.Ellipsis,
                                 textAlign = TextAlign.Center,
                                 color = Color.Black,
-                                )
+                            )
                         }
-
 
                         Box(
                             contentAlignment = Alignment.Center
@@ -1240,7 +1204,10 @@ fun InterfazModuloSacLarge(
                                 AgregarBt(
                                     text = "Pedir Cuenta",
                                     color = 0xFF244BC0,
-                                    onClick = { pedirCuenta= true}
+                                    onClick = {
+                                        pedirCuenta= false
+                                        pedirCuenta= true
+                                    }
                                 )
 
                                 Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(8)))
@@ -1276,24 +1243,20 @@ fun InterfazModuloSacLarge(
                                 )
                             }
                         }
-
-
                     }
                 }
-
-
             }
         }
     }
 
-    if (iniciarVentanaEliminarArticulo){
+    if (iniciarVentanaEliminarArticulo || iniciarVentanaAgregarArticulo){
         AlertDialog(
             modifier = Modifier.background(Color.White),
             containerColor = Color.White,
             onDismissRequest = { },
             title = {
                 Text(
-                    "Eliminar Articulo",
+                    if (iniciarVentanaEliminarArticulo) "Eliminar Articulo" else "Agregar Articulo",
                     fontFamily = fontAksharPrincipal,
                     fontWeight = FontWeight.Medium,
                     fontSize = objetoAdaptardor.ajustarFont(27),
@@ -1357,7 +1320,7 @@ fun InterfazModuloSacLarge(
                         Box{
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Text(
-                                    "Cantidad a eliminar:  ",
+                                    if (iniciarVentanaAgregarArticulo) "Cantidad a agregar: " else "Cantidad a eliminar:  ",
                                     fontFamily = fontAksharPrincipal,
                                     fontWeight = FontWeight.Medium,
                                     fontSize = objetoAdaptardor.ajustarFont(23),
@@ -1367,24 +1330,24 @@ fun InterfazModuloSacLarge(
                                     color = Color.Black
                                 )
 
-                                if(cantidadArticulosEliminar>1){
+                                if(cantidadArticulos>1){
                                     IconButton(
                                         onClick = {
-                                            cantidadArticulosEliminar-= if(cantidadArticulosEliminar==1) 0 else 1
+                                            cantidadArticulos-= if(cantidadArticulos==1) 0 else 1
                                         },
                                         modifier = Modifier.size(objetoAdaptardor.ajustarAltura(30))
                                     ) {
                                         Icon(
                                             imageVector = Icons.Filled.RemoveCircle,
                                             contentDescription = "Basurero",
-                                            tint = if(cantidadArticulosEliminar==1)Color.Red else Color.Black,
+                                            tint = Color.Black,
                                             modifier = Modifier.size(objetoAdaptardor.ajustarAltura(30))
                                         )
                                     }
                                 }
 
                                 Text(
-                                    cantidadArticulosEliminar.toString(),
+                                    cantidadArticulos.toString(),
                                     fontFamily = fontAksharPrincipal,
                                     fontWeight = FontWeight.Medium,
                                     fontSize = objetoAdaptardor.ajustarFont(22),
@@ -1393,10 +1356,10 @@ fun InterfazModuloSacLarge(
                                     modifier = Modifier.width(objetoAdaptardor.ajustarAncho(35)).padding(2.dp)
                                 )
 
-                                if (cantidadArticulosEliminar<articuloActualSeleccionado.Cantidad){
+                                if ((cantidadArticulos<articuloActualSeleccionado.Cantidad) || iniciarVentanaAgregarArticulo){
                                     IconButton(
                                         onClick = {
-                                            cantidadArticulosEliminar+=1
+                                            cantidadArticulos+=1
                                         },
                                         modifier = Modifier.size(objetoAdaptardor.ajustarAltura(30))
                                     ) {
@@ -1414,11 +1377,11 @@ fun InterfazModuloSacLarge(
                         }
                         // Input Nombre Mesa
                         OutlinedTextField(
-                            value = motivoELiminarArticulo,
-                            onValueChange = { newText -> motivoELiminarArticulo = newText },
+                            value = anotacionComanda,
+                            onValueChange = { newText -> anotacionComanda = newText },
                             label = {
                                 Text(
-                                    "Motivo de eliminacion",
+                                    if (iniciarVentanaAgregarArticulo) "Anotacion" else "Motivo de eliminacion",
                                     color = Color.DarkGray,
                                     fontFamily = fontAksharPrincipal,
                                     fontWeight = FontWeight.Light,
@@ -1429,7 +1392,7 @@ fun InterfazModuloSacLarge(
                             },
                             placeholder = {
                                 Text(
-                                    "Ingrese el motivo",
+                                    if (iniciarVentanaAgregarArticulo) "Ingrese la anotacion" else "Ingrese el motivo",
                                     fontFamily = fontAksharPrincipal,
                                     fontWeight = FontWeight.Light,
                                     fontSize = objetoAdaptardor.ajustarFont(16),
@@ -1461,7 +1424,7 @@ fun InterfazModuloSacLarge(
             confirmButton = {
                 Button(
                     onClick = {
-                        eliminarArticulo= true
+                        if (iniciarVentanaAgregarArticulo) agregarArticulo= true else eliminarArticulo= true
                     },
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Color(0xFF244BC0), // Color de fondo del botón
@@ -1471,7 +1434,7 @@ fun InterfazModuloSacLarge(
                     )
                 ) {
                     Text(
-                        "Eliminar",
+                        if (iniciarVentanaAgregarArticulo)  "Agregar" else "Eliminar",
                         fontFamily = fontAksharPrincipal,
                         fontWeight = FontWeight.Medium,
                         fontSize = objetoAdaptardor.ajustarFont(15),
@@ -1486,7 +1449,9 @@ fun InterfazModuloSacLarge(
                 Button(
                     onClick = {
                         iniciarVentanaEliminarArticulo=false
-                        cantidadArticulosEliminar= 1
+                        iniciarVentanaAgregarArticulo= false
+                        cantidadArticulos= 1
+                        anotacionComanda= ""
                     },
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Color.Red, // Color de fondo del botón
@@ -1509,6 +1474,7 @@ fun InterfazModuloSacLarge(
             }
         )
     }
+
 }
 
 @Composable

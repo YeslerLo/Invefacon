@@ -78,14 +78,10 @@ dependencies {
     implementation (libs.androidx.material) // Use the latest stable version here
     // Jetpack Compose Navigation
     implementation (libs.androidx.navigation.compose.v260) // O la última versión estable
-
     // Accompanist (si lo necesitas para otras animaciones o efectos)
     implementation (libs.accompanist.navigation.animation) // O la versión más reciente
-
     // Para usar las animaciones de transiciones
     implementation (libs.androidx.animation)
-
     implementation (libs.accompanist.navigation.animation.v0320)
-
-
+    implementation(libs.gson)
 }

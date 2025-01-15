@@ -42,7 +42,17 @@ class FuncionesHttp(private val servidorUrl:String, private val apiToken:String)
         } catch (e: CancellationException){
             null
         } catch (e: Exception) {
-            JSONObject("""{"code":401,"status":"error","data":"Error desconocido"}""")
+            e.printStackTrace()
+            JSONObject(
+                    """{
+                "code":401,
+                "status":"error",
+                "data":"Error desconocido",
+                "exceptionType":"${e.javaClass.name}",
+                "message":"${e.message}"
+                }"""
+            )
         }
+
     }
 }
