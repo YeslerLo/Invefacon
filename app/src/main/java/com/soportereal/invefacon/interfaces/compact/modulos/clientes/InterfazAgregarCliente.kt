@@ -97,7 +97,7 @@ fun IniciarInterfazAgregarCliente(
     val opcionExoneradoSeleccionada by remember { mutableStateOf("") }
     val opcionNoForzaCreditoSeleccionada by remember { mutableStateOf("") }
     var guardarCliente by remember { mutableStateOf(false) }
-    val isClienteAgregado by estadoRespuestaApi.regresarPantallaAnterior.collectAsState()
+    val isClienteAgregado by estadoRespuestaApi.estadoBtOk.collectAsState()
     var regresarPantallaAnterior by remember { mutableStateOf(false) }
     
     val opcionesEstadoCliente= remember {

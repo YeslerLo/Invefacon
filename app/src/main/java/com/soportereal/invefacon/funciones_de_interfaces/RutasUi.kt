@@ -423,7 +423,8 @@ fun NavHostPantallasModuloSac(
                         navControllerPantallasModuloSac,
                         systemUiController,
                         navControllerPantallasModulos,
-                        nombreEmpresa
+                        nombreEmpresa,
+                        codUsuario
                     )
                 }
             }

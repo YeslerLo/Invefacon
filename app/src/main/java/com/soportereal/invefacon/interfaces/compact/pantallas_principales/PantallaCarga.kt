@@ -267,7 +267,7 @@ class EstadoRespuestaApi : ViewModel(){
 
     val mostrarDatosRespuestaApi: StateFlow<Boolean> = _mostrarDatosRespuestaApi
     val datosRespuestaApi : StateFlow<JSONObject> = _datosRespuestaApi
-    val regresarPantallaAnterior : StateFlow<Boolean> = _regresarPantallaAnterior
+    val estadoBtOk : StateFlow<Boolean> = _regresarPantallaAnterior
     val mostrarSoloRespuestaError : StateFlow<Boolean> = _mostrarSoloRespuestaError
 
 

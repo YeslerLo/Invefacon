@@ -2,7 +2,7 @@ package com.soportereal.invefacon.interfaces.large.sac
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -47,6 +47,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableDoubleStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
@@ -59,6 +60,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.painterResource
@@ -108,8 +110,7 @@ fun InterfazSacComandaLarge(
     val objectoProcesadorDatosApi= ProcesarDatosModuloSac(token)
     val objetoAdaptardor= FuncionesParaAdaptarContenidoCompact(dpAltoPantalla, dpAnchoPantalla, dpFontPantalla, true)
     var datosIngresadosBarraBusqueda by rememberSaveable  { mutableStateOf("") }
-    var isMontoServicioActivo by rememberSaveable  { mutableStateOf(false) }
-    var montoTotal by rememberSaveable  { mutableStateOf(0.00) }
+    var montoTotal by rememberSaveable  {mutableDoubleStateOf(0.00) }
     var listaArticulosActuales by remember { mutableStateOf<List<ArticuloSac>>(emptyList()) }
     val lazyStateArticulos= rememberLazyListState()
     val lazyStateFamilias= rememberLazyListState()
@@ -130,7 +131,7 @@ fun InterfazSacComandaLarge(
     var actualizarMontos by remember { mutableStateOf(false) }
     var iniciarComandaSubCuenta by remember { mutableStateOf(false) }
     val coroutineScope = rememberCoroutineScope()
-    val regresarPantallaAnterior by estadoRespuestaApi.regresarPantallaAnterior.collectAsState()
+    val regresarPantallaAnterior by estadoRespuestaApi.estadoBtOk.collectAsState()
 
     LaunchedEffect(actualizarMontos) {
         montoTotal= 0.00
@@ -182,12 +183,13 @@ fun InterfazSacComandaLarge(
         }
     }
 
-    LaunchedEffect(familiaActualSeleccionada, subFamiliaActualSeleccionada) {
+    LaunchedEffect(familiaActualSeleccionada, subFamiliaActualSeleccionada, datosIngresadosBarraBusqueda) {
         if (subFamiliaActualSeleccionada.codigo.isNotEmpty()){
             isCargandoArticulos=true
             val result= objectoProcesadorDatosApi.obtenerListaArticulos(
-                codFamilia = familiaActualSeleccionada.codigo,
-                codSubFamilia = subFamiliaActualSeleccionada.codigo
+                codFamilia = if (datosIngresadosBarraBusqueda.isEmpty()) familiaActualSeleccionada.codigo else "",
+                codSubFamilia =  if (datosIngresadosBarraBusqueda.isEmpty()) subFamiliaActualSeleccionada.codigo else "",
+                datosBarraBusqueda = datosIngresadosBarraBusqueda
             )
             val listaArticulos = mutableListOf<ArticuloSac>()
             if (result!=null){
@@ -242,7 +244,6 @@ fun InterfazSacComandaLarge(
         }
 
         if(iniciarComandaSubCuenta && articulosSeleccionados.isNotEmpty()){
-            println("holaaa")
             objetoEstadoPantallaCarga.cambiarEstadoMenuPrincipal(true)
             val jsonComandaDetalle = JSONArray()
             val articulosAEliminar = mutableListOf<ArticulosSeleccionadosSac>()
@@ -252,7 +253,7 @@ fun InterfazSacComandaLarge(
                     val cantidad=articulo.cantidad
                     val precio = articulo.precioUnitario
                     val imp1= "13.00"
-                    val imp2 = if(isMontoServicioActivo) "10.00" else "0.00"
+                    val imp2 = "10.00"
                     val anotacion = articulo.anotacion
                     val subCuenta = articulo.subCuenta
                     val jsonObject = JSONObject().apply {
@@ -272,7 +273,7 @@ fun InterfazSacComandaLarge(
             if (jsonComandaDetalle.length()>0){
                 opcionesSubCuentas.remove(subCuentaSeleccionada)
                 articulosSeleccionados.removeAll(articulosAEliminar)
-                val result= objectoProcesadorDatosApi.comandarSubCuenta(
+                val result= objectoProcesadorDatosApi.comandarSubCuenta_eliminarArticulos(
                     codUsuario = codUsuario,
                     salon = salon,
                     mesa = nombreMesa,
@@ -450,7 +451,6 @@ fun InterfazSacComandaLarge(
         }
     }
 
-
     @Composable
     fun AgregarBxContenedorArticulos(
         articulo: ArticuloSac
@@ -459,9 +459,24 @@ fun InterfazSacComandaLarge(
             modifier = Modifier
                 .height(objetoAdaptardor.ajustarAltura(123))
                 .width(objetoAdaptardor.ajustarAncho(123))
-                .clickable {
-                    articuloActualSeleccionado= articulo
-                    iniciarVentanaAgregarArticulo=true
+                .pointerInput(Unit) {
+                    detectTapGestures(
+                        onTap = {
+                            articuloActualSeleccionado= articulo
+                            iniciarVentanaAgregarArticulo=true
+                        },
+                        onDoubleTap ={
+                            val articuloSeleccionado = ArticulosSeleccionadosSac(
+                                nombre = articulo.nombre,
+                                codigo = articulo.codigo,
+                                precioUnitario = articulo.precio,
+                                cantidad = 1,
+                                anotacion = "",
+                                subCuenta = subCuentaSeleccionada
+                            )
+                            agregarOActualizarProducto(articuloSeleccionado)
+                        }
+                    )
                 }
                 .shadow(
                     elevation = objetoAdaptardor.ajustarAltura(7),
@@ -1140,11 +1155,11 @@ fun InterfazSacComandaLarge(
 
         if (iniciarVentanaAgregarArticulo){
             var precioTotalArticulo by remember { mutableDoubleStateOf(0.00) }
-            var cantidadArticulos by remember { mutableStateOf(1) }
+            var cantidadArticulos by remember { mutableIntStateOf(1) }
             var anotacion by remember { mutableStateOf("") }
 
             LaunchedEffect(cantidadArticulos) {
-                precioTotalArticulo=articuloActualSeleccionado.precio.toDouble()*cantidadArticulos.toDouble()
+                precioTotalArticulo=articuloActualSeleccionado.precio*cantidadArticulos.toDouble()
             }
 
 
@@ -1335,7 +1350,7 @@ fun InterfazSacComandaLarge(
                             val articuloSeleccionado = ArticulosSeleccionadosSac(
                                 nombre = articuloActualSeleccionado.nombre,
                                 codigo = articuloActualSeleccionado.codigo,
-                                precioUnitario = articuloActualSeleccionado.precio.toDouble(),
+                                precioUnitario = articuloActualSeleccionado.precio,
                                 cantidad = cantidadArticulos,
                                 anotacion = anotacion,
                                 subCuenta = subCuentaSeleccionada
@@ -1448,7 +1463,7 @@ internal fun AgregarBxContenerdorMontosCuenta(
 @Composable
 @Preview(widthDp = 964, heightDp = 523, showBackground = true)
 private fun Preview(){
-    val m= ArticuloSac("Hamburguesa con queso", "0001", 1000.00)
+//    val m= ArticuloSac("Hamburguesa con queso", "0001", 1000.00)
 //    AgregarBxContenedorArticulos(m)
     InterfazSacComandaLarge(null, "", null, "", "", "", "")
 }

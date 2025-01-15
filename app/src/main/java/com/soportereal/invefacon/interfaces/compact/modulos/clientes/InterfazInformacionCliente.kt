@@ -134,7 +134,7 @@ fun IniciarInterfazInformacionCliente(
     var opciontieneCreditoSeleccionada by remember { mutableStateOf("") }
     var opcionExentoSeleccionada by remember { mutableStateOf("") }
     var guardarEdicionCliente by remember { mutableStateOf(false) }
-    val isClienteActualizado by estadoRespuestaApi.regresarPantallaAnterior.collectAsState()
+    val isClienteActualizado by estadoRespuestaApi.estadoBtOk.collectAsState()
     var regresarPantallaAnterior by remember { mutableStateOf(false) }
 
 
