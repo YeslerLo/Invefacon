@@ -152,6 +152,7 @@ fun InterfazModuloSacLarge(
     var nombreNuevaSubCuenta by remember { mutableStateOf("") }
     var iniciarMenuAgregarSubCuenta by remember { mutableStateOf(false) }
     var iniciarMenuQuitarMesa by remember { mutableStateOf(false) }
+    var actualizarEstadoMesas by remember { mutableStateOf(false) }
 
     LaunchedEffect(iniciarPantallaSacComanda) {
         if (iniciarPantallaSacComanda){
@@ -174,8 +175,10 @@ fun InterfazModuloSacLarge(
             }
             nombreNuevaMesa=""
             nombreSalonNuevaMesa=""
-            iniciarCreacionNuevaMesa=false
+            actualizarEstadoMesas= true
             objetoEstadoPantallaCarga.cambiarEstadoMenuPrincipal(false)
+            iniciarCreacionNuevaMesa=false
+
         }
     }
 
@@ -222,13 +225,60 @@ fun InterfazModuloSacLarge(
             if (listaCuentasActivasActuales!=listaCuentasActivas){
                 listaCuentasActivasActuales=listaCuentasActivas
             }
-            delay(500)
+
             if (isPrimeraVezCargando){
                 objetoEstadoPantallaCarga.cambiarEstadoMenuPrincipal(false)
                 isPrimeraVezCargando=false
                 isCargandoMesas=false
             }
-            delay(1000)
+            delay(10000)
+        }
+    }
+
+    LaunchedEffect(actualizarEstadoMesas) {
+        if (actualizarEstadoMesas){
+            val listaMesas = mutableListOf<Mesa>()
+            val listaCuentasActivas = mutableListOf<Mesa>()
+            val result= objectoProcesadorDatosApi.obtenerListaMesas(datosIngresadosBarraBusqueda)
+            if (result!=null){
+                val data = result.getJSONObject("data")
+                val datosMesas= data.getJSONArray("mesas")
+                for (i in 0 until datosMesas.length()){
+                    val datoMesa= datosMesas.getJSONObject(i)
+                    val mesa = Mesa(
+                        nombre = datoMesa.getString("mesa"),
+                        idMesa = datoMesa.getString("Consec"),
+                        cantidadSubcuentas = datoMesa.getString("cantidad_subcuentas"),
+                        tiempo = if(!datoMesa.isNull("minutos")) datoMesa.getInt("minutos") else 0,
+                        total = datoMesa.getString("monto"),
+                        estado = datoMesa.getString("CodEstado"),
+                        salon = datoMesa.getString("salon")
+                    )
+                    listaMesas.add(mesa)
+                }
+
+                val datosCuentasActivas = data.getJSONArray("cuentasActivas")
+                for (i in 0 until datosCuentasActivas.length()) {
+                    val datoMesa= datosCuentasActivas.getJSONObject(i)
+                    val mesa = Mesa(
+                        nombre = datoMesa.getString("mesa"),
+                        idMesa = datoMesa.getString("Consec"),
+                        cantidadSubcuentas = datoMesa.getString("cantidad_subcuentas"),
+                        tiempo = if(!datoMesa.isNull("minutos")) datoMesa.getInt("minutos") else 0,
+                        total = datoMesa.getString("monto"),
+                        estado = datoMesa.getString("CodEstado")
+                    )
+                    listaCuentasActivas.add(mesa)
+                }
+            }
+
+            if (listaMesasActualesFiltradas!=listaMesas){
+                listaMesasActualesFiltradas=listaMesas
+            }
+            if (listaCuentasActivasActuales!=listaCuentasActivas){
+                listaCuentasActivasActuales=listaCuentasActivas
+            }
+            actualizarEstadoMesas=false
         }
     }
 
@@ -352,6 +402,7 @@ fun InterfazModuloSacLarge(
                 """
             )
             estadoRespuestaApi.cambiarEstadoRespuestaApi(mostrarRespuesta = true, datosRespuesta = jsonObject )
+            actualizarEstadoMesas= true
             eliminarArticulo= false
             agregarArticulo= false
         }
@@ -368,6 +419,7 @@ fun InterfazModuloSacLarge(
             iniciarMenuQuitarMesa=false
             iniciarMenuMesaComandada=false
             objetoEstadoPantallaCarga.cambiarEstadoMenuPrincipal(false)
+            actualizarEstadoMesas= true
             quitarMesa= false
         }
     }
@@ -380,6 +432,7 @@ fun InterfazModuloSacLarge(
                 estadoRespuestaApi.cambiarEstadoRespuestaApi(mostrarRespuesta = true, datosRespuesta = result)
             }
             objetoEstadoPantallaCarga.cambiarEstadoMenuPrincipal(false)
+            actualizarEstadoMesas= true
             pedirCuenta= false
         }
     }
@@ -437,6 +490,7 @@ fun InterfazModuloSacLarge(
             mesaDestino= ""
             subCuentaDestinoArticulo=""
             objetoEstadoPantallaCarga.cambiarEstadoMenuPrincipal(false)
+            actualizarEstadoMesas= true
             moverArticulo= false
         }
     }
@@ -451,6 +505,7 @@ fun InterfazModuloSacLarge(
             mesaDestino=""
             objetoEstadoPantallaCarga.cambiarEstadoMenuPrincipal(false)
             iniciarMenuMoverMesa= false
+            actualizarEstadoMesas= true
             moverMesa= false
         }
     }
@@ -772,11 +827,13 @@ fun InterfazModuloSacLarge(
                         disabledContentColor = Color.White
                     ),
                     elevation = ButtonDefaults.buttonElevation(defaultElevation = 5.dp),
-                    onClick = {}
+                    onClick = {
+                        actualizarEstadoMesas= true
+                    }
                 ) {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center){
                         Text(
-                            "Ajustes",
+                            "Refrescar",
                             fontFamily = fontAksharPrincipal,
                             fontWeight = FontWeight.Medium,
                             fontSize = objetoAdaptardor.ajustarFont(16),
