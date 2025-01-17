@@ -53,6 +53,7 @@ import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -897,6 +898,8 @@ internal fun AgregarTextFieldMultifuncional(
     modoEdicionActivado: Boolean= true,
     contieneOpciones: Boolean = false,
     opciones: SnapshotStateMap<String, String> = mutableStateMapOf("1" to "1"),
+    usarOpciones2: Boolean = false,
+    opciones2: MutableState<LinkedHashMap<String, String>> = mutableStateOf(LinkedHashMap()),
     isSeleccionarFecha: Boolean = false,
     darFormatoMiles: Boolean = false,
     soloPermitirValoresNumericos: Boolean = false,
@@ -905,7 +908,8 @@ internal fun AgregarTextFieldMultifuncional(
     permitirPuntosDedimales: Boolean = false,
     permitirComas: Boolean= false,
     tomarAnchoMaximo: Boolean = true,
-    medidaAncho: Int = 0
+    medidaAncho: Int = 0,
+    mostrarClave: Boolean = false
 ){
     val fontAksharPrincipal = FontFamily(Font(R.font.akshar_medium))
     val configuration = LocalConfiguration.current
@@ -1078,27 +1082,52 @@ internal fun AgregarTextFieldMultifuncional(
                     .heightIn(max = objetoAdaptardor.ajustarAltura(200)),
                 scrollState = scrollState
             ) {
-                opciones.forEach { (clave, contenido) ->
-                    DropdownMenuItem(
-                        onClick = {
-                            nuevoValor (clave)
-                            expanded = false // Cierra el menú después de seleccionar
-                        },
-                        text = {
-                            Text(
-                                contenido,
-                                fontFamily = fontAksharPrincipal,
-                                fontWeight = FontWeight.Medium,
-                                fontSize = objetoAdaptardor.ajustarFont(17),
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                                textAlign = TextAlign.Center,
-                                color = Color.Black
-                            )
-                        },
-                        modifier = Modifier.background(Color.White)
-                    )
+                if (usarOpciones2){
+                    opciones2.value.entries.forEach { (clave, contenido) ->
+                        DropdownMenuItem(
+                            onClick = {
+                                nuevoValor (clave)
+                                expanded = false // Cierra el menú después de seleccionar
+                            },
+                            text = {
+                                Text(
+                                    if (mostrarClave) clave else contenido,
+                                    fontFamily = fontAksharPrincipal,
+                                    fontWeight = FontWeight.Medium,
+                                    fontSize = objetoAdaptardor.ajustarFont(17),
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    textAlign = TextAlign.Center,
+                                    color = Color.Black
+                                )
+                            },
+                            modifier = Modifier.background(Color.White)
+                        )
+                    }
+                }else{
+                    opciones.forEach { (clave, contenido) ->
+                        DropdownMenuItem(
+                            onClick = {
+                                nuevoValor (clave)
+                                expanded = false // Cierra el menú después de seleccionar
+                            },
+                            text = {
+                                Text(
+                                    if (mostrarClave) clave else contenido,
+                                    fontFamily = fontAksharPrincipal,
+                                    fontWeight = FontWeight.Medium,
+                                    fontSize = objetoAdaptardor.ajustarFont(17),
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    textAlign = TextAlign.Center,
+                                    color = Color.Black
+                                )
+                            },
+                            modifier = Modifier.background(Color.White)
+                        )
+                    }
                 }
+
             }
         }
 

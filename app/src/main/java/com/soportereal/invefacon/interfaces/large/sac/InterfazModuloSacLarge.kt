@@ -49,16 +49,15 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.snapshots.SnapshotStateMap
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
@@ -125,8 +124,12 @@ fun InterfazModuloSacLarge(
     var isCargandoMesas by remember { mutableStateOf(true) }
     var iniciarMenuMesaComandada by remember { mutableStateOf(false) }
     var mesaActual by remember { mutableStateOf(Mesa()) }
-    var subCuentaSeleccionada by remember { mutableStateOf("Juntos") }
-    val opcionesSubCuentas: SnapshotStateMap<String, String> = remember { mutableStateMapOf() }
+    var subCuentaSeleccionada by remember { mutableStateOf("") }
+    var subCuentaDestinoArticulo by remember { mutableStateOf("") }
+    val opcionesSubCuentas: MutableState<LinkedHashMap<String, String>> = remember { mutableStateOf(LinkedHashMap()) }
+    val opcionesSubCuentasDestino: MutableState<LinkedHashMap<String, String>> = remember { mutableStateOf(LinkedHashMap()) }
+    val opcionesMesas: MutableState<LinkedHashMap<String, String>> = remember { mutableStateOf(LinkedHashMap()) }
+    var mesaDestino by remember { mutableStateOf("") }
     val articulosComandados = remember { mutableStateListOf<ArticuloComandado>() }
     val lazyStateArticulosSeleccionados= rememberLazyListState()
     var iniciarPantallaSacComanda by remember { mutableStateOf(false) }
@@ -134,14 +137,21 @@ fun InterfazModuloSacLarge(
     var iniciarCalculoMontos by remember { mutableStateOf(false) }
     var iniciarVentanaEliminarArticulo by remember { mutableStateOf(false) }
     var iniciarVentanaAgregarArticulo by remember { mutableStateOf(false) }
+    var iniciarMenuMoverArticulo by remember { mutableStateOf(false) }
+    var iniciarMenuMoverMesa by remember { mutableStateOf(false) }
     var articuloActualSeleccionado by remember { mutableStateOf(ArticuloComandado()) }
-    val actualizarArticulos by estadoRespuestaApi.estadoBtOk.collectAsState()
+    val estadoBtOkRespuestaApi by estadoRespuestaApi.estadoBtOk.collectAsState()
     var agregarArticulo by remember { mutableStateOf(false) }
     var cantidadArticulos by remember { mutableIntStateOf(1) }
     var anotacionComanda by remember { mutableStateOf("") }
     var eliminarArticulo by remember { mutableStateOf(false) }
     var quitarMesa by remember { mutableStateOf(false) }
     var pedirCuenta by remember { mutableStateOf(false) }
+    var moverArticulo by remember { mutableStateOf(false) }
+    var moverMesa by remember { mutableStateOf(false) }
+    var nombreNuevaSubCuenta by remember { mutableStateOf("") }
+    var iniciarMenuAgregarSubCuenta by remember { mutableStateOf(false) }
+    var iniciarMenuQuitarMesa by remember { mutableStateOf(false) }
 
     LaunchedEffect(iniciarPantallaSacComanda) {
         if (iniciarPantallaSacComanda){
@@ -204,8 +214,8 @@ fun InterfazModuloSacLarge(
                     )
                     listaCuentasActivas.add(mesa)
                 }
-
             }
+
             if (listaMesasActualesFiltradas!=listaMesas){
                 listaMesasActualesFiltradas=listaMesas
             }
@@ -218,11 +228,12 @@ fun InterfazModuloSacLarge(
                 isPrimeraVezCargando=false
                 isCargandoMesas=false
             }
+            delay(1000)
         }
     }
 
-    LaunchedEffect(iniciarMenuMesaComandada, actualizarArticulos) {
-        if(iniciarMenuMesaComandada) {
+    LaunchedEffect(iniciarMenuMesaComandada, estadoBtOkRespuestaApi) {
+        if(iniciarMenuMesaComandada && !iniciarMenuMoverArticulo) {
             objetoEstadoPantallaCarga.cambiarEstadoMenuPrincipal(true)
             val result = objectoProcesadorDatosApi.obtenerDatosMesaComandada(mesaActual.nombre)
             if (result != null) {
@@ -230,18 +241,19 @@ fun InterfazModuloSacLarge(
                     mostrarSoloRespuestaError = true,
                     datosRespuesta = result
                 )
-                println(result)
 
                 if (result.getString("code")== "200"){
                     val data = result.getJSONObject("data")
                     val subCuentas = data.getJSONArray("Subcuentas")
                     val articulos = data.getJSONArray("detalleSubcuenta")
+                    opcionesSubCuentas.value.clear()
 
                     for (i in 0 until subCuentas.length()) {
-                        opcionesSubCuentas[subCuentas[i].toString()] = subCuentas[i].toString()
+                        opcionesSubCuentas.value[subCuentas[i].toString()] = subCuentas[i].toString()
                     }
 
                     subCuentaSeleccionada= subCuentas[0].toString()
+                    articulosComandados.clear()
 
                     for (i in 0 until articulos.length()) {
                         val articulo = articulos.getJSONObject(i)
@@ -308,7 +320,7 @@ fun InterfazModuloSacLarge(
 
             if (jsonComandaDetalle.length()>0){
                 articulosComandados.clear()
-                opcionesSubCuentas.clear()
+                opcionesSubCuentas.value.clear()
                 subCuentaSeleccionada =""
                 iniciarVentanaEliminarArticulo=false
                 iniciarVentanaAgregarArticulo=false
@@ -353,6 +365,8 @@ fun InterfazModuloSacLarge(
             if (result!=null){
                 estadoRespuestaApi.cambiarEstadoRespuestaApi(mostrarRespuesta = true, datosRespuesta = result)
             }
+            iniciarMenuQuitarMesa=false
+            iniciarMenuMesaComandada=false
             objetoEstadoPantallaCarga.cambiarEstadoMenuPrincipal(false)
             quitarMesa= false
         }
@@ -369,6 +383,78 @@ fun InterfazModuloSacLarge(
             pedirCuenta= false
         }
     }
+
+    LaunchedEffect(iniciarMenuMoverArticulo, mesaDestino, iniciarMenuMoverMesa) {
+        if(iniciarMenuMoverArticulo || iniciarMenuMoverMesa){
+            objetoEstadoPantallaCarga.cambiarEstadoMenuPrincipal(true)
+            var result = objectoProcesadorDatosApi.obetenerNombresMesas()
+            if (result!=null){
+                estadoRespuestaApi.cambiarEstadoRespuestaApi(mostrarSoloRespuestaError = true, datosRespuesta = result)
+                val data= result.getJSONObject("data")
+                val mesas= data.getJSONArray("Mesas")
+                for(i in 0 until mesas.length()){
+                    println(mesas.getString(i))
+                    opcionesMesas.value[mesas.getString(i)]= mesas.getString(i)
+                }
+                if (mesaDestino.isEmpty()){
+                    mesaDestino= opcionesMesas.value[mesaActual.nombre].toString()
+                }
+            }
+            subCuentaDestinoArticulo=""
+            opcionesSubCuentasDestino.value.clear()
+            result = objectoProcesadorDatosApi.obetenerSubCuentasMesa(mesaDestino)
+            if (result!= null){
+                estadoRespuestaApi.cambiarEstadoRespuestaApi(mostrarSoloRespuestaError = true, datosRespuesta = result)
+                val data= result.getJSONObject("data")
+                val subCuentas= data.getJSONArray("Subcuentas")
+                for( i in 0 until subCuentas.length()){
+                    opcionesSubCuentasDestino.value[subCuentas.getString(i)] = subCuentas.getString(i)
+                }
+                if (subCuentaDestinoArticulo.isEmpty()){
+                    subCuentaDestinoArticulo= opcionesSubCuentasDestino.value.keys.first()
+                }
+            }
+            objetoEstadoPantallaCarga.cambiarEstadoMenuPrincipal(false)
+        }
+    }
+
+    LaunchedEffect(moverArticulo) {
+        if(moverArticulo){
+            objetoEstadoPantallaCarga.cambiarEstadoMenuPrincipal(true)
+            val result= objectoProcesadorDatosApi.moverArticulo(
+                codigoArticulo = articuloActualSeleccionado.Cod_Articulo,
+                cantidadArticulos = cantidadArticulos.toString(),
+                mesa = mesaActual.nombre,
+                mesaDestino = mesaDestino,
+                subCuenta = articuloActualSeleccionado.SubCuenta,
+                subCuentaDestino = subCuentaDestinoArticulo,
+                codUsuario = codUsuario
+            )
+            if (result!=null){
+                estadoRespuestaApi.cambiarEstadoRespuestaApi(mostrarRespuesta = true, datosRespuesta = result)
+            }
+            iniciarMenuMoverArticulo= false
+            mesaDestino= ""
+            subCuentaDestinoArticulo=""
+            objetoEstadoPantallaCarga.cambiarEstadoMenuPrincipal(false)
+            moverArticulo= false
+        }
+    }
+
+    LaunchedEffect(moverMesa) {
+        if(moverMesa){
+            objetoEstadoPantallaCarga.cambiarEstadoMenuPrincipal(true)
+            val result = objectoProcesadorDatosApi.moverMesa(mesa = mesaActual.nombre, mesaDestino = mesaDestino)
+            if (result!= null){
+                estadoRespuestaApi.cambiarEstadoRespuestaApi(mostrarRespuesta = true, datosRespuesta = result)
+            }
+            mesaDestino=""
+            objetoEstadoPantallaCarga.cambiarEstadoMenuPrincipal(false)
+            iniciarMenuMoverMesa= false
+            moverMesa= false
+        }
+    }
+
 
     @Composable
     fun AgregarBt(
@@ -410,12 +496,11 @@ fun InterfazModuloSacLarge(
     fun AgregarBxContenedorArticulosComandados(
         articuloComandado: ArticuloComandado
     ){
-
         articuloComandado.calcularMontoTotal()
         Box(
             modifier = Modifier
-                .background(Color(0xFFF6F6F6))
-                .width(objetoAdaptardor.ajustarAncho(430))
+                .background(Color.White)
+                .width(objetoAdaptardor.ajustarAncho(365))
         ){
             Column {
                 Row(
@@ -510,16 +595,13 @@ fun InterfazModuloSacLarge(
                     AgregarBt(
                         text = "Mover",
                         color = 0xFF244BC0,
-                        onClick = {},
+                        onClick = {
+                            articuloActualSeleccionado= articuloComandado
+                            iniciarMenuMoverArticulo=true
+                        },
                         quitarPadInterno = true
                     )
                     Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(6)))
-                    AgregarBt(
-                        text = "Editar",
-                        color = 0xFF244BC0,
-                        onClick = {},
-                        quitarPadInterno = true
-                    )
                 }
                 HorizontalDivider()
                 Row {
@@ -1140,13 +1222,14 @@ fun InterfazModuloSacLarge(
 
                                 AgregarTextFieldMultifuncional(
                                     label = "Sub-Cuentas",
-                                    opciones = opcionesSubCuentas,
+                                    opciones2 = opcionesSubCuentas,
+                                    usarOpciones2 = true,
                                     contieneOpciones = true,
                                     nuevoValor = { nuevoValor->
                                         subCuentaSeleccionada=nuevoValor
                                         iniciarCalculoMontos=true
                                     },
-                                    valor = opcionesSubCuentas[subCuentaSeleccionada]?:"Juntos",
+                                    valor = subCuentaSeleccionada,
                                     isUltimo = true,
                                     tomarAnchoMaximo = false,
                                     medidaAncho = 180
@@ -1196,7 +1279,7 @@ fun InterfazModuloSacLarge(
                                 AgregarBt(
                                     text = "Mover Mesa",
                                     color = 0xFF244BC0,
-                                    onClick = { iniciarMenuMesaComandada= false}
+                                    onClick = { iniciarMenuMoverMesa=true}
                                 )
 
                                 Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(8)))
@@ -1216,8 +1299,7 @@ fun InterfazModuloSacLarge(
                                     text = "Quitar mesa",
                                     color = 0xFFFF5722,
                                     onClick = {
-                                        quitarMesa= true
-                                        iniciarMenuMesaComandada=false
+                                        iniciarMenuQuitarMesa= true
                                     }
                                 )
 
@@ -1238,7 +1320,7 @@ fun InterfazModuloSacLarge(
                                         iniciarMenuMesaComandada= false
                                         mesaActual= Mesa()
                                         articulosComandados.clear()
-                                        opcionesSubCuentas.clear()
+                                        opcionesSubCuentas.value.clear()
                                     }
                                 )
                             }
@@ -1475,6 +1557,528 @@ fun InterfazModuloSacLarge(
         )
     }
 
+    if (iniciarMenuMoverArticulo){
+        AlertDialog(
+            modifier = Modifier.background(Color.White),
+            containerColor = Color.White,
+            onDismissRequest = { },
+            title = {
+                Text(
+                   "Mover Articulo",
+                    fontFamily = fontAksharPrincipal,
+                    fontWeight = FontWeight.Medium,
+                    fontSize = objetoAdaptardor.ajustarFont(27),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    textAlign = TextAlign.Center,
+                    color = Color.Black
+                )
+            },
+            text = {
+                Box(
+                    contentAlignment = Alignment.TopCenter
+                ){
+                    Column(
+                        verticalArrangement = Arrangement.Center,
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .height(objetoAdaptardor.ajustarAltura(123))
+                                .width(objetoAdaptardor.ajustarAncho(123)),
+                            contentAlignment = Alignment.BottomCenter
+                        ) {
+                            SubcomposeAsyncImage(
+                                model = "https://invefacon.com/img/demorest/articulos/${articuloActualSeleccionado.Cod_Articulo}.png",
+                                contentDescription = "Imagen Articulo",
+                                modifier = Modifier
+                                    .fillMaxSize(),
+                                contentScale = ContentScale.FillBounds,
+                                loading = {
+                                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center){
+                                        CircularProgressIndicator(
+                                            color = Color(0xFF244BC0),
+                                            modifier = Modifier.size(objetoAdaptardor.ajustarAltura(50))
+                                        )
+                                    }
+                                },
+                                error = {
+                                    Image(
+                                        modifier = Modifier
+                                            .fillMaxSize(),
+                                        painter = painterResource(id = R.drawable.sin_imagen),
+                                        contentDescription = "Descripción de la imagen",
+                                        contentScale = ContentScale.FillBounds
+                                    )
+                                }
+                            )
+                        }
+                        Text(
+                            articuloActualSeleccionado.nombre,
+                            fontFamily = fontAksharPrincipal,
+                            fontWeight = FontWeight.Medium,
+                            fontSize = objetoAdaptardor.ajustarFont(27),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            textAlign = TextAlign.Center,
+                            color = Color.Black
+                        )
+                        Box{
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(
+                                    "Cantidad articulos a mover",
+                                    fontFamily = fontAksharPrincipal,
+                                    fontWeight = FontWeight.Medium,
+                                    fontSize = objetoAdaptardor.ajustarFont(23),
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    textAlign = TextAlign.Center,
+                                    color = Color.Black
+                                )
+
+                                if(cantidadArticulos>1){
+                                    IconButton(
+                                        onClick = {
+                                            cantidadArticulos-= if(cantidadArticulos==1) 0 else 1
+                                        },
+                                        modifier = Modifier.size(objetoAdaptardor.ajustarAltura(30))
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Filled.RemoveCircle,
+                                            contentDescription = "Basurero",
+                                            tint = Color.Black,
+                                            modifier = Modifier.size(objetoAdaptardor.ajustarAltura(30))
+                                        )
+                                    }
+                                }
+
+                                Text(
+                                    cantidadArticulos.toString(),
+                                    fontFamily = fontAksharPrincipal,
+                                    fontWeight = FontWeight.Medium,
+                                    fontSize = objetoAdaptardor.ajustarFont(22),
+                                    overflow = TextOverflow.Ellipsis,
+                                    textAlign = TextAlign.Center,
+                                    modifier = Modifier.width(objetoAdaptardor.ajustarAncho(35)).padding(2.dp)
+                                )
+
+                                if (cantidadArticulos<articuloActualSeleccionado.Cantidad){
+                                    IconButton(
+                                        onClick = {
+                                            cantidadArticulos+=1
+                                        },
+                                        modifier = Modifier.size(objetoAdaptardor.ajustarAltura(30))
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Filled.AddCircle,
+                                            contentDescription = "Agregar Articulo",
+                                            tint = Color.Black,
+                                            modifier = Modifier.size(objetoAdaptardor.ajustarAltura(30))
+                                        )
+                                    }
+                                }
+
+
+                            }
+                        }
+
+                        Box {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                AgregarTextFieldMultifuncional(
+                                    label = "Nueva Mesa",
+                                    opciones2 = opcionesMesas,
+                                    usarOpciones2 = true,
+                                    contieneOpciones = true,
+                                    nuevoValor = { nuevoValor->
+                                        mesaDestino= nuevoValor
+                                    },
+                                    valor = mesaDestino,
+                                    isUltimo = true,
+                                    tomarAnchoMaximo = false,
+                                    medidaAncho = 180,
+                                    mostrarClave = true
+                                )
+                                AgregarTextFieldMultifuncional(
+                                    label = "Nueva Sub-Cuenta",
+                                    opciones2 = opcionesSubCuentasDestino,
+                                    usarOpciones2 = true,
+                                    contieneOpciones = true,
+                                    nuevoValor = { nuevoValor->
+                                        subCuentaDestinoArticulo= nuevoValor
+                                    },
+                                    valor = subCuentaDestinoArticulo,
+                                    isUltimo = true,
+                                    tomarAnchoMaximo = false,
+                                    medidaAncho = 180,
+                                    mostrarClave = true
+                                )
+                                Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(8)))
+                                IconButton(
+                                    onClick = {
+                                        iniciarMenuAgregarSubCuenta=true
+                                    }
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Filled.AddCircle,
+                                        contentDescription = "Agregar Sub Cuenta",
+                                        tint = Color(0xFF244BC0)
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                       moverArticulo= true
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFF244BC0), // Color de fondo del botón
+                        contentColor = Color.White,
+                        disabledContainerColor = Color(0xFF244BC0),
+                        disabledContentColor = Color.White
+                    )
+                ) {
+                    Text(
+                        "Mover",
+                        fontFamily = fontAksharPrincipal,
+                        fontWeight = FontWeight.Medium,
+                        fontSize = objetoAdaptardor.ajustarFont(15),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        textAlign = TextAlign.Center,
+                        color = Color.White
+                    )
+                }
+            },
+            dismissButton = {
+                Button(
+                    onClick = {
+                        iniciarMenuMoverArticulo= false
+                        cantidadArticulos= 1
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color.Red, // Color de fondo del botón
+                        contentColor = Color.White,
+                        disabledContainerColor = Color.Red,
+                        disabledContentColor = Color.White
+                    )
+                ) {
+                    Text(
+                        "Cancelar",
+                        fontFamily = fontAksharPrincipal,
+                        fontWeight = FontWeight.Medium,
+                        fontSize = objetoAdaptardor.ajustarFont(15),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        textAlign = TextAlign.Center,
+                        color = Color.White
+                    )
+                }
+            }
+        )
+    }
+
+    if (iniciarMenuMoverMesa){
+        AlertDialog(
+            modifier = Modifier.background(Color.White),
+            containerColor = Color.White,
+            onDismissRequest = { },
+            title = {
+                Text(
+                    "Mover Mesa",
+                    fontFamily = fontAksharPrincipal,
+                    fontWeight = FontWeight.Medium,
+                    fontSize = objetoAdaptardor.ajustarFont(27),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    textAlign = TextAlign.Center,
+                    color = Color.Black
+                )
+            },
+            text = {
+                Box(
+                    contentAlignment = Alignment.Center
+                ){
+                    AgregarTextFieldMultifuncional(
+                        label = "Mesa Destino",
+                        opciones2 = opcionesMesas,
+                        usarOpciones2 = true,
+                        contieneOpciones = true,
+                        nuevoValor = { nuevoValor->
+                            mesaDestino= nuevoValor
+                        },
+                        valor = mesaDestino,
+                        isUltimo = true,
+                        tomarAnchoMaximo = false,
+                        medidaAncho = 180,
+                        mostrarClave = true
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        moverMesa= true
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFF244BC0), // Color de fondo del botón
+                        contentColor = Color.White,
+                        disabledContainerColor = Color(0xFF244BC0),
+                        disabledContentColor = Color.White
+                    )
+                ) {
+                    Text(
+                        "Mover",
+                        fontFamily = fontAksharPrincipal,
+                        fontWeight = FontWeight.Medium,
+                        fontSize = objetoAdaptardor.ajustarFont(15),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        textAlign = TextAlign.Center,
+                        color = Color.White
+                    )
+                }
+            },
+            dismissButton = {
+                Button(
+                    onClick = {
+                        iniciarMenuMoverMesa= false
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color.Red, // Color de fondo del botón
+                        contentColor = Color.White,
+                        disabledContainerColor = Color.Red,
+                        disabledContentColor = Color.White
+                    )
+                ) {
+                    Text(
+                        "Cancelar",
+                        fontFamily = fontAksharPrincipal,
+                        fontWeight = FontWeight.Medium,
+                        fontSize = objetoAdaptardor.ajustarFont(15),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        textAlign = TextAlign.Center,
+                        color = Color.White
+                    )
+                }
+            }
+        )
+    }
+
+    if(iniciarMenuAgregarSubCuenta) {
+        AlertDialog(
+            modifier = Modifier.background(Color.White),
+            containerColor = Color.White,
+            onDismissRequest = { },
+            title = {
+                Text(
+                    "Agregar Nueva Sub-Cuenta",
+                    fontFamily = fontAksharPrincipal,
+                    fontWeight = FontWeight.Medium,
+                    fontSize = objetoAdaptardor.ajustarFont(27),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    textAlign = TextAlign.Center,
+                    color = Color.Black
+                )
+            },
+            text = {
+                Box{
+                    Column {
+                        // Input Nombre Mesa
+                        OutlinedTextField(
+                            value = nombreNuevaSubCuenta,
+                            onValueChange = { newText -> nombreNuevaSubCuenta = newText },
+                            label = {
+                                Text(
+                                    "Nombre de la Sub-Cuenta",
+                                    color = Color.DarkGray,
+                                    fontFamily = fontAksharPrincipal,
+                                    fontWeight = FontWeight.Light,
+                                    fontSize = objetoAdaptardor.ajustarFont(16),
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            },
+                            placeholder = {
+                                Text(
+                                    "Ingrese el nombre de la Sub-Cuenta",
+                                    fontFamily = fontAksharPrincipal,
+                                    fontWeight = FontWeight.Light,
+                                    fontSize = objetoAdaptardor.ajustarFont(16),
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            },
+                            modifier = Modifier
+                                .width(objetoAdaptardor.ajustarAncho(300))
+                                .height(objetoAdaptardor.ajustarAltura(70)),
+                            singleLine = true,
+                            textStyle = TextStyle(fontFamily = fontAksharPrincipal, fontWeight = FontWeight.Light, color = Color.DarkGray, fontSize = objetoAdaptardor.ajustarFont(16)),
+                            shape = RoundedCornerShape(objetoAdaptardor.ajustarAltura(16)),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedTextColor = Color(0xFF5B5B5B), // Color del texto cuando está enfocado
+                                unfocusedTextColor = Color(0xFF5B5B5B),
+                                focusedPlaceholderColor =  Color(0xFF5B5B5B),
+                                unfocusedPlaceholderColor = Color(0xFF5B5B5B),
+                                focusedBorderColor =  Color(0xFF5B5B5B),
+                                unfocusedBorderColor = Color(0xFF5B5B5B)
+                            )
+                        )
+                        // Spacer separador de componente
+                        Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(8)))
+
+                    }
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        opcionesSubCuentasDestino.value[nombreNuevaSubCuenta]=nombreNuevaSubCuenta
+                        val jsonObject = JSONObject("""
+                                {
+                                    "code": 200,
+                                    "status": "ok",
+                                    "data": "Sub-Cuenta creada"
+                                }
+                            """
+                        )
+                        iniciarMenuAgregarSubCuenta=false
+                        nombreNuevaSubCuenta=""
+                        estadoRespuestaApi.cambiarEstadoRespuestaApi(mostrarRespuesta = true, datosRespuesta = jsonObject)
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFF244BC0), // Color de fondo del botón
+                        contentColor = Color.White,
+                        disabledContainerColor = Color(0xFF244BC0),
+                        disabledContentColor = Color.White
+                    )
+                ) {
+                    Text(
+                        "Crear",
+                        fontFamily = fontAksharPrincipal,
+                        fontWeight = FontWeight.Medium,
+                        fontSize = objetoAdaptardor.ajustarFont(15),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        textAlign = TextAlign.Center,
+                        color = Color.White
+                    )
+                }
+            },
+            dismissButton = {
+                Button(
+                    onClick = {
+                        iniciarMenuAgregarSubCuenta=false
+                        nombreNuevaSubCuenta=""
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color.Red, // Color de fondo del botón
+                        contentColor = Color.White,
+                        disabledContainerColor = Color.Red,
+                        disabledContentColor = Color.White
+                    )
+                ) {
+                    Text(
+                        "Cancelar",
+                        fontFamily = fontAksharPrincipal,
+                        fontWeight = FontWeight.Medium,
+                        fontSize = objetoAdaptardor.ajustarFont(15),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        textAlign = TextAlign.Center,
+                        color = Color.White
+                    )
+                }
+            }
+        )
+    }
+
+    if(iniciarMenuQuitarMesa) {
+        AlertDialog(
+            modifier = Modifier.background(Color.White),
+            containerColor = Color.White,
+            onDismissRequest = { },
+            title = {
+                Text(
+                    "Quitar Mesa",
+                    fontFamily = fontAksharPrincipal,
+                    fontWeight = FontWeight.Medium,
+                    fontSize = objetoAdaptardor.ajustarFont(25),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    textAlign = TextAlign.Center,
+                    color = Color.Black
+                )
+            },
+            text = {
+                Box(contentAlignment = Alignment.Center){
+                    Text(
+                        "¿Desea eliminar todos los articulos de mesa?",
+                        fontFamily = fontAksharPrincipal,
+                        fontWeight = FontWeight.Medium,
+                        fontSize = objetoAdaptardor.ajustarFont(27),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        textAlign = TextAlign.Center,
+                        color = Color.Black
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        quitarMesa=true
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFF244BC0), // Color de fondo del botón
+                        contentColor = Color.White,
+                        disabledContainerColor = Color(0xFF244BC0),
+                        disabledContentColor = Color.White
+                    )
+                ) {
+                    Text(
+                        "Quitar",
+                        fontFamily = fontAksharPrincipal,
+                        fontWeight = FontWeight.Medium,
+                        fontSize = objetoAdaptardor.ajustarFont(15),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        textAlign = TextAlign.Center,
+                        color = Color.White
+                    )
+                }
+            },
+            dismissButton = {
+                Button(
+                    onClick = {
+                        iniciarMenuQuitarMesa= false
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color.Red, // Color de fondo del botón
+                        contentColor = Color.White,
+                        disabledContainerColor = Color.Red,
+                        disabledContentColor = Color.White
+                    )
+                ) {
+                    Text(
+                        "Cancelar",
+                        fontFamily = fontAksharPrincipal,
+                        fontWeight = FontWeight.Medium,
+                        fontSize = objetoAdaptardor.ajustarFont(15),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        textAlign = TextAlign.Center,
+                        color = Color.White
+                    )
+                }
+            }
+        )
+    }
 }
 
 @Composable
@@ -1644,6 +2248,7 @@ internal fun BxContendorDatosMesa(
 
     }
 }
+
 
 @Composable
 @Preview(widthDp = 964, heightDp = 523)

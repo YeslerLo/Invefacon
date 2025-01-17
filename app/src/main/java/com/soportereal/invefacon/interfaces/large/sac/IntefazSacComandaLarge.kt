@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -44,18 +43,17 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableDoubleStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.snapshots.SnapshotStateMap
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
@@ -122,8 +120,8 @@ fun InterfazSacComandaLarge(
     var subFamiliaActualSeleccionada by remember { mutableStateOf(SubFamiliaSac()) }
     var isCargandoArticulos by remember { mutableStateOf(true) }
     val articulosSeleccionados = remember { mutableStateListOf<ArticulosSeleccionadosSac>() }
-    var subCuentaSeleccionada by remember { mutableStateOf("Juntos") }
-    val opcionesSubCuentas: SnapshotStateMap<String, String> = remember { mutableStateMapOf() }
+    var subCuentaSeleccionada by remember { mutableStateOf("") }
+    val opcionesSubCuentas: MutableState<LinkedHashMap<String, String>> = remember { mutableStateOf(LinkedHashMap()) }
     var nombreNuevaSubCuenta by remember { mutableStateOf("") }
     var iniciarMenuAgregarSubCuenta by remember { mutableStateOf(false) }
     var articuloActualSeleccionado by remember { mutableStateOf(ArticuloSac()) }
@@ -141,13 +139,13 @@ fun InterfazSacComandaLarge(
             }
         }
         montoTotal= BigDecimal(montoTotal)
-            .setScale(2, RoundingMode.HALF_UP) // Redondea al entero más cercano
+            .setScale(2, RoundingMode.HALF_UP)
             .toDouble()
         actualizarMontos=false
     }
 
     LaunchedEffect(Unit) {
-        val result= objectoProcesadorDatosApi.obtenerListaFamilias()
+        var result= objectoProcesadorDatosApi.obtenerListaFamilias()
         val listaFamilias = mutableListOf<FamiliaSac>()
         if (result!=null){
             estadoRespuestaApi.cambiarEstadoRespuestaApi(mostrarSoloRespuestaError = true, datosRespuesta = result)
@@ -164,6 +162,17 @@ fun InterfazSacComandaLarge(
         }
         listaFamiliasSac=listaFamilias
         familiaActualSeleccionada= listaFamilias[0]
+
+        result = objectoProcesadorDatosApi.obetenerSubCuentasMesa(nombreMesa)
+        if (result!= null){
+            estadoRespuestaApi.cambiarEstadoRespuestaApi(mostrarSoloRespuestaError = true, datosRespuesta = result)
+            val data= result.getJSONObject("data")
+            val subCuentas= data.getJSONArray("Subcuentas")
+            for( i in 0 until subCuentas.length()){
+                opcionesSubCuentas.value[subCuentas.getString(i)] = subCuentas.getString(i)
+            }
+            subCuentaSeleccionada= opcionesSubCuentas.value.keys.first()
+        }
     }
 
     LaunchedEffect(familiaActualSeleccionada) {
@@ -271,7 +280,9 @@ fun InterfazSacComandaLarge(
             }
 
             if (jsonComandaDetalle.length()>0){
-                opcionesSubCuentas.remove(subCuentaSeleccionada)
+                opcionesSubCuentas.value = LinkedHashMap(opcionesSubCuentas.value).apply {
+                    remove(subCuentaSeleccionada)
+                }
                 articulosSeleccionados.removeAll(articulosAEliminar)
                 val result= objectoProcesadorDatosApi.comandarSubCuenta_eliminarArticulos(
                     codUsuario = codUsuario,
@@ -300,13 +311,14 @@ fun InterfazSacComandaLarge(
     }
 
     LaunchedEffect(regresarPantallaAnterior) {
-        if (regresarPantallaAnterior && opcionesSubCuentas.size==0){
+        println(opcionesSubCuentas)
+        if (regresarPantallaAnterior && opcionesSubCuentas.value.isEmpty()){
             navControllerPantallasModuloSac?.popBackStack()
             estadoRespuestaApi.cambiarEstadoRespuestaApi()
         }
 
-        if (regresarPantallaAnterior && opcionesSubCuentas.size>0){
-            subCuentaSeleccionada= opcionesSubCuentas.keys.first()
+        if (regresarPantallaAnterior && opcionesSubCuentas.value.isNotEmpty()){
+            subCuentaSeleccionada= opcionesSubCuentas.value.keys.first()
             estadoRespuestaApi.cambiarEstadoRespuestaApi()
         }
     }
@@ -853,10 +865,11 @@ fun InterfazSacComandaLarge(
                             ) {
                                 AgregarTextFieldMultifuncional(
                                     label = "Sub-Cuentas",
-                                    opciones = opcionesSubCuentas,
+                                    opciones2 = opcionesSubCuentas,
+                                    usarOpciones2 = true,
                                     contieneOpciones = true,
                                 nuevoValor = {nuevoValor-> subCuentaSeleccionada=nuevoValor},
-                                valor = opcionesSubCuentas[subCuentaSeleccionada]?:"Juntos",
+                                valor = subCuentaSeleccionada,
                                 isUltimo = true,
                                 tomarAnchoMaximo = false,
                                 medidaAncho = 180
@@ -1011,7 +1024,7 @@ fun InterfazSacComandaLarge(
                 confirmButton = {
                     Button(
                         onClick = {
-                            opcionesSubCuentas[nombreNuevaSubCuenta]=nombreNuevaSubCuenta
+                            opcionesSubCuentas.value[nombreNuevaSubCuenta]=nombreNuevaSubCuenta
                             val jsonObject = JSONObject("""
                                 {
                                     "code": 200,
@@ -1206,10 +1219,11 @@ fun InterfazSacComandaLarge(
 
                             AgregarTextFieldMultifuncional(
                                 label = "Sub-Cuenta",
-                                opciones = opcionesSubCuentas,
+                                opciones2 = opcionesSubCuentas,
+                                usarOpciones2 = true,
                                 contieneOpciones = true,
                                 nuevoValor = {nuevoValor-> subCuentaSeleccionada=nuevoValor},
-                                valor = opcionesSubCuentas[subCuentaSeleccionada]?:"Juntos",
+                                valor = subCuentaSeleccionada,
                                 isUltimo = true,
                                 tomarAnchoMaximo = false,
                                 medidaAncho = 250

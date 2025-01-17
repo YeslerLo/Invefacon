@@ -70,6 +70,49 @@ class ProcesarDatosModuloSac(apiToken: String){
             .build()
         return objetoFuncionesHttpInvefacon.metodoPost(formBody = formBody, apiDirectorio = "apimovil/sac/pedirCuenta.php")
     }
+
+    suspend fun obetenerNombresMesas():JSONObject?{
+        val formBody = MultipartBody.Builder().setType(MultipartBody.FORM)
+            .addFormDataPart("Mesa", "")
+            .build()
+        return objetoFuncionesHttpInvefacon.metodoPost(formBody = formBody, apiDirectorio = "apimovil/sac/listaMesasSola.php")
+    }
+
+    suspend fun obetenerSubCuentasMesa(nombreMesa: String):JSONObject?{
+        val formBody = MultipartBody.Builder().setType(MultipartBody.FORM)
+            .addFormDataPart("Mesa", nombreMesa)
+            .build()
+        return objetoFuncionesHttpInvefacon.metodoPost(formBody = formBody, apiDirectorio = "apimovil/sac/listaSubcuentas.php")
+    }
+
+    suspend fun moverMesa(mesa: String, mesaDestino: String):JSONObject?{
+        val formBody = MultipartBody.Builder().setType(MultipartBody.FORM)
+            .addFormDataPart("MesaActual", mesa)
+            .addFormDataPart("MesaDestino", mesaDestino)
+            .build()
+        return objetoFuncionesHttpInvefacon.metodoPost(formBody = formBody, apiDirectorio = "apimovil/sac/MoverMesaCompleta.php")
+    }
+
+    suspend fun moverArticulo(
+        codigoArticulo: String,
+        cantidadArticulos: String,
+        mesa: String,
+        mesaDestino: String,
+        subCuenta: String,
+        subCuentaDestino: String,
+        codUsuario: String
+    ):JSONObject?{
+        val formBody = MultipartBody.Builder().setType(MultipartBody.FORM)
+            .addFormDataPart("MesaActual", mesa)
+            .addFormDataPart("MesaDestino", mesaDestino)
+            .addFormDataPart("SubCuentaActual", subCuenta)
+            .addFormDataPart("SubCuentaDestino", subCuentaDestino)
+            .addFormDataPart("Cod_Articulo", codigoArticulo)
+            .addFormDataPart("Cantidad", cantidadArticulos)
+            .addFormDataPart("Cod_Usuario", codUsuario)
+            .build()
+        return objetoFuncionesHttpInvefacon.metodoPost(formBody = formBody, apiDirectorio = "apimovil/sac/moverArticulo.php")
+    }
 }
 
 data class Mesa(
