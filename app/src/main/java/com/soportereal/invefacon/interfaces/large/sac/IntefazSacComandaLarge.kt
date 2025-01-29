@@ -24,6 +24,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AddCircle
+import androidx.compose.material.icons.filled.ArrowBackIosNew
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.RemoveCircle
 import androidx.compose.material.icons.filled.RestaurantMenu
@@ -130,6 +131,7 @@ fun InterfazSacComandaLarge(
     var iniciarComandaSubCuenta by remember { mutableStateOf(false) }
     val coroutineScope = rememberCoroutineScope()
     val regresarPantallaAnterior by estadoRespuestaApi.estadoBtOk.collectAsState()
+    var regresarPantalla by remember { mutableStateOf(false) }
 
     LaunchedEffect(actualizarMontos) {
         montoTotal= 0.00
@@ -319,6 +321,13 @@ fun InterfazSacComandaLarge(
 
         if (regresarPantallaAnterior && opcionesSubCuentas.value.isNotEmpty()){
             subCuentaSeleccionada= opcionesSubCuentas.value.keys.first()
+            estadoRespuestaApi.cambiarEstadoRespuestaApi()
+        }
+    }
+
+    LaunchedEffect(regresarPantalla) {
+        if (regresarPantalla){
+            navControllerPantallasModuloSac?.popBackStack()
             estadoRespuestaApi.cambiarEstadoRespuestaApi()
         }
     }
@@ -588,7 +597,7 @@ fun InterfazSacComandaLarge(
     ) {
         val (bxSuperior, bxContenedorArticulos, txfBarraBusqueda,
             bxContenerdorCuentasActivas, bxContenedorBotones,
-            bxContenedorFamilias, bxContenedorSubFamilias) = createRefs()
+            bxContenedorFamilias, bxContenedorSubFamilias,flechaRegresar) = createRefs()
 
         Box(
             modifier = Modifier
@@ -624,6 +633,21 @@ fun InterfazSacComandaLarge(
                     textAlign = TextAlign.Center
                 )
             }
+        }
+
+        IconButton(
+            onClick = {regresarPantalla=true},
+            modifier = Modifier.constrainAs(flechaRegresar){
+                start.linkTo(parent.start)
+                top.linkTo(parent.top)
+            }
+        ) {
+            Icon(
+                imageVector = Icons.Filled.ArrowBackIosNew,
+                contentDescription = "Flecha atras",
+                tint = Color.White,
+                modifier = Modifier.size(objetoAdaptardor.ajustarAltura(25))
+            )
         }
 
         OutlinedTextField(

@@ -14,36 +14,34 @@ import kotlin.coroutines.cancellation.CancellationException
 class FuncionesHttp(private val servidorUrl:String, private val apiToken:String) {
 
     suspend fun metodoPost(formBody: MultipartBody, apiDirectorio: String): JSONObject? {
-        // Estado para el cliente HTTP
-        val client = OkHttpClient()
-        // Configuración de la solicitud POST
-        val request = Request.Builder()
-            .url("$servidorUrl/$apiDirectorio")
-            .post(formBody)
-            .addHeader("Content-Type", "application/json")
-            .addHeader("Authorization", "Bearer $apiToken")
-            .build()
-        return try {
-            // Ejecutar la solicitud en el contexto de IO
-            val response: Response = withContext(Dispatchers.IO) {
-                client.newCall(request).execute()
-            }
-            if (response.isSuccessful) {
-                val responseBody = response.body?.string()
-                println(responseBody)
-                JSONObject(responseBody ?: """{"code":401,"status":"error","data":"El servidor no regresó ningun dato"}""")
-            } else {
-                JSONObject("""{"code":401,"status":"error","data":"Error respuesta servidor"}""")
-            }
-        } catch (e: IOException) {
-            JSONObject("""{"code":401,"status":"error","data":"Revise su conexion a Internet"}""")
-        } catch (e: JSONException) {
-            JSONObject("""{"code":401,"status":"error","data":"Error al parsear JSON"}""")
-        } catch (e: CancellationException){
-            null
-        } catch (e: Exception) {
-            e.printStackTrace()
-            JSONObject(
+        return withContext(Dispatchers.IO) {
+            // Estado para el cliente HTTP
+            val client = OkHttpClient()
+            // Configuración de la solicitud POST
+            val request = Request.Builder()
+                .url("$servidorUrl/$apiDirectorio")
+                .post(formBody)
+                .addHeader("Content-Type", "application/json")
+                .addHeader("Authorization", "Bearer $apiToken")
+                .build()
+            try {
+                // Ejecutar la solicitud en el contexto de IO
+                val response: Response = client.newCall(request).execute()
+                if (response.isSuccessful) {
+                    val responseBody = response.body?.string()
+                    JSONObject(responseBody ?: """{"code":401,"status":"error","data":"El servidor no regresó ningun dato"}""")
+                } else {
+                    JSONObject("""{"code":401,"status":"error","data":"Error respuesta servidor"}""")
+                }
+            } catch (e: IOException) {
+                JSONObject("""{"code":401,"status":"error","data":"Revise su conexion a Internet"}""")
+            } catch (e: JSONException) {
+                JSONObject("""{"code":401,"status":"error","data":"Error al parsear JSON"}""")
+            } catch (e: CancellationException){
+                null
+            } catch (e: Exception) {
+                e.printStackTrace()
+                JSONObject(
                     """{
                 "code":401,
                 "status":"error",
@@ -51,8 +49,8 @@ class FuncionesHttp(private val servidorUrl:String, private val apiToken:String)
                 "exceptionType":"${e.javaClass.name}",
                 "message":"${e.message}"
                 }"""
-            )
+                )
+            }
         }
-
     }
 }

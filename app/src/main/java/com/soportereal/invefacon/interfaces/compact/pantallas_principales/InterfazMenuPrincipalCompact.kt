@@ -96,7 +96,7 @@ fun IniciarInterfazMenuPrincipalCompact(
             .height(objetoAdaptardor.ajustarAltura(20)),
             contentAlignment = Alignment.Center
         ){
-            Text(text = "Invefacon ©2024",
+            Text(text = "Invefacon ©2025",
                 color = Color.White,
                 fontFamily = aksharFont,
                 fontWeight = FontWeight.Light,

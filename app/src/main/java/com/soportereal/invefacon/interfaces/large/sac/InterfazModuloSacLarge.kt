@@ -29,6 +29,7 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AddCircle
+import androidx.compose.material.icons.filled.ArrowBackIosNew
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.RemoveCircle
 import androidx.compose.material.icons.filled.RestaurantMenu
@@ -153,6 +154,7 @@ fun InterfazModuloSacLarge(
     var iniciarMenuAgregarSubCuenta by remember { mutableStateOf(false) }
     var iniciarMenuQuitarMesa by remember { mutableStateOf(false) }
     var actualizarEstadoMesas by remember { mutableStateOf(false) }
+    var regresarPantallaAnterior by remember { mutableStateOf(false) }
 
     LaunchedEffect(iniciarPantallaSacComanda) {
         if (iniciarPantallaSacComanda){
@@ -286,6 +288,7 @@ fun InterfazModuloSacLarge(
         if(iniciarMenuMesaComandada && !iniciarMenuMoverArticulo) {
             objetoEstadoPantallaCarga.cambiarEstadoMenuPrincipal(true)
             val result = objectoProcesadorDatosApi.obtenerDatosMesaComandada(mesaActual.nombre)
+            println(result)
             if (result != null) {
                 estadoRespuestaApi.cambiarEstadoRespuestaApi(
                     mostrarSoloRespuestaError = true,
@@ -510,6 +513,12 @@ fun InterfazModuloSacLarge(
         }
     }
 
+    LaunchedEffect(regresarPantallaAnterior) {
+        if (regresarPantallaAnterior){
+            navControllerPantallasModulos?.popBackStack()
+            estadoRespuestaApi.cambiarEstadoRespuestaApi()
+        }
+    }
 
     @Composable
     fun AgregarBt(
@@ -683,7 +692,8 @@ fun InterfazModuloSacLarge(
             .statusBarsPadding()
             .navigationBarsPadding()
     ){
-        val (bxSuperior, bxContenedorMesas ,txfBarraBusqueda, bxContenerdorCuentasActivas, bxContenedorBotones)= createRefs()
+        val (bxSuperior, bxContenedorMesas ,txfBarraBusqueda, bxContenerdorCuentasActivas, bxContenedorBotones, flechaRegresar)= createRefs()
+
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -700,6 +710,7 @@ fun InterfazModuloSacLarge(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.padding(bottom = objetoAdaptardor.ajustarAltura(6))
             ){
+
                 Icon(
                     Icons.Default.RestaurantMenu,
                     contentDescription ="Icono SAC",
@@ -718,6 +729,21 @@ fun InterfazModuloSacLarge(
                     textAlign = TextAlign.Center
                 )
             }
+        }
+
+        IconButton(
+            onClick = {regresarPantallaAnterior=true},
+            modifier = Modifier.constrainAs(flechaRegresar){
+                start.linkTo(parent.start)
+                top.linkTo(parent.top)
+            }
+        ) {
+            Icon(
+                imageVector = Icons.Filled.ArrowBackIosNew,
+                contentDescription = "Flecha atras",
+                tint = Color.White,
+                modifier = Modifier.size(objetoAdaptardor.ajustarAltura(25))
+            )
         }
 
         OutlinedTextField(
@@ -952,8 +978,10 @@ fun InterfazModuloSacLarge(
                             fontSize = objetoAdaptardor.ajustarFont(16),
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
-                            textAlign = TextAlign.Center,
-                            modifier = Modifier.width(objetoAdaptardor.ajustarAncho(55))
+                            textAlign = TextAlign.Start,
+                            modifier = Modifier
+                                .width(objetoAdaptardor.ajustarAncho(55))
+                                .padding(objetoAdaptardor.ajustarAncho(2))
                         )
 
                         Text(
@@ -964,8 +992,10 @@ fun InterfazModuloSacLarge(
                             fontSize = objetoAdaptardor.ajustarFont(16),
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
-                            textAlign = TextAlign.Center,
-                            modifier = Modifier.width(objetoAdaptardor.ajustarAncho(55))
+                            textAlign = TextAlign.Start,
+                            modifier = Modifier
+                                .width(objetoAdaptardor.ajustarAncho(55))
+                                .padding(objetoAdaptardor.ajustarAncho(2))
                         )
 
                         Text(
@@ -976,8 +1006,10 @@ fun InterfazModuloSacLarge(
                             fontSize = objetoAdaptardor.ajustarFont(16),
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
-                            textAlign = TextAlign.Center,
-                            modifier = Modifier.width(objetoAdaptardor.ajustarAncho(85))
+                            textAlign = TextAlign.Start,
+                            modifier = Modifier
+                                .width(objetoAdaptardor.ajustarAncho(85))
+                                .padding(objetoAdaptardor.ajustarAncho(2))
                         )
                     }
 
@@ -1006,8 +1038,10 @@ fun InterfazModuloSacLarge(
                                             fontWeight = FontWeight.Medium,
                                             fontSize = objetoAdaptardor.ajustarFont(16),
                                             overflow = TextOverflow.Ellipsis,
-                                            textAlign = TextAlign.Center,
-                                            modifier = Modifier.width(objetoAdaptardor.ajustarAncho(55))
+                                            textAlign = TextAlign.Start,
+                                            modifier = Modifier
+                                                .width(objetoAdaptardor.ajustarAncho(55))
+                                                .padding(objetoAdaptardor.ajustarAncho(2))
                                         )
 
                                         var tiempo by remember { mutableStateOf("") }
@@ -1027,8 +1061,10 @@ fun InterfazModuloSacLarge(
                                             fontWeight = FontWeight.Medium,
                                             fontSize = objetoAdaptardor.ajustarFont(16),
                                             overflow = TextOverflow.Ellipsis,
-                                            textAlign = TextAlign.Center,
-                                            modifier = Modifier.width(objetoAdaptardor.ajustarAncho(55))
+                                            textAlign = TextAlign.Start,
+                                            modifier = Modifier
+                                                .width(objetoAdaptardor.ajustarAncho(55))
+                                                .padding(objetoAdaptardor.ajustarAncho(2))
                                         )
 
                                         val total= mesa.total
@@ -1046,8 +1082,10 @@ fun InterfazModuloSacLarge(
                                             fontWeight = FontWeight.Medium,
                                             fontSize = objetoAdaptardor.ajustarFont(16),
                                             overflow = TextOverflow.Ellipsis,
-                                            textAlign = TextAlign.Center,
-                                            modifier = Modifier.width(objetoAdaptardor.ajustarAncho(85))
+                                            textAlign = TextAlign.Start,
+                                            modifier = Modifier
+                                                .width(objetoAdaptardor.ajustarAncho(85))
+                                                .padding(objetoAdaptardor.ajustarAncho(2))
                                         )
                                     }
                                 }
