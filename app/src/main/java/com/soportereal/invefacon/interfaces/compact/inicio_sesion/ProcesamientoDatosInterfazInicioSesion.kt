@@ -13,7 +13,7 @@ class ProcesamientoDatosInterfazInicioSesion {
             .addFormDataPart("email", clienteCorreoEmpresa)
             .build()
         // Llama a la función `metodoPost` y devuelve el resultado
-        return objetoFuncionesHttpInvefacon.metodoPost(apiBody, "api/seguridad/empresas.php")
+        return objetoFuncionesHttpInvefacon.metodoPost(apiBody, "apiMovil/seguridad/empresas.php")
     }
 
     suspend fun validarInicioSesion(correoEmpresa: String, nombreEmpresa: String, passwordEmpresa: String): JSONObject?{
@@ -22,7 +22,7 @@ class ProcesamientoDatosInterfazInicioSesion {
             .addFormDataPart("clave",passwordEmpresa)
             .addFormDataPart("empresa", nombreEmpresa)
             .build()
-        return objetoFuncionesHttpInvefacon.metodoPost(apiBody, "api/seguridad/authtoken.php")
+        return objetoFuncionesHttpInvefacon.metodoPost(apiBody, "apiMovil/seguridad/authtoken.php")
 
     }
 }

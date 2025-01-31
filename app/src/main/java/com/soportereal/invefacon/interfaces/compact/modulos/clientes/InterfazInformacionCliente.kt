@@ -87,6 +87,7 @@ import androidx.navigation.NavController
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.soportereal.invefacon.R
 import com.soportereal.invefacon.interfaces.compact.FuncionesParaAdaptarContenidoCompact
+import com.soportereal.invefacon.interfaces.compact.obtenerEstiloBody
 import com.soportereal.invefacon.interfaces.compact.pantallas_principales.objetoEstadoPantallaCarga
 import com.soportereal.invefacon.interfaces.compact.pantallas_principales.estadoRespuestaApi
 import kotlinx.coroutines.delay
@@ -997,7 +998,7 @@ internal fun AgregarTextFieldMultifuncional(
             textStyle = TextStyle(
                 fontFamily = fontAksharPrincipal,
                 fontWeight =    FontWeight.Light,
-                fontSize =  objetoAdaptardor.ajustarFont(18),
+                fontSize =  obtenerEstiloBody(),
                 color = Color.Black,
                 textAlign = TextAlign.Start
             ),
@@ -1006,7 +1007,7 @@ internal fun AgregarTextFieldMultifuncional(
                     label,
                     fontFamily = fontAksharPrincipal,
                     fontWeight =    FontWeight.Light,
-                    fontSize =  objetoAdaptardor.ajustarFont(15),
+                    fontSize =  obtenerEstiloBody(),
                     color = Color.DarkGray,
                     overflow = TextOverflow.Ellipsis,
                     textAlign = TextAlign.Center,
@@ -1046,7 +1047,7 @@ internal fun AgregarTextFieldMultifuncional(
                     textPlaceholder,
                     fontFamily = fontAksharPrincipal,
                     fontWeight =    FontWeight.Light,
-                    fontSize =  objetoAdaptardor.ajustarFont(18),
+                    fontSize =  obtenerEstiloBody(),
                     color = Color.DarkGray,
                     overflow = TextOverflow.Ellipsis,
                     textAlign = TextAlign.Center,
@@ -1094,7 +1095,7 @@ internal fun AgregarTextFieldMultifuncional(
                                     if (mostrarClave) clave else contenido,
                                     fontFamily = fontAksharPrincipal,
                                     fontWeight = FontWeight.Medium,
-                                    fontSize = objetoAdaptardor.ajustarFont(17),
+                                    fontSize = obtenerEstiloBody(),
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis,
                                     textAlign = TextAlign.Center,
@@ -1116,7 +1117,7 @@ internal fun AgregarTextFieldMultifuncional(
                                     if (mostrarClave) clave else contenido,
                                     fontFamily = fontAksharPrincipal,
                                     fontWeight = FontWeight.Medium,
-                                    fontSize = objetoAdaptardor.ajustarFont(17),
+                                    fontSize = obtenerEstiloBody(),
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis,
                                     textAlign = TextAlign.Center,

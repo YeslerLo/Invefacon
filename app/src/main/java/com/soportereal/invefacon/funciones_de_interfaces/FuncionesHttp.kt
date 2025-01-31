@@ -29,14 +29,20 @@ class FuncionesHttp(private val servidorUrl:String, private val apiToken:String)
                 val response: Response = client.newCall(request).execute()
                 if (response.isSuccessful) {
                     val responseBody = response.body?.string()
-                    JSONObject(responseBody ?: """{"code":401,"status":"error","data":"El servidor no regresó ningun dato"}""")
+                    if (responseBody!=null){
+                        val json = JSONObject(responseBody)
+                        val data = json.getString("status")
+                        JSONObject(responseBody)
+                    }else{
+                        JSONObject("""{"code":401,"status":"error","data":"El servidor no regresó ningun dato"}""")
+                    }
                 } else {
                     JSONObject("""{"code":401,"status":"error","data":"Error respuesta servidor"}""")
                 }
             } catch (e: IOException) {
                 JSONObject("""{"code":401,"status":"error","data":"Revise su conexion a Internet"}""")
             } catch (e: JSONException) {
-                JSONObject("""{"code":401,"status":"error","data":"Error al parsear JSON"}""")
+                JSONObject("""{"code":401,"status":"error","data":"$e"}""")
             } catch (e: CancellationException){
                 null
             } catch (e: Exception) {
@@ -45,9 +51,7 @@ class FuncionesHttp(private val servidorUrl:String, private val apiToken:String)
                     """{
                 "code":401,
                 "status":"error",
-                "data":"Error desconocido",
-                "exceptionType":"${e.javaClass.name}",
-                "message":"${e.message}"
+                "data":"Error desconocido exceptionType":"${e.javaClass.name} message":"${e.message}"
                 }"""
                 )
             }

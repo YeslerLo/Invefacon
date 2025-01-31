@@ -308,12 +308,13 @@ fun InterfazSacComandaLarge(
             }
             delay(100)
             objetoEstadoPantallaCarga.cambiarEstadoMenuPrincipal(false)
+            delay(2000)
+            estadoRespuestaApi.cambiarEstadoRespuestaApi(regresarPantallaAnterior=true)
             iniciarComandaSubCuenta= false
         }
     }
 
     LaunchedEffect(regresarPantallaAnterior) {
-        println(opcionesSubCuentas)
         if (regresarPantallaAnterior && opcionesSubCuentas.value.isEmpty()){
             navControllerPantallasModuloSac?.popBackStack()
             estadoRespuestaApi.cambiarEstadoRespuestaApi()
@@ -947,7 +948,9 @@ fun InterfazSacComandaLarge(
                             nombreCampo = "Total",
                             monto = montoTotal
                         )
+
                         Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(1)))
+
                         Button(
                             modifier = Modifier
                                 .width(objetoAdaptardor.ajustarAncho(255)),

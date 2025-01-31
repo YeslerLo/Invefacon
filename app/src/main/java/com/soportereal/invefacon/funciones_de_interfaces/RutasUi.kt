@@ -409,11 +409,15 @@ fun NavHostPantallasModuloSac(
             val dpAnchoPantalla = configuration.screenWidthDp
             when(dpAnchoPantalla){
                 in 300..600-> {
-                    InterfazModuloSac(
+                    val activity = LocalContext.current as Activity
+                    activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+                    InterfazModuloSacLarge(
                         apiToken,
                         navControllerPantallasModuloSac,
                         systemUiController,
-                        navControllerPantallasModulos
+                        navControllerPantallasModulos,
+                        nombreEmpresa,
+                        codUsuario
                     )
                 }else->{
                     val activity = LocalContext.current as Activity
@@ -456,7 +460,18 @@ fun NavHostPantallasModuloSac(
             val dpAnchoPantalla = configuration.screenWidthDp
             when(dpAnchoPantalla){
                 in 300..600-> {
-                    println("")
+                    val activity = LocalContext.current as Activity
+                    activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+                    InterfazSacComandaLarge(
+                        systemUiController = systemUiController,
+                        navControllerPantallasModuloSac = navControllerPantallasModuloSac,
+                        token = apiToken,
+                        nombreMesa= nombreMesa,
+                        nombreEmpresa= nombreEmpresa,
+                        codUsuario = codUsuario,
+                        salon= salon
+
+                    )
                 }else->{
                 val activity = LocalContext.current as Activity
                 activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
