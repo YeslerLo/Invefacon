@@ -48,8 +48,6 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -165,6 +163,7 @@ fun InterfazModuloSacLarge(
     var actualizarListaMesas by remember { mutableStateOf(false) }
     var regresarPantallaAnterior by remember { mutableStateOf(false) }
     var actualizarSubCuentasYMesas by remember { mutableStateOf(false) }
+    var cantidadArticulosComandados by remember { mutableIntStateOf(0) }
 
     LaunchedEffect(iniciarPantallaSacComanda) {
         if (iniciarPantallaSacComanda){
@@ -355,6 +354,12 @@ fun InterfazModuloSacLarge(
                 }
             }
             montoTotalComandado= "\u20A1 "+String.format(Locale.US, "%,.2f", montoTotalComandado.replace(",", "").toDouble())
+            cantidadArticulosComandados = 0
+            for (i in 0 until articulosComandados.size){
+                if (articulosComandados[i].SubCuenta==subCuentaSeleccionada){
+                    cantidadArticulosComandados+=1
+                }
+            }
             iniciarCalculoMontos= false
         }
     }
@@ -546,7 +551,7 @@ fun InterfazModuloSacLarge(
             modifier = if (quitarPadInterno) {
                 Modifier.height(objetoAdaptardor.ajustarAltura(35))
             } else {
-                Modifier
+                Modifier.width(objetoAdaptardor.ajustarAncho(120))
             },
             onClick = {
                 onClick(true)
@@ -788,7 +793,7 @@ fun InterfazModuloSacLarge(
                 Box(
                     modifier = Modifier
                         .width(objetoAdaptardor.ajustarAncho(250))
-                        .height(objetoAdaptardor.ajustarAltura(55))
+                        .height(objetoAdaptardor.ajustarAltura(45))
                         .background(Color.LightGray, RoundedCornerShape(objetoAdaptardor.ajustarAltura(18)))
                         .padding(horizontal = 16.dp, vertical = 4.dp),
                     contentAlignment = Alignment.CenterStart
@@ -817,7 +822,7 @@ fun InterfazModuloSacLarge(
                 }
             }, modifier = Modifier
                 .width(objetoAdaptardor.ajustarAncho(250))
-                .height(objetoAdaptardor.ajustarAltura(55))
+                .height(objetoAdaptardor.ajustarAltura(45))
                 .constrainAs(txfBarraBusqueda) {
                     top.linkTo(bxSuperior.bottom, margin = objetoAdaptardor.ajustarAltura(8))
                     start.linkTo(parent.start, margin = objetoAdaptardor.ajustarAncho(8))
@@ -827,7 +832,7 @@ fun InterfazModuloSacLarge(
         Box(
             modifier = Modifier
                 .background(Color.White)
-                .height(objetoAdaptardor.ajustarAltura(55))
+                .height(objetoAdaptardor.ajustarAltura(45))
                 .width(objetoAdaptardor.ajustarAncho(487))
                 .constrainAs(bxContenedorBotones) {
                     start.linkTo(txfBarraBusqueda.end, margin = objetoAdaptardor.ajustarAncho(8))
@@ -842,7 +847,7 @@ fun InterfazModuloSacLarge(
                     modifier = Modifier
                         .weight(1f)
                         .fillMaxHeight()
-                        .padding(objetoAdaptardor.ajustarAltura(4)),
+                        .padding(start = objetoAdaptardor.ajustarAltura(4), end =  objetoAdaptardor.ajustarAltura(4)),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Color(0xFF244BC0), // Color de fondo del botón
                         contentColor = Color.White,
@@ -871,7 +876,7 @@ fun InterfazModuloSacLarge(
                     modifier = Modifier
                         .weight(1f)
                         .fillMaxHeight()
-                        .padding(objetoAdaptardor.ajustarAltura(4)),
+                        .padding(start = objetoAdaptardor.ajustarAltura(4), end =  objetoAdaptardor.ajustarAltura(4)),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Color(0xFF244BC0), // Color de fondo del botón
                         contentColor = Color.White,
@@ -902,7 +907,7 @@ fun InterfazModuloSacLarge(
             modifier = Modifier
                 .background(Color.White)
                 .width(objetoAdaptardor.ajustarAncho(740))
-                .height(objetoAdaptardor.ajustarAltura(410))
+                .height(objetoAdaptardor.ajustarAltura(420))
                 .constrainAs(bxContenedorMesas) {
                     start.linkTo(parent.start, margin = objetoAdaptardor.ajustarAncho(12))
                     top.linkTo(txfBarraBusqueda.bottom, margin = objetoAdaptardor.ajustarAltura(4))
@@ -980,7 +985,7 @@ fun InterfazModuloSacLarge(
                         text = "Cuentas activas",
                         fontFamily = fontAksharPrincipal,
                         fontWeight =    FontWeight.SemiBold,
-                        fontSize = obtenerEstiloTitle(),
+                        fontSize = obtenerEstiloBody(),
                         color = Color.White,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
@@ -1146,7 +1151,6 @@ fun InterfazModuloSacLarge(
             text = {
                 Box{
                     Column {
-
                         BasicTextField(
                             value = nombreNuevaMesa,
                             onValueChange = { nuevoValor ->
@@ -1325,7 +1329,6 @@ fun InterfazModuloSacLarge(
     }
 
     if(iniciarMenuMesaComandada) {
-
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -1335,104 +1338,57 @@ fun InterfazModuloSacLarge(
         ){
             Surface(
                 modifier = Modifier
-                    .width(objetoAdaptardor.ajustarAncho(630))
-                    .wrapContentHeight()
+                    .wrapContentWidth()
+                    .heightIn(max = objetoAdaptardor.ajustarAltura(500))
                     .align(Alignment.Center),
                 shape = RoundedCornerShape(16.dp),
                 color = Color.White
             )  {
                 Box(
-                    modifier = Modifier.padding(objetoAdaptardor.ajustarAltura(24)),
+                    modifier = Modifier.padding(objetoAdaptardor.ajustarAltura(30)),
                     contentAlignment = Alignment.Center
                 ){
-                    LazyColumn (
+                    Column(
                         verticalArrangement = Arrangement.Center,
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        item {
-                            Text(
-                                "Articulos Comandados ${mesaActual.nombre}",
-                                fontFamily = fontAksharPrincipal,
-                                fontWeight = FontWeight.Medium,
-                                fontSize = obtenerEstiloHead(),
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                                textAlign = TextAlign.Center,
-                                color = Color.Black,
-                            )
-                            Row(
-                                horizontalArrangement = Arrangement.Center,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Text(
-                                    "Sub-Cuentas: ",
-                                    fontFamily = fontAksharPrincipal,
-                                    fontWeight = FontWeight.Medium,
-                                    fontSize = obtenerEstiloTitle(),
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis,
-                                    textAlign = TextAlign.Center,
-                                    color = Color.Black
-                                )
-
-                                Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(8)))
-
-                                AgregarTextFieldMultifuncional(
-                                    label = "Sub-Cuentas",
-                                    opciones2 = opcionesSubCuentas,
-                                    usarOpciones2 = true,
-                                    contieneOpciones = true,
-                                    nuevoValor = { nuevoValor->
-                                        subCuentaSeleccionada=nuevoValor
-                                        iniciarCalculoMontos=true
-                                    },
-                                    valor = subCuentaSeleccionada,
-                                    isUltimo = true,
-                                    tomarAnchoMaximo = false,
-                                    medidaAncho = 180
-                                )
-                            }
-                            Box(
-                                modifier = Modifier
-                                    .heightIn(max = objetoAdaptardor.ajustarAltura(280))
-                                    .wrapContentWidth(),
-                                contentAlignment = Alignment.Center
-                            ){
-                                LazyColumn(
-                                    state = lazyStateArticulosSeleccionados,
-                                ) {
-                                    items(articulosComandados){ producto->
-                                        if (producto.SubCuenta.uppercase()==subCuentaSeleccionada.uppercase()){
-                                            AgregarBxContenedorArticulosComandados(producto)
-                                        }
-                                    }
-                                }
-                            }
-                            Box(
-                                contentAlignment = Alignment.CenterEnd,
-                                modifier = Modifier
-                                    .height(objetoAdaptardor.ajustarAltura(50))
-                                    .width(objetoAdaptardor.ajustarAncho(500))
-                            ){
-                                Text(
-                                    "Total $montoTotalComandado",
-                                    fontFamily = fontAksharPrincipal,
-                                    fontWeight = FontWeight.Medium,
-                                    fontSize = obtenerEstiloTitle(),
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis,
-                                    textAlign = TextAlign.Center,
-                                    color = Color.Black,
-                                )
-                            }
-
+                        Text(
+                            "Articulos Comandados ${mesaActual.nombre}",
+                            fontFamily = fontAksharPrincipal,
+                            fontWeight = FontWeight.Medium,
+                            fontSize = obtenerEstiloDisplay(),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            textAlign = TextAlign.Center,
+                            color = Color.Black,
+                        )
+                        Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(4)))
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center
+                        ) {
                             Box(
                                 contentAlignment = Alignment.Center
                             ){
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.Center
+                                Column(
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.Center
                                 ){
+                                    AgregarTextFieldMultifuncional(
+                                        label = "Sub-Cuentas",
+                                        opciones2 = opcionesSubCuentas,
+                                        usarOpciones2 = true,
+                                        contieneOpciones = true,
+                                        nuevoValor = { nuevoValor->
+                                            subCuentaSeleccionada=nuevoValor
+                                            iniciarCalculoMontos=true
+                                        },
+                                        valor = subCuentaSeleccionada,
+                                        isUltimo = true,
+                                        tomarAnchoMaximo = false,
+                                        medidaAncho = 180
+                                    )
+                                    Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(4)))
                                     AgregarBt(
                                         text = "Mover Mesa",
                                         color = 0xFF244BC0,
@@ -1442,7 +1398,7 @@ fun InterfazModuloSacLarge(
                                         }
                                     )
 
-                                    Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(8)))
+                                    Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(4)))
 
                                     AgregarBt(
                                         text = "Pedir Cuenta",
@@ -1452,9 +1408,76 @@ fun InterfazModuloSacLarge(
                                             pedirCuenta= true
                                         }
                                     )
+                                }
+                            }
+                            Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(16)))
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.Center
+                            ){
+                                Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(12)))
+                                Box(
+                                    modifier = Modifier
+                                        .heightIn(max = objetoAdaptardor.ajustarAltura(320))
+                                        .wrapContentWidth(),
+                                    contentAlignment = Alignment.Center
+                                ){
+                                    LazyColumn(
+                                        state = lazyStateArticulosSeleccionados,
+                                    ) {
+                                        items(articulosComandados){ producto->
+                                            if (producto.SubCuenta.uppercase()==subCuentaSeleccionada.uppercase()){
+                                                AgregarBxContenedorArticulosComandados(producto)
+                                            }
+                                        }
+                                    }
+                                }
+                                Row {
+                                    Box(
+                                        contentAlignment = Alignment.CenterStart,
+                                        modifier = Modifier
+                                            .height(objetoAdaptardor.ajustarAltura(50))
+                                            .width(objetoAdaptardor.ajustarAncho(165))
+                                    ){
+                                        Text(
+                                            "Articulos: $cantidadArticulosComandados",
+                                            fontFamily = fontAksharPrincipal,
+                                            fontWeight = FontWeight.Medium,
+                                            fontSize = obtenerEstiloLabel(),
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis,
+                                            textAlign = TextAlign.Start,
+                                            color = Color.Black,
+                                        )
+                                    }
+                                    Box(
+                                        contentAlignment = Alignment.CenterEnd,
+                                        modifier = Modifier
+                                            .height(objetoAdaptardor.ajustarAltura(50))
+                                            .width(objetoAdaptardor.ajustarAncho(200))
+                                    ){
+                                        Text(
+                                            "Total $montoTotalComandado",
+                                            fontFamily = fontAksharPrincipal,
+                                            fontWeight = FontWeight.Medium,
+                                            fontSize = obtenerEstiloTitle(),
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis,
+                                            textAlign = TextAlign.End,
+                                            color = Color.Black,
+                                        )
+                                    }
+                                }
 
-                                    Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(8)))
-
+                            }
+                            Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(16)))
+                            Box(
+                                contentAlignment = Alignment.Center
+                            ){
+                                Column(
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.Center
+                                ){
                                     AgregarBt(
                                         text = "Quitar mesa",
                                         color = 0xFFFF5722,
@@ -1463,15 +1486,15 @@ fun InterfazModuloSacLarge(
                                         }
                                     )
 
-                                    Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(8)))
+                                    Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(4)))
 
                                     AgregarBt(
-                                        text = "Agregar comanda",
+                                        text = "+ Comanda",
                                         color =  0xFF22B14C,
                                         onClick = { iniciarPantallaSacComanda= true}
                                     )
 
-                                    Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(8)))
+                                    Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(4)))
 
                                     AgregarBt(
                                         text = "Salir",
@@ -1486,8 +1509,8 @@ fun InterfazModuloSacLarge(
                                 }
                             }
                         }
-
                     }
+
                 }
             }
         }
@@ -2245,13 +2268,12 @@ fun InterfazModuloSacLarge(
             text = {
                 Box(contentAlignment = Alignment.Center){
                     Text(
-                        "¿Desea eliminar todos los articulos de mesa?",
+                        "¿Desea eliminar todos los articulos de la mesa?",
                         fontFamily = fontAksharPrincipal,
                         fontWeight = FontWeight.Medium,
                         fontSize = obtenerEstiloBody(),
-                        maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
-                        textAlign = TextAlign.Center,
+                        textAlign = TextAlign.Justify,
                         color = Color.Black
                     )
                 }

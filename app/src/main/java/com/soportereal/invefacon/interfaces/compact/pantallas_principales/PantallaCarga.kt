@@ -261,13 +261,13 @@ val objetoEstadoPantallaCarga= EstadoPantallaCarga()
 class EstadoRespuestaApi : ViewModel(){
     private val _mostrarDatosRespuestaApi = MutableStateFlow(false)
     private val _datosRespuestaApi = MutableStateFlow(JSONObject("{}"))
-    private val _regresarPantallaAnterior = MutableStateFlow(false)
+    private val _estadoBtOk = MutableStateFlow(false)
     private val _mostrarSoloRespuestaError = MutableStateFlow(false)
 
 
     val mostrarDatosRespuestaApi: StateFlow<Boolean> = _mostrarDatosRespuestaApi
     val datosRespuestaApi : StateFlow<JSONObject> = _datosRespuestaApi
-    val estadoBtOk : StateFlow<Boolean> = _regresarPantallaAnterior
+    val estadoBtOk : StateFlow<Boolean> = _estadoBtOk
     val mostrarSoloRespuestaError : StateFlow<Boolean> = _mostrarSoloRespuestaError
 
 
@@ -279,8 +279,10 @@ class EstadoRespuestaApi : ViewModel(){
     ){
         _mostrarDatosRespuestaApi.value= mostrarRespuesta
         _datosRespuestaApi.value= datosRespuesta
-        _regresarPantallaAnterior.value = regresarPantallaAnterior
+        _estadoBtOk.value = regresarPantallaAnterior
         _mostrarSoloRespuestaError.value = mostrarSoloRespuestaError
+
+
     }
 }
 val estadoRespuestaApi= EstadoRespuestaApi()

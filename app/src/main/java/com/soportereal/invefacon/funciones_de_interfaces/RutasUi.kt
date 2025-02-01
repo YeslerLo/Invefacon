@@ -40,7 +40,6 @@ import com.soportereal.invefacon.interfaces.compact.modulos.clientes.IniciarInte
 import com.soportereal.invefacon.interfaces.compact.modulos.clientes.IniciarInterfazModuloClientes
 import com.soportereal.invefacon.interfaces.compact.modulos.clientes.InterfazModuloClientes
 import com.soportereal.invefacon.interfaces.compact.modulos.sac.IniciarInterfazModuloSac
-import com.soportereal.invefacon.interfaces.compact.modulos.sac.InterfazModuloSac
 import com.soportereal.invefacon.interfaces.compact.pantallas_principales.CustomBarView
 import com.soportereal.invefacon.interfaces.compact.pantallas_principales.IniciarInterfazAjustes
 import com.soportereal.invefacon.interfaces.compact.pantallas_principales.IniciarInterfazInicio

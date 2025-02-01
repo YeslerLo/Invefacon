@@ -205,6 +205,3 @@ data class Cliente(
     var opcionesLogicasCliente:  SnapshotStateMap<String, String> = mutableStateMapOf(),
     var opcionesTipoIndetificacionCliente:  SnapshotStateMap<String, String> = mutableStateMapOf()
 )
-
-
-

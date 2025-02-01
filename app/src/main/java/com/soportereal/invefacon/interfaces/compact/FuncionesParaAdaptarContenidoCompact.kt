@@ -38,10 +38,10 @@ internal class FuncionesParaAdaptarContenidoCompact(
 fun obtenerEstiloDisplay(): TextUnit {
     val configuration = LocalConfiguration.current
     return when {
-        configuration.screenWidthDp < 360 -> 16.sp
-        configuration.screenWidthDp in 360..599 -> 18.sp
-        configuration.screenWidthDp in 600..839 -> 20.sp
-        else ->22.sp
+        configuration.screenWidthDp < 360 -> 18.sp
+        configuration.screenWidthDp in 360..599 -> 20.sp
+        configuration.screenWidthDp in 600..839 -> 22.sp
+        else ->24.sp
     }
 }
 
@@ -49,9 +49,9 @@ fun obtenerEstiloDisplay(): TextUnit {
 fun obtenerEstiloHead(): TextUnit {
     val configuration = LocalConfiguration.current
     return when {
-        configuration.screenWidthDp < 360 -> 14.sp
-        configuration.screenWidthDp in 360..599 -> 16.sp
-        configuration.screenWidthDp in 600..839 -> 18.sp
+        configuration.screenWidthDp < 360 -> 15.sp
+        configuration.screenWidthDp in 360..599 -> 17.sp
+        configuration.screenWidthDp in 600..839 -> 19.sp
         else -> 20.sp
     }
 }
@@ -61,9 +61,9 @@ fun obtenerEstiloTitle(): TextUnit {
     val configuration = LocalConfiguration.current
     return when {
         configuration.screenWidthDp < 360 -> 12.sp
-        configuration.screenWidthDp in 360..599 -> 14.sp
-        configuration.screenWidthDp in 600..839 -> 16.sp
-        else ->18.sp
+        configuration.screenWidthDp in 360..599 -> 15.sp
+        configuration.screenWidthDp in 600..839 -> 17.sp
+        else ->19.sp
     }
 }
 

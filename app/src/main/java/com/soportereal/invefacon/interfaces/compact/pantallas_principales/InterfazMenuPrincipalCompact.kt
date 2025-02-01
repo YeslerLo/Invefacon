@@ -43,6 +43,8 @@ import com.soportereal.invefacon.funciones_de_interfaces.RutasPantallasMenuPrinc
 import com.soportereal.invefacon.funciones_de_interfaces.RutasPantallasMenuPrincipal.PantallaInicio
 import com.soportereal.invefacon.funciones_de_interfaces.RutasPantallasMenuPrincipal.PantallaSalir
 import com.soportereal.invefacon.interfaces.compact.FuncionesParaAdaptarContenidoCompact
+import com.soportereal.invefacon.interfaces.compact.obtenerEstiloBody
+import com.soportereal.invefacon.interfaces.compact.obtenerEstiloLabel
 
 
 @SuppressLint("SourceLockedOrientationActivity")
@@ -100,7 +102,8 @@ fun IniciarInterfazMenuPrincipalCompact(
                 color = Color.White,
                 fontFamily = aksharFont,
                 fontWeight = FontWeight.Light,
-                fontSize = objetoAdaptardor.ajustarFont(15))
+                fontSize = obtenerEstiloLabel()
+            )
         }
 
         if(isCargandoPantallaMenuPrincipal || mostrarRespuestaApi){
@@ -150,8 +153,21 @@ fun NavegacionInferior(navController: NavController) {
                         launchSingleTop=true
                     }
                 },
-                icon = { Icon(imageVector = PantallaInicio.icono, contentDescription = PantallaInicio.titulo, modifier = Modifier.size(objetoAdaptardor.ajustarAltura(28))) },
-                label = { Text(PantallaInicio.titulo, fontFamily = aksharFont, fontWeight = FontWeight.Light, fontSize = objetoAdaptardor.ajustarFont(15)) },
+                icon = {
+                    Icon(
+                        imageVector = PantallaInicio.icono,
+                        contentDescription = PantallaInicio.titulo,
+                        modifier = Modifier.size(objetoAdaptardor.ajustarAltura(28))
+                    )
+                },
+                label = {
+                    Text(
+                        PantallaInicio.titulo,
+                        fontFamily = aksharFont,
+                        fontWeight = FontWeight.Light,
+                        fontSize = obtenerEstiloBody()
+                    )
+                },
                 alwaysShowLabel = true,
                 colors =  NavigationBarItemDefaults.colors(
                     selectedIconColor = Color(0xFF244BC0), // Color del ícono cuando el ítem está seleccionado
@@ -170,8 +186,21 @@ fun NavegacionInferior(navController: NavController) {
                         launchSingleTop=true
                     }
                 },
-                icon = { Icon(imageVector = PantallaAjustes.icono, contentDescription = PantallaAjustes.titulo, modifier = Modifier.size(objetoAdaptardor.ajustarAltura(28))) },
-                label = { Text(PantallaAjustes.titulo, fontFamily = aksharFont, fontWeight = FontWeight.Light, fontSize = objetoAdaptardor.ajustarFont(15)) },
+                icon = {
+                    Icon(
+                        imageVector = PantallaAjustes.icono,
+                        contentDescription = PantallaAjustes.titulo,
+                        modifier = Modifier.size(objetoAdaptardor.ajustarAltura(28))
+                    )
+                },
+                label = {
+                    Text(
+                        PantallaAjustes.titulo,
+                        fontFamily = aksharFont,
+                        fontWeight = FontWeight.Light,
+                        fontSize = obtenerEstiloBody()
+                    )
+                },
                 alwaysShowLabel = true,
                 colors =  NavigationBarItemDefaults.colors(
                     selectedIconColor = Color(0xFF244BC0), // Color del ícono cuando el ítem está seleccionado
@@ -190,8 +219,24 @@ fun NavegacionInferior(navController: NavController) {
                         launchSingleTop=true
                     }
                 },
-                icon = { Icon(imageVector = PantallaSalir.icono, contentDescription = PantallaSalir.titulo, modifier = Modifier.size(objetoAdaptardor.ajustarAltura(28))) },
-                label = { Text(PantallaSalir.titulo, fontFamily = aksharFont, fontWeight = FontWeight.Light, fontSize = objetoAdaptardor.ajustarFont(15)) },
+                icon = {
+                    Icon(
+                        imageVector = PantallaSalir.icono,
+                        contentDescription = PantallaSalir.titulo,
+                        modifier = Modifier
+                            .size(objetoAdaptardor.ajustarAltura(28))
+                            .padding( bottom = 0.dp)
+                    )
+                },
+                label = {
+                    Text(
+                        PantallaSalir.titulo,
+                        fontFamily = aksharFont,
+                        fontWeight = FontWeight.Light,
+                        fontSize = obtenerEstiloBody(),
+                        modifier = Modifier.padding(top = 0.dp)
+                    )
+                },
                 alwaysShowLabel = true,
                 colors =  NavigationBarItemDefaults.colors(
                     selectedIconColor = Color(0xFF244BC0), // Color del ícono cuando el ítem está seleccionado
