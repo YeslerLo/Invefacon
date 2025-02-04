@@ -53,7 +53,7 @@ fun IniciarInterfazMenuPrincipalCompact(
     token: String,
     nombreEmpresa: String,
     nombreUsuario: String,
-    navControllerPrincipal: NavController?,
+    navControllerPrincipal: NavController,
     systemUiController: SystemUiController,
     codUsuario: String
 ) {
@@ -64,7 +64,7 @@ fun IniciarInterfazMenuPrincipalCompact(
     val dpFontPantalla= configuration.fontScale
     val objetoAdaptardor= FuncionesParaAdaptarContenidoCompact(dpAltoPantalla, dpAnchoPantalla, dpFontPantalla)
     val navControllerPantallasMenuPrincipal = rememberNavController()
-    val isCargandoPantallaMenuPrincipal by objetoEstadoPantallaCarga.isCargandoPantallasMenuPrincipal.collectAsState()
+    val isCargandoPantallaMenuPrincipal by objetoEstadoPantallaCarga.isCargandoPantalla.collectAsState()
     val mostrarRespuestaApi by estadoRespuestaApi.mostrarDatosRespuestaApi.collectAsState()
 
     Box(modifier = Modifier
@@ -107,7 +107,7 @@ fun IniciarInterfazMenuPrincipalCompact(
         }
 
         if(isCargandoPantallaMenuPrincipal || mostrarRespuestaApi){
-            CustomBarView(systemUiController)
+            PantallaCarga(systemUiController)
         }
     }
 }
@@ -256,5 +256,6 @@ fun NavegacionInferior(navController: NavController) {
 @Composable
 private fun Preview(){
     val systemUiController = rememberSystemUiController()
-    IniciarInterfazMenuPrincipalCompact("", "demo", "YESLER LORIO", null,systemUiController,"")
+    val na = rememberNavController()
+    IniciarInterfazMenuPrincipalCompact("", "demo", "YESLER LORIO", na,systemUiController,"")
 }

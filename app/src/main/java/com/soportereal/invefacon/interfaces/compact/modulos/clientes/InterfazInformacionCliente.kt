@@ -278,7 +278,7 @@ fun IniciarInterfazInformacionCliente(
             opciontieneCreditoSeleccionada= datosCliente.getString("tienecredito")
             opcionExentoSeleccionada= datosCliente.getString("exento")
             delay(500)
-            objetoEstadoPantallaCarga.cambiarEstadoMenuPrincipal(false)
+            objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
             isCosultaDatasFinalizada=0
         }
     }
@@ -288,11 +288,10 @@ fun IniciarInterfazInformacionCliente(
 
     ConstraintLayout(
         modifier = Modifier
-        .fillMaxWidth()
-        .height(objetoAdaptardor.ajustarAltura(722))
-        .background(Color(0xFFFFFFFF))
-        .statusBarsPadding()
-        .navigationBarsPadding()
+            .fillMaxSize()
+            .background(Color(0xFFFFFFFF))
+            .statusBarsPadding()
+            .navigationBarsPadding()
     ) {
         val (bxSuperior, bxContenedorLzColum, snhtMensajesSuperiores,flechaRegresar, bxContenedorCirculoCarga)= createRefs()
 
@@ -473,7 +472,7 @@ fun IniciarInterfazInformacionCliente(
                     println(clienteModificado.ClienteNombreComercial)
                     println("444")
                     if (ValidarCamposObligatoriosClientes(clienteModificado)){
-                        objetoEstadoPantallaCarga.cambiarEstadoMenuPrincipal(true)
+                        objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(true)
                         val result= objectoProcesadorDatosApi.actualizarDatosClientes(
                             clienteActual = clienteActual,
                             clienteModificado = clienteModificado
@@ -483,7 +482,7 @@ fun IniciarInterfazInformacionCliente(
                             estadoRespuestaApi.cambiarEstadoRespuestaApi(mostrarRespuesta = true, datosRespuesta = result)
                         }
                     }
-                    objetoEstadoPantallaCarga.cambiarEstadoMenuPrincipal(false)
+                    objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
                     guardarEdicionCliente=false
                 }
             }
@@ -495,7 +494,7 @@ fun IniciarInterfazInformacionCliente(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(objetoAdaptardor.ajustarAltura(652))
+                    .height(objetoAdaptardor.ajustarAltura(742))
                     .background(Color.White)
                     .constrainAs(bxContenedorLzColum){
                         start.linkTo(parent.start)

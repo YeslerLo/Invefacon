@@ -57,7 +57,7 @@ import org.json.JSONObject
 
 
 @Composable
-fun CustomBarView(
+fun PantallaCarga(
     systemUiController: SystemUiController
 ) {
     val aksharFont = FontFamily(Font(R.font.akshar_medium))
@@ -70,19 +70,18 @@ fun CustomBarView(
     val mostrarRespuestaApi by estadoRespuestaApi.mostrarDatosRespuestaApi.collectAsState()
     val mostrarSoloRespuestaError by estadoRespuestaApi.mostrarSoloRespuestaError.collectAsState()
     val datosRespuestaApi by estadoRespuestaApi.datosRespuestaApi.collectAsState()
-    val isCargandoPantallaMenuPrincipal by objetoEstadoPantallaCarga.isCargandoPantallasMenuPrincipal.collectAsState()
-    val isCargandoPantallasPrincipales by objetoEstadoPantallaCarga.isCargandoPantallaPrincipales.collectAsState()
+    val isCargandoPantallaMenuPrincipal by objetoEstadoPantallaCarga.isCargandoPantalla.collectAsState()
     val showDialog = remember { mutableStateOf(mostrarRespuestaApi) }
     var exitoRespuestaApi by remember { mutableStateOf(false) }
 
     // Animación de las barras
-    LaunchedEffect(isCargandoPantallaMenuPrincipal, isCargandoPantallasPrincipales) {
-        while (isCargandoPantallaMenuPrincipal || isCargandoPantallasPrincipales) {
+    LaunchedEffect(isCargandoPantallaMenuPrincipal) {
+        while (isCargandoPantallaMenuPrincipal) {
             activeIndex = (activeIndex + 1) % 5
             delay(200L)
         }
     }
-    if (isCargandoPantallaMenuPrincipal || isCargandoPantallasPrincipales){
+    if (isCargandoPantallaMenuPrincipal){
         // Fondo translúcido
         Box(
             modifier = Modifier
@@ -118,7 +117,7 @@ fun CustomBarView(
     }
 
 
-    if(!isCargandoPantallaMenuPrincipal || !isCargandoPantallasPrincipales){
+    if(!isCargandoPantallaMenuPrincipal){
 
         // Estado para controlar la visibilidad del diálogo
         if (datosRespuestaApi.toString()!="{}"){
@@ -242,18 +241,12 @@ fun BarItem(
 
 
 class EstadoPantallaCarga : ViewModel() {
-    private val _isCargandoPantallasMenuPrincipal = MutableStateFlow(false)
-    private val _isCargandoPantallasPrincipales= MutableStateFlow(false)
+    private val _isCargandoPantalla = MutableStateFlow(false)
 
-    val isCargandoPantallasMenuPrincipal: StateFlow<Boolean> = _isCargandoPantallasMenuPrincipal
-    val isCargandoPantallaPrincipales: StateFlow<Boolean> = _isCargandoPantallasPrincipales
+    val isCargandoPantalla: StateFlow<Boolean> = _isCargandoPantalla
 
-    fun cambiarEstadoMenuPrincipal(cargando: Boolean) {
-        _isCargandoPantallasMenuPrincipal.value = cargando
-    }
-
-    fun cambiarEstadoPantallaPrincipal(cargando: Boolean){
-        _isCargandoPantallasPrincipales.value= cargando
+    fun cambiarEstadoPantallasCarga(cargando: Boolean) {
+        _isCargandoPantalla.value = cargando
     }
 }
 val objetoEstadoPantallaCarga= EstadoPantallaCarga()

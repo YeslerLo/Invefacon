@@ -26,7 +26,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountTree
@@ -46,11 +45,8 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
@@ -87,7 +83,6 @@ import coil.compose.SubcomposeAsyncImage
 import com.google.accompanist.systemuicontroller.SystemUiController
 import com.soportereal.invefacon.R
 import com.soportereal.invefacon.interfaces.compact.FuncionesParaAdaptarContenidoCompact
-import com.soportereal.invefacon.interfaces.compact.inicio_sesion.ocultarTeclado
 import com.soportereal.invefacon.interfaces.compact.modulos.clientes.AgregarTextFieldMultifuncional
 import com.soportereal.invefacon.interfaces.compact.obtenerEstiloBody
 import com.soportereal.invefacon.interfaces.compact.obtenerEstiloDisplay
@@ -249,7 +244,7 @@ fun InterfazSacComandaLarge(
             listaArticulosActuales= listaArticulos
             delay(500)
             isCargandoArticulos=false
-            objetoEstadoPantallaCarga.cambiarEstadoMenuPrincipal(false)
+            objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
         }
 
     }
@@ -270,7 +265,7 @@ fun InterfazSacComandaLarge(
         }
 
         if(iniciarComandaSubCuenta && articulosSeleccionados.isNotEmpty()){
-            objetoEstadoPantallaCarga.cambiarEstadoMenuPrincipal(true)
+            objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(true)
             val jsonComandaDetalle = JSONArray()
             val articulosAEliminar = mutableListOf<ArticulosSeleccionadosSac>()
             articulosSeleccionados.forEach{articulo ->
@@ -322,7 +317,7 @@ fun InterfazSacComandaLarge(
                 estadoRespuestaApi.cambiarEstadoRespuestaApi(mostrarRespuesta = true, datosRespuesta = jsonObject )
             }
             delay(100)
-            objetoEstadoPantallaCarga.cambiarEstadoMenuPrincipal(false)
+            objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
             delay(2000)
             estadoRespuestaApi.cambiarEstadoRespuestaApi(regresarPantallaAnterior=true)
             iniciarComandaSubCuenta= false
@@ -607,14 +602,13 @@ fun InterfazSacComandaLarge(
 
     ConstraintLayout(
         modifier = Modifier
-            .width(objetoAdaptardor.ajustarAncho(964))
-            .height(objetoAdaptardor.ajustarAltura(523))
+            .fillMaxSize()
             .background(Color(0xFFFFFFFF))
             .statusBarsPadding()
             .navigationBarsPadding()
     ) {
         val (bxSuperior, bxContenedorArticulos, txfBarraBusqueda,
-            bxContenerdorCuentasActivas, bxContenedorBotones,
+            bxContenerdorArticulosSeleccionados,
             bxContenedorFamilias, bxContenedorSubFamilias,flechaRegresar) = createRefs()
 
         Box(
@@ -652,6 +646,7 @@ fun InterfazSacComandaLarge(
                 )
             }
         }
+
         IconButton(
             onClick = {regresarPantalla=true},
             modifier = Modifier
@@ -746,7 +741,10 @@ fun InterfazSacComandaLarge(
                             disabledContentColor = Color.White
                         ),
                         elevation = ButtonDefaults.buttonElevation(defaultElevation = 7.dp),
-                        onClick = {familiaActualSeleccionada= familia},
+                        onClick = {
+                            datosIngresadosBarraBusqueda = ""
+                            familiaActualSeleccionada= familia
+                        },
                         contentPadding = PaddingValues(start = 12.dp, end = 12.dp, top = 0.dp, bottom = 0.dp)
                     ) {
                         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center){
@@ -792,6 +790,7 @@ fun InterfazSacComandaLarge(
                         ),
                         elevation = ButtonDefaults.buttonElevation(defaultElevation = 7.dp),
                         onClick = {
+                            datosIngresadosBarraBusqueda = ""
                             subFamiliaActualSeleccionada= subFamilia
                         },
                         contentPadding = PaddingValues(start = 12.dp, end = 12.dp, top = 0.dp, bottom = 0.dp)
@@ -818,7 +817,7 @@ fun InterfazSacComandaLarge(
             modifier = Modifier
                 .background(Color.White)
                 .width(objetoAdaptardor.ajustarAncho(675))
-                .height(objetoAdaptardor.ajustarAltura(375))
+                .height(objetoAdaptardor.ajustarAltura(465))
                 .constrainAs(bxContenedorArticulos) {
                     start.linkTo(parent.start, margin = objetoAdaptardor.ajustarAncho(8))
                     top.linkTo(bxContenedorSubFamilias.bottom, margin = objetoAdaptardor.ajustarAltura(7))
@@ -842,7 +841,6 @@ fun InterfazSacComandaLarge(
                     verticalArrangement = Arrangement.spacedBy(objetoAdaptardor.ajustarAltura(16)),
                     state = lazyStateArticulos,
                 ) {
-
                     items(listaArticulosActuales.chunked(5)) { rowItems ->
                         Row(
                             horizontalArrangement = Arrangement.Start,
@@ -852,25 +850,23 @@ fun InterfazSacComandaLarge(
                                 AgregarBxContenedorArticulos(articulo)
                                 Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(12)))
                             }
-
                         }
                     }
                     item { Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(16)))}
                 }
             }
-
         }
 
         Card(
             modifier = Modifier
                 .background(Color.White)
                 .width(objetoAdaptardor.ajustarAncho(260))
-                .height(objetoAdaptardor.ajustarAltura(469))
+                .height(objetoAdaptardor.ajustarAltura(530))
                 .shadow(
                     elevation = objetoAdaptardor.ajustarAltura(2),
                     shape = RoundedCornerShape(objetoAdaptardor.ajustarAltura(20))
                 )
-                .constrainAs(bxContenerdorCuentasActivas) {
+                .constrainAs(bxContenerdorArticulosSeleccionados) {
                     start.linkTo(bxContenedorArticulos.end, margin = objetoAdaptardor.ajustarAncho(8))
                     top.linkTo(bxSuperior.bottom, margin = objetoAdaptardor.ajustarAltura(8))
                 },
@@ -883,7 +879,7 @@ fun InterfazSacComandaLarge(
                 Box(modifier = Modifier
                     .background(Color(0xFFF6F6F6))
                     .width(objetoAdaptardor.ajustarAncho(260))
-                    .height(objetoAdaptardor.ajustarAltura(390)),
+                    .height(objetoAdaptardor.ajustarAltura(445)),
                     contentAlignment = Alignment.TopCenter
                 ){
                     Column {
@@ -961,6 +957,7 @@ fun InterfazSacComandaLarge(
                         )
                         Button(
                             modifier = Modifier
+                                .height(objetoAdaptardor.ajustarAltura(45))
                                 .width(objetoAdaptardor.ajustarAncho(255)),
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = Color(0xFF244BC0), // Color de fondo del botón
@@ -1069,18 +1066,30 @@ fun InterfazSacComandaLarge(
                 confirmButton = {
                     Button(
                         onClick = {
-                            opcionesSubCuentas.value[nombreNuevaSubCuenta]=nombreNuevaSubCuenta
-                            val jsonObject = JSONObject("""
+                            if (nombreNuevaSubCuenta.isEmpty()){
+                                val jsonObject = JSONObject("""
+                                {
+                                    "code": 400,
+                                    "status": "error",
+                                   "data": "Ingrese el nombre de la Sub-Cuenta"
+                                }
+                                """
+                                )
+                                estadoRespuestaApi.cambiarEstadoRespuestaApi(mostrarRespuesta = true, datosRespuesta = jsonObject)
+                            }else{
+                                opcionesSubCuentas.value[nombreNuevaSubCuenta]=nombreNuevaSubCuenta
+                                val jsonObject = JSONObject("""
                                 {
                                     "code": 200,
                                     "status": "ok",
                                     "data": "Sub-Cuenta creada"
                                 }
-                            """
-                            )
-                            iniciarMenuAgregarSubCuenta=false
-                            nombreNuevaSubCuenta=""
-                            estadoRespuestaApi.cambiarEstadoRespuestaApi(mostrarRespuesta = true, datosRespuesta = jsonObject)
+                                """
+                                )
+                                iniciarMenuAgregarSubCuenta=false
+                                nombreNuevaSubCuenta=""
+                                estadoRespuestaApi.cambiarEstadoRespuestaApi(mostrarRespuesta = true, datosRespuesta = jsonObject)
+                            }
                         },
                         colors = ButtonDefaults.buttonColors(
                             containerColor = Color(0xFF244BC0), // Color de fondo del botón

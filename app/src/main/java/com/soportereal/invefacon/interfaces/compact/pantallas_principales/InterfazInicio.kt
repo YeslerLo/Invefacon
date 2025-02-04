@@ -22,7 +22,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ShowChart
 import androidx.compose.material.icons.filled.AccountCircle
@@ -37,11 +36,11 @@ import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Receipt
 import androidx.compose.material.icons.filled.RestaurantMenu
 import androidx.compose.material.icons.filled.ShoppingCart
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -71,14 +70,15 @@ import coil.compose.SubcomposeAsyncImage
 import com.google.accompanist.systemuicontroller.SystemUiController
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.soportereal.invefacon.R
-import com.soportereal.invefacon.funciones_de_interfaces.NavHostPantallasModulos
-import com.soportereal.invefacon.funciones_de_interfaces.RutasPantallasModulos
+import com.soportereal.invefacon.funciones_de_interfaces.RutasPatallas
 import com.soportereal.invefacon.interfaces.compact.FuncionesParaAdaptarContenidoCompact
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
+
+@SuppressLint("SourceLockedOrientationActivity")
 @Composable
 fun IniciarInterfazInicio(
     token: String,
@@ -87,33 +87,6 @@ fun IniciarInterfazInicio(
     navControllerPrincipal: NavController,
     systemUiController: SystemUiController,
     codUsuario: String
-){
-    val navControllerPantallasModulos= rememberNavController()
-    Scaffold(
-        content = { innerPadding ->
-            NavHostPantallasModulos(
-                navControllerPantallasModulos = navControllerPantallasModulos,
-                navControllerPrincipal = navControllerPrincipal,
-                token = token,
-                innerPadding = innerPadding,
-                nombreUsuario = nombreUsuario,
-                nombreEmpresa = nombreEmpresa,
-                systemUiController = systemUiController,
-                codUsuario = codUsuario
-            )
-        }
-    )
-}
-
-
-@SuppressLint("SourceLockedOrientationActivity")
-@Composable
-fun InterfazInicio(
-    navControllerPantallasModulos: NavController?,
-    navControllerPrincipal: NavController?,
-    nombreEmpresa: String,
-    nombreUsuario: String,
-    systemUiController: SystemUiController
 ){
     val activity = LocalContext.current as Activity
     activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
@@ -170,7 +143,7 @@ fun InterfazInicio(
                     contentColor = Color.White // Color del contenido (texto e iconos)
                 ),
                     onClick = {
-                        navControllerPrincipal?.popBackStack() // Salir de la pantalla
+                        navControllerPrincipal.popBackStack() // Salir de la pantalla
                         showDialog.value = false // Cerrar el diálog
                     }
                 ) {
@@ -210,7 +183,7 @@ fun InterfazInicio(
 
     LaunchedEffect(iniciarPantallaModulo) {
         if(iniciarPantallaModulo){
-            navControllerPantallasModulos?.navigate(rutaPantallaModulo)
+            navControllerPrincipal.navigate(rutaPantallaModulo)
         }
     }
 
@@ -231,9 +204,7 @@ fun InterfazInicio(
                 onClick = {
                     CoroutineScope(Dispatchers.IO).launch {
                         if (rutaPantalla!=null){
-                            objetoEstadoPantallaCarga.cambiarEstadoMenuPrincipal(true)
                             rutaPantallaModulo=rutaPantalla
-                            delay(1000)
                             iniciarPantallaModulo=true
                         }
                     }
@@ -377,10 +348,10 @@ fun InterfazInicio(
                         modifier = Modifier.height(objetoAdaptardor.ajustarAltura(640)),
                         verticalArrangement = Arrangement.spacedBy(objetoAdaptardor.ajustarAltura(12))
                     ) {
-                        item {  Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(8))) }
+                        item { Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(8))) }
                         item { btOpcionesModulos("Proformas", Icons.Default.Receipt, null) }
-                        item {  btOpcionesModulos("Clientes", Icons.Default.People, RutasPantallasModulos.PantallaModuloClientes.ruta) }
-                        item { btOpcionesModulos("SAC", Icons.Default.RestaurantMenu, RutasPantallasModulos.PantallaModuloSac.ruta) }
+                        item { btOpcionesModulos("Clientes", Icons.Default.People, RutasPatallas.Clientes.ruta+"/$token") }
+                        item { btOpcionesModulos("SAC", Icons.Default.RestaurantMenu, RutasPatallas.Sac.ruta+"/$token"+"/$nombreEmpresa"+"/$codUsuario") }
                         item { btOpcionesModulos("CxP", Icons.Default.MonetizationOn, null) }
                         item { btOpcionesModulos("Compras", Icons.Default.ShoppingCart, null) }
                         item { btOpcionesModulos("Resumen", Icons.Default.Assessment, null) }
@@ -390,14 +361,14 @@ fun InterfazInicio(
             }
         }
     }
-    objetoEstadoPantallaCarga.cambiarEstadoPantallaPrincipal(false)
+    objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
 }
 
 @Preview(showBackground = true)
 @Composable
 private fun Preview(){
     val systemUiController = rememberSystemUiController()
-    val estadoPantallaCarga = EstadoPantallaCarga()
-    InterfazInicio(null,null,"" ,"", systemUiController)
+    val na = rememberNavController()
+    IniciarInterfazInicio("","" ,"", na, systemUiController, "")
 }
 

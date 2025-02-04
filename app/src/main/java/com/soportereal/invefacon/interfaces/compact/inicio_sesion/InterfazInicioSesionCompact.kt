@@ -92,7 +92,7 @@ import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.navigation.NavController
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.soportereal.invefacon.R
-import com.soportereal.invefacon.funciones_de_interfaces.RutasPantallasPrincipales
+import com.soportereal.invefacon.funciones_de_interfaces.RutasPatallas
 import com.soportereal.invefacon.interfaces.compact.FuncionesParaAdaptarContenidoCompact
 import com.soportereal.invefacon.interfaces.compact.pantallas_principales.objetoEstadoPantallaCarga
 import kotlinx.coroutines.CoroutineScope
@@ -155,7 +155,7 @@ fun IniciarInterfazInicioSesionCompact(
 
     LaunchedEffect(isInicioSesionAprobado) {
         if (isInicioSesionAprobado){
-            navController?.navigate(RutasPantallasPrincipales.PantallaMenuPrincipal.ruta+"/$apiToken/$clienteNombreEmpresa/$clienteNombreUsuario/$codUsuario")
+            navController?.navigate(RutasPatallas.Inicio.ruta+"/$apiToken/$clienteNombreEmpresa/$clienteNombreUsuario/$codUsuario")
         }
     }
 
@@ -840,10 +840,10 @@ fun IniciarInterfazInicioSesionCompact(
 
 
         if (errorResultadoApi==null){
-            objetoEstadoPantallaCarga.cambiarEstadoPantallaPrincipal(true)
+            objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(true)
         }
         else{
-            objetoEstadoPantallaCarga.cambiarEstadoPantallaPrincipal(false)
+            objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
         }
     }
 }

@@ -4,8 +4,6 @@ import android.app.Activity
 import android.content.pm.ActivityInfo
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.layout.Box
@@ -21,7 +19,6 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavController
 import androidx.navigation.NavHostController
@@ -29,6 +26,7 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
+import androidx.navigation.navigation
 import com.google.accompanist.systemuicontroller.SystemUiController
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.soportereal.invefacon.funciones_de_interfaces.RutasPantallasMenuPrincipal.PantallaAjustes
@@ -38,29 +36,37 @@ import com.soportereal.invefacon.interfaces.compact.inicio_sesion.IniciarInterfa
 import com.soportereal.invefacon.interfaces.compact.modulos.clientes.IniciarInterfazAgregarCliente
 import com.soportereal.invefacon.interfaces.compact.modulos.clientes.IniciarInterfazInformacionCliente
 import com.soportereal.invefacon.interfaces.compact.modulos.clientes.IniciarInterfazModuloClientes
-import com.soportereal.invefacon.interfaces.compact.modulos.clientes.InterfazModuloClientes
-import com.soportereal.invefacon.interfaces.compact.modulos.sac.IniciarInterfazModuloSac
-import com.soportereal.invefacon.interfaces.compact.pantallas_principales.CustomBarView
+import com.soportereal.invefacon.interfaces.compact.pantallas_principales.PantallaCarga
 import com.soportereal.invefacon.interfaces.compact.pantallas_principales.IniciarInterfazAjustes
 import com.soportereal.invefacon.interfaces.compact.pantallas_principales.IniciarInterfazInicio
 import com.soportereal.invefacon.interfaces.compact.pantallas_principales.IniciarInterfazMenuPrincipalCompact
 import com.soportereal.invefacon.interfaces.compact.pantallas_principales.IniciarInterfazSalir
-import com.soportereal.invefacon.interfaces.compact.pantallas_principales.InterfazInicio
 import com.soportereal.invefacon.interfaces.compact.pantallas_principales.objetoEstadoPantallaCarga
 import com.soportereal.invefacon.interfaces.large.sac.InterfazModuloSacLarge
 import com.soportereal.invefacon.interfaces.large.sac.InterfazSacComandaLarge
 
 
-sealed class RutasPantallasPrincipales (
-    val ruta: String
-)
-{
-    data object PantallaInicioSesion: RutasPantallasPrincipales(
-        ruta = "PantallaInicioSesion"
-    )
-    data object PantallaMenuPrincipal: RutasPantallasPrincipales(
-        ruta = "PantallasMenuPrincipal"
-    )
+sealed class RutasPatallas(val ruta: String){
+
+    // Auntenticacion
+    data object InicioSesion : RutasPatallas("auth/Inicio Sesion")
+
+    // Principales ]
+    data object Inicio : RutasPatallas("main/Inicio")
+    data object Ajustes : RutasPatallas("main/Ajustes")
+    data object Salir : RutasPatallas("main/Salir")
+
+    // Modulos
+    data object Clientes : RutasPatallas("mod/Clientes")
+    data object Sac : RutasPatallas("mod/Sac")
+
+    // Clientes
+    data object ClientesInfo : RutasPatallas("Clientes/Info")
+    data object ClientesAgregar: RutasPatallas("Clientes/Agregar")
+
+    // Sac
+    data object SacComanda : RutasPatallas("Sac/Comanda")
+
 }
 
 sealed class RutasPantallasMenuPrincipal(
@@ -86,93 +92,246 @@ sealed class RutasPantallasMenuPrincipal(
     )
 }
 
-sealed class RutasPantallasModulos(
-    val ruta: String
-)
-{
-    data object PantllaInicio: RutasPantallasModulos("PantallaInicio")
-    data object PantallaModuloClientes: RutasPantallasModulos("PantallaModuloClientes")
-    data object PantallaModuloSac: RutasPantallasModulos("PantallaModuloSac")
-
-}
-
-sealed class RutasPantallasModuloClientes(
-    val ruta: String
-)
-{
-    data object PantallaInicioModuloClientes: RutasPantallasModuloClientes("PantallaInicioModuloClientes")
-    data object PantallaInfoCliente: RutasPantallasModuloClientes("PantallaInfoCliente")
-    data object PantallaAgregarCliente: RutasPantallasModuloClientes("PantallaAgregarCliente")
-}
-
-sealed class RutasPantallasModuloSac(
-    val ruta: String
-){
-    data object PantallaInicioMuduloSac: RutasPantallasModuloSac("PantallaInicioModuloSac")
-    data object PantallaSacComanda: RutasPantallasModuloSac("PantallaSacComanda")
-}
 
 @Composable
-fun NavHostPrincipal(
-    navControllerPrincipal: NavHostController
+fun NavegacionPantallas(
+    navcontroller: NavHostController
 ){
     val systemUiController = rememberSystemUiController()
-    val configuration = LocalConfiguration.current
-    val dpAnchoPantalla = configuration.screenWidthDp
-    val isCargandoPantallasPrincipales by objetoEstadoPantallaCarga.isCargandoPantallaPrincipales.collectAsState()
+    val isPantallaCargaActiva by objetoEstadoPantallaCarga.isCargandoPantalla.collectAsState()
 
-    Box(modifier = Modifier.fillMaxSize()){
+    Box(
+        modifier = Modifier.fillMaxSize()
+    ){
+        NavHost(navController= navcontroller, startDestination = "auth"){
 
-        NavHost(navController= navControllerPrincipal, startDestination = RutasPantallasPrincipales.PantallaInicioSesion.ruta){
-            composable(RutasPantallasPrincipales.PantallaInicioSesion.ruta
-            ) {
-                when(dpAnchoPantalla){
-                    in 300..600->{
-                        IniciarInterfazInicioSesionCompact(navControllerPrincipal)
-                    }else->{
-                        IniciarInterfazInicioSesionCompact(navControllerPrincipal)
-                    }
+            // Navigacion pantalla Auntenticacion
+            navigation(startDestination= RutasPatallas.InicioSesion.ruta, route = "auth"){
+                composable(RutasPatallas.InicioSesion.ruta
+                ) {
+                    IniciarInterfazInicioSesionCompact(
+                        navController = navcontroller
+                    )
                 }
             }
-            composable(RutasPantallasPrincipales.PantallaMenuPrincipal.ruta+"/{token}"+"/{nombreEmpresa}"+"/{nombreUsuario}"+"/{codUsuario}",
-                arguments = listOf(
-                    navArgument(name= "token"){
-                        type= NavType.StringType
-                        defaultValue="error"
-                    },
-                    navArgument(name= "nombreEmpresa"){
-                        type= NavType.StringType
-                        defaultValue="error"
-                    },
-                    navArgument(name= "nombreUsuario"){
-                        type= NavType.StringType
-                        defaultValue="error"
-                    },
-                    navArgument(name= "codUsuario"){
-                        type= NavType.StringType
-                        defaultValue="error"
-                    }
-                ),
-                enterTransition = { slideInHorizontally { it } + fadeIn() },
-                exitTransition = { slideOutHorizontally { -it } + fadeOut() },
-                popEnterTransition = { fadeIn() },
-                popExitTransition = { fadeOut() }
-            ) { backstackEntry->
-                val token= requireNotNull(backstackEntry.arguments?.getString("token"))
-                val nombreEmpresa= requireNotNull(backstackEntry.arguments?.getString("nombreEmpresa"))
-                val nombreUsuario= requireNotNull(backstackEntry.arguments?.getString("nombreUsuario"))
-                val codUsuario= requireNotNull(backstackEntry.arguments?.getString("codUsuario"))
-                IniciarInterfazMenuPrincipalCompact(token,nombreEmpresa, nombreUsuario,navControllerPrincipal, systemUiController, codUsuario)
+
+            // Navigacion pantallas Principales
+            navigation(startDestination = RutasPatallas.Inicio.ruta, route = "main"){
+                composable(
+                    route = RutasPatallas.Inicio.ruta+"/{token}"+"/{nombreEmpresa}"+"/{nombreUsuario}"+"/{codUsuario}",
+                    arguments = listOf(
+                        navArgument(name= "token"){
+                            type= NavType.StringType
+                            defaultValue="error"
+                        },
+                        navArgument(name= "nombreEmpresa"){
+                            type= NavType.StringType
+                            defaultValue="error"
+                        },
+                        navArgument(name= "nombreUsuario"){
+                            type= NavType.StringType
+                            defaultValue="error"
+                        },
+                        navArgument(name= "codUsuario"){
+                            type= NavType.StringType
+                            defaultValue="error"
+                        }
+                    ),
+                    enterTransition = { slideInHorizontally(
+                        animationSpec = tween(durationMillis = 500, easing = FastOutSlowInEasing)
+                    ) { it } },
+                    exitTransition = { slideOutHorizontally(
+                        animationSpec = tween(durationMillis = 500, easing = FastOutSlowInEasing)
+                    ) { -it } }
+
+                ) { backstackEntry->
+                    val token= requireNotNull(backstackEntry.arguments?.getString("token"))
+                    val nombreEmpresa= requireNotNull(backstackEntry.arguments?.getString("nombreEmpresa"))
+                    val nombreUsuario= requireNotNull(backstackEntry.arguments?.getString("nombreUsuario"))
+                    val codUsuario= requireNotNull(backstackEntry.arguments?.getString("codUsuario"))
+
+                    IniciarInterfazMenuPrincipalCompact(
+                        token = token,
+                        nombreEmpresa = nombreEmpresa,
+                        nombreUsuario = nombreUsuario,
+                        navControllerPrincipal = navcontroller,
+                        systemUiController = systemUiController,
+                        codUsuario = codUsuario
+                    )
+                }
             }
+
+            // Navigacion pantallas Modulo Clientes
+            navigation(startDestination = RutasPatallas.Clientes.ruta, "Clientes"){
+                composable(
+                    route = RutasPatallas.Clientes.ruta+"/{token}",
+                    arguments = listOf(
+                        navArgument(name= "token"){
+                            type= NavType.StringType
+                            defaultValue="error"
+                        }
+                    ),
+                    enterTransition = { slideInHorizontally(
+                        animationSpec = tween(durationMillis = 500, easing = FastOutSlowInEasing)
+                    ) { it } },
+                    exitTransition = { slideOutHorizontally(
+                        animationSpec = tween(durationMillis = 500, easing = FastOutSlowInEasing)
+                    ) { -it } }
+                ) {backstackEntry->
+                    val token= requireNotNull(backstackEntry.arguments?.getString("token"))
+                    IniciarInterfazModuloClientes(
+                        token = token,
+                        systemUiController = systemUiController,
+                        navController = navcontroller
+                    )
+                }
+
+                composable(
+                    route = RutasPatallas.ClientesInfo.ruta+"/{codigoCliente}/{token}",
+                    arguments = listOf(
+                        navArgument(name = "codigoCliente"){
+                            type= NavType.StringType
+                            defaultValue="error"
+                        },
+                        navArgument(name= "token"){
+                            type= NavType.StringType
+                            defaultValue="error"
+                        }
+                    ),
+                    enterTransition = { slideInHorizontally(
+                        animationSpec = tween(durationMillis = 500, easing = FastOutSlowInEasing)
+                    ) { it } },
+                    exitTransition = { slideOutHorizontally(
+                        animationSpec = tween(durationMillis = 500, easing = FastOutSlowInEasing)
+                    ) { -it } }
+                ) {backstackEntry->
+                    val codigoCliente= requireNotNull(backstackEntry.arguments?.getString("codigoCliente"))
+                    val token= requireNotNull(backstackEntry.arguments?.getString("token"))
+                    IniciarInterfazInformacionCliente(
+                        codigoCliente = codigoCliente,
+                        navControllerPantallasModuloClientes = navcontroller,
+                        token = token
+                    )
+                }
+
+                composable(
+                    route = RutasPatallas.ClientesAgregar.ruta+"/{token}",
+                    arguments = listOf(
+                        navArgument(name= "token"){
+                            type= NavType.StringType
+                            defaultValue="error"
+                        }
+                    ),
+                    enterTransition = { slideInHorizontally(
+                        animationSpec = tween(durationMillis = 500, easing = FastOutSlowInEasing)
+                    ) { it } },
+                    exitTransition = { slideOutHorizontally(
+                        animationSpec = tween(durationMillis = 500, easing = FastOutSlowInEasing)
+                    ) { -it } }
+                ) {backstackEntry->
+                    val token= requireNotNull(backstackEntry.arguments?.getString("token"))
+                    IniciarInterfazAgregarCliente(
+                        navController = navcontroller,
+                        token = token
+                    )
+                }
+            }
+
+            // Navigacion pantallas Modulo SAC
+            navigation(startDestination = RutasPatallas.Sac.ruta, route= "Sac"){
+
+                composable(
+                    route = RutasPatallas.Sac.ruta+"/{token}/{nombreEmpresa}/{codUsuario}",
+                    arguments = listOf(
+                        navArgument(name ="token"){
+                            type= NavType.StringType
+                            defaultValue= "Error"
+                        },
+                        navArgument(name ="nombreEmpresa"){
+                            type= NavType.StringType
+                            defaultValue= "Error"
+                        },navArgument(name ="codUsuario"){
+                            type= NavType.StringType
+                            defaultValue= "Error"
+                        }
+                    ),
+                    enterTransition = { slideInHorizontally(
+                        animationSpec = tween(durationMillis = 500, easing = FastOutSlowInEasing)
+                    ) { it } },
+                    exitTransition = { slideOutHorizontally(
+                        animationSpec = tween(durationMillis = 500, easing = FastOutSlowInEasing)
+                    ) { -it } }
+                ){backStackEntry->
+                    val token = requireNotNull(backStackEntry.arguments?.getString("token"))
+                    val nombreEmpresa = requireNotNull(backStackEntry.arguments?.getString("nombreEmpresa"))
+                    val codUsuario = requireNotNull(backStackEntry.arguments?.getString("codUsuario"))
+                    val activity = LocalContext.current as Activity
+                    activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+
+                    InterfazModuloSacLarge(
+                        token = token,
+                        systemUiController = systemUiController,
+                        navController = navcontroller,
+                        nombreEmpresa = nombreEmpresa,
+                        codUsuario = codUsuario
+                    )
+                }
+
+                composable(
+                    RutasPatallas.SacComanda.ruta+"/{nombreMesa}/{salon}/{token}/{nombreEmpresa}/{codUsuario}",
+                    enterTransition = { slideInHorizontally(
+                        animationSpec = tween(durationMillis = 500, easing = FastOutSlowInEasing)
+                    ) { it } },
+                    exitTransition = { slideOutHorizontally(
+                        animationSpec = tween(durationMillis = 500, easing = FastOutSlowInEasing)
+                    ) { -it } },
+                    arguments = listOf(
+                        navArgument(name= "nombreMesa"){
+                            type= NavType.StringType
+                            defaultValue="error"
+                        },
+                        navArgument(name= "salon"){
+                            type= NavType.StringType
+                            defaultValue="error"
+                        },
+                        navArgument(name= "token"){
+                            type= NavType.StringType
+                            defaultValue="error"
+                        },
+                        navArgument(name= "nombreEmpresa"){
+                            type= NavType.StringType
+                            defaultValue="error"
+                        },
+                        navArgument(name= "codUsuario"){
+                            type= NavType.StringType
+                            defaultValue="error"
+                        }
+                    )
+                ){backstackEntry->
+                    val nombreMesa= requireNotNull(backstackEntry.arguments?.getString("nombreMesa"))
+                    val salon= requireNotNull(backstackEntry.arguments?.getString("salon"))
+                    val token= requireNotNull(backstackEntry.arguments?.getString("token"))
+                    val nombreEmpresa= requireNotNull(backstackEntry.arguments?.getString("nombreEmpresa"))
+                    val codUsuario= requireNotNull(backstackEntry.arguments?.getString("codUsuario"))
+
+                    val activity = LocalContext.current as Activity
+                    activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+                    InterfazSacComandaLarge(
+                        systemUiController = systemUiController,
+                        navControllerPantallasModuloSac = navcontroller,
+                        token = token,
+                        nombreMesa= nombreMesa,
+                        nombreEmpresa= nombreEmpresa,
+                        codUsuario = codUsuario,
+                        salon= salon
+
+                    )
+                }
+            }
+
         }
-
-        if(isCargandoPantallasPrincipales){
-            CustomBarView(systemUiController)
-        }
-
-
+        PantallaCarga(systemUiController)
     }
-
 }
 
 @Composable
@@ -181,12 +340,11 @@ fun NavHostPantallasMenuPrincipal(
     token: String,
     nombreUsuario: String,
     nombreEmpresa: String,
-    navControllerPrincipal: NavController?,
+    navControllerPrincipal: NavController,
     navControllerPantallasMenuPrincipal: NavHostController,
     systemUiController: SystemUiController,
     codUsuario: String
 ){
-
     NavHost(
         navController = navControllerPantallasMenuPrincipal,
         startDestination = PantallaInicio.ruta,
@@ -203,16 +361,14 @@ fun NavHostPantallasMenuPrincipal(
                 animationSpec = tween(durationMillis = 500, easing = FastOutSlowInEasing)
             ) { -it } }
         ) {
-            if (navControllerPrincipal != null) {
-                IniciarInterfazInicio(
-                    token = token,
-                    nombreUsuario = nombreUsuario,
-                    nombreEmpresa = nombreEmpresa,
-                    navControllerPrincipal = navControllerPrincipal,
-                    systemUiController= systemUiController,
-                    codUsuario = codUsuario
-                )
-            }
+            IniciarInterfazInicio(
+                token = token,
+                nombreUsuario = nombreUsuario,
+                nombreEmpresa = nombreEmpresa,
+                navControllerPrincipal = navControllerPrincipal,
+                systemUiController= systemUiController,
+                codUsuario = codUsuario
+            )
         }
         composable(
             PantallaAjustes.ruta,
@@ -228,264 +384,7 @@ fun NavHostPantallasMenuPrincipal(
         composable(
             PantallaSalir.ruta
         ) {
-            if (navControllerPrincipal != null) {
-                IniciarInterfazSalir(navControllerPrincipal)
-            }
-        }
-    }
-}
-
-@Composable
-fun NavHostPantallasModulos(
-    navControllerPantallasModulos:NavHostController,
-    navControllerPrincipal:NavController,
-    token: String,
-    nombreUsuario: String,
-    nombreEmpresa: String,
-    codUsuario: String,
-    innerPadding: PaddingValues,
-    systemUiController: SystemUiController
-){
-    Box(modifier = Modifier.fillMaxSize()) {
-        NavHost(
-            navController = navControllerPantallasModulos,
-            startDestination = RutasPantallasModulos.PantllaInicio.ruta,
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-        ) {
-            composable(
-                RutasPantallasModulos.PantllaInicio.ruta,
-                enterTransition = {
-                    slideInHorizontally(
-                        animationSpec = tween(durationMillis = 500, easing = FastOutSlowInEasing)
-                    ) { it }
-                },
-                exitTransition = {
-                    slideOutHorizontally(
-                        animationSpec = tween(durationMillis = 500, easing = FastOutSlowInEasing)
-                    ) { -it }
-                }
-            ) {
-                InterfazInicio(
-                    navControllerPantallasModulos = navControllerPantallasModulos,
-                    nombreUsuario = nombreUsuario,
-                    nombreEmpresa = nombreEmpresa,
-                    navControllerPrincipal = navControllerPrincipal,
-                    systemUiController = systemUiController
-                )
-            }
-
-            composable(
-                RutasPantallasModulos.PantallaModuloClientes.ruta,
-                enterTransition = {
-                    slideInHorizontally(
-                        animationSpec = tween(durationMillis = 500, easing = FastOutSlowInEasing)
-                    ) { it }
-                },
-                exitTransition = {
-                    slideOutHorizontally(
-                        animationSpec = tween(durationMillis = 500, easing = FastOutSlowInEasing)
-                    ) { -it }
-                }
-            ) {
-                IniciarInterfazModuloClientes(token, systemUiController, navControllerPantallasModulos)
-            }
-
-            composable(
-                RutasPantallasModulos.PantallaModuloSac.ruta,
-                enterTransition = {
-                    slideInHorizontally(
-                        animationSpec = tween(durationMillis = 500, easing = FastOutSlowInEasing)
-                    ) { it }
-                },
-                exitTransition = {
-                    slideOutHorizontally(
-                        animationSpec = tween(durationMillis = 500, easing = FastOutSlowInEasing)
-                    ) { -it }
-                }
-            ) {
-                IniciarInterfazModuloSac(token, systemUiController, navControllerPantallasModulos, codUsuario, nombreEmpresa)
-            }
-        }
-    }
-}
-
-@Composable
-fun NavHostPantallasModuloClientes(
-    apiToken: String,
-    navControlerPantallasModuloClientes: NavHostController,
-    innerPadding: PaddingValues,
-    systemUiController: SystemUiController,
-    navControllerPantallasModulos: NavController?
-){
-    NavHost(
-        navController = navControlerPantallasModuloClientes,
-        startDestination = RutasPantallasModuloClientes.PantallaInicioModuloClientes.ruta,
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(innerPadding)
-    ) {
-        composable(
-            RutasPantallasModuloClientes.PantallaInicioModuloClientes.ruta,
-            enterTransition = { slideInHorizontally(
-                animationSpec = tween(durationMillis = 500, easing = FastOutSlowInEasing)
-            ) { it } },
-            exitTransition = { slideOutHorizontally(
-                animationSpec = tween(durationMillis = 500, easing = FastOutSlowInEasing)
-            ) { -it } }
-        ){
-            InterfazModuloClientes(apiToken, navControlerPantallasModuloClientes, systemUiController,navControllerPantallasModulos)
-        }
-
-        composable(
-            RutasPantallasModuloClientes.PantallaInfoCliente.ruta+"/{codigoCliente}",
-            arguments = listOf(
-                navArgument(name = "datosCliente"){
-                    type= NavType.StringType
-                    defaultValue="error"
-                }
-            ),
-            enterTransition = { slideInHorizontally(
-                animationSpec = tween(durationMillis = 500, easing = FastOutSlowInEasing)
-            ) { it } },
-            exitTransition = { slideOutHorizontally(
-                animationSpec = tween(durationMillis = 500, easing = FastOutSlowInEasing)
-            ) { -it } }
-        ) {backstackEntry->
-            val codigoCliente= requireNotNull(backstackEntry.arguments?.getString("codigoCliente"))
-            IniciarInterfazInformacionCliente(
-                codigoCliente = codigoCliente,
-                navControllerPantallasModuloClientes = navControlerPantallasModuloClientes,
-                token = apiToken
-            )
-        }
-
-        composable(
-            RutasPantallasModuloClientes.PantallaAgregarCliente.ruta,
-            enterTransition = { slideInHorizontally(
-                animationSpec = tween(durationMillis = 500, easing = FastOutSlowInEasing)
-            ) { it } },
-            exitTransition = { slideOutHorizontally(
-                animationSpec = tween(durationMillis = 500, easing = FastOutSlowInEasing)
-            ) { -it } }
-        ) {
-            IniciarInterfazAgregarCliente(
-                navController = navControlerPantallasModuloClientes,
-                token = apiToken
-            )
-        }
-    }
-}
-
-@Composable
-fun NavHostPantallasModuloSac(
-    apiToken: String,
-    navControllerPantallasModuloSac: NavHostController,
-    innerPadding: PaddingValues,
-    systemUiController: SystemUiController,
-    navControllerPantallasModulos: NavController?,
-    nombreEmpresa: String,
-    codUsuario: String
-){
-    NavHost(
-        navController = navControllerPantallasModuloSac,
-        startDestination = RutasPantallasModuloSac.PantallaInicioMuduloSac.ruta,
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(innerPadding)
-    ) {
-        composable(
-            RutasPantallasModuloSac.PantallaInicioMuduloSac.ruta,
-            enterTransition = { slideInHorizontally(
-                animationSpec = tween(durationMillis = 500, easing = FastOutSlowInEasing)
-            ) { it } },
-            exitTransition = { slideOutHorizontally(
-                animationSpec = tween(durationMillis = 500, easing = FastOutSlowInEasing)
-            ) { -it } }
-        ){
-            val configuration = LocalConfiguration.current
-            val dpAnchoPantalla = configuration.screenWidthDp
-            when(dpAnchoPantalla){
-                in 300..600-> {
-                    val activity = LocalContext.current as Activity
-                    activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
-                    InterfazModuloSacLarge(
-                        apiToken,
-                        navControllerPantallasModuloSac,
-                        systemUiController,
-                        navControllerPantallasModulos,
-                        nombreEmpresa,
-                        codUsuario
-                    )
-                }else->{
-                    val activity = LocalContext.current as Activity
-                    activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
-                    InterfazModuloSacLarge(
-                        apiToken,
-                        navControllerPantallasModuloSac,
-                        systemUiController,
-                        navControllerPantallasModulos,
-                        nombreEmpresa,
-                        codUsuario
-                    )
-                }
-            }
-        }
-
-        composable(
-            RutasPantallasModuloSac.PantallaSacComanda.ruta+"/{nombreMesa}/{salon}",
-            enterTransition = { slideInHorizontally(
-                animationSpec = tween(durationMillis = 500, easing = FastOutSlowInEasing)
-            ) { it } },
-            exitTransition = { slideOutHorizontally(
-                animationSpec = tween(durationMillis = 500, easing = FastOutSlowInEasing)
-            ) { -it } },
-            arguments = listOf(
-                navArgument(name= "nombreMesa"){
-                    type= NavType.StringType
-                    defaultValue="error"
-                },
-                navArgument(name= "salon"){
-                    type= NavType.StringType
-                    defaultValue="error"
-                }
-
-            )
-        ){backstackEntry->
-            val nombreMesa= requireNotNull(backstackEntry.arguments?.getString("nombreMesa"))
-            val salon= requireNotNull(backstackEntry.arguments?.getString("salon"))
-            val configuration = LocalConfiguration.current
-            val dpAnchoPantalla = configuration.screenWidthDp
-            when(dpAnchoPantalla){
-                in 300..600-> {
-                    val activity = LocalContext.current as Activity
-                    activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
-                    InterfazSacComandaLarge(
-                        systemUiController = systemUiController,
-                        navControllerPantallasModuloSac = navControllerPantallasModuloSac,
-                        token = apiToken,
-                        nombreMesa= nombreMesa,
-                        nombreEmpresa= nombreEmpresa,
-                        codUsuario = codUsuario,
-                        salon= salon
-
-                    )
-                }else->{
-                val activity = LocalContext.current as Activity
-                activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
-                InterfazSacComandaLarge(
-                    systemUiController = systemUiController,
-                    navControllerPantallasModuloSac = navControllerPantallasModuloSac,
-                    token = apiToken,
-                    nombreMesa= nombreMesa,
-                    nombreEmpresa= nombreEmpresa,
-                    codUsuario = codUsuario,
-                    salon= salon
-
-                )
-            }
-            }
+            IniciarInterfazSalir(navControllerPrincipal)
         }
     }
 }

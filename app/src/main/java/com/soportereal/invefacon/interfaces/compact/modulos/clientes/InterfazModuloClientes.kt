@@ -1,8 +1,6 @@
 package com.soportereal.invefacon.interfaces.compact.modulos.clientes
 
 import android.annotation.SuppressLint
-import android.app.Activity
-import android.content.pm.ActivityInfo
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -45,7 +43,6 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Snackbar
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -83,8 +80,7 @@ import androidx.navigation.compose.rememberNavController
 import com.google.accompanist.systemuicontroller.SystemUiController
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.soportereal.invefacon.R
-import com.soportereal.invefacon.funciones_de_interfaces.NavHostPantallasModuloClientes
-import com.soportereal.invefacon.funciones_de_interfaces.RutasPantallasModuloClientes
+import com.soportereal.invefacon.funciones_de_interfaces.RutasPatallas
 import com.soportereal.invefacon.interfaces.compact.FuncionesParaAdaptarContenidoCompact
 import com.soportereal.invefacon.interfaces.compact.inicio_sesion.ocultarTeclado
 import com.soportereal.invefacon.interfaces.compact.pantallas_principales.EstadoPantallaCarga
@@ -100,35 +96,10 @@ import java.text.Normalizer
 @SuppressLint("SourceLockedOrientationActivity")
 @Composable
 internal fun IniciarInterfazModuloClientes(
-    apiToken: String,
+    token: String,
     systemUiController: SystemUiController,
-    navControllerPantallasModulos: NavController?
+    navController: NavController
 ) {
-//    val activity = LocalContext.current as Activity
-//    activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
-    val navControllerPantallasModuloCliente= rememberNavController()
-
-    Scaffold (
-        content = {innerPadding ->
-            NavHostPantallasModuloClientes(
-                apiToken =  apiToken,
-                navControlerPantallasModuloClientes = navControllerPantallasModuloCliente,
-                innerPadding= innerPadding,
-                systemUiController= systemUiController,
-                navControllerPantallasModulos= navControllerPantallasModulos
-            )
-        }
-    )
-}
-
-
-@Composable
-fun InterfazModuloClientes(
-    apiToken: String,
-    navControllerPantallasModuloClientes: NavController,
-    systemUiController: SystemUiController,
-    navControllerPantallasModulos: NavController?
-){
     systemUiController.setStatusBarColor(Color(0xFF244BC0))
     systemUiController.setNavigationBarColor(Color.Black)
     val fontAksharPrincipal = FontFamily(Font(R.font.akshar_medium))
@@ -138,7 +109,7 @@ fun InterfazModuloClientes(
     val dpFontPantalla= configuration.fontScale
     val objetoAdaptardor= FuncionesParaAdaptarContenidoCompact(dpAltoPantalla, dpAnchoPantalla, dpFontPantalla)
     var datosIngresadosBarraBusqueda by rememberSaveable  { mutableStateOf("") }
-    val objectoProcesadorDatosApi= ProcesarDatosModuloClientes(apiToken)
+    val objectoProcesadorDatosApi= ProcesarDatosModuloClientes(token)
     var apiConsultaActual by remember { mutableStateOf<Job?>(null) }
     val cortinaConsultaApi= CoroutineScope(Dispatchers.IO)
     var listaClientesActuales by remember { mutableStateOf<List<Cliente>>(emptyList()) }
@@ -170,8 +141,8 @@ fun InterfazModuloClientes(
 
     LaunchedEffect(iniciarPantallaAgregarClente) {
         if (iniciarPantallaAgregarClente){
-            objetoEstadoPantallaCarga.cambiarEstadoMenuPrincipal(true)
-            navControllerPantallasModuloClientes.navigate(RutasPantallasModuloClientes.PantallaAgregarCliente.ruta){
+            objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(true)
+            navController.navigate(RutasPatallas.ClientesAgregar.ruta+"/$token"){
                 restoreState= true
                 launchSingleTop=true
             }
@@ -180,15 +151,14 @@ fun InterfazModuloClientes(
 
     LaunchedEffect(regresarPantallaAnterior) {
         if(regresarPantallaAnterior){
-            navControllerPantallasModulos?.popBackStack()
+            navController .popBackStack()
         }
     }
 
 
     ConstraintLayout(
         modifier = Modifier
-            .fillMaxWidth()
-            .height(objetoAdaptardor.ajustarAltura(622))
+            .fillMaxSize()
             .background(Color(0xFFFFFFFF))
             .statusBarsPadding()
             .navigationBarsPadding()
@@ -249,7 +219,7 @@ fun InterfazModuloClientes(
                     listaClientesActuales=listaClientesActuales+listaClientes
                     isCargandoClientes=false
                 }
-                objetoEstadoPantallaCarga.cambiarEstadoMenuPrincipal(false)
+                objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
             }
         }
 
@@ -436,7 +406,7 @@ fun InterfazModuloClientes(
 
         Box(
             modifier = Modifier
-                .height(objetoAdaptardor.ajustarAltura(538))
+                .height(objetoAdaptardor.ajustarAltura(628))
                 .background(Color.White)
                 .fillMaxWidth()
                 .constrainAs(bxContenedorDatosClientes){
@@ -454,8 +424,9 @@ fun InterfazModuloClientes(
                 items(listaClientesActuales) { cliente ->
                     AgregarBxConenedorInformacionCliente(
                         datosCliente = cliente,
-                        navControllerPantallasModuloClientes = navControllerPantallasModuloClientes,
-                        estadoPantallaCarga= objetoEstadoPantallaCarga
+                        navController = navController,
+                        estadoPantallaCarga= objetoEstadoPantallaCarga,
+                        token = token
                     )
                 }
 
@@ -635,11 +606,14 @@ fun InterfazModuloClientes(
 }
 
 
+
+
 @Composable
 fun AgregarBxConenedorInformacionCliente(
     datosCliente: Cliente,
-    navControllerPantallasModuloClientes: NavController,
-    estadoPantallaCarga: EstadoPantallaCarga
+    navController: NavController,
+    estadoPantallaCarga: EstadoPantallaCarga,
+    token : String
 ){
     val configuration = LocalConfiguration.current
     val dpAnchoPantalla = configuration.screenWidthDp
@@ -651,8 +625,8 @@ fun AgregarBxConenedorInformacionCliente(
 
     LaunchedEffect(iniciarPantallaInformacionCliente) {
         if (iniciarPantallaInformacionCliente){
-            estadoPantallaCarga.cambiarEstadoMenuPrincipal(true)
-            navControllerPantallasModuloClientes.navigate(RutasPantallasModuloClientes.PantallaInfoCliente.ruta+"/${datosCliente.codigo}"){
+            estadoPantallaCarga.cambiarEstadoPantallasCarga(true)
+            navController.navigate(RutasPatallas.ClientesInfo.ruta+"/${datosCliente.codigo}"+"/$token"){
                 restoreState= true
                 launchSingleTop=true
             }
@@ -886,5 +860,6 @@ fun quitarTildesYMinusculas(texto: String): String {
 @Composable
 private fun Preview(){
     val systemUiController = rememberSystemUiController()
-    IniciarInterfazModuloClientes("", systemUiController, null)
+    val nav= rememberNavController()
+    IniciarInterfazModuloClientes("", systemUiController,nav )
 }

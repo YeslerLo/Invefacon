@@ -80,10 +80,11 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.navigation.NavController
+import androidx.navigation.compose.rememberNavController
 import coil.compose.SubcomposeAsyncImage
 import com.google.accompanist.systemuicontroller.SystemUiController
 import com.soportereal.invefacon.R
-import com.soportereal.invefacon.funciones_de_interfaces.RutasPantallasModuloSac
+import com.soportereal.invefacon.funciones_de_interfaces.RutasPatallas
 import com.soportereal.invefacon.interfaces.compact.FuncionesParaAdaptarContenidoCompact
 import com.soportereal.invefacon.interfaces.compact.inicio_sesion.ocultarTeclado
 import com.soportereal.invefacon.interfaces.compact.modulos.clientes.AgregarTextFieldMultifuncional
@@ -102,10 +103,9 @@ import java.util.Locale
 
 @Composable
 fun InterfazModuloSacLarge(
-    apiToken: String,
-    navControllerPantallasModuloSac: NavController?,
+    token: String,
     systemUiController: SystemUiController?,
-    navControllerPantallasModulos: NavController?,
+    navController: NavController,
     nombreEmpresa: String,
     codUsuario: String
 ){
@@ -123,7 +123,7 @@ fun InterfazModuloSacLarge(
     val lazyStateCuentasActivas= rememberLazyListState()
     var listaCuentasActivasActuales by remember { mutableStateOf<List<Mesa>>(emptyList()) }
     var listaMesasActualesFiltradas by remember { mutableStateOf<List<Mesa>>(emptyList()) }
-    val objectoProcesadorDatosApi= ProcesarDatosModuloSac(apiToken)
+    val objectoProcesadorDatosApi= ProcesarDatosModuloSac(token)
     var iniciarMenuCrearMesa by remember { mutableStateOf(false) }
     var nombreNuevaMesa by remember { mutableStateOf("") }
     var nombreSalonNuevaMesa by remember { mutableStateOf("") }
@@ -167,9 +167,11 @@ fun InterfazModuloSacLarge(
 
     LaunchedEffect(iniciarPantallaSacComanda) {
         if (iniciarPantallaSacComanda){
-            objetoEstadoPantallaCarga.cambiarEstadoMenuPrincipal(true)
+            objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(true)
             delay(500)
-            navControllerPantallasModuloSac?.navigate(RutasPantallasModuloSac.PantallaSacComanda.ruta+"/"+mesaActual.nombre+"/"+mesaActual.salon){
+            navController.navigate(
+                RutasPatallas.SacComanda.ruta+"/"+mesaActual.nombre+"/"+mesaActual.salon+"/"+token+"/"+nombreEmpresa+"/"+codUsuario
+            ){
                 restoreState= true
                 launchSingleTop=true
             }
@@ -178,18 +180,32 @@ fun InterfazModuloSacLarge(
 
     LaunchedEffect(iniciarCreacionNuevaMesa) {
         if (iniciarCreacionNuevaMesa){
-            objetoEstadoPantallaCarga.cambiarEstadoMenuPrincipal(true)
-            delay(500)
-            val result = objectoProcesadorDatosApi.crearNuevaMesa(nombreNuevaMesa, nombreSalonNuevaMesa)
-            if (result!=null){
-                estadoRespuestaApi.cambiarEstadoRespuestaApi(mostrarRespuesta = true, datosRespuesta = result)
+            if (nombreNuevaMesa.isEmpty() && nombreSalonNuevaMesa.isEmpty()){
+                val jsonObject = JSONObject(
+                """
+                    {
+                        "code": 400,
+                        "status": "error",
+                        "data": "Complete los campos"
+                    }
+                """
+                )
+                estadoRespuestaApi.cambiarEstadoRespuestaApi(mostrarRespuesta = true, datosRespuesta = jsonObject)
+            }else{
+                objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(true)
+                delay(500)
+                val result = objectoProcesadorDatosApi.crearNuevaMesa(nombreNuevaMesa, nombreSalonNuevaMesa)
+                if (result!=null){
+                    estadoRespuestaApi.cambiarEstadoRespuestaApi(mostrarRespuesta = true, datosRespuesta = result)
+                }
+                nombreNuevaMesa=""
+                nombreSalonNuevaMesa=""
+                actualizarListaMesas= true
+                objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
+                iniciarMenuCrearMesa=false
+                iniciarCreacionNuevaMesa=false
             }
-            nombreNuevaMesa=""
-            nombreSalonNuevaMesa=""
-            actualizarListaMesas= true
-            objetoEstadoPantallaCarga.cambiarEstadoMenuPrincipal(false)
-            iniciarCreacionNuevaMesa=false
-
+            iniciarCreacionNuevaMesa = false
         }
     }
 
@@ -238,7 +254,7 @@ fun InterfazModuloSacLarge(
             }
 
             if (isPrimeraVezCargando){
-                objetoEstadoPantallaCarga.cambiarEstadoMenuPrincipal(false)
+                objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
                 isPrimeraVezCargando=false
                 isCargandoMesas=false
             }
@@ -295,7 +311,7 @@ fun InterfazModuloSacLarge(
 
     LaunchedEffect(iniciarMenuMesaComandada, estadoBtOkRespuestaApi) {
         if(iniciarMenuMesaComandada && !iniciarMenuMoverArticulo) {
-            objetoEstadoPantallaCarga.cambiarEstadoMenuPrincipal(true)
+            objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(true)
             val result = objectoProcesadorDatosApi.obtenerDatosMesaComandada(mesaActual.nombre)
             println(result)
             if (result != null) {
@@ -338,7 +354,7 @@ fun InterfazModuloSacLarge(
                 }
 
             }
-            objetoEstadoPantallaCarga.cambiarEstadoMenuPrincipal(false)
+            objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
             iniciarCalculoMontos= true
             estadoRespuestaApi.cambiarEstadoRespuestaApi()
         }
@@ -366,7 +382,7 @@ fun InterfazModuloSacLarge(
 
     LaunchedEffect(agregarArticulo, eliminarArticulo) {
         if(agregarArticulo  || (eliminarArticulo&& anotacionComanda.isNotEmpty())){
-            objetoEstadoPantallaCarga.cambiarEstadoMenuPrincipal(true)
+            objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(true)
             val jsonComandaDetalle = JSONArray()
             val codigo=articuloActualSeleccionado.Cod_Articulo
             val cantidad= if (agregarArticulo) cantidadArticulos else -cantidadArticulos
@@ -405,7 +421,7 @@ fun InterfazModuloSacLarge(
                 }
             }
             delay(100)
-            objetoEstadoPantallaCarga.cambiarEstadoMenuPrincipal(false)
+            objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
             eliminarArticulo= false
             agregarArticulo= false
         }
@@ -429,14 +445,14 @@ fun InterfazModuloSacLarge(
 
     LaunchedEffect(quitarMesa) {
         if(quitarMesa){
-            objetoEstadoPantallaCarga.cambiarEstadoMenuPrincipal(true)
+            objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(true)
             val result = objectoProcesadorDatosApi.quitarMesa(mesaActual.nombre)
             if (result!=null){
                 estadoRespuestaApi.cambiarEstadoRespuestaApi(mostrarRespuesta = true, datosRespuesta = result)
             }
             iniciarMenuQuitarMesa=false
             iniciarMenuMesaComandada=false
-            objetoEstadoPantallaCarga.cambiarEstadoMenuPrincipal(false)
+            objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
             actualizarListaMesas= true
             quitarMesa= false
         }
@@ -444,12 +460,12 @@ fun InterfazModuloSacLarge(
 
     LaunchedEffect(pedirCuenta) {
         if(pedirCuenta){
-            objetoEstadoPantallaCarga.cambiarEstadoMenuPrincipal(true)
+            objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(true)
             val result = objectoProcesadorDatosApi.pedirCuenta(mesaActual.nombre)
             if (result!=null){
                 estadoRespuestaApi.cambiarEstadoRespuestaApi(mostrarRespuesta = true, datosRespuesta = result)
             }
-            objetoEstadoPantallaCarga.cambiarEstadoMenuPrincipal(false)
+            objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
             actualizarListaMesas= true
             pedirCuenta= false
         }
@@ -457,7 +473,7 @@ fun InterfazModuloSacLarge(
 
     LaunchedEffect(actualizarSubCuentasYMesas, mesaDestino) {
         if(actualizarSubCuentasYMesas){
-            objetoEstadoPantallaCarga.cambiarEstadoMenuPrincipal(true)
+            objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(true)
             var result = objectoProcesadorDatosApi.obetenerNombresMesas()
             if (result!=null){
                 estadoRespuestaApi.cambiarEstadoRespuestaApi(mostrarSoloRespuestaError = true, datosRespuesta = result)
@@ -488,7 +504,7 @@ fun InterfazModuloSacLarge(
                 }
             }
             if (mesaDestino.isNotEmpty() || subCuentaDestinoArticulo.isNotEmpty()){
-                objetoEstadoPantallaCarga.cambiarEstadoMenuPrincipal(false)
+                objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
                 actualizarSubCuentasYMesas = false
             }
         }
@@ -496,7 +512,7 @@ fun InterfazModuloSacLarge(
 
     LaunchedEffect(moverArticulo) {
         if(moverArticulo){
-            objetoEstadoPantallaCarga.cambiarEstadoMenuPrincipal(true)
+            objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(true)
             val result= objectoProcesadorDatosApi.moverArticulo(
                 codigoArticulo = articuloActualSeleccionado.Cod_Articulo,
                 cantidadArticulos = cantidadArticulos.toString(),
@@ -512,7 +528,7 @@ fun InterfazModuloSacLarge(
             iniciarMenuMoverArticulo= false
             mesaDestino= ""
             subCuentaDestinoArticulo=""
-            objetoEstadoPantallaCarga.cambiarEstadoMenuPrincipal(false)
+            objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
             actualizarListaMesas= true
             moverArticulo= false
         }
@@ -520,13 +536,13 @@ fun InterfazModuloSacLarge(
 
     LaunchedEffect(moverMesa) {
         if(moverMesa){
-            objetoEstadoPantallaCarga.cambiarEstadoMenuPrincipal(true)
+            objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(true)
             val result = objectoProcesadorDatosApi.moverMesa(mesa = mesaActual.nombre, mesaDestino = mesaDestino)
             if (result!= null){
                 estadoRespuestaApi.cambiarEstadoRespuestaApi(mostrarRespuesta = true, datosRespuesta = result)
             }
             mesaDestino=""
-            objetoEstadoPantallaCarga.cambiarEstadoMenuPrincipal(false)
+            objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
             iniciarMenuMoverMesa= false
             actualizarListaMesas= true
             moverMesa= false
@@ -535,7 +551,7 @@ fun InterfazModuloSacLarge(
 
     LaunchedEffect(regresarPantallaAnterior) {
         if (regresarPantallaAnterior){
-            navControllerPantallasModulos?.popBackStack()
+            navController.popBackStack()
             estadoRespuestaApi.cambiarEstadoRespuestaApi()
         }
     }
@@ -707,13 +723,13 @@ fun InterfazModuloSacLarge(
 
     ConstraintLayout(
         modifier = Modifier
-            .width(objetoAdaptardor.ajustarAncho(964))
-            .height(objetoAdaptardor.ajustarAltura(523))
+            .fillMaxSize()
             .background(Color(0xFFFFFFFF))
             .statusBarsPadding()
             .navigationBarsPadding()
     ){
-        val (bxSuperior, bxContenedorMesas ,txfBarraBusqueda, bxContenerdorCuentasActivas, bxContenedorBotones, flechaRegresar)= createRefs()
+        val (bxSuperior, bxContenedorMesas ,txfBarraBusqueda,
+            bxContenerdorCuentasActivas, bxContenedorBotones, flechaRegresar)= createRefs()
 
         Box(
             modifier = Modifier
@@ -907,7 +923,7 @@ fun InterfazModuloSacLarge(
             modifier = Modifier
                 .background(Color.White)
                 .width(objetoAdaptardor.ajustarAncho(740))
-                .height(objetoAdaptardor.ajustarAltura(420))
+                .height(objetoAdaptardor.ajustarAltura(515))
                 .constrainAs(bxContenedorMesas) {
                     start.linkTo(parent.start, margin = objetoAdaptardor.ajustarAncho(12))
                     top.linkTo(txfBarraBusqueda.bottom, margin = objetoAdaptardor.ajustarAltura(4))
@@ -939,9 +955,12 @@ fun InterfazModuloSacLarge(
                             rowItems.forEach { mesa ->
                                 BxContendorDatosMesa(
                                     datosMesa = mesa,
-                                    navControllerPantallasModuloSac = navControllerPantallasModuloSac,
+                                    navControllerPantallasModuloSac = navController,
                                     iniciarMenuDetalleComanda = { valor-> iniciarMenuMesaComandada=valor},
-                                    mesaSeleccionada = {datosMesaActual-> mesaActual= datosMesaActual }
+                                    mesaSeleccionada = {datosMesaActual-> mesaActual= datosMesaActual },
+                                    token = token,
+                                    nombreEmpresa = nombreEmpresa,
+                                    codUsuario = codUsuario
                                 )
                                 Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(12)))
                             }
@@ -960,7 +979,7 @@ fun InterfazModuloSacLarge(
             modifier = Modifier
                 .background(Color.White)
                 .width(objetoAdaptardor.ajustarAncho(195))
-                .height(objetoAdaptardor.ajustarAltura(469))
+                .height(objetoAdaptardor.ajustarAltura(530))
                 .shadow(
                     elevation = objetoAdaptardor.ajustarAltura(2),
                     shape = RoundedCornerShape(objetoAdaptardor.ajustarAltura(20))
@@ -1124,6 +1143,7 @@ fun InterfazModuloSacLarge(
                             }
 
                         }
+                        item { Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(16)))}
                     }
                 }
             }
@@ -1276,7 +1296,6 @@ fun InterfazModuloSacLarge(
             confirmButton = {
                 Button(
                     onClick = {
-                        iniciarMenuCrearMesa=false
                         iniciarCreacionNuevaMesa=true
                     },
                     colors = ButtonDefaults.buttonColors(
@@ -2188,18 +2207,31 @@ fun InterfazModuloSacLarge(
             confirmButton = {
                 Button(
                     onClick = {
-                        opcionesSubCuentasDestino.value[nombreNuevaSubCuenta]=nombreNuevaSubCuenta
-                        val jsonObject = JSONObject("""
+                        if (nombreNuevaSubCuenta.isEmpty()){
+                            val jsonObject = JSONObject("""
+                                {
+                                    "code": 400,
+                                    "status": "error",
+                                    "data": "Ingrese el nombre de la Sub-Cuenta"
+                                }
+                                """
+                            )
+                            estadoRespuestaApi.cambiarEstadoRespuestaApi(mostrarRespuesta = true, datosRespuesta = jsonObject)
+                        }else{
+                            opcionesSubCuentasDestino.value[nombreNuevaSubCuenta]=nombreNuevaSubCuenta
+                            val jsonObject = JSONObject("""
                                 {
                                     "code": 200,
                                     "status": "ok",
                                     "data": "Sub-Cuenta creada"
                                 }
                             """
-                        )
-                        iniciarMenuAgregarSubCuenta=false
-                        nombreNuevaSubCuenta=""
-                        estadoRespuestaApi.cambiarEstadoRespuestaApi(mostrarRespuesta = true, datosRespuesta = jsonObject)
+                            )
+                            iniciarMenuAgregarSubCuenta=false
+                            nombreNuevaSubCuenta=""
+                            estadoRespuestaApi.cambiarEstadoRespuestaApi(mostrarRespuesta = true, datosRespuesta = jsonObject)
+                        }
+
                     },
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Color(0xFF244BC0), // Color de fondo del botón
@@ -2335,7 +2367,10 @@ internal fun BxContendorDatosMesa(
     datosMesa: Mesa,
     navControllerPantallasModuloSac:NavController?,
     iniciarMenuDetalleComanda: (Boolean)->Unit,
-    mesaSeleccionada: (Mesa)->Unit
+    mesaSeleccionada: (Mesa)->Unit,
+    token : String,
+    nombreEmpresa: String,
+    codUsuario: String
 ){
     val configuration = LocalConfiguration.current
     val dpAnchoPantalla = configuration.screenWidthDp
@@ -2347,10 +2382,12 @@ internal fun BxContendorDatosMesa(
 
     LaunchedEffect(iniciarPantallaSacComanda) {
         if (iniciarPantallaSacComanda && datosMesa.estado=="null"){
-            objetoEstadoPantallaCarga.cambiarEstadoMenuPrincipal(true)
+            objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(true)
             iniciarMenuDetalleComanda(false)
             delay(500)
-            navControllerPantallasModuloSac?.navigate(RutasPantallasModuloSac.PantallaSacComanda.ruta+"/"+datosMesa.nombre+"/"+datosMesa.salon){
+            navControllerPantallasModuloSac?.navigate(
+                RutasPatallas.SacComanda.ruta+"/"+datosMesa.nombre+"/"+datosMesa.salon+"/"+token+"/"+nombreEmpresa+"/"+codUsuario
+            ){
                 restoreState= true
                 launchSingleTop=true
             }
@@ -2490,7 +2527,8 @@ internal fun BxContendorDatosMesa(
 private fun Preview(){
     val m= Mesa(idMesa = "1", estado = "2", nombre = "Mesa 1", total= "10000", tiempo = 45, cantidadSubcuentas = "1")
 //    BxContendorDatosMesa(m)
-    InterfazModuloSacLarge("", null, null, null, "","")
+    val nav = rememberNavController()
+    InterfazModuloSacLarge("", null, nav, "","")
 }
 
 //@Preview

@@ -280,7 +280,7 @@ fun IniciarInterfazAgregarCliente(
     LaunchedEffect(isCosultaDatasFinalizada) {
         if (isCosultaDatasFinalizada==2){
             delay(500)
-            objetoEstadoPantallaCarga.cambiarEstadoMenuPrincipal(false)
+            objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
             isCosultaDatasFinalizada= 0
         }
     }
@@ -321,21 +321,20 @@ fun IniciarInterfazAgregarCliente(
                 opcionesTipoIndetificacionCliente = opcionesTipoIndentificacionCliente
             )
             if (ValidarCamposObligatoriosClientes(datosCliente)){
-                objetoEstadoPantallaCarga.cambiarEstadoMenuPrincipal(true)
+                objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(true)
                 val result= objectoProcesadorDatosApi.agregarCliente(datosCliente = datosCliente)
                 if (result != null) {
                     estadoRespuestaApi.cambiarEstadoRespuestaApi(mostrarRespuesta = true, datosRespuesta = result)
                 }
             }
         }
-        objetoEstadoPantallaCarga.cambiarEstadoMenuPrincipal(false)
+        objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
         guardarCliente=false
     }
 
     ConstraintLayout(
         modifier = Modifier
-            .fillMaxWidth()
-            .height(objetoAdaptardor.ajustarAltura(722))
+            .fillMaxSize()
             .background(Color(0xFFFFFFFF))
             .statusBarsPadding()
             .navigationBarsPadding()
@@ -394,7 +393,7 @@ fun IniciarInterfazAgregarCliente(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(objetoAdaptardor.ajustarAltura(652))
+                .height(objetoAdaptardor.ajustarAltura(742))
                 .background(Color.White)
                 .constrainAs(bxContenedorLzColum){
                     start.linkTo(parent.start)

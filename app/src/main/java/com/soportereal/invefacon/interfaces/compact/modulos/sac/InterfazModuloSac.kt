@@ -17,7 +17,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Error
 import androidx.compose.material.icons.filled.RestaurantMenu
 import androidx.compose.material3.Icon
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -33,37 +32,11 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.navigation.NavController
-import androidx.navigation.compose.rememberNavController
 import com.google.accompanist.systemuicontroller.SystemUiController
 import com.soportereal.invefacon.R
-import com.soportereal.invefacon.funciones_de_interfaces.NavHostPantallasModuloSac
 import com.soportereal.invefacon.interfaces.compact.FuncionesParaAdaptarContenidoCompact
 import com.soportereal.invefacon.interfaces.compact.pantallas_principales.objetoEstadoPantallaCarga
 
-@Composable
-fun IniciarInterfazModuloSac(
-    apiToken: String,
-    systemUiController: SystemUiController,
-    navControllerPantallasModulos: NavController?,
-    codUsuario: String,
-    nombreEmpresa: String
-){
-    val navControllerPantallasModuloSac= rememberNavController()
-
-    Scaffold (
-        content = {innerPadding ->
-            NavHostPantallasModuloSac(
-                apiToken =  apiToken,
-                navControllerPantallasModuloSac = navControllerPantallasModuloSac,
-                innerPadding= innerPadding,
-                systemUiController= systemUiController,
-                navControllerPantallasModulos= navControllerPantallasModulos,
-                codUsuario= codUsuario,
-                nombreEmpresa = nombreEmpresa
-            )
-        }
-    )
-}
 
 @Composable
 fun InterfazModuloSac(
@@ -138,7 +111,7 @@ fun InterfazModuloSac(
                 Text("Actualmente este módulo no se encuentra disponible para este dispositivo", textAlign = TextAlign.Center)
             }
         }
-        objetoEstadoPantallaCarga.cambiarEstadoMenuPrincipal(false)
+        objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
     }
 }
 @Composable

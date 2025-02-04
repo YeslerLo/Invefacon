@@ -99,6 +99,6 @@ fun IniciarInterfazAjustes(){
                 Text("En desarrollo...", textAlign = TextAlign.Center)
             }
         }
-        objetoEstadoPantallaCarga.cambiarEstadoMenuPrincipal(false)
+        objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
     }
 }
