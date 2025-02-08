@@ -320,6 +320,7 @@ fun InterfazSacComandaLarge(
             objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
             delay(2000)
             estadoRespuestaApi.cambiarEstadoRespuestaApi(regresarPantallaAnterior=true)
+            println(regresarPantallaAnterior)
             iniciarComandaSubCuenta= false
         }
     }
@@ -332,6 +333,7 @@ fun InterfazSacComandaLarge(
 
         if (regresarPantallaAnterior && opcionesSubCuentas.value.isNotEmpty()){
             subCuentaSeleccionada= opcionesSubCuentas.value.keys.first()
+            actualizarMontos=true
             estadoRespuestaApi.cambiarEstadoRespuestaApi()
         }
     }
@@ -635,7 +637,7 @@ fun InterfazSacComandaLarge(
                 )
                 Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(8)))
                 Text(
-                    "SAC $nombreMesa",
+                    "SAC $nombreMesa-$salon",
                     fontFamily = fontAksharPrincipal,
                     fontWeight = FontWeight.SemiBold,
                     fontSize = obtenerEstiloDisplay(),
@@ -1059,7 +1061,6 @@ fun InterfazSacComandaLarge(
                             )
                             // Spacer separador de componente
                             Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(8)))
-
                         }
                     }
                 },
@@ -1077,7 +1078,10 @@ fun InterfazSacComandaLarge(
                                 )
                                 estadoRespuestaApi.cambiarEstadoRespuestaApi(mostrarRespuesta = true, datosRespuesta = jsonObject)
                             }else{
-                                opcionesSubCuentas.value[nombreNuevaSubCuenta]=nombreNuevaSubCuenta
+                                val nuevoMapa = LinkedHashMap<String, String>()
+                                nuevoMapa[nombreNuevaSubCuenta] = nombreNuevaSubCuenta
+                                nuevoMapa.putAll(opcionesSubCuentas.value)
+                                opcionesSubCuentas.value = nuevoMapa
                                 val jsonObject = JSONObject("""
                                 {
                                     "code": 200,
@@ -1470,6 +1474,264 @@ internal fun AgregarBxContenerdorMontosCuenta(
 }
 
 
+@Composable
+fun AgregarBxContendorArticuloAgregado(
+    articulo: ArticulosSeleccionadosSac
+){
+    val fontAksharPrincipal = FontFamily(Font(R.font.akshar_medium))
+    val configuration = LocalConfiguration.current
+    val dpAnchoPantalla = configuration.screenWidthDp
+    val dpAltoPantalla = configuration.screenHeightDp
+    val dpFontPantalla= configuration.fontScale
+    val objetoAdaptardor= FuncionesParaAdaptarContenidoCompact(dpAltoPantalla, dpAnchoPantalla, dpFontPantalla, true)
+    Box(
+        modifier = Modifier
+            .width(objetoAdaptardor.ajustarAncho(260))
+            .background(Color(0xFFF6F6F6))
+    ){
+        Column {
+            Row(
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(6)))
+                Text(
+                    articulo.nombre,
+                    fontFamily = fontAksharPrincipal,
+                    fontWeight = FontWeight.Medium,
+                    fontSize = obtenerEstiloBody(),
+                    overflow = TextOverflow.Ellipsis,
+                    textAlign = TextAlign.Start,
+                    modifier = Modifier.width(objetoAdaptardor.ajustarAncho(165)).padding(2.dp)
+                )
+                Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(4)))
+                Box{
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+
+                        IconButton(
+                            onClick = {
+                                val articuloSeleccionado = ArticulosSeleccionadosSac(
+                                    nombre = articulo.nombre,
+                                    codigo = articulo.codigo,
+                                    precioUnitario = articulo.precioUnitario,
+                                    cantidad = -1,
+                                    subCuenta = articulo.subCuenta
+                                )
+//                                agregarOActualizarProducto(articuloSeleccionado)
+                            },
+                            modifier = Modifier.size(objetoAdaptardor.ajustarAltura(22))
+                        ) {
+                            Icon(
+                                imageVector = if(articulo.cantidad==1) Icons.Filled.Delete else Icons.Filled.RemoveCircle,
+                                contentDescription = "Basurero",
+                                tint = if(articulo.cantidad==1)Color.Red else Color.Black,
+                                modifier = Modifier.size(objetoAdaptardor.ajustarAltura(22))
+                            )
+                        }
+
+                        Text(
+                            articulo.cantidad.toString(),
+                            fontFamily = fontAksharPrincipal,
+                            fontWeight = FontWeight.Medium,
+                            fontSize = obtenerEstiloLabel(),
+                            overflow = TextOverflow.Ellipsis,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.width(objetoAdaptardor.ajustarAncho(35)).padding(2.dp)
+                        )
+                        IconButton(
+                            onClick = {
+                                val articuloSeleccionado = ArticulosSeleccionadosSac(
+                                    nombre = articulo.nombre,
+                                    codigo = articulo.codigo,
+                                    precioUnitario = articulo.precioUnitario,
+                                    cantidad = 1,
+                                    subCuenta = articulo.subCuenta
+                                )
+//                                agregarOActualizarProducto(articuloSeleccionado)
+                            },
+                            modifier = Modifier.size(objetoAdaptardor.ajustarAltura(22))
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.AddCircle,
+                                contentDescription = "Basurero",
+                                tint = Color.Black,
+                                modifier = Modifier.size(objetoAdaptardor.ajustarAltura(22))
+                            )
+                        }
+                    }
+                }
+                Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(6)))
+            }
+            HorizontalDivider()
+            if (articulo.tipo == 1){
+
+                Row {
+                    Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(10)))
+                    Text(
+                        "1",
+                        fontFamily = fontAksharPrincipal,
+                        fontWeight = FontWeight.Light,
+                        fontSize = obtenerEstiloLabel(),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.width(objetoAdaptardor.ajustarAncho(20)).padding(2.dp),
+                        color = Color.DarkGray
+                    )
+                    Text(
+                        "Bebida: Coca-Cola 500ml",
+                        fontFamily = fontAksharPrincipal,
+                        fontWeight = FontWeight.Light,
+                        fontSize = obtenerEstiloLabel(),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        textAlign = TextAlign.Start,
+                        modifier = Modifier.width(objetoAdaptardor.ajustarAncho(130)).padding(2.dp),
+                        color = Color.DarkGray
+                    )
+                    Text(
+                        "+ \u20A1 "+String.format(Locale.US, "%,.2f", 300.toString().replace(",", "").toDouble()),
+                        fontFamily = fontAksharPrincipal,
+                        fontWeight = FontWeight.Light,
+                        fontSize = obtenerEstiloLabel(),
+                        overflow = TextOverflow.Ellipsis,
+                        textAlign = TextAlign.End,
+                        modifier = Modifier.width(objetoAdaptardor.ajustarAncho(130)).padding(2.dp)
+                    )
+                }
+                HorizontalDivider()
+                Row {
+                    Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(10)))
+                    Text(
+                        "2",
+                        fontFamily = fontAksharPrincipal,
+                        fontWeight = FontWeight.Light,
+                        fontSize = obtenerEstiloLabel(),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.width(objetoAdaptardor.ajustarAncho(20)).padding(2.dp),
+                        color = Color.DarkGray
+                    )
+                    Text(
+                        "Plato Principal: Cazados de pollo",
+                        fontFamily = fontAksharPrincipal,
+                        fontWeight = FontWeight.Light,
+                        fontSize = obtenerEstiloLabel(),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        textAlign = TextAlign.Start,
+                        modifier = Modifier.width(objetoAdaptardor.ajustarAncho(130)).padding(2.dp),
+                        color = Color.DarkGray
+                    )
+                    Text(
+                        "\u20A1 "+String.format(Locale.US, "%,.2f", articulo.montoTotal.toString().replace(",", "").toDouble()),
+                        fontFamily = fontAksharPrincipal,
+                        fontWeight = FontWeight.Light,
+                        fontSize = obtenerEstiloLabel(),
+                        overflow = TextOverflow.Ellipsis,
+                        textAlign = TextAlign.End,
+                        modifier = Modifier.width(objetoAdaptardor.ajustarAncho(130)).padding(2.dp)
+                    )
+                }
+                HorizontalDivider()
+                Row {
+                    Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(10)))
+                    Text(
+                        "1",
+                        fontFamily = fontAksharPrincipal,
+                        fontWeight = FontWeight.Light,
+                        fontSize = obtenerEstiloLabel(),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.width(objetoAdaptardor.ajustarAncho(20)).padding(2.dp),
+                        color = Color.DarkGray
+                    )
+                    Text(
+                        "Postre: Galleta de chocolate",
+                        fontFamily = fontAksharPrincipal,
+                        fontWeight = FontWeight.Light,
+                        fontSize = obtenerEstiloLabel(),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        textAlign = TextAlign.Start,
+                        modifier = Modifier.width(objetoAdaptardor.ajustarAncho(130)).padding(2.dp),
+                        color = Color.DarkGray
+                    )
+                    Text(
+                        "\u20A1 "+String.format(Locale.US, "%,.2f", articulo.montoTotal.toString().replace(",", "").toDouble()),
+                        fontFamily = fontAksharPrincipal,
+                        fontWeight = FontWeight.Light,
+                        fontSize = obtenerEstiloLabel(),
+                        overflow = TextOverflow.Ellipsis,
+                        textAlign = TextAlign.End,
+                        modifier = Modifier.width(objetoAdaptardor.ajustarAncho(130)).padding(2.dp)
+                    )
+                }
+                HorizontalDivider()
+                Row {
+                    Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(10)))
+                    Text(
+                        "1",
+                        fontFamily = fontAksharPrincipal,
+                        fontWeight = FontWeight.Light,
+                        fontSize = obtenerEstiloLabel(),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.width(objetoAdaptardor.ajustarAncho(20)).padding(2.dp),
+                        color = Color.DarkGray
+                    )
+                    Text(
+                        "Postre: Pastel de Vainilla",
+                        fontFamily = fontAksharPrincipal,
+                        fontWeight = FontWeight.Light,
+                        fontSize = obtenerEstiloLabel(),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        textAlign = TextAlign.Start,
+                        modifier = Modifier.width(objetoAdaptardor.ajustarAncho(130)).padding(2.dp),
+                        color = Color.DarkGray
+                    )
+                    Text(
+                        "+ \u20A1 "+String.format(Locale.US, "%,.2f", 1200.toString().replace(",", "").toDouble()),
+                        fontFamily = fontAksharPrincipal,
+                        fontWeight = FontWeight.Light,
+                        fontSize = obtenerEstiloLabel(),
+                        overflow = TextOverflow.Ellipsis,
+                        textAlign = TextAlign.End,
+                        modifier = Modifier.width(objetoAdaptardor.ajustarAncho(130)).padding(2.dp)
+                    )
+                }
+                HorizontalDivider()
+            }
+            Row {
+                Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(6)))
+                Text(
+                    articulo.anotacion,
+                    fontFamily = fontAksharPrincipal,
+                    fontWeight = FontWeight.Light,
+                    fontSize = obtenerEstiloLabel(),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    textAlign = TextAlign.Start,
+                    modifier = Modifier.width(objetoAdaptardor.ajustarAncho(130)).padding(2.dp),
+                    color = Color.DarkGray
+                )
+                Text(
+                    "\u20A1 "+String.format(Locale.US, "%,.2f", 12300.toString().replace(",", "").toDouble()),
+                    fontFamily = fontAksharPrincipal,
+                    fontWeight = FontWeight.Light,
+                    fontSize = obtenerEstiloBody(),
+                    overflow = TextOverflow.Ellipsis,
+                    textAlign = TextAlign.End,
+                    modifier = Modifier.width(objetoAdaptardor.ajustarAncho(130)).padding(2.dp)
+                )
+            }
+        }
+    }
+}
+
 
 
 @Composable
@@ -1482,13 +1744,14 @@ private fun Preview(){
 
 //@Composable
 //@Preview()
-//private fun Preview(){
+//private fun Preview2(){
 //    val a= ArticulosSeleccionadosSac(
 //        codigo = "0001",
-//        nombre = "Hamburguesa con queso y papas a la francesa con Coca-Cola",
+//        nombre = "Combo del dia",
 //        anotacion = "Sin cebolla, sin queso, sin carne, sin pan porque me da ansiedad",
 //        cantidad = 1,
-//        precioUnitario = 2300
+//        precioUnitario = 2300.00,
+//        isCombo = 1
 //    )
 //    AgregarBxContendorArticuloAgregado(a)
 //}

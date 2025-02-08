@@ -4,10 +4,12 @@ import com.soportereal.invefacon.funciones_de_interfaces.FuncionesHttp
 import okhttp3.MultipartBody
 import org.json.JSONArray
 import org.json.JSONObject
+import java.net.Inet4Address
 
 class ProcesarDatosModuloSac(apiToken: String){
 
     private val objetoFuncionesHttpInvefacon= FuncionesHttp(servidorUrl = "https://invefacon.com", apiToken = apiToken)
+
     suspend fun obtenerListaMesas(mesa: String=""): JSONObject?{
 
         val formBody = MultipartBody.Builder().setType(MultipartBody.FORM)
@@ -50,6 +52,7 @@ class ProcesarDatosModuloSac(apiToken: String){
             .build()
         return objetoFuncionesHttpInvefacon.metodoPost(formBody = formBody, apiDirectorio = "apimovil/sac/crearComanda.php")
     }
+
     suspend fun obtenerDatosMesaComandada(nombreMesa: String):JSONObject?{
         val formBody = MultipartBody.Builder().setType(MultipartBody.FORM)
             .addFormDataPart("Mesa",nombreMesa)
@@ -85,7 +88,10 @@ class ProcesarDatosModuloSac(apiToken: String){
         return objetoFuncionesHttpInvefacon.metodoPost(formBody = formBody, apiDirectorio = "apimovil/sac/listaSubcuentas.php")
     }
 
-    suspend fun moverMesa(mesa: String, mesaDestino: String):JSONObject?{
+    suspend fun moverMesa(
+        mesa: String,
+        mesaDestino: String
+    ):JSONObject?{
         val formBody = MultipartBody.Builder().setType(MultipartBody.FORM)
             .addFormDataPart("MesaActual", mesa)
             .addFormDataPart("MesaDestino", mesaDestino)
@@ -128,7 +134,8 @@ data class Mesa(
 data class ArticuloSac(
     var nombre: String="",
     var codigo: String= "",
-    var precio: Double = 0.00
+    var precio: Double = 0.00,
+    var tipo: Int = 0
 )
 
 data class FamiliaSac(
@@ -149,7 +156,8 @@ data class ArticulosSeleccionadosSac(
     var cantidad: Int = 0,
     var precioUnitario: Double = 0.0,
     var montoTotal : Double = 0.0,
-    var subCuenta : String = ""
+    var subCuenta : String = "",
+    var tipo : Int = 0
 ){
     fun calcularMontoTotal() {
         montoTotal = (precioUnitario * cantidad.toDouble())

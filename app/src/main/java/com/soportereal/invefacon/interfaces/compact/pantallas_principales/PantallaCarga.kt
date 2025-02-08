@@ -116,17 +116,11 @@ fun PantallaCarga(
         }
     }
 
-
     if(!isCargandoPantallaMenuPrincipal){
-
         // Estado para controlar la visibilidad del diálogo
         if (datosRespuestaApi.toString()!="{}"){
             exitoRespuestaApi= datosRespuestaApi.getString("code")=="200" && datosRespuestaApi.getString("status")=="ok"
         }
-        else{
-            estadoRespuestaApi.cambiarEstadoRespuestaApi(mostrarRespuesta = false, datosRespuesta = JSONObject("""{"code":400,"status":"error","data":"Error"}"""))
-        }
-
         if(mostrarRespuestaApi || (mostrarSoloRespuestaError && !exitoRespuestaApi)){
             Box(
                 modifier = Modifier
@@ -274,8 +268,6 @@ class EstadoRespuestaApi : ViewModel(){
         _datosRespuestaApi.value= datosRespuesta
         _estadoBtOk.value = regresarPantallaAnterior
         _mostrarSoloRespuestaError.value = mostrarSoloRespuestaError
-
-
     }
 }
 val estadoRespuestaApi= EstadoRespuestaApi()
