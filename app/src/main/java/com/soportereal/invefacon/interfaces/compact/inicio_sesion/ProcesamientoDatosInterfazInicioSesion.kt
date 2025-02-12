@@ -6,14 +6,14 @@ import org.json.JSONObject
 
 class ProcesamientoDatosInterfazInicioSesion {
 
-    private val objetoFuncionesHttpInvefacon= FuncionesHttp(servidorUrl = "https://invefacon.com", apiToken = "") //No se pasa ningun parametro para apiToken ya que este no es necesario
+    private val objetoFuncionesHttpInvefacon= FuncionesHttp(apiToken = "") //No se pasa ningun parametro para apiToken ya que este no es necesario
 
     suspend fun obtenerNombresEmpresasPorCorreo(clienteCorreoEmpresa: String): JSONObject? {
         val apiBody = MultipartBody.Builder().setType(MultipartBody.FORM)
             .addFormDataPart("email", clienteCorreoEmpresa)
             .build()
         // Llama a la función `metodoPost` y devuelve el resultado
-        return objetoFuncionesHttpInvefacon.metodoPost(apiBody, "apiMovil/seguridad/empresas.php")
+        return objetoFuncionesHttpInvefacon.metodoPost(apiBody, "seguridad/empresas.php")
     }
 
     suspend fun validarInicioSesion(correoEmpresa: String, nombreEmpresa: String, passwordEmpresa: String): JSONObject?{
@@ -22,7 +22,7 @@ class ProcesamientoDatosInterfazInicioSesion {
             .addFormDataPart("clave",passwordEmpresa)
             .addFormDataPart("empresa", nombreEmpresa)
             .build()
-        return objetoFuncionesHttpInvefacon.metodoPost(apiBody, "apiMovil/seguridad/authtoken.php")
+        return objetoFuncionesHttpInvefacon.metodoPost(apiBody, "seguridad/authtoken.php")
 
     }
 }

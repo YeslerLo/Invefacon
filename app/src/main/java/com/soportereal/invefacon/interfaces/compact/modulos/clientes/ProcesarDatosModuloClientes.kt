@@ -8,7 +8,7 @@ import org.json.JSONObject
 
 class ProcesarDatosModuloClientes(apiToken: String){
 
-    private val objetoFuncionesHttpInvefacon= FuncionesHttp(servidorUrl = "https://invefacon.com", apiToken = apiToken)
+    private val objetoFuncionesHttpInvefacon= FuncionesHttp(apiToken = apiToken)
 
     suspend fun obtenerDatosClientes(
         clientesPorPagina: String? = "1",
@@ -24,7 +24,7 @@ class ProcesarDatosModuloClientes(apiToken: String){
             .addFormDataPart("cliente${busquedaPor?:"codigo"}", clienteDatoBusqueda)
             .addFormDataPart("clientecodigoestado", clienteEstado?:"")
             .build()
-        return objetoFuncionesHttpInvefacon.metodoPost(formBody = formBody, apiDirectorio = "apiMovil/clientes/clientes.php")
+        return objetoFuncionesHttpInvefacon.metodoPost(formBody = formBody, apiDirectorio = "clientes/clientes.php")
     }
 
     suspend fun obtenerDatosAgentes():JSONObject?{
@@ -32,14 +32,14 @@ class ProcesarDatosModuloClientes(apiToken: String){
             .addFormDataPart("estado", "1")
             .addFormDataPart("grupo", "2")
             .build()
-        return objetoFuncionesHttpInvefacon.metodoPost(formBody = formBody, apiDirectorio = "apiMovil/seguridad/usuarios.php")
+        return objetoFuncionesHttpInvefacon.metodoPost(formBody = formBody, apiDirectorio = "seguridad/usuarios.php")
     }
 
     suspend fun obtenerTiposClientes():JSONObject?{
         val formBody = MultipartBody.Builder().setType(MultipartBody.FORM)
             .addFormDataPart("estado", "1")
             .build()
-        return objetoFuncionesHttpInvefacon.metodoPost(formBody = formBody, apiDirectorio = "apiMovil/clientes/tipocliente.php")
+        return objetoFuncionesHttpInvefacon.metodoPost(formBody = formBody, apiDirectorio = "clientes/tipocliente.php")
     }
 
     suspend fun actualizarDatosClientes(
@@ -124,7 +124,7 @@ class ProcesarDatosModuloClientes(apiToken: String){
         val formBody = formBuilder.build()
         println(formBody)
 
-        return objetoFuncionesHttpInvefacon.metodoPost(formBody = formBody, apiDirectorio = "api/clientes/editarcliente.php")
+        return objetoFuncionesHttpInvefacon.metodoPost(formBody = formBody, apiDirectorio = "clientes/editarcliente.php")
 
     }
 
@@ -158,7 +158,7 @@ class ProcesarDatosModuloClientes(apiToken: String){
             .addFormDataPart("Cedula", datosCliente.Cedula)
             .build()
 
-        return objetoFuncionesHttpInvefacon.metodoPost(formBody = formBody, apiDirectorio = "api/clientes/agregarcliente.php")
+        return objetoFuncionesHttpInvefacon.metodoPost(formBody = formBody, apiDirectorio = "clientes/agregarcliente.php")
     }
 }
 
