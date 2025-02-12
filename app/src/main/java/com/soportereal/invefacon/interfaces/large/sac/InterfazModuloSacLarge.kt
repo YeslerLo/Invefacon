@@ -1,6 +1,6 @@
 package com.soportereal.invefacon.interfaces.large.sac
 
-import androidx.compose.foundation.Image
+ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -26,7 +26,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountTree
@@ -67,7 +66,6 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
@@ -86,7 +84,6 @@ import com.google.accompanist.systemuicontroller.SystemUiController
 import com.soportereal.invefacon.R
 import com.soportereal.invefacon.funciones_de_interfaces.RutasPatallas
 import com.soportereal.invefacon.interfaces.compact.FuncionesParaAdaptarContenidoCompact
-import com.soportereal.invefacon.interfaces.compact.inicio_sesion.ocultarTeclado
 import com.soportereal.invefacon.interfaces.compact.modulos.clientes.AgregarTextFieldMultifuncional
 import com.soportereal.invefacon.interfaces.compact.obtenerEstiloBody
 import com.soportereal.invefacon.interfaces.compact.obtenerEstiloDisplay
@@ -118,7 +115,6 @@ fun InterfazModuloSacLarge(
     val dpFontPantalla= configuration.fontScale
     val objetoAdaptardor= FuncionesParaAdaptarContenidoCompact(dpAltoPantalla, dpAnchoPantalla, dpFontPantalla, true)
     var datosIngresadosBarraBusqueda by rememberSaveable  { mutableStateOf("") }
-    val contexto = LocalContext.current
     val lazyStateMesas= rememberLazyListState()
     val lazyStateCuentasActivas= rememberLazyListState()
     var listaCuentasActivasActuales by remember { mutableStateOf<List<Mesa>>(emptyList()) }
@@ -480,12 +476,13 @@ fun InterfazModuloSacLarge(
                 val data= result.getJSONObject("data")
                 val mesas= data.getJSONArray("Mesas")
                 for(i in 0 until mesas.length()){
-                    println(mesas.getString(i))
-                    opcionesMesas.value[mesas.getString(i)]= mesas.getString(i)
+                    val datosMesa = mesas.getJSONObject(i)
+                    opcionesMesas.value[datosMesa.getString("nombreMesa")] = datosMesa.getString("nombreMesa")+"-"+datosMesa.getString("nombreSalon")
                 }
-                if (mesaDestino.isEmpty()){
-                    mesaDestino= opcionesMesas.value[mesaActual.nombre].toString()
+                if (mesaDestino.isEmpty()) {
+                    mesaDestino = opcionesMesas.value[mesaActual.nombre].toString()
                 }
+
             }
             subCuentaDestinoArticulo=""
             opcionesSubCuentasDestino.value.clear()
@@ -801,9 +798,6 @@ fun InterfazModuloSacLarge(
             ),
             keyboardOptions = KeyboardOptions.Default.copy(
                 imeAction = ImeAction.Done
-            ),
-            keyboardActions = KeyboardActions(
-                onDone = { ocultarTeclado(contexto) }
             ),
             decorationBox = { innerTextField ->
                 Box(
@@ -1186,9 +1180,6 @@ fun InterfazModuloSacLarge(
                             keyboardOptions = KeyboardOptions.Default.copy(
                                 imeAction = ImeAction.Done
                             ),
-                            keyboardActions = KeyboardActions(
-                                onDone = { ocultarTeclado(contexto) }
-                            ),
                             decorationBox = { innerTextField ->
                                 Box(
                                     modifier = Modifier
@@ -1245,9 +1236,6 @@ fun InterfazModuloSacLarge(
                             ),
                             keyboardOptions = KeyboardOptions.Default.copy(
                                 imeAction = ImeAction.Done
-                            ),
-                            keyboardActions = KeyboardActions(
-                                onDone = { ocultarTeclado(contexto) }
                             ),
                             decorationBox = { innerTextField ->
                                 Box(
@@ -1675,9 +1663,6 @@ fun InterfazModuloSacLarge(
                             keyboardOptions = KeyboardOptions.Default.copy(
                                 imeAction = ImeAction.Done
                             ),
-                            keyboardActions = KeyboardActions(
-                                onDone = { ocultarTeclado(contexto) }
-                            ),
                             decorationBox = { innerTextField ->
                                 Box(
                                     modifier = Modifier
@@ -1910,7 +1895,7 @@ fun InterfazModuloSacLarge(
 
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             AgregarTextFieldMultifuncional(
-                                label = "Nueva Mesa",
+                                label = "Mesa Destino",
                                 opciones2 = opcionesMesas,
                                 usarOpciones2 = true,
                                 contieneOpciones = true,
@@ -1918,14 +1903,13 @@ fun InterfazModuloSacLarge(
                                     actualizarSubCuentasYMesas = true
                                     mesaDestino= nuevoValor
                                 },
-                                valor = mesaDestino,
+                                valor = opcionesMesas.value[mesaDestino]?:"Seleccione un Mesa",
                                 isUltimo = true,
                                 tomarAnchoMaximo = false,
-                                medidaAncho = 150,
-                                mostrarClave = true
+                                medidaAncho = 210
                             )
                             AgregarTextFieldMultifuncional(
-                                label = "Nueva Sub-Cuenta",
+                                label = "Sub-Cuenta Destino",
                                 opciones2 = opcionesSubCuentasDestino,
                                 usarOpciones2 = true,
                                 contieneOpciones = true,
@@ -1958,9 +1942,9 @@ fun InterfazModuloSacLarge(
                                     moverArticulo= true
                                 },
                                 colors = ButtonDefaults.buttonColors(
-                                    containerColor = Color(0xFF244BC0), // Color de fondo del botón
+                                    containerColor = Color.Red, // Color de fondo del botón
                                     contentColor = Color.White,
-                                    disabledContainerColor = Color(0xFF244BC0),
+                                    disabledContainerColor = Color.Red,
                                     disabledContentColor = Color.White
                                 )
                             ) {
@@ -1984,9 +1968,9 @@ fun InterfazModuloSacLarge(
                                     cantidadArticulos= 1
                                 },
                                 colors = ButtonDefaults.buttonColors(
-                                    containerColor = Color.Red, // Color de fondo del botón
+                                    containerColor = Color(0xFF244BC0), // Color de fondo del botón
                                     contentColor = Color.White,
-                                    disabledContainerColor = Color.Red,
+                                    disabledContainerColor = Color(0xFF244BC0),
                                     disabledContentColor = Color.White
                                 )
                             ) {
@@ -2010,7 +1994,6 @@ fun InterfazModuloSacLarge(
     }
 
     if (iniciarMenuMoverMesa){
-
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -2058,11 +2041,10 @@ fun InterfazModuloSacLarge(
                                 nuevoValor = { nuevoValor->
                                     mesaDestino= nuevoValor
                                 },
-                                valor = mesaDestino,
+                                valor = opcionesMesas.value[mesaDestino]?:"Seleccione una Mesa",
                                 isUltimo = true,
                                 tomarAnchoMaximo = false,
-                                medidaAncho = 180,
-                                mostrarClave = true
+                                medidaAncho = 210,
                             )
                         }
                         Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(8)))
@@ -2073,10 +2055,11 @@ fun InterfazModuloSacLarge(
                                     iniciarMenuMoverMesa= false
                                 },
                                 colors = ButtonDefaults.buttonColors(
-                                    containerColor = Color(0xFF244BC0), // Color de fondo del botón
+                                    containerColor = Color.Red, // Color de fondo del botón
                                     contentColor = Color.White,
-                                    disabledContainerColor = Color(0xFF244BC0),
+                                    disabledContainerColor = Color.Red,
                                     disabledContentColor = Color.White
+
                                 )
                             ) {
                                 Text(
@@ -2098,9 +2081,9 @@ fun InterfazModuloSacLarge(
                                     iniciarMenuMoverMesa= false
                                 },
                                 colors = ButtonDefaults.buttonColors(
-                                    containerColor = Color.Red, // Color de fondo del botón
+                                    containerColor = Color(0xFF244BC0), // Color de fondo del botón
                                     contentColor = Color.White,
-                                    disabledContainerColor = Color.Red,
+                                    disabledContainerColor = Color(0xFF244BC0),
                                     disabledContentColor = Color.White
                                 )
                             ) {
@@ -2159,9 +2142,6 @@ fun InterfazModuloSacLarge(
                             keyboardOptions = KeyboardOptions.Default.copy(
                                 imeAction = ImeAction.Done
                             ),
-                            keyboardActions = KeyboardActions(
-                                onDone = { ocultarTeclado(contexto) }
-                            ),
                             decorationBox = { innerTextField ->
                                 Box(
                                     modifier = Modifier
@@ -2219,6 +2199,7 @@ fun InterfazModuloSacLarge(
                             estadoRespuestaApi.cambiarEstadoRespuestaApi(mostrarRespuesta = true, datosRespuesta = jsonObject)
                         }else{
                             opcionesSubCuentasDestino.value[nombreNuevaSubCuenta]=nombreNuevaSubCuenta
+                            subCuentaDestinoArticulo= nombreNuevaSubCuenta
                             val jsonObject = JSONObject("""
                                 {
                                     "code": 200,

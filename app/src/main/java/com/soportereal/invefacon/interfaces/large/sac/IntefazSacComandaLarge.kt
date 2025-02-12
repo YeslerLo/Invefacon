@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -97,6 +98,8 @@ import org.json.JSONArray
 import org.json.JSONObject
 import java.math.BigDecimal
 import java.math.RoundingMode
+import java.text.SimpleDateFormat
+import java.util.Date
 import java.util.Locale
 
 @Composable
@@ -131,6 +134,7 @@ fun InterfazSacComandaLarge(
     var subFamiliaActualSeleccionada by remember { mutableStateOf(SubFamiliaSac()) }
     var isCargandoArticulos by remember { mutableStateOf(true) }
     val articulosSeleccionados = remember { mutableStateListOf<ArticulosSeleccionadosSac>() }
+    val articulosComboSeleccionados = remember { mutableStateListOf<ArticuloSacGrupo>() }
     var subCuentaSeleccionada by remember { mutableStateOf("") }
     val opcionesSubCuentas: MutableState<LinkedHashMap<String, String>> = remember { mutableStateOf(LinkedHashMap()) }
     var nombreNuevaSubCuenta by remember { mutableStateOf("") }
@@ -142,6 +146,9 @@ fun InterfazSacComandaLarge(
     val coroutineScope = rememberCoroutineScope()
     val regresarPantallaAnterior by estadoRespuestaApi.estadoBtOk.collectAsState()
     var regresarPantalla by remember { mutableStateOf(false) }
+    var iniciarVentanaAgregarCombo by remember { mutableStateOf(false) }
+    val lazyStateArticulosCombo= rememberLazyListState()
+    var precioTotalArticulo by remember { mutableDoubleStateOf(0.00) }
 
     LaunchedEffect(actualizarMontos) {
         montoTotal= 0.00
@@ -233,10 +240,51 @@ fun InterfazSacComandaLarge(
                         .setScale(0, RoundingMode.HALF_UP)
                         .toDouble()
 
+                    val datosGruposStr = datosArticulo.optString("datosGrupos", "[]")
+                    val datosGrupos = JSONArray(datosGruposStr)
+
+                    val listaGrupos = mutableListOf<SacGrupo>()
+                    var cantidadArticulosObli = 0
+
+                    for (a in 0 until datosGrupos.length()){
+                        val datosGrupo= datosGrupos.getJSONObject(a)
+                        val nombreGrupo = datosGrupo.getString("nombreGrupo")
+                        val cantidadArticulos = datosGrupo.getInt("cantidadArticulos")
+                        val articulosGrupoStr = datosGrupo.optString("articulosGrupo", "[]")
+                        val articulosGrupo = JSONArray(articulosGrupoStr)
+
+                        val listaArticulosGrupo = mutableListOf<ArticuloSacGrupo>()
+
+                        for(e in 0 until articulosGrupo.length()){
+                            val datosArticuloGrupo = articulosGrupo.getJSONObject(e)
+                            val codigo = datosArticuloGrupo.getString("codigo")
+                            val nombreArticulo = datosArticuloGrupo.getString("nombreArticulo")
+                            val precio = datosArticuloGrupo.getDouble("precio")
+
+                            val articuloGrupo = ArticuloSacGrupo(
+                                codigo = codigo,
+                                nombre = nombreArticulo,
+                                nombreGrupo = nombreGrupo,
+                                precio = precio
+                            )
+                            listaArticulosGrupo.add(articuloGrupo)
+                        }
+
+                        val grupo = SacGrupo(
+                            nombre = nombreGrupo,
+                            cantidadItems = cantidadArticulos,
+                            articulos = listaArticulosGrupo
+                        )
+                        cantidadArticulosObli+=cantidadArticulos
+                        listaGrupos.add(grupo)
+                    }
+
                     val articulo = ArticuloSac(
                         nombre = datosArticulo.getString("nombreArticulo"),
                         codigo = datosArticulo.getString("Cod_Articulo"),
-                        precio = precioFinal
+                        precio = precioFinal,
+                        listaGrupos = listaGrupos,
+                        cantidadArticulosObli = cantidadArticulosObli
                     )
                     listaArticulos.add(articulo)
                 }
@@ -320,6 +368,7 @@ fun InterfazSacComandaLarge(
             objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
             delay(2000)
             estadoRespuestaApi.cambiarEstadoRespuestaApi(regresarPantallaAnterior=true)
+            println(regresarPantallaAnterior)
             iniciarComandaSubCuenta= false
         }
     }
@@ -332,6 +381,7 @@ fun InterfazSacComandaLarge(
 
         if (regresarPantallaAnterior && opcionesSubCuentas.value.isNotEmpty()){
             subCuentaSeleccionada= opcionesSubCuentas.value.keys.first()
+            actualizarMontos=true
             estadoRespuestaApi.cambiarEstadoRespuestaApi()
         }
     }
@@ -344,10 +394,11 @@ fun InterfazSacComandaLarge(
     }
 
     fun agregarOActualizarProducto(nuevoProducto: ArticulosSeleccionadosSac) {
+        println(nuevoProducto)
 
         // Buscar un producto existente en la lista por su 'codigo'
-        val productoExistente = articulosSeleccionados.find { it.codigo == nuevoProducto.codigo && it.subCuenta== nuevoProducto.subCuenta}
-        val index = articulosSeleccionados.indexOfFirst { it.codigo == nuevoProducto.codigo && it.subCuenta== nuevoProducto.subCuenta }
+        val productoExistente = articulosSeleccionados.find { it.codigo == nuevoProducto.codigo && it.subCuenta== nuevoProducto.subCuenta && it.idGrupo == nuevoProducto.idGrupo}
+        val index = articulosSeleccionados.indexOfFirst { it.codigo == nuevoProducto.codigo && it.subCuenta== nuevoProducto.subCuenta && it.idGrupo == nuevoProducto.idGrupo}
 
         if (productoExistente != null) {
             // Si el producto ya existe, actualizar su cantidad
@@ -377,6 +428,21 @@ fun InterfazSacComandaLarge(
         actualizarMontos=true
     }
 
+    fun agregarOActualizarArticuloCombo(cantidad: Int =0, articulo: ArticuloSacGrupo) {
+
+        // Buscar un producto existente en la lista por su 'codigo'
+        val productoExistente = articulosComboSeleccionados.find { it.codigo==articulo.codigo}
+
+        if (productoExistente != null) {
+            // Si el producto ya existe, actualizar su cantidad
+            productoExistente.cantidad += cantidad
+            precioTotalArticulo+= articulo.precio*cantidad
+        } else {
+            // Si el producto no existe, agregarlo a la lista
+            articulosComboSeleccionados.add(articulo)
+        }
+    }
+
     @Composable
     fun AgregarBxContendorArticuloAgregado(
         articulo: ArticulosSeleccionadosSac
@@ -398,12 +464,16 @@ fun InterfazSacComandaLarge(
                         fontSize = obtenerEstiloBody(),
                         overflow = TextOverflow.Ellipsis,
                         textAlign = TextAlign.Start,
-                        modifier = Modifier.width(objetoAdaptardor.ajustarAncho(165)).padding(2.dp)
+                        modifier = Modifier
+                            .width(objetoAdaptardor.ajustarAncho(165))
+                            .padding(2.dp)
                     )
                     Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(4)))
                     Box{
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center
+                        ) {
                             IconButton(
                                 onClick = {
                                     val articuloSeleccionado = ArticulosSeleccionadosSac(
@@ -411,17 +481,19 @@ fun InterfazSacComandaLarge(
                                         codigo = articulo.codigo,
                                         precioUnitario = articulo.precioUnitario,
                                         cantidad = -1,
-                                        subCuenta = articulo.subCuenta
+                                        subCuenta = articulo.subCuenta,
+                                        idGrupo = articulo.idGrupo,
+                                        articulosCombo = articulo.articulosCombo
                                     )
                                     agregarOActualizarProducto(articuloSeleccionado)
                                 },
-                                modifier = Modifier.size(objetoAdaptardor.ajustarAltura(22))
+                                modifier = Modifier.size(objetoAdaptardor.ajustarAltura(30))
                             ) {
                                 Icon(
                                     imageVector = if(articulo.cantidad==1) Icons.Filled.Delete else Icons.Filled.RemoveCircle,
                                     contentDescription = "Basurero",
                                     tint = if(articulo.cantidad==1)Color.Red else Color.Black,
-                                    modifier = Modifier.size(objetoAdaptardor.ajustarAltura(22))
+                                    modifier = Modifier.size(objetoAdaptardor.ajustarAltura(30))
                                 )
                             }
 
@@ -432,33 +504,80 @@ fun InterfazSacComandaLarge(
                                 fontSize = obtenerEstiloLabel(),
                                 overflow = TextOverflow.Ellipsis,
                                 textAlign = TextAlign.Center,
-                                modifier = Modifier.width(objetoAdaptardor.ajustarAncho(35)).padding(2.dp)
+                                modifier = Modifier
+                                    .width(objetoAdaptardor.ajustarAncho(35))
+                                    .padding(2.dp)
                             )
-                            IconButton(
-                                onClick = {
-                                    val articuloSeleccionado = ArticulosSeleccionadosSac(
-                                        nombre = articulo.nombre,
-                                        codigo = articulo.codigo,
-                                        precioUnitario = articulo.precioUnitario,
-                                        cantidad = 1,
-                                        subCuenta = articulo.subCuenta
+                            if (articulo.articulosCombo.size==0){
+                                IconButton(
+                                    onClick = {
+                                        val articuloSeleccionado = ArticulosSeleccionadosSac(
+                                            nombre = articulo.nombre,
+                                            codigo = articulo.codigo,
+                                            precioUnitario = articulo.precioUnitario,
+                                            cantidad = 1,
+                                            subCuenta = articulo.subCuenta,
+                                            idGrupo = articulo.idGrupo,
+                                            articulosCombo = articulo.articulosCombo
+                                        )
+                                        agregarOActualizarProducto(articuloSeleccionado)
+                                    },
+                                    modifier = Modifier.size(objetoAdaptardor.ajustarAltura(30))
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Filled.AddCircle,
+                                        contentDescription = "Basurero",
+                                        tint = Color.Black,
+                                        modifier = Modifier.size(objetoAdaptardor.ajustarAltura(30))
                                     )
-                                    agregarOActualizarProducto(articuloSeleccionado)
-                                },
-                                modifier = Modifier.size(objetoAdaptardor.ajustarAltura(22))
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Filled.AddCircle,
-                                    contentDescription = "Basurero",
-                                    tint = Color.Black,
-                                    modifier = Modifier.size(objetoAdaptardor.ajustarAltura(22))
-                                )
+                                }
                             }
+
                         }
                     }
                     Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(6)))
                 }
                 HorizontalDivider()
+                for (i in 0 until articulo.articulosCombo.size){
+                    val articuloCombo = articulo.articulosCombo[i]
+                    Row(
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(10)))
+                        Text(
+                            articuloCombo.cantidad.toString(),
+                            fontFamily = fontAksharPrincipal,
+                            fontWeight = FontWeight.Light,
+                            fontSize = obtenerEstiloLabel(),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.width(objetoAdaptardor.ajustarAncho(20)).padding(2.dp),
+                            color = Color.DarkGray
+                        )
+                        Text(
+                            articuloCombo.nombreGrupo+": "+articuloCombo.nombre,
+                            fontFamily = fontAksharPrincipal,
+                            fontWeight = FontWeight.Light,
+                            fontSize = obtenerEstiloLabel(),
+                            overflow = TextOverflow.Ellipsis,
+                            textAlign = TextAlign.Start,
+                            modifier = Modifier.width(objetoAdaptardor.ajustarAncho(130)).padding(2.dp),
+                            color = Color.DarkGray
+                        )
+                        Text(
+                            "+ \u20A1 "+String.format(Locale.US, "%,.2f", "${articuloCombo.precio*articuloCombo.cantidad}".replace(",", "").toDouble()),
+                            fontFamily = fontAksharPrincipal,
+                            fontWeight = FontWeight.Light,
+                            fontSize = obtenerEstiloLabel(),
+                            overflow = TextOverflow.Ellipsis,
+                            textAlign = TextAlign.End,
+                            modifier = Modifier.width(objetoAdaptardor.ajustarAncho(130)).padding(2.dp)
+                        )
+                    }
+                    HorizontalDivider()
+                }
                 Row {
                     Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(6)))
                     Text(
@@ -469,7 +588,9 @@ fun InterfazSacComandaLarge(
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                         textAlign = TextAlign.Start,
-                        modifier = Modifier.width(objetoAdaptardor.ajustarAncho(130)).padding(2.dp),
+                        modifier = Modifier
+                            .width(objetoAdaptardor.ajustarAncho(130))
+                            .padding(2.dp),
                         color = Color.DarkGray
                     )
                     Text(
@@ -479,7 +600,9 @@ fun InterfazSacComandaLarge(
                         fontSize = obtenerEstiloBody(),
                         overflow = TextOverflow.Ellipsis,
                         textAlign = TextAlign.End,
-                        modifier = Modifier.width(objetoAdaptardor.ajustarAncho(130)).padding(2.dp)
+                        modifier = Modifier
+                            .width(objetoAdaptardor.ajustarAncho(130))
+                            .padding(2.dp)
                     )
                 }
             }
@@ -497,19 +620,28 @@ fun InterfazSacComandaLarge(
                 .pointerInput(Unit) {
                     detectTapGestures(
                         onTap = {
-                            articuloActualSeleccionado= articulo
-                            iniciarVentanaAgregarArticulo=true
+                            articuloActualSeleccionado = articulo
+                            if (articulo.listaGrupos.isEmpty()) {
+                                iniciarVentanaAgregarArticulo = true
+                            } else {
+                                iniciarVentanaAgregarCombo = true
+                            }
+
                         },
-                        onDoubleTap ={
-                            val articuloSeleccionado = ArticulosSeleccionadosSac(
-                                nombre = articulo.nombre,
-                                codigo = articulo.codigo,
-                                precioUnitario = articulo.precio,
-                                cantidad = 1,
-                                anotacion = "",
-                                subCuenta = subCuentaSeleccionada
-                            )
-                            agregarOActualizarProducto(articuloSeleccionado)
+                        onDoubleTap = {
+                            if (articulo.listaGrupos.isEmpty()) {
+                                val articuloSeleccionado = ArticulosSeleccionadosSac(
+                                    nombre = articulo.nombre,
+                                    codigo = articulo.codigo,
+                                    precioUnitario = articulo.precio,
+                                    cantidad = 1,
+                                    anotacion = "",
+                                    subCuenta = subCuentaSeleccionada
+                                )
+                                agregarOActualizarProducto(articuloSeleccionado)
+                            } else {
+                                iniciarVentanaAgregarCombo = true
+                            }
                         }
                     )
                 }
@@ -600,6 +732,167 @@ fun InterfazSacComandaLarge(
         }
     }
 
+    @Composable
+    fun AgregarBxContenedorArticulosCombo(
+        grupo: SacGrupo
+    ){
+        var actualizarArticulos by remember { mutableStateOf(true) }
+        var itemsRestantes by remember { mutableStateOf(grupo.cantidadItems) }
+        LaunchedEffect(actualizarArticulos) {
+            if (actualizarArticulos){
+                for(i in 0 until grupo.articulos.size){
+                    val articulo = grupo.articulos[i]
+                    articulo.cantidad = 0
+                    agregarOActualizarArticuloCombo(
+                        articulo = articulo
+                    )
+                }
+                actualizarArticulos = false
+            }
+        }
+
+
+        Card(
+            modifier = Modifier
+                .wrapContentHeight()
+                .width(objetoAdaptardor.ajustarAncho(440))
+                .padding(objetoAdaptardor.ajustarAltura(8))
+                .shadow(
+                    elevation = objetoAdaptardor.ajustarAltura(7),
+                    shape = RoundedCornerShape(objetoAdaptardor.ajustarAltura(16))
+                ),
+            shape = RoundedCornerShape(objetoAdaptardor.ajustarAltura(16)),
+            colors = CardDefaults.cardColors(containerColor = Color.White)
+        ) {
+            Column(
+                verticalArrangement = Arrangement.Top,
+                horizontalAlignment = Alignment.Start
+            ) {
+                Row {
+                    Text(
+                        "${grupo.nombre} (${grupo.cantidadItems})",
+                        fontFamily = fontAksharPrincipal,
+                        fontWeight = FontWeight.Light,
+                        fontSize = obtenerEstiloHead(),
+                        overflow = TextOverflow.Ellipsis,
+                        textAlign = TextAlign.Start,
+                        color = Color.Black,
+                        modifier = Modifier
+                            .width(objetoAdaptardor.ajustarAncho(300))
+                            .padding(objetoAdaptardor.ajustarAltura(8))
+                    )
+                    Text(
+                        "Faltan: ${itemsRestantes}",
+                        fontFamily = fontAksharPrincipal,
+                        fontWeight = FontWeight.Light,
+                        fontSize = obtenerEstiloBody(),
+                        overflow = TextOverflow.Ellipsis,
+                        textAlign = TextAlign.End,
+                        color = Color.Black,
+                        modifier = Modifier
+                            .width(objetoAdaptardor.ajustarAncho(110))
+                            .padding(objetoAdaptardor.ajustarAltura(8))
+                    )
+                }
+                HorizontalDivider(
+                    thickness = 2.dp,
+                    color = Color.Black
+                )
+
+                for(i in 0 until articulosComboSeleccionados.size){
+                    val articulo = articulosComboSeleccionados[i]
+                    if(articulo.nombreGrupo==grupo.nombre){
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center
+                        ) {
+                            Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(30)))
+                            Text(
+                                articulo.nombre,
+                                fontFamily = fontAksharPrincipal,
+                                fontWeight = FontWeight.Light,
+                                fontSize = obtenerEstiloLabel(),
+                                overflow = TextOverflow.Ellipsis,
+                                textAlign = TextAlign.Start,
+                                color = Color.Black,
+                                modifier = Modifier.width(objetoAdaptardor.ajustarAncho(200))
+                            )
+
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.Center
+                            ) {
+                                Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(16)))
+                                Text(
+                                    "\u20A1 "+String.format(Locale.US, "%,.2f", "${articulo.precio*articulo.cantidad}".replace(",", "").toDouble()),
+                                    fontFamily = fontAksharPrincipal,
+                                    fontWeight = FontWeight.Light,
+                                    fontSize = obtenerEstiloLabel(),
+                                    overflow = TextOverflow.Ellipsis,
+                                    textAlign = TextAlign.Start,
+                                    color = Color.Black,
+                                    modifier = Modifier.width(objetoAdaptardor.ajustarAncho(100)).padding(6.dp)
+                                )
+                                IconButton(
+                                    onClick = {
+                                        if (itemsRestantes>=0 && articulo.cantidad>0){
+                                            agregarOActualizarArticuloCombo(
+                                                cantidad = -1,
+                                                articulo = articulo
+                                            )
+                                            itemsRestantes+=1
+                                        }
+                                    },
+                                    modifier = Modifier.size(objetoAdaptardor.ajustarAltura(30))
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Filled.RemoveCircle,
+                                        contentDescription = "Basurero",
+                                        tint =  if (itemsRestantes>=0 && articulo.cantidad>0) Color.Black else Color.White,
+                                        modifier = Modifier.size(objetoAdaptardor.ajustarAltura(30))
+                                    )
+                                }
+                                Text(
+                                    articulo.cantidad.toString(),
+                                    fontFamily = fontAksharPrincipal,
+                                    fontWeight = FontWeight.Medium,
+                                    fontSize = obtenerEstiloLabel(),
+                                    overflow = TextOverflow.Ellipsis,
+                                    textAlign = TextAlign.Center,
+                                    modifier = Modifier
+                                        .width(objetoAdaptardor.ajustarAncho(35))
+                                        .padding(2.dp)
+                                )
+
+                                IconButton(
+                                    onClick = {
+                                        if (itemsRestantes>0){
+                                            agregarOActualizarArticuloCombo(
+                                                cantidad = 1,
+                                                articulo = articulo
+                                            )
+                                            itemsRestantes-=1
+                                        }
+                                    },
+                                    modifier = Modifier.size(objetoAdaptardor.ajustarAltura(30))
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Filled.AddCircle,
+                                        contentDescription = "Basurero",
+                                        tint =  if (itemsRestantes>0) Color.Black else Color.White,
+                                        modifier = Modifier.size(objetoAdaptardor.ajustarAltura(30))
+                                    )
+                                }
+                                Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(16)))
+                            }
+                        }
+                        HorizontalDivider()
+                    }
+                }
+            }
+        }
+    }
+
     ConstraintLayout(
         modifier = Modifier
             .fillMaxSize()
@@ -635,7 +928,7 @@ fun InterfazSacComandaLarge(
                 )
                 Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(8)))
                 Text(
-                    "SAC $nombreMesa",
+                    "SAC $nombreMesa-$salon",
                     fontFamily = fontAksharPrincipal,
                     fontWeight = FontWeight.SemiBold,
                     fontSize = obtenerEstiloDisplay(),
@@ -650,7 +943,7 @@ fun InterfazSacComandaLarge(
         IconButton(
             onClick = {regresarPantalla=true},
             modifier = Modifier
-                .constrainAs(flechaRegresar){
+                .constrainAs(flechaRegresar) {
                     start.linkTo(parent.start, margin = objetoAdaptardor.ajustarAncho(20))
                     top.linkTo(parent.top, margin = objetoAdaptardor.ajustarAltura(12))
                 }
@@ -682,7 +975,10 @@ fun InterfazSacComandaLarge(
                     modifier = Modifier
                         .width(objetoAdaptardor.ajustarAncho(250))
                         .height(objetoAdaptardor.ajustarAltura(45))
-                        .background(Color.LightGray, RoundedCornerShape(objetoAdaptardor.ajustarAltura(18)))
+                        .background(
+                            Color.LightGray,
+                            RoundedCornerShape(objetoAdaptardor.ajustarAltura(18))
+                        )
                         .padding(horizontal = 16.dp, vertical = 4.dp),
                     contentAlignment = Alignment.CenterStart
                 ) {
@@ -735,9 +1031,9 @@ fun InterfazSacComandaLarge(
                     Button(
                         modifier = Modifier.height(objetoAdaptardor.ajustarAltura(35)),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFFEAEAEA), // Color de fondo del botón
+                            containerColor = if (familiaActualSeleccionada.nombre==familia.nombre) Color(0xFFBFBFBF) else Color(0xFFEAEAEA), // Color de fondo del botón
                             contentColor = Color.White,
-                            disabledContainerColor = Color(0xFFEAEAEA),
+                            disabledContainerColor = if (familiaActualSeleccionada.nombre==familia.nombre) Color(0xFFBFBFBF) else Color(0xFFEAEAEA),
                             disabledContentColor = Color.White
                         ),
                         elevation = ButtonDefaults.buttonElevation(defaultElevation = 7.dp),
@@ -783,9 +1079,9 @@ fun InterfazSacComandaLarge(
                     Button(
                         modifier = Modifier.height(objetoAdaptardor.ajustarAltura(35)),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFFEAEAEA), // Color de fondo del botón
+                            containerColor = if (subFamiliaActualSeleccionada.nombre==subFamilia.nombre) Color(0xFFBFBFBF) else Color(0xFFEAEAEA), // Color de fondo del botón
                             contentColor = Color.White,
-                            disabledContainerColor = Color(0xFFEAEAEA),
+                            disabledContainerColor = if (subFamiliaActualSeleccionada.nombre==subFamilia.nombre) Color(0xFFBFBFBF) else Color(0xFFEAEAEA),
                             disabledContentColor = Color.White
                         ),
                         elevation = ButtonDefaults.buttonElevation(defaultElevation = 7.dp),
@@ -820,7 +1116,10 @@ fun InterfazSacComandaLarge(
                 .height(objetoAdaptardor.ajustarAltura(465))
                 .constrainAs(bxContenedorArticulos) {
                     start.linkTo(parent.start, margin = objetoAdaptardor.ajustarAncho(8))
-                    top.linkTo(bxContenedorSubFamilias.bottom, margin = objetoAdaptardor.ajustarAltura(7))
+                    top.linkTo(
+                        bxContenedorSubFamilias.bottom,
+                        margin = objetoAdaptardor.ajustarAltura(7)
+                    )
                 },
             contentAlignment = Alignment.TopStart
         ){
@@ -867,7 +1166,10 @@ fun InterfazSacComandaLarge(
                     shape = RoundedCornerShape(objetoAdaptardor.ajustarAltura(20))
                 )
                 .constrainAs(bxContenerdorArticulosSeleccionados) {
-                    start.linkTo(bxContenedorArticulos.end, margin = objetoAdaptardor.ajustarAncho(8))
+                    start.linkTo(
+                        bxContenedorArticulos.end,
+                        margin = objetoAdaptardor.ajustarAncho(8)
+                    )
                     top.linkTo(bxSuperior.bottom, margin = objetoAdaptardor.ajustarAltura(8))
                 },
             shape = RoundedCornerShape(objetoAdaptardor.ajustarAltura(20)),
@@ -985,31 +1287,332 @@ fun InterfazSacComandaLarge(
                 }
             }
         }
+    }
 
-        if(iniciarMenuAgregarSubCuenta) {
-            AlertDialog(
-                modifier = Modifier.background(Color.White),
-                containerColor = Color.White,
-                onDismissRequest = { },
-                title = {
+    if(iniciarMenuAgregarSubCuenta) {
+        AlertDialog(
+            modifier = Modifier.background(Color.White),
+            containerColor = Color.White,
+            onDismissRequest = { },
+            title = {
+                Text(
+                    "Agregar Nueva Sub-Cuenta",
+                    fontFamily = fontAksharPrincipal,
+                    fontWeight = FontWeight.Medium,
+                    fontSize = obtenerEstiloHead(),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    textAlign = TextAlign.Center,
+                    color = Color.Black
+                )
+            },
+            text = {
+                Box{
+                    Column {
+                        BasicTextField(
+                            value = nombreNuevaSubCuenta,
+                            onValueChange = { nuevoValor ->
+                                nombreNuevaSubCuenta = nuevoValor
+                            },
+                            singleLine = true,
+                            textStyle = TextStyle(
+                                fontFamily = fontAksharPrincipal,
+                                fontWeight = FontWeight.Light,
+                                color = Color.Black,
+                                textAlign = TextAlign.Justify
+                            ),
+                            keyboardOptions = KeyboardOptions.Default.copy(
+                                imeAction = ImeAction.Done
+                            ),
+                            decorationBox = { innerTextField ->
+                                Box(
+                                    modifier = Modifier
+                                        .width(objetoAdaptardor.ajustarAncho(300))
+                                        .height(objetoAdaptardor.ajustarAltura(70))
+                                        .background(
+                                            Color.LightGray,
+                                            RoundedCornerShape(objetoAdaptardor.ajustarAltura(18))
+                                        )
+                                        .padding(horizontal = 16.dp, vertical = 4.dp),
+                                    contentAlignment = Alignment.CenterStart
+                                ) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Filled.AccountTree,
+                                            contentDescription = "Icono Buscar",
+                                            tint = Color.DarkGray,
+                                            modifier = Modifier.size(objetoAdaptardor.ajustarAltura(30))
+                                        )
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                        if (nombreNuevaSubCuenta.isEmpty()) {
+                                            Text(
+                                                "Nombre de la Sub-Cuenta",
+                                                fontFamily = fontAksharPrincipal,
+                                                fontWeight = FontWeight.Light,
+                                                fontSize = objetoAdaptardor.ajustarFont(16),
+                                                maxLines = 1,
+                                                overflow = TextOverflow.Ellipsis
+                                            )
+                                        }
+                                        innerTextField()
+                                    }
+                                }
+                            }, modifier = Modifier
+                                .width(objetoAdaptardor.ajustarAncho(300))
+                                .height(objetoAdaptardor.ajustarAltura(70))
+                        )
+                        // Spacer separador de componente
+                        Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(8)))
+                    }
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        if (nombreNuevaSubCuenta.isEmpty()){
+                            val jsonObject = JSONObject("""
+                                {
+                                    "code": 400,
+                                    "status": "error",
+                                   "data": "Ingrese el nombre de la Sub-Cuenta"
+                                }
+                                """
+                            )
+                            estadoRespuestaApi.cambiarEstadoRespuestaApi(mostrarRespuesta = true, datosRespuesta = jsonObject)
+                        }else{
+                            val nuevoMapa = LinkedHashMap<String, String>()
+                            nuevoMapa[nombreNuevaSubCuenta] = nombreNuevaSubCuenta
+                            nuevoMapa.putAll(opcionesSubCuentas.value)
+                            opcionesSubCuentas.value = nuevoMapa
+                            val jsonObject = JSONObject("""
+                                {
+                                    "code": 200,
+                                    "status": "ok",
+                                    "data": "Sub-Cuenta creada"
+                                }
+                                """
+                            )
+                            iniciarMenuAgregarSubCuenta=false
+                            nombreNuevaSubCuenta=""
+                            estadoRespuestaApi.cambiarEstadoRespuestaApi(mostrarRespuesta = true, datosRespuesta = jsonObject)
+                        }
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFF244BC0), // Color de fondo del botón
+                        contentColor = Color.White,
+                        disabledContainerColor = Color(0xFF244BC0),
+                        disabledContentColor = Color.White
+                    )
+                ) {
                     Text(
-                        "Agregar Nueva Sub-Cuenta",
+                        "Crear",
                         fontFamily = fontAksharPrincipal,
                         fontWeight = FontWeight.Medium,
-                        fontSize = obtenerEstiloHead(),
+                        fontSize = objetoAdaptardor.ajustarFont(15),
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                         textAlign = TextAlign.Center,
-                        color = Color.Black
+                        color = Color.White
                     )
-                },
-                text = {
-                    Box{
-                        Column {
+                }
+            },
+            dismissButton = {
+                Button(
+                    onClick = {
+                        iniciarMenuAgregarSubCuenta=false
+                        nombreNuevaSubCuenta=""
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color.Red, // Color de fondo del botón
+                        contentColor = Color.White,
+                        disabledContainerColor = Color.Red,
+                        disabledContentColor = Color.White
+                    )
+                ) {
+                    Text(
+                        "Cancelar",
+                        fontFamily = fontAksharPrincipal,
+                        fontWeight = FontWeight.Medium,
+                        fontSize = objetoAdaptardor.ajustarFont(15),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        textAlign = TextAlign.Center,
+                        color = Color.White
+                    )
+                }
+            }
+        )
+    }
+
+    if (iniciarVentanaAgregarArticulo){
+        var cantidadArticulos by remember { mutableIntStateOf(1) }
+        var anotacion by remember { mutableStateOf("") }
+
+        LaunchedEffect(cantidadArticulos) {
+            precioTotalArticulo=articuloActualSeleccionado.precio*cantidadArticulos.toDouble()
+        }
+
+
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black.copy(alpha = 0.5f))
+                .clickable(enabled = false) {},
+            contentAlignment = Alignment.Center
+        ) {
+            Surface(
+                modifier = Modifier
+                    .wrapContentWidth(Alignment.CenterHorizontally)
+                    .wrapContentHeight()
+                    .align(Alignment.Center),
+                shape = RoundedCornerShape(16.dp),
+                color = Color.White
+            ) {
+                Box(
+                    modifier = Modifier.padding(objetoAdaptardor.ajustarAltura(24)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(
+                        verticalArrangement = Arrangement.Center,
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            "Agregar Articulo",
+                            fontFamily = fontAksharPrincipal,
+                            fontWeight = FontWeight.Medium,
+                            fontSize = obtenerEstiloHead(),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            textAlign = TextAlign.Center,
+                            color = Color.Black
+                        )
+
+                        Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(8)))
+
+                        Box(
+                            modifier = Modifier
+                                .height(objetoAdaptardor.ajustarAltura(123))
+                                .width(objetoAdaptardor.ajustarAncho(123)),
+                            contentAlignment = Alignment.BottomCenter
+                        ) {
+                            SubcomposeAsyncImage(
+                                model = "https://invefacon.com/img/demorest/articulos/${articuloActualSeleccionado.codigo}.png",
+                                contentDescription = "Imagen Articulo",
+                                modifier = Modifier
+                                    .fillMaxSize(),
+                                contentScale = ContentScale.FillBounds,
+                                loading = {
+                                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center){
+                                        CircularProgressIndicator(
+                                            color = Color(0xFF244BC0),
+                                            modifier = Modifier.size(objetoAdaptardor.ajustarAltura(50))
+                                        )
+                                    }
+                                },
+                                error = {
+                                    Image(
+                                        modifier = Modifier
+                                            .fillMaxSize(),
+                                        painter = painterResource(id = R.drawable.sin_imagen),
+                                        contentDescription = "Descripción de la imagen",
+                                        contentScale = ContentScale.FillBounds
+                                    )
+                                }
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(4)))
+                        Text(
+                            articuloActualSeleccionado.nombre,
+                            fontFamily = fontAksharPrincipal,
+                            fontWeight = FontWeight.Medium,
+                            fontSize = obtenerEstiloTitle(),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            textAlign = TextAlign.Center,
+                            color = Color.Black
+                        )
+
+                        Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(4)))
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                "\u20A1 "+String.format(Locale.US, "%,.2f", precioTotalArticulo.toString().replace(",", "").toDouble()),
+                                fontFamily = fontAksharPrincipal,
+                                fontWeight = FontWeight.Medium,
+                                fontSize = obtenerEstiloBody(),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                textAlign = TextAlign.Center,
+                                color = Color.Black
+                            )
+
+                            Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(8)))
+
+                            if(cantidadArticulos>1){
+                                IconButton(
+                                    onClick = {
+                                        cantidadArticulos-= if(cantidadArticulos==1) 0 else 1
+                                    },
+                                    modifier = Modifier.size(objetoAdaptardor.ajustarAltura(30))
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Filled.RemoveCircle,
+                                        contentDescription = "Basurero",
+                                        tint = if(cantidadArticulos==1)Color.Red else Color.Black,
+                                        modifier = Modifier.size(objetoAdaptardor.ajustarAltura(30))
+                                    )
+                                }
+                            }
+
+
+                            Text(
+                                cantidadArticulos.toString(),
+                                fontFamily = fontAksharPrincipal,
+                                fontWeight = FontWeight.Medium,
+                                fontSize = obtenerEstiloLabel(),
+                                overflow = TextOverflow.Ellipsis,
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier
+                                    .width(objetoAdaptardor.ajustarAncho(35))
+                                    .padding(2.dp)
+                            )
+                            IconButton(
+                                onClick = {
+                                    cantidadArticulos+=1
+                                },
+                                modifier = Modifier.size(objetoAdaptardor.ajustarAltura(30))
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Filled.AddCircle,
+                                    contentDescription = "Basurero",
+                                    tint = Color.Black,
+                                    modifier = Modifier.size(objetoAdaptardor.ajustarAltura(30))
+                                )
+                            }
+                        }
+
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            AgregarTextFieldMultifuncional(
+                                label = "Sub-Cuenta",
+                                opciones2 = opcionesSubCuentas,
+                                usarOpciones2 = true,
+                                contieneOpciones = true,
+                                nuevoValor = {nuevoValor-> subCuentaSeleccionada=nuevoValor},
+                                valor = subCuentaSeleccionada,
+                                isUltimo = true,
+                                tomarAnchoMaximo = false,
+                                medidaAncho = 150
+                            )
+                            Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(8)))
                             BasicTextField(
-                                value = nombreNuevaSubCuenta,
+                                value = anotacion,
                                 onValueChange = { nuevoValor ->
-                                    nombreNuevaSubCuenta = nuevoValor
+                                    anotacion = nuevoValor
                                 },
                                 singleLine = true,
                                 textStyle = TextStyle(
@@ -1026,7 +1629,10 @@ fun InterfazSacComandaLarge(
                                         modifier = Modifier
                                             .width(objetoAdaptardor.ajustarAncho(300))
                                             .height(objetoAdaptardor.ajustarAltura(70))
-                                            .background(Color.LightGray, RoundedCornerShape(objetoAdaptardor.ajustarAltura(18)))
+                                            .background(
+                                                Color.LightGray,
+                                                RoundedCornerShape(objetoAdaptardor.ajustarAltura(18))
+                                            )
                                             .padding(horizontal = 16.dp, vertical = 4.dp),
                                         contentAlignment = Alignment.CenterStart
                                     ) {
@@ -1034,15 +1640,15 @@ fun InterfazSacComandaLarge(
                                             verticalAlignment = Alignment.CenterVertically
                                         ) {
                                             Icon(
-                                                imageVector = Icons.Filled.AccountTree,
+                                                imageVector = Icons.Filled.EditNote,
                                                 contentDescription = "Icono Buscar",
                                                 tint = Color.DarkGray,
                                                 modifier = Modifier.size(objetoAdaptardor.ajustarAltura(30))
                                             )
                                             Spacer(modifier = Modifier.width(8.dp))
-                                            if (nombreNuevaSubCuenta.isEmpty()) {
+                                            if (anotacion.isEmpty()) {
                                                 Text(
-                                                    "Nombre de la Sub-Cuenta",
+                                                    "Anotación",
                                                     fontFamily = fontAksharPrincipal,
                                                     fontWeight = FontWeight.Light,
                                                     fontSize = objetoAdaptardor.ajustarFont(16),
@@ -1054,183 +1660,172 @@ fun InterfazSacComandaLarge(
                                         }
                                     }
                                 }, modifier = Modifier
-                                    .width(objetoAdaptardor.ajustarAncho(300))
-                                    .height(objetoAdaptardor.ajustarAltura(70))
+                                    .width(objetoAdaptardor.ajustarAncho(200))
+                                    .height(objetoAdaptardor.ajustarAltura(50))
                             )
-                            // Spacer separador de componente
-                            Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(8)))
+                        }
 
+                        Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(8)))
+                        Row {
+                            Button(
+                                onClick = {
+                                    val formatter = SimpleDateFormat("HHmmssSSS", Locale.getDefault())
+                                    val hora = formatter.format(Date())
+                                    val articuloSeleccionado = ArticulosSeleccionadosSac(
+                                        nombre = articuloActualSeleccionado.nombre,
+                                        codigo = articuloActualSeleccionado.codigo,
+                                        precioUnitario = articuloActualSeleccionado.precio,
+                                        cantidad = cantidadArticulos,
+                                        anotacion = anotacion,
+                                        subCuenta = subCuentaSeleccionada,
+                                        idGrupo = hora.toString()
+                                    )
+                                    agregarOActualizarProducto(articuloSeleccionado)
+                                    iniciarVentanaAgregarArticulo=false
+                                },
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = Color(0xFF244BC0), // Color de fondo del botón
+                                    contentColor = Color.White,
+                                    disabledContainerColor = Color(0xFF244BC0),
+                                    disabledContentColor = Color.White
+                                )
+                            ) {
+                                Text(
+                                    "Agregar",
+                                    fontFamily = fontAksharPrincipal,
+                                    fontWeight = FontWeight.Medium,
+                                    fontSize = objetoAdaptardor.ajustarFont(15),
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    textAlign = TextAlign.Center,
+                                    color = Color.White
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(8)))
+                            Button(
+                                onClick = {
+                                    iniciarVentanaAgregarArticulo=false
+                                },
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = Color.Red, // Color de fondo del botón
+                                    contentColor = Color.White,
+                                    disabledContainerColor = Color.Red,
+                                    disabledContentColor = Color.White
+                                )
+                            ) {
+                                Text(
+                                    "Cancelar",
+                                    fontFamily = fontAksharPrincipal,
+                                    fontWeight = FontWeight.Medium,
+                                    fontSize = objetoAdaptardor.ajustarFont(15),
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    textAlign = TextAlign.Center,
+                                    color = Color.White
+                                )
+                            }
                         }
                     }
-                },
-                confirmButton = {
-                    Button(
-                        onClick = {
-                            if (nombreNuevaSubCuenta.isEmpty()){
-                                val jsonObject = JSONObject("""
-                                {
-                                    "code": 400,
-                                    "status": "error",
-                                   "data": "Ingrese el nombre de la Sub-Cuenta"
-                                }
-                                """
-                                )
-                                estadoRespuestaApi.cambiarEstadoRespuestaApi(mostrarRespuesta = true, datosRespuesta = jsonObject)
-                            }else{
-                                opcionesSubCuentas.value[nombreNuevaSubCuenta]=nombreNuevaSubCuenta
-                                val jsonObject = JSONObject("""
-                                {
-                                    "code": 200,
-                                    "status": "ok",
-                                    "data": "Sub-Cuenta creada"
-                                }
-                                """
-                                )
-                                iniciarMenuAgregarSubCuenta=false
-                                nombreNuevaSubCuenta=""
-                                estadoRespuestaApi.cambiarEstadoRespuestaApi(mostrarRespuesta = true, datosRespuesta = jsonObject)
-                            }
-                        },
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFF244BC0), // Color de fondo del botón
-                            contentColor = Color.White,
-                            disabledContainerColor = Color(0xFF244BC0),
-                            disabledContentColor = Color.White
-                        )
-                    ) {
-                        Text(
-                            "Crear",
-                            fontFamily = fontAksharPrincipal,
-                            fontWeight = FontWeight.Medium,
-                            fontSize = objetoAdaptardor.ajustarFont(15),
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                            textAlign = TextAlign.Center,
-                            color = Color.White
-                        )
-                    }
-                },
-                dismissButton = {
-                    Button(
-                        onClick = {
-                            iniciarMenuAgregarSubCuenta=false
-                            nombreNuevaSubCuenta=""
-                        },
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = Color.Red, // Color de fondo del botón
-                            contentColor = Color.White,
-                            disabledContainerColor = Color.Red,
-                            disabledContentColor = Color.White
-                        )
-                    ) {
-                        Text(
-                            "Cancelar",
-                            fontFamily = fontAksharPrincipal,
-                            fontWeight = FontWeight.Medium,
-                            fontSize = objetoAdaptardor.ajustarFont(15),
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                            textAlign = TextAlign.Center,
-                            color = Color.White
-                        )
-                    }
                 }
-            )
-        }
-
-        if (iniciarVentanaAgregarArticulo){
-            var precioTotalArticulo by remember { mutableDoubleStateOf(0.00) }
-            var cantidadArticulos by remember { mutableIntStateOf(1) }
-            var anotacion by remember { mutableStateOf("") }
-
-            LaunchedEffect(cantidadArticulos) {
-                precioTotalArticulo=articuloActualSeleccionado.precio*cantidadArticulos.toDouble()
             }
+        }
+    }
 
+    if (iniciarVentanaAgregarCombo){
+        val cantidadArticulos by remember { mutableIntStateOf(1) }
+        var anotacion by remember { mutableStateOf("") }
+        val listaArticulosCombo = remember { mutableStateListOf<ArticuloSacGrupo>() }
+        articulosComboSeleccionados.clear()
+        precioTotalArticulo= 0.00
 
-            Box(
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black.copy(alpha = 0.5f))
+                .clickable(enabled = false) {},
+            contentAlignment = Alignment.Center
+        ) {
+            Surface(
                 modifier = Modifier
-                    .fillMaxSize()
-                    .background(Color.Black.copy(alpha = 0.5f))
-                    .clickable(enabled = false) {},
-                contentAlignment = Alignment.Center
+                    .wrapContentWidth(Alignment.CenterHorizontally)
+                    .wrapContentHeight()
+                    .align(Alignment.Center),
+                shape = RoundedCornerShape(16.dp),
+                color = Color.White
             ) {
-                Surface(
-                    modifier = Modifier
-                        .wrapContentWidth(Alignment.CenterHorizontally)
-                        .wrapContentHeight()
-                        .align(Alignment.Center),
-                    shape = RoundedCornerShape(16.dp),
-                    color = Color.White
+                Box(
+                    modifier = Modifier.padding(objetoAdaptardor.ajustarAltura(24)),
+                    contentAlignment = Alignment.Center
                 ) {
-                    Box(
-                        modifier = Modifier.padding(objetoAdaptardor.ajustarAltura(24)),
-                        contentAlignment = Alignment.Center
+                    Column(
+                        verticalArrangement = Arrangement.Center,
+                        horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        Column(
-                            verticalArrangement = Arrangement.Center,
-                            horizontalAlignment = Alignment.CenterHorizontally
+                        Text(
+                            "Agregar Articulo",
+                            fontFamily = fontAksharPrincipal,
+                            fontWeight = FontWeight.Medium,
+                            fontSize = obtenerEstiloHead(),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            textAlign = TextAlign.Center,
+                            color = Color.Black
+                        )
+
+                        Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(8)))
+
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center
                         ) {
-                            Text(
-                                "Agregar Articulo",
-                                fontFamily = fontAksharPrincipal,
-                                fontWeight = FontWeight.Medium,
-                                fontSize = obtenerEstiloHead(),
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                                textAlign = TextAlign.Center,
-                                color = Color.Black
-                            )
-
-                            Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(8)))
-
-                            Box(
-                                modifier = Modifier
-                                    .height(objetoAdaptardor.ajustarAltura(123))
-                                    .width(objetoAdaptardor.ajustarAncho(123)),
-                                contentAlignment = Alignment.BottomCenter
+                            Column(
+                                verticalArrangement = Arrangement.Center,
+                                horizontalAlignment = Alignment.CenterHorizontally
                             ) {
-                                SubcomposeAsyncImage(
-                                    model = "https://invefacon.com/img/demorest/articulos/${articuloActualSeleccionado.codigo}.png",
-                                    contentDescription = "Imagen Articulo",
+                                Box(
                                     modifier = Modifier
-                                        .fillMaxSize(),
-                                    contentScale = ContentScale.FillBounds,
-                                    loading = {
-                                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center){
-                                            CircularProgressIndicator(
-                                                color = Color(0xFF244BC0),
-                                                modifier = Modifier.size(objetoAdaptardor.ajustarAltura(50))
+                                        .height(objetoAdaptardor.ajustarAltura(123))
+                                        .width(objetoAdaptardor.ajustarAncho(123)),
+                                    contentAlignment = Alignment.BottomCenter
+                                ) {
+                                    SubcomposeAsyncImage(
+                                        model = "https://invefacon.com/img/demorest/articulos/${articuloActualSeleccionado.codigo}.png",
+                                        contentDescription = "Imagen Articulo",
+                                        modifier = Modifier
+                                            .fillMaxSize(),
+                                        contentScale = ContentScale.FillBounds,
+                                        loading = {
+                                            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center){
+                                                CircularProgressIndicator(
+                                                    color = Color(0xFF244BC0),
+                                                    modifier = Modifier.size(objetoAdaptardor.ajustarAltura(50))
+                                                )
+                                            }
+                                        },
+                                        error = {
+                                            Image(
+                                                modifier = Modifier
+                                                    .fillMaxSize(),
+                                                painter = painterResource(id = R.drawable.sin_imagen),
+                                                contentDescription = "Descripción de la imagen",
+                                                contentScale = ContentScale.FillBounds
                                             )
                                         }
-                                    },
-                                    error = {
-                                        Image(
-                                            modifier = Modifier
-                                                .fillMaxSize(),
-                                            painter = painterResource(id = R.drawable.sin_imagen),
-                                            contentDescription = "Descripción de la imagen",
-                                            contentScale = ContentScale.FillBounds
-                                        )
-                                    }
+                                    )
+                                }
+                                Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(4)))
+                                Text(
+                                    articuloActualSeleccionado.nombre,
+                                    fontFamily = fontAksharPrincipal,
+                                    fontWeight = FontWeight.Medium,
+                                    fontSize = obtenerEstiloTitle(),
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    textAlign = TextAlign.Center,
+                                    color = Color.Black
                                 )
-                            }
-                            Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(4)))
-                            Text(
-                                articuloActualSeleccionado.nombre,
-                                fontFamily = fontAksharPrincipal,
-                                fontWeight = FontWeight.Medium,
-                                fontSize = obtenerEstiloTitle(),
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                                textAlign = TextAlign.Center,
-                                color = Color.Black
-                            )
 
-                            Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(4)))
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
+                                Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(4)))
                                 Text(
                                     "\u20A1 "+String.format(Locale.US, "%,.2f", precioTotalArticulo.toString().replace(",", "").toDouble()),
                                     fontFamily = fontAksharPrincipal,
@@ -1241,53 +1836,8 @@ fun InterfazSacComandaLarge(
                                     textAlign = TextAlign.Center,
                                     color = Color.Black
                                 )
+                                Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(4)))
 
-                                Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(8)))
-
-                                if(cantidadArticulos>1){
-                                    IconButton(
-                                        onClick = {
-                                            cantidadArticulos-= if(cantidadArticulos==1) 0 else 1
-                                        },
-                                        modifier = Modifier.size(objetoAdaptardor.ajustarAltura(30))
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Filled.RemoveCircle,
-                                            contentDescription = "Basurero",
-                                            tint = if(cantidadArticulos==1)Color.Red else Color.Black,
-                                            modifier = Modifier.size(objetoAdaptardor.ajustarAltura(30))
-                                        )
-                                    }
-                                }
-
-
-                                Text(
-                                    cantidadArticulos.toString(),
-                                    fontFamily = fontAksharPrincipal,
-                                    fontWeight = FontWeight.Medium,
-                                    fontSize = obtenerEstiloLabel(),
-                                    overflow = TextOverflow.Ellipsis,
-                                    textAlign = TextAlign.Center,
-                                    modifier = Modifier.width(objetoAdaptardor.ajustarAncho(35)).padding(2.dp)
-                                )
-                                IconButton(
-                                    onClick = {
-                                        cantidadArticulos+=1
-                                    },
-                                    modifier = Modifier.size(objetoAdaptardor.ajustarAltura(30))
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Filled.AddCircle,
-                                        contentDescription = "Basurero",
-                                        tint = Color.Black,
-                                        modifier = Modifier.size(objetoAdaptardor.ajustarAltura(30))
-                                    )
-                                }
-                            }
-
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
                                 AgregarTextFieldMultifuncional(
                                     label = "Sub-Cuenta",
                                     opciones2 = opcionesSubCuentas,
@@ -1320,7 +1870,12 @@ fun InterfazSacComandaLarge(
                                             modifier = Modifier
                                                 .width(objetoAdaptardor.ajustarAncho(300))
                                                 .height(objetoAdaptardor.ajustarAltura(70))
-                                                .background(Color.LightGray, RoundedCornerShape(objetoAdaptardor.ajustarAltura(18)))
+                                                .background(
+                                                    Color.LightGray,
+                                                    RoundedCornerShape(
+                                                        objetoAdaptardor.ajustarAltura(18)
+                                                    )
+                                                )
                                                 .padding(horizontal = 16.dp, vertical = 4.dp),
                                             contentAlignment = Alignment.CenterStart
                                         ) {
@@ -1351,63 +1906,103 @@ fun InterfazSacComandaLarge(
                                         .width(objetoAdaptardor.ajustarAncho(200))
                                         .height(objetoAdaptardor.ajustarAltura(50))
                                 )
-                            }
 
-                            Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(8)))
-                            Row {
-                                Button(
-                                    onClick = {
-                                        val articuloSeleccionado = ArticulosSeleccionadosSac(
-                                            nombre = articuloActualSeleccionado.nombre,
-                                            codigo = articuloActualSeleccionado.codigo,
-                                            precioUnitario = articuloActualSeleccionado.precio,
-                                            cantidad = cantidadArticulos,
-                                            anotacion = anotacion,
-                                            subCuenta = subCuentaSeleccionada
+                                Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(8)))
+                                Row {
+                                    Button(
+                                        onClick = {
+                                            val formatter = SimpleDateFormat("HHmmssSSS", Locale.getDefault())
+                                            val hora = formatter.format(Date())
+                                            var cantidadArticulosAgre = 0
+                                            for (i in 0 until articulosComboSeleccionados.size){
+                                                val articulo = articulosComboSeleccionados[i]
+                                                if (articulo.cantidad>0){
+                                                    cantidadArticulosAgre += articulo.cantidad
+                                                    articulo.idGrupo = hora
+                                                    listaArticulosCombo.add(articulo)
+                                                }
+                                            }
+                                            if (articuloActualSeleccionado.cantidadArticulosObli== cantidadArticulosAgre){
+                                                val articuloSeleccionado = ArticulosSeleccionadosSac(
+                                                    nombre = articuloActualSeleccionado.nombre,
+                                                    codigo = articuloActualSeleccionado.codigo,
+                                                    precioUnitario = articuloActualSeleccionado.precio,
+                                                    cantidad = cantidadArticulos,
+                                                    anotacion = anotacion,
+                                                    subCuenta = subCuentaSeleccionada,
+                                                    idGrupo = hora.toString(),
+                                                    articulosCombo = listaArticulosCombo
+                                                )
+                                                agregarOActualizarProducto(articuloSeleccionado)
+                                                iniciarVentanaAgregarCombo=false
+                                            }else{
+                                                val jsonObject = JSONObject("""
+                                                    {
+                                                        "code": 400,
+                                                        "status": "error",
+                                                       "data": "Seleccione todos los articulos obligatorios del combo"
+                                                    }
+                                                """
+                                                )
+                                                estadoRespuestaApi.cambiarEstadoRespuestaApi(mostrarRespuesta = true, datosRespuesta = jsonObject)
+                                            }
+
+                                        },
+                                        colors = ButtonDefaults.buttonColors(
+                                            containerColor = Color(0xFF244BC0), // Color de fondo del botón
+                                            contentColor = Color.White,
+                                            disabledContainerColor = Color(0xFF244BC0),
+                                            disabledContentColor = Color.White
                                         )
-                                        agregarOActualizarProducto(articuloSeleccionado)
-                                        iniciarVentanaAgregarArticulo=false
-                                    },
-                                    colors = ButtonDefaults.buttonColors(
-                                        containerColor = Color(0xFF244BC0), // Color de fondo del botón
-                                        contentColor = Color.White,
-                                        disabledContainerColor = Color(0xFF244BC0),
-                                        disabledContentColor = Color.White
-                                    )
-                                ) {
-                                    Text(
-                                        "Agregar",
-                                        fontFamily = fontAksharPrincipal,
-                                        fontWeight = FontWeight.Medium,
-                                        fontSize = objetoAdaptardor.ajustarFont(15),
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis,
-                                        textAlign = TextAlign.Center,
-                                        color = Color.White
-                                    )
+                                    ) {
+                                        Text(
+                                            "Agregar",
+                                            fontFamily = fontAksharPrincipal,
+                                            fontWeight = FontWeight.Medium,
+                                            fontSize = objetoAdaptardor.ajustarFont(15),
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis,
+                                            textAlign = TextAlign.Center,
+                                            color = Color.White
+                                        )
+                                    }
+                                    Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(8)))
+                                    Button(
+                                        onClick = {
+                                            iniciarVentanaAgregarCombo=false
+                                        },
+                                        colors = ButtonDefaults.buttonColors(
+                                            containerColor = Color.Red, // Color de fondo del botón
+                                            contentColor = Color.White,
+                                            disabledContainerColor = Color.Red,
+                                            disabledContentColor = Color.White
+                                        )
+                                    ) {
+                                        Text(
+                                            "Cancelar",
+                                            fontFamily = fontAksharPrincipal,
+                                            fontWeight = FontWeight.Medium,
+                                            fontSize = objetoAdaptardor.ajustarFont(15),
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis,
+                                            textAlign = TextAlign.Center,
+                                            color = Color.White
+                                        )
+                                    }
                                 }
-                                Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(8)))
-                                Button(
-                                    onClick = {
-                                        iniciarVentanaAgregarArticulo=false
-                                    },
-                                    colors = ButtonDefaults.buttonColors(
-                                        containerColor = Color.Red, // Color de fondo del botón
-                                        contentColor = Color.White,
-                                        disabledContainerColor = Color.Red,
-                                        disabledContentColor = Color.White
-                                    )
-                                ) {
-                                    Text(
-                                        "Cancelar",
-                                        fontFamily = fontAksharPrincipal,
-                                        fontWeight = FontWeight.Medium,
-                                        fontSize = objetoAdaptardor.ajustarFont(15),
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis,
-                                        textAlign = TextAlign.Center,
-                                        color = Color.White
-                                    )
+                            }
+                            Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(8)))
+                            Box(
+                                modifier = Modifier
+                                    .heightIn(max = objetoAdaptardor.ajustarAltura(500)),
+                                contentAlignment = Alignment.BottomCenter
+                            ) {
+                                LazyColumn(
+                                    state = lazyStateArticulosCombo
+                                ){
+                                    items(articuloActualSeleccionado.listaGrupos) { grupo ->
+                                        AgregarBxContenedorArticulosCombo(grupo)
+                                    }
                                 }
                             }
                         }
@@ -1462,13 +2057,9 @@ internal fun AgregarBxContenerdorMontosCuenta(
                 modifier = Modifier.width(objetoAdaptardor.ajustarAncho(143)),
                 color =  Color.Black
             )
-
-
         }
-
     }
 }
-
 
 
 
@@ -1482,13 +2073,14 @@ private fun Preview(){
 
 //@Composable
 //@Preview()
-//private fun Preview(){
+//private fun Preview2(){
 //    val a= ArticulosSeleccionadosSac(
 //        codigo = "0001",
-//        nombre = "Hamburguesa con queso y papas a la francesa con Coca-Cola",
+//        nombre = "Combo del dia",
 //        anotacion = "Sin cebolla, sin queso, sin carne, sin pan porque me da ansiedad",
 //        cantidad = 1,
-//        precioUnitario = 2300
+//        precioUnitario = 2300.00,
+//        isCombo = 1
 //    )
 //    AgregarBxContendorArticuloAgregado(a)
 //}

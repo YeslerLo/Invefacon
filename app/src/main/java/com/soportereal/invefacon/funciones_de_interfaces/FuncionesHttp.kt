@@ -11,7 +11,10 @@ import org.json.JSONException
 import org.json.JSONObject
 import kotlin.coroutines.cancellation.CancellationException
 
-class FuncionesHttp(private val servidorUrl:String, private val apiToken:String) {
+class FuncionesHttp(
+    private val servidorUrl:String = "https://invefacon.com/api/",
+    private val apiToken:String
+) {
 
     suspend fun metodoPost(formBody: MultipartBody, apiDirectorio: String): JSONObject? {
         return withContext(Dispatchers.IO) {
@@ -32,6 +35,7 @@ class FuncionesHttp(private val servidorUrl:String, private val apiToken:String)
                     if (responseBody!=null){
                         val json = JSONObject(responseBody)
                         val data = json.getString("status")
+                        println(responseBody)
                         JSONObject(responseBody)
                     }else{
                         JSONObject("""{"code":401,"status":"error","data":"El servidor no regresó ningun dato"}""")

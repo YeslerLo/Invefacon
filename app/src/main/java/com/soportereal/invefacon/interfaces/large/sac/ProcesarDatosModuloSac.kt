@@ -7,13 +7,14 @@ import org.json.JSONObject
 
 class ProcesarDatosModuloSac(apiToken: String){
 
-    private val objetoFuncionesHttpInvefacon= FuncionesHttp(servidorUrl = "https://invefacon.com", apiToken = apiToken)
+    private val objetoFuncionesHttpInvefacon= FuncionesHttp(apiToken = apiToken)
+
     suspend fun obtenerListaMesas(mesa: String=""): JSONObject?{
 
         val formBody = MultipartBody.Builder().setType(MultipartBody.FORM)
             .addFormDataPart("mesa",mesa)
             .build()
-        return objetoFuncionesHttpInvefacon.metodoPost(formBody = formBody, apiDirectorio = "apiMovil/sac/listaMesas.php")
+        return objetoFuncionesHttpInvefacon.metodoPost(formBody = formBody, apiDirectorio = "sacMovil/listaMesas.php")
     }
 
     suspend fun crearNuevaMesa(nombreMesa: String, nombreSalon: String):JSONObject?{
@@ -22,7 +23,7 @@ class ProcesarDatosModuloSac(apiToken: String){
             .addFormDataPart("MesaNombre",nombreMesa)
             .addFormDataPart("SalonNombre",nombreSalon)
             .build()
-        return objetoFuncionesHttpInvefacon.metodoPost(formBody = formBody, apiDirectorio = "apiMovil/sac/crearMesa.php")
+        return objetoFuncionesHttpInvefacon.metodoPost(formBody = formBody, apiDirectorio = "sacMovil/crearMesa.php")
     }
 
     suspend fun obtenerListaArticulos(codFamilia: String, codSubFamilia: String, datosBarraBusqueda: String):JSONObject?{
@@ -31,14 +32,14 @@ class ProcesarDatosModuloSac(apiToken: String){
             .addFormDataPart("subfamilia",codSubFamilia)
             .addFormDataPart("nombreArticulo",datosBarraBusqueda)
             .build()
-        return objetoFuncionesHttpInvefacon.metodoPost(formBody = formBody, apiDirectorio = "apiMovil/sac/listaArticulos.php")
+        return objetoFuncionesHttpInvefacon.metodoPost(formBody = formBody, apiDirectorio = "sacMovil/listaArticulos.php")
     }
 
     suspend fun obtenerListaFamilias():JSONObject?{
         val formBody = MultipartBody.Builder().setType(MultipartBody.FORM)
             .addFormDataPart("opcional","opcional")
             .build()
-        return objetoFuncionesHttpInvefacon.metodoPost(formBody = formBody, apiDirectorio = "apiMovil/sac/listaFamilias.php")
+        return objetoFuncionesHttpInvefacon.metodoPost(formBody = formBody, apiDirectorio = "sacMovil/listaFamilias.php")
     }
 
     suspend fun comandarSubCuenta_eliminarArticulos(mesa: String, salon: String, codUsuario: String, jsonComandaDetalle: JSONArray): JSONObject?{
@@ -48,49 +49,53 @@ class ProcesarDatosModuloSac(apiToken: String){
             .addFormDataPart("Cod_Usuario", codUsuario)
             .addFormDataPart("JsonComandaDetalle",jsonComandaDetalle. toString())
             .build()
-        return objetoFuncionesHttpInvefacon.metodoPost(formBody = formBody, apiDirectorio = "apimovil/sac/crearComanda.php")
+        return objetoFuncionesHttpInvefacon.metodoPost(formBody = formBody, apiDirectorio = "sacMovil/crearComanda.php")
     }
+
     suspend fun obtenerDatosMesaComandada(nombreMesa: String):JSONObject?{
         val formBody = MultipartBody.Builder().setType(MultipartBody.FORM)
             .addFormDataPart("Mesa",nombreMesa)
             .build()
-        return objetoFuncionesHttpInvefacon.metodoPost(formBody = formBody, apiDirectorio = "apimovil/sac/detalleMesa.php")
+        return objetoFuncionesHttpInvefacon.metodoPost(formBody = formBody, apiDirectorio = "sacMovil/detalleMesa.php")
     }
 
     suspend fun quitarMesa(nombreMesa: String):JSONObject?{
         val formBody = MultipartBody.Builder().setType(MultipartBody.FORM)
             .addFormDataPart("Mesa", nombreMesa)
             .build()
-        return objetoFuncionesHttpInvefacon.metodoPost(formBody = formBody, apiDirectorio = "apimovil/sac/vaciarMesa.php")
+        return objetoFuncionesHttpInvefacon.metodoPost(formBody = formBody, apiDirectorio = "sacMovil/vaciarMesa.php")
     }
 
     suspend fun pedirCuenta(nombreMesa: String):JSONObject?{
         val formBody = MultipartBody.Builder().setType(MultipartBody.FORM)
             .addFormDataPart("Mesa", nombreMesa)
             .build()
-        return objetoFuncionesHttpInvefacon.metodoPost(formBody = formBody, apiDirectorio = "apimovil/sac/pedirCuenta.php")
+        return objetoFuncionesHttpInvefacon.metodoPost(formBody = formBody, apiDirectorio = "sacMovil/pedirCuenta.php")
     }
 
     suspend fun obetenerNombresMesas():JSONObject?{
         val formBody = MultipartBody.Builder().setType(MultipartBody.FORM)
             .addFormDataPart("Mesa", "")
             .build()
-        return objetoFuncionesHttpInvefacon.metodoPost(formBody = formBody, apiDirectorio = "apimovil/sac/listaMesasSola.php")
+        return objetoFuncionesHttpInvefacon.metodoPost(formBody = formBody, apiDirectorio = "sacMovil/listaMesasSola.php")
     }
 
     suspend fun obetenerSubCuentasMesa(nombreMesa: String):JSONObject?{
         val formBody = MultipartBody.Builder().setType(MultipartBody.FORM)
             .addFormDataPart("Mesa", nombreMesa)
             .build()
-        return objetoFuncionesHttpInvefacon.metodoPost(formBody = formBody, apiDirectorio = "apimovil/sac/listaSubcuentas.php")
+        return objetoFuncionesHttpInvefacon.metodoPost(formBody = formBody, apiDirectorio = "sacMovil/listaSubcuentas.php")
     }
 
-    suspend fun moverMesa(mesa: String, mesaDestino: String):JSONObject?{
+    suspend fun moverMesa(
+        mesa: String,
+        mesaDestino: String
+    ):JSONObject?{
         val formBody = MultipartBody.Builder().setType(MultipartBody.FORM)
             .addFormDataPart("MesaActual", mesa)
             .addFormDataPart("MesaDestino", mesaDestino)
             .build()
-        return objetoFuncionesHttpInvefacon.metodoPost(formBody = formBody, apiDirectorio = "apimovil/sac/MoverMesaCompleta.php")
+        return objetoFuncionesHttpInvefacon.metodoPost(formBody = formBody, apiDirectorio = "sacMovil/MoverMesaCompleta.php")
     }
 
     suspend fun moverArticulo(
@@ -111,7 +116,7 @@ class ProcesarDatosModuloSac(apiToken: String){
             .addFormDataPart("Cantidad", cantidadArticulos)
             .addFormDataPart("Cod_Usuario", codUsuario)
             .build()
-        return objetoFuncionesHttpInvefacon.metodoPost(formBody = formBody, apiDirectorio = "apimovil/sac/moverArticulo.php")
+        return objetoFuncionesHttpInvefacon.metodoPost(formBody = formBody, apiDirectorio = "sacMovil/moverArticulo.php")
     }
 }
 
@@ -128,6 +133,23 @@ data class Mesa(
 data class ArticuloSac(
     var nombre: String="",
     var codigo: String= "",
+    var precio: Double = 0.00,
+    var cantidadArticulosObli: Int = 1,
+    var listaGrupos : List<SacGrupo> = emptyList()
+)
+
+data class SacGrupo(
+    var nombre: String="",
+    var cantidadItems: Int = 0,
+    var articulos : List<ArticuloSacGrupo> = emptyList()
+)
+
+data class ArticuloSacGrupo(
+    var nombre: String="",
+    var nombreGrupo : String = "",
+    var idGrupo: String = "",
+    var codigo: String= "",
+    var cantidad: Int = 0,
     var precio: Double = 0.00
 )
 
@@ -149,10 +171,16 @@ data class ArticulosSeleccionadosSac(
     var cantidad: Int = 0,
     var precioUnitario: Double = 0.0,
     var montoTotal : Double = 0.0,
-    var subCuenta : String = ""
+    var subCuenta : String = "",
+    var articulosCombo : List<ArticuloSacGrupo> = emptyList(),
+    var idGrupo: String = ""
 ){
     fun calcularMontoTotal() {
         montoTotal = (precioUnitario * cantidad.toDouble())
+        for (i in articulosCombo.indices){
+            val articulo = articulosCombo[i]
+            montoTotal+= articulo.precio*articulo.cantidad
+        }
     }
 }
 data class ArticuloComandado(

@@ -1078,8 +1078,14 @@ internal fun AgregarTextFieldMultifuncional(
                 onDismissRequest = { expanded = false },
                 modifier = Modifier
                     .background(Color.White)
-                    .width(objetoAdaptardor.ajustarAltura(360))
-                    .heightIn(max = objetoAdaptardor.ajustarAltura(200)),
+                    .let {
+                        if (tomarAnchoMaximo) {
+                            it.fillMaxWidth()
+                        } else {
+                            it.width(medidaAncho.dp)
+                        }
+                    }
+                    .heightIn(max = objetoAdaptardor.ajustarAltura(700)),
                 scrollState = scrollState
             ) {
                 if (usarOpciones2){
