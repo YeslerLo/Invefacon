@@ -197,7 +197,6 @@ fun InterfazModuloSacLarge(
                 nombreNuevaMesa=""
                 nombreSalonNuevaMesa=""
                 actualizarListaMesas= true
-                objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
                 iniciarMenuCrearMesa=false
                 iniciarCreacionNuevaMesa=false
             }
@@ -206,6 +205,7 @@ fun InterfazModuloSacLarge(
     }
 
     LaunchedEffect(Unit) {
+        delay(500)
         while (true){
             val listaMesas = mutableListOf<Mesa>()
             val listaCuentasActivas = mutableListOf<Mesa>()
@@ -301,6 +301,7 @@ fun InterfazModuloSacLarge(
             if (listaCuentasActivasActuales!=listaCuentasActivas){
                 listaCuentasActivasActuales=listaCuentasActivas
             }
+            objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
             actualizarListaMesas=false
         }
     }
@@ -309,7 +310,6 @@ fun InterfazModuloSacLarge(
         if(iniciarMenuMesaComandada && !iniciarMenuMoverArticulo) {
             objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(true)
             val result = objectoProcesadorDatosApi.obtenerDatosMesaComandada(mesaActual.nombre)
-            println(result)
             if (result != null) {
                 estadoRespuestaApi.cambiarEstadoRespuestaApi(
                     mostrarSoloRespuestaError = true,
@@ -319,7 +319,7 @@ fun InterfazModuloSacLarge(
                 if (result.getString("code")== "200"){
                     val data = result.getJSONObject("data")
                     val subCuentas = data.getJSONArray("Subcuentas")
-                    val articulos = data.getJSONArray("detalleSubcuenta")
+                    val datosLineas = data.getJSONArray("datosLineas")
                     opcionesSubCuentas.value.clear()
 
                     for (i in 0 until subCuentas.length()) {
@@ -329,8 +329,11 @@ fun InterfazModuloSacLarge(
                     subCuentaSeleccionada= subCuentas[0].toString()
                     articulosComandados.clear()
 
-                    for (i in 0 until articulos.length()) {
-                        val articulo = articulos.getJSONObject(i)
+                    for (i in 0 until datosLineas.length()) {
+                        val datoLinea = datosLineas.getJSONObject(i)
+                        val articulosLineaString = datoLinea.getString("articulosLinea")
+                        val articulosLinea = JSONArray(articulosLineaString)
+                        val articulo= articulosLinea.getJSONObject(0)
                         val articuloComadado = ArticuloComandado(
                             Consec = articulo.getString("Consec"),
                             Cod_Articulo = articulo.getString("Cod_Articulo"),
@@ -340,8 +343,22 @@ fun InterfazModuloSacLarge(
                             Imp2 = articulo.getString("Imp2"),
                             Linea = articulo.getString("Linea"),
                             SubCuenta = articulo.getString("SubCuenta"),
-                            nombre= articulo.getString("nombreArticulo")
+                            nombre= articulo.getString("nombreArticulo"),
+                            isCombo = articulo.getInt("isCombo")
                         )
+                        if (articulosLinea.length()>1){
+                            val listaArticulosGrupo = mutableListOf<ArticuloSacGrupo>()
+                            for (a in 1 until articulosLinea.length()){
+                                val datoArticulo = articulosLinea.getJSONObject(a)
+                                val articuloGrupo = ArticuloSacGrupo(
+                                    nombre = datoArticulo.getString("nombreArticulo"),
+                                    precio = datoArticulo.getDouble("Precio"),
+                                    cantidad = datoArticulo.getInt("Cantidad")
+                                )
+                                listaArticulosGrupo.add(articuloGrupo)
+                            }
+                            articuloComadado.articulos= listaArticulosGrupo
+                        }
                         articulosComandados.add(articuloComadado)
                     }
                 }
@@ -352,7 +369,6 @@ fun InterfazModuloSacLarge(
             }
             objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
             iniciarCalculoMontos= true
-            estadoRespuestaApi.cambiarEstadoRespuestaApi()
         }
     }
 
@@ -387,6 +403,8 @@ fun InterfazModuloSacLarge(
             val imp2 = "10.00"
             val anotacion = anotacionComanda
             val subCuenta = articuloActualSeleccionado.SubCuenta
+            val linea = articuloActualSeleccionado.Linea
+            val isCombo = articuloActualSeleccionado.isCombo
             val jsonObject = JSONObject().apply {
                 put("codigo", codigo)
                 put("cantidad", cantidad)
@@ -395,6 +413,8 @@ fun InterfazModuloSacLarge(
                 put("imp2", imp2)
                 put("anotacion", anotacion)
                 put("subcuenta", subCuenta)
+                put("linea", linea)
+                put("isCombo", isCombo)
             }
             jsonComandaDetalle.put(jsonObject)
 
@@ -406,7 +426,7 @@ fun InterfazModuloSacLarge(
                 iniciarVentanaAgregarArticulo=false
                 anotacionComanda= ""
                 cantidadArticulos= 1
-                val result= objectoProcesadorDatosApi.comandarSubCuenta_eliminarArticulos(
+                val result= objectoProcesadorDatosApi.comandarSubCuentaEliminarArticulos(
                     codUsuario = codUsuario,
                     salon = mesaActual.salon,
                     mesa = mesaActual.nombre,
@@ -416,8 +436,8 @@ fun InterfazModuloSacLarge(
                     estadoRespuestaApi.cambiarEstadoRespuestaApi(mostrarRespuesta = true, datosRespuesta = result )
                 }
             }
+            actualizarListaMesas= true
             delay(100)
-            objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
             eliminarArticulo= false
             agregarArticulo= false
         }
@@ -448,7 +468,6 @@ fun InterfazModuloSacLarge(
             }
             iniciarMenuQuitarMesa=false
             iniciarMenuMesaComandada=false
-            objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
             actualizarListaMesas= true
             quitarMesa= false
         }
@@ -461,7 +480,6 @@ fun InterfazModuloSacLarge(
             if (result!=null){
                 estadoRespuestaApi.cambiarEstadoRespuestaApi(mostrarRespuesta = true, datosRespuesta = result)
             }
-            objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
             actualizarListaMesas= true
             pedirCuenta= false
         }
@@ -517,7 +535,9 @@ fun InterfazModuloSacLarge(
                 mesaDestino = mesaDestino,
                 subCuenta = articuloActualSeleccionado.SubCuenta,
                 subCuentaDestino = subCuentaDestinoArticulo,
-                codUsuario = codUsuario
+                codUsuario = codUsuario,
+                linea = articuloActualSeleccionado.Linea,
+                isCombo = articuloActualSeleccionado.isCombo
             )
             if (result!=null){
                 estadoRespuestaApi.cambiarEstadoRespuestaApi(mostrarRespuesta = true, datosRespuesta = result)
@@ -525,7 +545,6 @@ fun InterfazModuloSacLarge(
             iniciarMenuMoverArticulo= false
             mesaDestino= ""
             subCuentaDestinoArticulo=""
-            objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
             actualizarListaMesas= true
             moverArticulo= false
         }
@@ -539,7 +558,6 @@ fun InterfazModuloSacLarge(
                 estadoRespuestaApi.cambiarEstadoRespuestaApi(mostrarRespuesta = true, datosRespuesta = result)
             }
             mesaDestino=""
-            objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
             iniciarMenuMoverMesa= false
             actualizarListaMesas= true
             moverMesa= false
@@ -597,9 +615,13 @@ fun InterfazModuloSacLarge(
         Box(
             modifier = Modifier
                 .background(Color.White)
-                .width(objetoAdaptardor.ajustarAncho(365))
+                .width(objetoAdaptardor.ajustarAncho(365)),
+            contentAlignment = Alignment.CenterEnd
         ){
-            Column {
+            Column(
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.End
+            ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -673,15 +695,17 @@ fun InterfazModuloSacLarge(
                             )
                             IconButton(
                                 onClick = {
-                                    articuloActualSeleccionado= articuloComandado
-                                    iniciarVentanaAgregarArticulo = true
+                                    if(articuloComandado.articulos.isEmpty()){
+                                        articuloActualSeleccionado= articuloComandado
+                                        iniciarVentanaAgregarArticulo = true
+                                    }
                                 },
                                 modifier = Modifier.size(objetoAdaptardor.ajustarAltura(22))
                             ) {
                                 Icon(
                                     imageVector = Icons.Filled.AddCircle,
                                     contentDescription = "Agregar Articulo",
-                                    tint = Color.Black,
+                                    tint =  if(articuloComandado.articulos.isEmpty()) Color.Black else Color.White,
                                     modifier = Modifier.size(objetoAdaptardor.ajustarAltura(22))
                                 )
                             }
@@ -702,6 +726,46 @@ fun InterfazModuloSacLarge(
                     Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(6)))
                 }
                 HorizontalDivider()
+                for (i in 0 until articuloComandado.articulos.size){
+                    val articuloCombo = articuloComandado.articulos[i]
+                    Row(
+                        horizontalArrangement = Arrangement.End,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(10)))
+                        Text(
+                            articuloCombo.cantidad.toString(),
+                            fontFamily = fontAksharPrincipal,
+                            fontWeight = FontWeight.Light,
+                            fontSize = obtenerEstiloLabel(),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.width(objetoAdaptardor.ajustarAncho(20)).padding(2.dp),
+                            color = Color.DarkGray
+                        )
+                        Text(
+                            articuloCombo.nombre,
+                            fontFamily = fontAksharPrincipal,
+                            fontWeight = FontWeight.Light,
+                            fontSize = obtenerEstiloLabel(),
+                            overflow = TextOverflow.Ellipsis,
+                            textAlign = TextAlign.Start,
+                            modifier = Modifier.width(objetoAdaptardor.ajustarAncho(200)).padding(2.dp),
+                            color = Color.DarkGray
+                        )
+                        Text(
+                            "+ \u20A1 "+String.format(Locale.US, "%,.2f", "${articuloCombo.precio*articuloCombo.cantidad}".replace(",", "").toDouble()),
+                            fontFamily = fontAksharPrincipal,
+                            fontWeight = FontWeight.Light,
+                            fontSize = obtenerEstiloLabel(),
+                            overflow = TextOverflow.Ellipsis,
+                            textAlign = TextAlign.End,
+                            modifier = Modifier.width(objetoAdaptardor.ajustarAncho(100)).padding(2.dp)
+                        )
+                    }
+                    HorizontalDivider()
+                }
                 Row {
                     Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(6)))
                     Text(
@@ -1014,6 +1078,7 @@ fun InterfazModuloSacLarge(
                         .background(Color(0xFFFAFAFA))
                 ){
                     Row {
+                        Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(6)))
                         Text(
                             "Mesa",
                             fontFamily = fontAksharPrincipal,
@@ -1022,7 +1087,7 @@ fun InterfazModuloSacLarge(
                             fontSize = obtenerEstiloLabel(),
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
-                            textAlign = TextAlign.Start,
+                            textAlign = TextAlign.Center,
                             modifier = Modifier
                                 .width(objetoAdaptardor.ajustarAncho(55))
                                 .padding(objetoAdaptardor.ajustarAncho(2))
@@ -1036,7 +1101,7 @@ fun InterfazModuloSacLarge(
                             fontSize = obtenerEstiloLabel(),
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
-                            textAlign = TextAlign.Start,
+                            textAlign = TextAlign.Center,
                             modifier = Modifier
                                 .width(objetoAdaptardor.ajustarAncho(55))
                                 .padding(objetoAdaptardor.ajustarAncho(2))
@@ -1050,9 +1115,9 @@ fun InterfazModuloSacLarge(
                             fontSize = obtenerEstiloLabel(),
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
-                            textAlign = TextAlign.Start,
+                            textAlign = TextAlign.Center,
                             modifier = Modifier
-                                .width(objetoAdaptardor.ajustarAncho(85))
+                                .width(objetoAdaptardor.ajustarAncho(80))
                                 .padding(objetoAdaptardor.ajustarAncho(2))
                         )
                     }
@@ -1075,6 +1140,7 @@ fun InterfazModuloSacLarge(
                                     contentAlignment = Alignment.Center
                                 ){
                                     Row {
+                                        Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(6)))
                                         Text(
                                             mesa.nombre,
                                             fontFamily = fontAksharPrincipal,
@@ -1083,7 +1149,7 @@ fun InterfazModuloSacLarge(
                                             fontSize = obtenerEstiloLabel(),
                                             overflow = TextOverflow.Ellipsis,
                                             maxLines = 1,
-                                            textAlign = TextAlign.Start,
+                                            textAlign = TextAlign.Center,
                                             modifier = Modifier
                                                 .width(objetoAdaptardor.ajustarAncho(55))
                                                 .padding(objetoAdaptardor.ajustarAncho(2))
@@ -1106,9 +1172,9 @@ fun InterfazModuloSacLarge(
                                             fontWeight = FontWeight.Medium,
                                             fontSize = obtenerEstiloLabel(),
                                             overflow = TextOverflow.Ellipsis,
-                                            textAlign = TextAlign.Start,
+                                            textAlign = TextAlign.Center,
                                             modifier = Modifier
-                                                .width(objetoAdaptardor.ajustarAncho(55))
+                                                .width(objetoAdaptardor.ajustarAncho(60))
                                                 .padding(objetoAdaptardor.ajustarAncho(2))
                                         )
 
@@ -1127,11 +1193,12 @@ fun InterfazModuloSacLarge(
                                             fontWeight = FontWeight.Medium,
                                             fontSize = obtenerEstiloLabel(),
                                             overflow = TextOverflow.Ellipsis,
-                                            textAlign = TextAlign.Start,
+                                            textAlign = TextAlign.End,
                                             modifier = Modifier
-                                                .width(objetoAdaptardor.ajustarAncho(85))
+                                                .width(objetoAdaptardor.ajustarAncho(80))
                                                 .padding(objetoAdaptardor.ajustarAncho(2))
                                         )
+                                        Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(4)))
                                     }
                                 }
                             }

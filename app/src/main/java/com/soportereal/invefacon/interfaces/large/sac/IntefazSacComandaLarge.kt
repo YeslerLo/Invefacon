@@ -164,6 +164,7 @@ fun InterfazSacComandaLarge(
     }
 
     LaunchedEffect(Unit) {
+        estadoRespuestaApi.cambiarEstadoRespuestaApi()
         var result= objectoProcesadorDatosApi.obtenerListaFamilias()
         val listaFamilias = mutableListOf<FamiliaSac>()
         if (result!=null){
@@ -325,6 +326,8 @@ fun InterfazSacComandaLarge(
                     val imp2 = "10.00"
                     val anotacion = articulo.anotacion
                     val subCuenta = articulo.subCuenta
+                    val grupo = articulo.idGrupo
+                    val isCombo = articulo.isCombo
                     val jsonObject = JSONObject().apply {
                         put("codigo", codigo)
                         put("cantidad", cantidad)
@@ -333,8 +336,35 @@ fun InterfazSacComandaLarge(
                         put("imp2", imp2)
                         put("anotacion", anotacion)
                         put("subcuenta", subCuenta)
+                        put("grupo", grupo)
+                        put("isCombo", isCombo)
                     }
                     jsonComandaDetalle.put(jsonObject)
+
+                    val articulosCombo = articulo.articulosCombo
+
+                    articulosCombo.forEach { articuloCombo ->
+                        val codigoAr=articuloCombo.codigo
+                        val cantidadAr=articuloCombo.cantidad
+                        val precioAr = articuloCombo.precio
+                        val imp1Ar = "13.00"
+                        val imp2Ar = "10.00"
+                        val anotacionAr = articulo.anotacion
+                        val subCuentaAr = articulo.subCuenta
+                        val grupoAr = articulo.idGrupo
+                        val jsonObjectAr = JSONObject().apply {
+                            put("codigo", codigoAr)
+                            put("cantidad", cantidadAr)
+                            put("precio", precioAr)
+                            put("imp1",imp1Ar)
+                            put("imp2", imp2Ar)
+                            put("anotacion", anotacionAr)
+                            put("subcuenta", subCuentaAr)
+                            put("grupo", grupoAr)
+                            put("isCombo", isCombo)
+                        }
+                        jsonComandaDetalle.put(jsonObjectAr)
+                    }
                     articulosAEliminar.add(articulo)
                 }
             }
@@ -344,7 +374,7 @@ fun InterfazSacComandaLarge(
                     remove(subCuentaSeleccionada)
                 }
                 articulosSeleccionados.removeAll(articulosAEliminar)
-                val result= objectoProcesadorDatosApi.comandarSubCuenta_eliminarArticulos(
+                val result= objectoProcesadorDatosApi.comandarSubCuentaEliminarArticulos(
                     codUsuario = codUsuario,
                     salon = salon,
                     mesa = nombreMesa,
@@ -374,12 +404,12 @@ fun InterfazSacComandaLarge(
     }
 
     LaunchedEffect(regresarPantallaAnterior) {
-        if (regresarPantallaAnterior && opcionesSubCuentas.value.isEmpty()){
+        if (regresarPantallaAnterior && opcionesSubCuentas.value.isEmpty() && listaArticulosActuales.isNotEmpty()){
             navControllerPantallasModuloSac?.popBackStack()
             estadoRespuestaApi.cambiarEstadoRespuestaApi()
         }
 
-        if (regresarPantallaAnterior && opcionesSubCuentas.value.isNotEmpty()){
+        if (regresarPantallaAnterior && opcionesSubCuentas.value.isNotEmpty()  && listaArticulosActuales.isNotEmpty()){
             subCuentaSeleccionada= opcionesSubCuentas.value.keys.first()
             actualizarMontos=true
             estadoRespuestaApi.cambiarEstadoRespuestaApi()
@@ -394,7 +424,6 @@ fun InterfazSacComandaLarge(
     }
 
     fun agregarOActualizarProducto(nuevoProducto: ArticulosSeleccionadosSac) {
-        println(nuevoProducto)
 
         // Buscar un producto existente en la lista por su 'codigo'
         val productoExistente = articulosSeleccionados.find { it.codigo == nuevoProducto.codigo && it.subCuenta== nuevoProducto.subCuenta && it.idGrupo == nuevoProducto.idGrupo}
@@ -431,7 +460,7 @@ fun InterfazSacComandaLarge(
     fun agregarOActualizarArticuloCombo(cantidad: Int =0, articulo: ArticuloSacGrupo) {
 
         // Buscar un producto existente en la lista por su 'codigo'
-        val productoExistente = articulosComboSeleccionados.find { it.codigo==articulo.codigo}
+        val productoExistente = articulosComboSeleccionados.find { it.codigo==articulo.codigo && it.idGrupo==articulo.idGrupo}
 
         if (productoExistente != null) {
             // Si el producto ya existe, actualizar su cantidad
@@ -487,13 +516,13 @@ fun InterfazSacComandaLarge(
                                     )
                                     agregarOActualizarProducto(articuloSeleccionado)
                                 },
-                                modifier = Modifier.size(objetoAdaptardor.ajustarAltura(30))
+                                modifier = Modifier.size(objetoAdaptardor.ajustarAltura(25))
                             ) {
                                 Icon(
                                     imageVector = if(articulo.cantidad==1) Icons.Filled.Delete else Icons.Filled.RemoveCircle,
                                     contentDescription = "Basurero",
                                     tint = if(articulo.cantidad==1)Color.Red else Color.Black,
-                                    modifier = Modifier.size(objetoAdaptardor.ajustarAltura(30))
+                                    modifier = Modifier.size(objetoAdaptardor.ajustarAltura(25))
                                 )
                             }
 
@@ -508,7 +537,7 @@ fun InterfazSacComandaLarge(
                                     .width(objetoAdaptardor.ajustarAncho(35))
                                     .padding(2.dp)
                             )
-                            if (articulo.articulosCombo.size==0){
+                            if (articulo.articulosCombo.isEmpty()){
                                 IconButton(
                                     onClick = {
                                         val articuloSeleccionado = ArticulosSeleccionadosSac(
@@ -532,7 +561,6 @@ fun InterfazSacComandaLarge(
                                     )
                                 }
                             }
-
                         }
                     }
                     Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(6)))
@@ -563,7 +591,7 @@ fun InterfazSacComandaLarge(
                             fontSize = obtenerEstiloLabel(),
                             overflow = TextOverflow.Ellipsis,
                             textAlign = TextAlign.Start,
-                            modifier = Modifier.width(objetoAdaptardor.ajustarAncho(130)).padding(2.dp),
+                            modifier = Modifier.width(objetoAdaptardor.ajustarAncho(140)).padding(1.dp),
                             color = Color.DarkGray
                         )
                         Text(
@@ -573,7 +601,7 @@ fun InterfazSacComandaLarge(
                             fontSize = obtenerEstiloLabel(),
                             overflow = TextOverflow.Ellipsis,
                             textAlign = TextAlign.End,
-                            modifier = Modifier.width(objetoAdaptardor.ajustarAncho(130)).padding(2.dp)
+                            modifier = Modifier.width(objetoAdaptardor.ajustarAncho(130)).padding(1.dp)
                         )
                     }
                     HorizontalDivider()
@@ -617,33 +645,36 @@ fun InterfazSacComandaLarge(
             modifier = Modifier
                 .height(objetoAdaptardor.ajustarAltura(130))
                 .width(objetoAdaptardor.ajustarAncho(123))
-                .pointerInput(Unit) {
-                    detectTapGestures(
-                        onTap = {
-                            articuloActualSeleccionado = articulo
-                            if (articulo.listaGrupos.isEmpty()) {
-                                iniciarVentanaAgregarArticulo = true
-                            } else {
-                                iniciarVentanaAgregarCombo = true
-                            }
-
-                        },
-                        onDoubleTap = {
-                            if (articulo.listaGrupos.isEmpty()) {
-                                val articuloSeleccionado = ArticulosSeleccionadosSac(
-                                    nombre = articulo.nombre,
-                                    codigo = articulo.codigo,
-                                    precioUnitario = articulo.precio,
-                                    cantidad = 1,
-                                    anotacion = "",
-                                    subCuenta = subCuentaSeleccionada
-                                )
-                                agregarOActualizarProducto(articuloSeleccionado)
-                            } else {
-                                iniciarVentanaAgregarCombo = true
-                            }
+                .let {
+                    if (articulo.listaGrupos.isEmpty()) {
+                        it.pointerInput(Unit) {
+                            detectTapGestures(
+                                onTap = {
+                                    articuloActualSeleccionado = articulo
+                                    iniciarVentanaAgregarArticulo = true
+                                },
+                                onDoubleTap = {
+                                    val formatter = SimpleDateFormat("HHmmssSSS", Locale.getDefault())
+                                    val hora = formatter.format(Date())
+                                    val articuloSeleccionado = ArticulosSeleccionadosSac(
+                                        nombre = articulo.nombre,
+                                        codigo = articulo.codigo,
+                                        precioUnitario = articulo.precio,
+                                        cantidad = 1,
+                                        anotacion = "",
+                                        subCuenta = subCuentaSeleccionada,
+                                        idGrupo = hora
+                                    )
+                                    agregarOActualizarProducto(articuloSeleccionado)
+                                }
+                            )
                         }
-                    )
+                    } else {
+                        it.clickable {
+                            articuloActualSeleccionado = articulo
+                            iniciarVentanaAgregarCombo = true
+                        }
+                    }
                 }
                 .shadow(
                     elevation = objetoAdaptardor.ajustarAltura(7),
@@ -737,14 +768,21 @@ fun InterfazSacComandaLarge(
         grupo: SacGrupo
     ){
         var actualizarArticulos by remember { mutableStateOf(true) }
-        var itemsRestantes by remember { mutableStateOf(grupo.cantidadItems) }
+        var itemsRestantes by remember { mutableIntStateOf(grupo.cantidadItems) }
         LaunchedEffect(actualizarArticulos) {
             if (actualizarArticulos){
                 for(i in 0 until grupo.articulos.size){
                     val articulo = grupo.articulos[i]
-                    articulo.cantidad = 0
+                    val nuevoArticulo= ArticuloSacGrupo(
+                        nombre = articulo.nombre,
+                        nombreGrupo = articulo.nombreGrupo,
+                        idGrupo = articulo.idGrupo,
+                        codigo = articulo.codigo,
+                        cantidad = 0,
+                        precio = articulo.precio
+                    )
                     agregarOActualizarArticuloCombo(
-                        articulo = articulo
+                        articulo = nuevoArticulo
                     )
                 }
                 actualizarArticulos = false
@@ -755,7 +793,7 @@ fun InterfazSacComandaLarge(
         Card(
             modifier = Modifier
                 .wrapContentHeight()
-                .width(objetoAdaptardor.ajustarAncho(440))
+                .width(objetoAdaptardor.ajustarAncho(450))
                 .padding(objetoAdaptardor.ajustarAltura(8))
                 .shadow(
                     elevation = objetoAdaptardor.ajustarAltura(7),
@@ -782,7 +820,7 @@ fun InterfazSacComandaLarge(
                             .padding(objetoAdaptardor.ajustarAltura(8))
                     )
                     Text(
-                        "Faltan: ${itemsRestantes}",
+                        "Faltan: $itemsRestantes",
                         fontFamily = fontAksharPrincipal,
                         fontWeight = FontWeight.Light,
                         fontSize = obtenerEstiloBody(),
@@ -843,13 +881,13 @@ fun InterfazSacComandaLarge(
                                             itemsRestantes+=1
                                         }
                                     },
-                                    modifier = Modifier.size(objetoAdaptardor.ajustarAltura(30))
+                                    modifier = Modifier.size(objetoAdaptardor.ajustarAltura(25))
                                 ) {
                                     Icon(
                                         imageVector = Icons.Filled.RemoveCircle,
                                         contentDescription = "Basurero",
                                         tint =  if (itemsRestantes>=0 && articulo.cantidad>0) Color.Black else Color.White,
-                                        modifier = Modifier.size(objetoAdaptardor.ajustarAltura(30))
+                                        modifier = Modifier.size(objetoAdaptardor.ajustarAltura(25))
                                     )
                                 }
                                 Text(
@@ -874,13 +912,13 @@ fun InterfazSacComandaLarge(
                                             itemsRestantes-=1
                                         }
                                     },
-                                    modifier = Modifier.size(objetoAdaptardor.ajustarAltura(30))
+                                    modifier = Modifier.size(objetoAdaptardor.ajustarAltura(25))
                                 ) {
                                     Icon(
                                         imageVector = Icons.Filled.AddCircle,
                                         contentDescription = "Basurero",
                                         tint =  if (itemsRestantes>0) Color.Black else Color.White,
-                                        modifier = Modifier.size(objetoAdaptardor.ajustarAltura(30))
+                                        modifier = Modifier.size(objetoAdaptardor.ajustarAltura(25))
                                     )
                                 }
                                 Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(16)))
@@ -1732,10 +1770,10 @@ fun InterfazSacComandaLarge(
     }
 
     if (iniciarVentanaAgregarCombo){
+        articulosComboSeleccionados.clear()
         val cantidadArticulos by remember { mutableIntStateOf(1) }
         var anotacion by remember { mutableStateOf("") }
         val listaArticulosCombo = remember { mutableStateListOf<ArticuloSacGrupo>() }
-        articulosComboSeleccionados.clear()
         precioTotalArticulo= 0.00
 
         Box(
@@ -1931,7 +1969,8 @@ fun InterfazSacComandaLarge(
                                                     anotacion = anotacion,
                                                     subCuenta = subCuentaSeleccionada,
                                                     idGrupo = hora.toString(),
-                                                    articulosCombo = listaArticulosCombo
+                                                    articulosCombo = listaArticulosCombo,
+                                                    isCombo = 1
                                                 )
                                                 agregarOActualizarProducto(articuloSeleccionado)
                                                 iniciarVentanaAgregarCombo=false
@@ -2066,21 +2105,5 @@ internal fun AgregarBxContenerdorMontosCuenta(
 @Composable
 @Preview(widthDp = 964, heightDp = 523, showBackground = true)
 private fun Preview(){
-//    val m= ArticuloSac("Hamburguesa con queso", "0001", 1000.00)
-//    AgregarBxContenedorArticulos(m)
     InterfazSacComandaLarge(null, "", null, "", "", "", "")
 }
-
-//@Composable
-//@Preview()
-//private fun Preview2(){
-//    val a= ArticulosSeleccionadosSac(
-//        codigo = "0001",
-//        nombre = "Combo del dia",
-//        anotacion = "Sin cebolla, sin queso, sin carne, sin pan porque me da ansiedad",
-//        cantidad = 1,
-//        precioUnitario = 2300.00,
-//        isCombo = 1
-//    )
-//    AgregarBxContendorArticuloAgregado(a)
-//}

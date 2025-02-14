@@ -42,7 +42,7 @@ class ProcesarDatosModuloSac(apiToken: String){
         return objetoFuncionesHttpInvefacon.metodoPost(formBody = formBody, apiDirectorio = "sacMovil/listaFamilias.php")
     }
 
-    suspend fun comandarSubCuenta_eliminarArticulos(mesa: String, salon: String, codUsuario: String, jsonComandaDetalle: JSONArray): JSONObject?{
+    suspend fun comandarSubCuentaEliminarArticulos(mesa: String, salon: String, codUsuario: String, jsonComandaDetalle: JSONArray): JSONObject?{
         val formBody = MultipartBody.Builder().setType(MultipartBody.FORM)
             .addFormDataPart("Mesa",mesa)
             .addFormDataPart("Salon",salon)
@@ -105,7 +105,9 @@ class ProcesarDatosModuloSac(apiToken: String){
         mesaDestino: String,
         subCuenta: String,
         subCuentaDestino: String,
-        codUsuario: String
+        codUsuario: String,
+        linea : String,
+        isCombo: Int
     ):JSONObject?{
         val formBody = MultipartBody.Builder().setType(MultipartBody.FORM)
             .addFormDataPart("MesaActual", mesa)
@@ -115,6 +117,8 @@ class ProcesarDatosModuloSac(apiToken: String){
             .addFormDataPart("Cod_Articulo", codigoArticulo)
             .addFormDataPart("Cantidad", cantidadArticulos)
             .addFormDataPart("Cod_Usuario", codUsuario)
+            .addFormDataPart("linea", linea)
+            .addFormDataPart("isCombo", isCombo.toString())
             .build()
         return objetoFuncionesHttpInvefacon.metodoPost(formBody = formBody, apiDirectorio = "sacMovil/moverArticulo.php")
     }
@@ -173,7 +177,8 @@ data class ArticulosSeleccionadosSac(
     var montoTotal : Double = 0.0,
     var subCuenta : String = "",
     var articulosCombo : List<ArticuloSacGrupo> = emptyList(),
-    var idGrupo: String = ""
+    var idGrupo: String = "",
+    var isCombo : Int = 0
 ){
     fun calcularMontoTotal() {
         montoTotal = (precioUnitario * cantidad.toDouble())
@@ -183,6 +188,7 @@ data class ArticulosSeleccionadosSac(
         }
     }
 }
+
 data class ArticuloComandado(
     val Consec: String= "",
     val Cod_Articulo: String= "",
@@ -194,9 +200,15 @@ data class ArticuloComandado(
     var SubCuenta: String= "",
     val nombre: String = "",
     var montoTotal: Double= 0.00,
-    var anotacion: String = "Sin Anotacion"
+    var anotacion: String = "Sin Anotacion",
+    var articulos : List<ArticuloSacGrupo> = emptyList(),
+    var isCombo : Int = 0
 ){
     fun calcularMontoTotal() {
         montoTotal = (Precio*Cantidad.toDouble())
+        for (i in articulos.indices){
+            val articulo = articulos[i]
+            montoTotal+= articulo.precio*articulo.cantidad
+        }
     }
 }

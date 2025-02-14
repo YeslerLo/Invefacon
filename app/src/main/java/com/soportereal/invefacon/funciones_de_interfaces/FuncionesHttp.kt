@@ -33,9 +33,9 @@ class FuncionesHttp(
                 if (response.isSuccessful) {
                     val responseBody = response.body?.string()
                     if (responseBody!=null){
+                        println(responseBody)
                         val json = JSONObject(responseBody)
                         val data = json.getString("status")
-                        println(responseBody)
                         JSONObject(responseBody)
                     }else{
                         JSONObject("""{"code":401,"status":"error","data":"El servidor no regresó ningun dato"}""")
