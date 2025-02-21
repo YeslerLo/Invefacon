@@ -311,7 +311,6 @@ fun InterfazSacComandaLarge(
                 }
             }
             listaArticulosActuales= listaArticulos
-            delay(500)
             isCargandoArticulos=false
             objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
         }
@@ -1282,7 +1281,7 @@ fun InterfazSacComandaLarge(
                                     valor = subCuentaSeleccionada,
                                     isUltimo = true,
                                     tomarAnchoMaximo = false,
-                                    medidaAncho = 70
+                                    medidaAncho = 80
                                 )
                                 Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(8)))
                                 IconButton(
