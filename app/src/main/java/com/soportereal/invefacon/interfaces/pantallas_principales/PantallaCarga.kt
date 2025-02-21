@@ -1,4 +1,4 @@
-package com.soportereal.invefacon.interfaces.compact.pantallas_principales
+package com.soportereal.invefacon.interfaces.pantallas_principales
 
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.LinearEasing
@@ -49,7 +49,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import com.google.accompanist.systemuicontroller.SystemUiController
 import com.soportereal.invefacon.R
-import com.soportereal.invefacon.interfaces.compact.FuncionesParaAdaptarContenidoCompact
+import com.soportereal.invefacon.interfaces.FuncionesParaAdaptarContenidoCompact
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow

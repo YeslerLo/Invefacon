@@ -1,4 +1,4 @@
-package com.soportereal.invefacon.interfaces.compact.pantallas_principales
+package com.soportereal.invefacon.interfaces.pantallas_principales
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -33,7 +33,7 @@ import androidx.compose.ui.unit.dp
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.navigation.NavController
 import com.soportereal.invefacon.R
-import com.soportereal.invefacon.interfaces.compact.FuncionesParaAdaptarContenidoCompact
+import com.soportereal.invefacon.interfaces.FuncionesParaAdaptarContenidoCompact
 
 
 @Composable

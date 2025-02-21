@@ -1,4 +1,4 @@
-package com.soportereal.invefacon.interfaces.compact.modulos.clientes
+package com.soportereal.invefacon.interfaces.modulos.clientes
 
 
 import android.app.DatePickerDialog
@@ -86,10 +86,10 @@ import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.navigation.NavController
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.soportereal.invefacon.R
-import com.soportereal.invefacon.interfaces.compact.FuncionesParaAdaptarContenidoCompact
-import com.soportereal.invefacon.interfaces.compact.obtenerEstiloBody
-import com.soportereal.invefacon.interfaces.compact.pantallas_principales.objetoEstadoPantallaCarga
-import com.soportereal.invefacon.interfaces.compact.pantallas_principales.estadoRespuestaApi
+import com.soportereal.invefacon.interfaces.FuncionesParaAdaptarContenidoCompact
+import com.soportereal.invefacon.interfaces.obtenerEstiloBody
+import com.soportereal.invefacon.interfaces.pantallas_principales.objetoEstadoPantallaCarga
+import com.soportereal.invefacon.interfaces.pantallas_principales.estadoRespuestaApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.json.JSONObject
@@ -1034,7 +1034,7 @@ internal fun AgregarTextFieldMultifuncional(
                     if (tomarAnchoMaximo) {
                         it.fillMaxWidth()
                     } else {
-                        it.width(medidaAncho.dp)
+                        it.width(objetoAdaptardor.ajustarAncho(medidaAncho))
                     }
                 }
                 .focusRequester(solicitadorFoco)
@@ -1082,7 +1082,7 @@ internal fun AgregarTextFieldMultifuncional(
                         if (tomarAnchoMaximo) {
                             it.fillMaxWidth()
                         } else {
-                            it.width(medidaAncho.dp)
+                            it.width(objetoAdaptardor.ajustarAncho(medidaAncho))
                         }
                     }
                     .heightIn(max = objetoAdaptardor.ajustarAltura(700)),

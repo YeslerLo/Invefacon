@@ -1,4 +1,4 @@
-package com.soportereal.invefacon.interfaces.large.sac
+package com.soportereal.invefacon.interfaces.modulos.sac
 
 import com.soportereal.invefacon.funciones_de_interfaces.FuncionesHttp
 import okhttp3.MultipartBody
@@ -59,9 +59,11 @@ class ProcesarDatosModuloSac(apiToken: String){
         return objetoFuncionesHttpInvefacon.metodoPost(formBody = formBody, apiDirectorio = "sacMovil/detalleMesa.php")
     }
 
-    suspend fun quitarMesa(nombreMesa: String):JSONObject?{
+    suspend fun quitarMesa(nombreMesa: String, password: String, codUsuario: String):JSONObject?{
         val formBody = MultipartBody.Builder().setType(MultipartBody.FORM)
             .addFormDataPart("Mesa", nombreMesa)
+            .addFormDataPart("password", password)
+            .addFormDataPart("cod_usuario", codUsuario)
             .build()
         return objetoFuncionesHttpInvefacon.metodoPost(formBody = formBody, apiDirectorio = "sacMovil/vaciarMesa.php")
     }
@@ -87,13 +89,24 @@ class ProcesarDatosModuloSac(apiToken: String){
         return objetoFuncionesHttpInvefacon.metodoPost(formBody = formBody, apiDirectorio = "sacMovil/listaSubcuentas.php")
     }
 
+    suspend fun aplicarImp2(nombreMesa: String):JSONObject?{
+        val formBody = MultipartBody.Builder().setType(MultipartBody.FORM)
+            .addFormDataPart("Mesa", nombreMesa)
+            .build()
+        return objetoFuncionesHttpInvefacon.metodoPost(formBody = formBody, apiDirectorio = "sacMovil/aplicarImpuestoServicio.php")
+    }
+
     suspend fun moverMesa(
         mesa: String,
-        mesaDestino: String
+        mesaDestino: String,
+        password: String,
+        codUsuario: String
     ):JSONObject?{
         val formBody = MultipartBody.Builder().setType(MultipartBody.FORM)
             .addFormDataPart("MesaActual", mesa)
             .addFormDataPart("MesaDestino", mesaDestino)
+            .addFormDataPart("password", password)
+            .addFormDataPart("cod_usuario", codUsuario)
             .build()
         return objetoFuncionesHttpInvefacon.metodoPost(formBody = formBody, apiDirectorio = "sacMovil/MoverMesaCompleta.php")
     }
@@ -139,6 +152,7 @@ data class ArticuloSac(
     var codigo: String= "",
     var precio: Double = 0.00,
     var cantidadArticulosObli: Int = 1,
+    var imp1 : String= "",
     var listaGrupos : List<SacGrupo> = emptyList()
 )
 
@@ -154,7 +168,8 @@ data class ArticuloSacGrupo(
     var idGrupo: String = "",
     var codigo: String= "",
     var cantidad: Int = 0,
-    var precio: Double = 0.00
+    var precio: Double = 0.00,
+    var imp1: String = ""
 )
 
 data class FamiliaSac(
@@ -178,7 +193,9 @@ data class ArticulosSeleccionadosSac(
     var subCuenta : String = "",
     var articulosCombo : List<ArticuloSacGrupo> = emptyList(),
     var idGrupo: String = "",
-    var isCombo : Int = 0
+    var isCombo : Int = 0,
+    var cantidadArticulosObli : Int = 1,
+    var imp1: String = ""
 ){
     fun calcularMontoTotal() {
         montoTotal = (precioUnitario * cantidad.toDouble())

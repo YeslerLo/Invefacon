@@ -1,4 +1,4 @@
-package com.soportereal.invefacon.interfaces.compact.modulos.sac
+package com.soportereal.invefacon.interfaces.pantallas_principales
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -15,7 +15,7 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Error
-import androidx.compose.material.icons.filled.RestaurantMenu
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -28,25 +28,13 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.constraintlayout.compose.ConstraintLayout
-import androidx.navigation.NavController
-import com.google.accompanist.systemuicontroller.SystemUiController
 import com.soportereal.invefacon.R
-import com.soportereal.invefacon.interfaces.compact.FuncionesParaAdaptarContenidoCompact
-import com.soportereal.invefacon.interfaces.compact.pantallas_principales.objetoEstadoPantallaCarga
-
+import com.soportereal.invefacon.interfaces.FuncionesParaAdaptarContenidoCompact
 
 @Composable
-fun InterfazModuloSac(
-    apiToken: String,
-    navControllerPantallasModuloSac: NavController?,
-    systemUiController: SystemUiController?,
-    navControllerPantallasModulos: NavController?
-){
-    systemUiController?.setStatusBarColor(Color(0xFF244BC0))
-    systemUiController?.setNavigationBarColor(Color.Black)
+fun IniciarInterfazAjustes(){
     val fontAksharPrincipal = FontFamily(Font(R.font.akshar_medium))
     val configuration = LocalConfiguration.current
     val dpAnchoPantalla = configuration.screenWidthDp
@@ -80,14 +68,14 @@ fun InterfazModuloSac(
                 modifier = Modifier.padding(bottom = objetoAdaptardor.ajustarAltura(6))
             ){
                 Icon(
-                    Icons.Default.RestaurantMenu,
-                    contentDescription ="Icono SAC",
+                    Icons.Filled.Settings,
+                    contentDescription ="Icono Ajustes",
                     tint = Color.White,
                     modifier = Modifier.size(objetoAdaptardor.ajustarAltura(50))
                 )
                 Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(8)))
                 Text(
-                    "SAC",
+                    "Ajustes",
                     fontFamily = fontAksharPrincipal,
                     fontWeight =    FontWeight.SemiBold,
                     fontSize = objetoAdaptardor.ajustarFont(30),
@@ -108,14 +96,9 @@ fun InterfazModuloSac(
             Column(verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
                 Icon(imageVector = Icons.Filled.Error, tint = Color.Red, contentDescription = "")
                 Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(20)))
-                Text("Actualmente este módulo no se encuentra disponible para este dispositivo", textAlign = TextAlign.Center)
+                Text("En desarrollo...", textAlign = TextAlign.Center)
             }
         }
         objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
     }
-}
-@Composable
-@Preview(showBackground = true, widthDp = 1280, heightDp = 660)
-private fun Preview(){
-    InterfazModuloSac("", null, null, null)
 }

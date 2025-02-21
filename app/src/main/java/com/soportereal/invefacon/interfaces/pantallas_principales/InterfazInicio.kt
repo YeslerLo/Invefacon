@@ -1,4 +1,4 @@
-package com.soportereal.invefacon.interfaces.compact.pantallas_principales
+package com.soportereal.invefacon.interfaces.pantallas_principales
 
 import android.annotation.SuppressLint
 import android.app.Activity
@@ -71,14 +71,13 @@ import com.google.accompanist.systemuicontroller.SystemUiController
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.soportereal.invefacon.R
 import com.soportereal.invefacon.funciones_de_interfaces.RutasPatallas
-import com.soportereal.invefacon.interfaces.compact.FuncionesParaAdaptarContenidoCompact
+import com.soportereal.invefacon.interfaces.FuncionesParaAdaptarContenidoCompact
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 
-@SuppressLint("SourceLockedOrientationActivity")
+@SuppressLint("SourceLockedOrientationActivity", "ContextCastToActivity")
 @Composable
 fun IniciarInterfazInicio(
     token: String,
@@ -332,9 +331,9 @@ fun IniciarInterfazInicio(
                             .height(objetoAdaptardor.ajustarAltura(640)),
                         verticalArrangement = Arrangement.spacedBy(objetoAdaptardor.ajustarAltura(12))
                     ) {
-                        item {  Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(8))) }
-                        item { btOpcionesModulos("Facturación", Icons.Default.Description, null) }
-                        item {  btOpcionesModulos("Ventas", Icons.AutoMirrored.Filled.ShowChart, null) }
+                        item { Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(8))) }
+                        item { btOpcionesModulos("Facturación", Icons.Default.Description, RutasPatallas.Facturacion.ruta+"/$token"+"/$nombreEmpresa"+"/$codUsuario") }
+                        item { btOpcionesModulos("Ventas", Icons.AutoMirrored.Filled.ShowChart, null) }
                         item { btOpcionesModulos("Inventario", Icons.Default.Inventory, null) }
                         item { btOpcionesModulos("CxC", Icons.Default.CreditCard, null) }
                         item { btOpcionesModulos("Proveedores", Icons.Filled.LocalShipping, null) }

@@ -1,4 +1,4 @@
-package com.soportereal.invefacon.interfaces.compact.modulos.clientes
+package com.soportereal.invefacon.interfaces.modulos.clientes
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -59,9 +59,9 @@ import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.navigation.NavController
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.soportereal.invefacon.R
-import com.soportereal.invefacon.interfaces.compact.FuncionesParaAdaptarContenidoCompact
-import com.soportereal.invefacon.interfaces.compact.pantallas_principales.estadoRespuestaApi
-import com.soportereal.invefacon.interfaces.compact.pantallas_principales.objetoEstadoPantallaCarga
+import com.soportereal.invefacon.interfaces.FuncionesParaAdaptarContenidoCompact
+import com.soportereal.invefacon.interfaces.pantallas_principales.estadoRespuestaApi
+import com.soportereal.invefacon.interfaces.pantallas_principales.objetoEstadoPantallaCarga
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 

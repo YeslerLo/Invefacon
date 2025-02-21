@@ -1,4 +1,4 @@
-package com.soportereal.invefacon.interfaces.compact.modulos.clientes
+package com.soportereal.invefacon.interfaces.modulos.clientes
 
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.snapshots.SnapshotStateMap

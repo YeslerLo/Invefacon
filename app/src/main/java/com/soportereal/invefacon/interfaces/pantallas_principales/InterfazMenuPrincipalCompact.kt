@@ -1,4 +1,4 @@
-package com.soportereal.invefacon.interfaces.compact.pantallas_principales
+package com.soportereal.invefacon.interfaces.pantallas_principales
 
 
 import android.annotation.SuppressLint
@@ -42,9 +42,9 @@ import com.soportereal.invefacon.funciones_de_interfaces.NavHostPantallasMenuPri
 import com.soportereal.invefacon.funciones_de_interfaces.RutasPantallasMenuPrincipal.PantallaAjustes
 import com.soportereal.invefacon.funciones_de_interfaces.RutasPantallasMenuPrincipal.PantallaInicio
 import com.soportereal.invefacon.funciones_de_interfaces.RutasPantallasMenuPrincipal.PantallaSalir
-import com.soportereal.invefacon.interfaces.compact.FuncionesParaAdaptarContenidoCompact
-import com.soportereal.invefacon.interfaces.compact.obtenerEstiloBody
-import com.soportereal.invefacon.interfaces.compact.obtenerEstiloLabel
+import com.soportereal.invefacon.interfaces.FuncionesParaAdaptarContenidoCompact
+import com.soportereal.invefacon.interfaces.obtenerEstiloBody
+import com.soportereal.invefacon.interfaces.obtenerEstiloLabel
 
 
 @SuppressLint("SourceLockedOrientationActivity")

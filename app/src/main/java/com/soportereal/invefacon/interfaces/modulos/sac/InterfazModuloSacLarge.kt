@@ -1,103 +1,109 @@
-package com.soportereal.invefacon.interfaces.large.sac
+package com.soportereal.invefacon.interfaces.modulos.sac
 
+ import android.annotation.SuppressLint
  import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.navigationBarsPadding
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.wrapContentHeight
-import androidx.compose.foundation.layout.wrapContentWidth
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AccountTree
-import androidx.compose.material.icons.filled.AddCircle
-import androidx.compose.material.icons.filled.ArrowBackIosNew
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.EditNote
-import androidx.compose.material.icons.filled.Place
-import androidx.compose.material.icons.filled.RemoveCircle
-import androidx.compose.material.icons.filled.RestaurantMenu
-import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.TableBar
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.Font
-import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
-import androidx.constraintlayout.compose.ConstraintLayout
-import androidx.navigation.NavController
-import androidx.navigation.compose.rememberNavController
-import coil.compose.SubcomposeAsyncImage
-import com.google.accompanist.systemuicontroller.SystemUiController
-import com.soportereal.invefacon.R
-import com.soportereal.invefacon.funciones_de_interfaces.RutasPatallas
-import com.soportereal.invefacon.interfaces.compact.FuncionesParaAdaptarContenidoCompact
-import com.soportereal.invefacon.interfaces.compact.modulos.clientes.AgregarTextFieldMultifuncional
-import com.soportereal.invefacon.interfaces.compact.obtenerEstiloBody
-import com.soportereal.invefacon.interfaces.compact.obtenerEstiloDisplay
-import com.soportereal.invefacon.interfaces.compact.obtenerEstiloHead
-import com.soportereal.invefacon.interfaces.compact.obtenerEstiloLabel
-import com.soportereal.invefacon.interfaces.compact.obtenerEstiloTitle
-import com.soportereal.invefacon.interfaces.compact.pantallas_principales.estadoRespuestaApi
-import com.soportereal.invefacon.interfaces.compact.pantallas_principales.objetoEstadoPantallaCarga
-import kotlinx.coroutines.delay
-import org.json.JSONArray
-import org.json.JSONObject
-import java.util.Locale
+ import androidx.compose.foundation.background
+ import androidx.compose.foundation.clickable
+ import androidx.compose.foundation.layout.Arrangement
+ import androidx.compose.foundation.layout.Box
+ import androidx.compose.foundation.layout.Column
+ import androidx.compose.foundation.layout.PaddingValues
+ import androidx.compose.foundation.layout.Row
+ import androidx.compose.foundation.layout.Spacer
+ import androidx.compose.foundation.layout.fillMaxHeight
+ import androidx.compose.foundation.layout.fillMaxSize
+ import androidx.compose.foundation.layout.fillMaxWidth
+ import androidx.compose.foundation.layout.height
+ import androidx.compose.foundation.layout.heightIn
+ import androidx.compose.foundation.layout.navigationBarsPadding
+ import androidx.compose.foundation.layout.padding
+ import androidx.compose.foundation.layout.size
+ import androidx.compose.foundation.layout.statusBarsPadding
+ import androidx.compose.foundation.layout.width
+ import androidx.compose.foundation.layout.wrapContentHeight
+ import androidx.compose.foundation.layout.wrapContentWidth
+ import androidx.compose.foundation.lazy.LazyColumn
+ import androidx.compose.foundation.lazy.items
+ import androidx.compose.foundation.lazy.rememberLazyListState
+ import androidx.compose.foundation.shape.RoundedCornerShape
+ import androidx.compose.material.icons.Icons
+ import androidx.compose.material.icons.filled.AccountTree
+ import androidx.compose.material.icons.filled.AddCircle
+ import androidx.compose.material.icons.filled.ArrowBackIosNew
+ import androidx.compose.material.icons.filled.Delete
+ import androidx.compose.material.icons.filled.EditNote
+ import androidx.compose.material.icons.filled.Password
+ import androidx.compose.material.icons.filled.Person
+ import androidx.compose.material.icons.filled.Place
+ import androidx.compose.material.icons.filled.RemoveCircle
+ import androidx.compose.material.icons.filled.RestaurantMenu
+ import androidx.compose.material.icons.filled.TableBar
+ import androidx.compose.material3.AlertDialog
+ import androidx.compose.material3.Button
+ import androidx.compose.material3.ButtonDefaults
+ import androidx.compose.material3.Card
+ import androidx.compose.material3.CardDefaults
+ import androidx.compose.material3.CircularProgressIndicator
+ import androidx.compose.material3.HorizontalDivider
+ import androidx.compose.material3.Icon
+ import androidx.compose.material3.IconButton
+ import androidx.compose.material3.Surface
+ import androidx.compose.material3.Switch
+ import androidx.compose.material3.SwitchDefaults
+ import androidx.compose.material3.Text
+ import androidx.compose.runtime.Composable
+ import androidx.compose.runtime.LaunchedEffect
+ import androidx.compose.runtime.MutableState
+ import androidx.compose.runtime.collectAsState
+ import androidx.compose.runtime.getValue
+ import androidx.compose.runtime.mutableIntStateOf
+ import androidx.compose.runtime.mutableStateListOf
+ import androidx.compose.runtime.mutableStateOf
+ import androidx.compose.runtime.remember
+ import androidx.compose.runtime.setValue
+ import androidx.compose.ui.Alignment
+ import androidx.compose.ui.Modifier
+ import androidx.compose.ui.draw.shadow
+ import androidx.compose.ui.graphics.Color
+ import androidx.compose.ui.layout.ContentScale
+ import androidx.compose.ui.platform.LocalConfiguration
+ import androidx.compose.ui.platform.LocalContext
+ import androidx.compose.ui.res.painterResource
+ import androidx.compose.ui.text.font.Font
+ import androidx.compose.ui.text.font.FontFamily
+ import androidx.compose.ui.text.font.FontWeight
+ import androidx.compose.ui.text.style.TextAlign
+ import androidx.compose.ui.text.style.TextOverflow
+ import androidx.compose.ui.tooling.preview.Preview
+ import androidx.compose.ui.unit.dp
+ import androidx.constraintlayout.compose.ConstraintLayout
+ import androidx.navigation.NavController
+ import androidx.navigation.compose.rememberNavController
+ import coil.compose.SubcomposeAsyncImage
+ import com.google.accompanist.systemuicontroller.SystemUiController
+ import com.soportereal.invefacon.R
+ import com.soportereal.invefacon.funciones_de_interfaces.BBasicTextField
+ import com.soportereal.invefacon.funciones_de_interfaces.RutasPatallas
+ import com.soportereal.invefacon.funciones_de_interfaces.actualizarParametro
+ import com.soportereal.invefacon.funciones_de_interfaces.guardarParametroSiNoExiste
+ import com.soportereal.invefacon.funciones_de_interfaces.mostrarMensajeError
+ import com.soportereal.invefacon.funciones_de_interfaces.obtenerParametro
+ import com.soportereal.invefacon.interfaces.FuncionesParaAdaptarContenidoCompact
+ import com.soportereal.invefacon.interfaces.modulos.clientes.AgregarTextFieldMultifuncional
+ import com.soportereal.invefacon.interfaces.obtenerEstiloBody
+ import com.soportereal.invefacon.interfaces.obtenerEstiloDisplay
+ import com.soportereal.invefacon.interfaces.obtenerEstiloHead
+ import com.soportereal.invefacon.interfaces.obtenerEstiloLabel
+ import com.soportereal.invefacon.interfaces.obtenerEstiloTitle
+ import com.soportereal.invefacon.interfaces.pantallas_principales.estadoRespuestaApi
+ import com.soportereal.invefacon.interfaces.pantallas_principales.objetoEstadoPantallaCarga
+ import kotlinx.coroutines.delay
+ import org.json.JSONArray
+ import org.json.JSONObject
+ import java.util.Locale
 
 
+@SuppressLint("MutableCollectionMutableState")
 @Composable
 fun InterfazModuloSacLarge(
     token: String,
@@ -114,7 +120,7 @@ fun InterfazModuloSacLarge(
     val dpAltoPantalla = configuration.screenHeightDp
     val dpFontPantalla= configuration.fontScale
     val objetoAdaptardor= FuncionesParaAdaptarContenidoCompact(dpAltoPantalla, dpAnchoPantalla, dpFontPantalla, true)
-    var datosIngresadosBarraBusqueda by rememberSaveable  { mutableStateOf("") }
+    var datosIngresadosBarraBusqueda by remember  { mutableStateOf("") }
     val lazyStateMesas= rememberLazyListState()
     val lazyStateCuentasActivas= rememberLazyListState()
     var listaCuentasActivasActuales by remember { mutableStateOf<List<Mesa>>(emptyList()) }
@@ -122,6 +128,7 @@ fun InterfazModuloSacLarge(
     val objectoProcesadorDatosApi= ProcesarDatosModuloSac(token)
     var iniciarMenuCrearMesa by remember { mutableStateOf(false) }
     var nombreNuevaMesa by remember { mutableStateOf("") }
+    var nombreNuevaPersona by remember { mutableStateOf("") }
     var nombreSalonNuevaMesa by remember { mutableStateOf("") }
     var iniciarCreacionNuevaMesa by remember { mutableStateOf(false) }
     var isPrimeraVezCargando by remember { mutableStateOf(true) }
@@ -160,6 +167,15 @@ fun InterfazModuloSacLarge(
     var regresarPantallaAnterior by remember { mutableStateOf(false) }
     var actualizarSubCuentasYMesas by remember { mutableStateOf(false) }
     var cantidadArticulosComandados by remember { mutableIntStateOf(0) }
+    var iniciarMenuCrearPersona by remember { mutableStateOf(false) }
+    var iniciarCreacionNuevaPersona by remember { mutableStateOf(false) }
+    var iniciarMenuAjustes by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+    guardarParametroSiNoExiste(context, "prmImp2", "1")
+    var valorPrmImp2 by remember { mutableStateOf(obtenerParametro(context, "prmImp2")) }
+    var codUsuarioIngresado by remember { mutableStateOf(codUsuario) }
+    var passwordIngresada by remember { mutableStateOf("") }
+    var aplicarImp2 by remember { mutableStateOf(false) }
 
     LaunchedEffect(iniciarPantallaSacComanda) {
         if (iniciarPantallaSacComanda){
@@ -177,16 +193,7 @@ fun InterfazModuloSacLarge(
     LaunchedEffect(iniciarCreacionNuevaMesa) {
         if (iniciarCreacionNuevaMesa){
             if (nombreNuevaMesa.isEmpty() && nombreSalonNuevaMesa.isEmpty()){
-                val jsonObject = JSONObject(
-                """
-                    {
-                        "code": 400,
-                        "status": "error",
-                        "data": "Complete los campos"
-                    }
-                """
-                )
-                estadoRespuestaApi.cambiarEstadoRespuestaApi(mostrarRespuesta = true, datosRespuesta = jsonObject)
+                mostrarMensajeError("Complete los campos")
             }else{
                 objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(true)
                 delay(500)
@@ -211,34 +218,37 @@ fun InterfazModuloSacLarge(
             val listaCuentasActivas = mutableListOf<Mesa>()
             val result= objectoProcesadorDatosApi.obtenerListaMesas(datosIngresadosBarraBusqueda)
             if (result!=null){
-                val data = result.getJSONObject("data")
-                val datosMesas= data.getJSONArray("mesas")
-                for (i in 0 until datosMesas.length()){
-                    val datoMesa= datosMesas.getJSONObject(i)
-                    val mesa = Mesa(
-                        nombre = datoMesa.getString("mesa"),
-                        idMesa = datoMesa.getString("Consec"),
-                        cantidadSubcuentas = datoMesa.getString("cantidad_subcuentas"),
-                        tiempo = if(!datoMesa.isNull("minutos")) datoMesa.getInt("minutos") else 0,
-                        total = datoMesa.getString("monto"),
-                        estado = datoMesa.getString("CodEstado"),
-                        salon = datoMesa.getString("salon")
-                    )
-                    listaMesas.add(mesa)
-                }
+                if (result.getString("status")=="ok"){
+                    val data = result.getJSONObject("data")
+                    val datosMesas= data.getJSONArray("mesas")
+                    for (i in 0 until datosMesas.length()){
+                        val datoMesa= datosMesas.getJSONObject(i)
+                        val mesa = Mesa(
+                            nombre = datoMesa.getString("mesa"),
+                            idMesa = datoMesa.getString("Consec"),
+                            cantidadSubcuentas = datoMesa.getString("cantidad_subcuentas"),
+                            tiempo = if(!datoMesa.isNull("minutos")) datoMesa.getInt("minutos") else 0,
+                            total = datoMesa.getString("monto"),
+                            estado = datoMesa.getString("CodEstado"),
+                            salon = datoMesa.getString("salon")
+                        )
+                        listaMesas.add(mesa)
+                    }
 
-                val datosCuentasActivas = data.getJSONArray("cuentasActivas")
-                for (i in 0 until datosCuentasActivas.length()) {
-                    val datoMesa= datosCuentasActivas.getJSONObject(i)
-                    val mesa = Mesa(
-                        nombre = datoMesa.getString("mesa"),
-                        idMesa = datoMesa.getString("Consec"),
-                        cantidadSubcuentas = datoMesa.getString("cantidad_subcuentas"),
-                        tiempo = if(!datoMesa.isNull("minutos")) datoMesa.getInt("minutos") else 0,
-                        total = datoMesa.getString("monto"),
-                        estado = datoMesa.getString("CodEstado")
-                    )
-                    listaCuentasActivas.add(mesa)
+                    val datosCuentasActivas = data.getJSONArray("cuentasActivas")
+                    for (i in 0 until datosCuentasActivas.length()) {
+                        val datoMesa= datosCuentasActivas.getJSONObject(i)
+                        val mesa = Mesa(
+                            nombre = datoMesa.getString("mesa"),
+                            salon = datoMesa.getString("salon"),
+                            idMesa = datoMesa.getString("Consec"),
+                            cantidadSubcuentas = datoMesa.getString("cantidad_subcuentas"),
+                            tiempo = if(!datoMesa.isNull("minutos")) datoMesa.getInt("minutos") else 0,
+                            total = datoMesa.getString("monto"),
+                            estado = datoMesa.getString("CodEstado")
+                        )
+                        listaCuentasActivas.add(mesa)
+                    }
                 }
             }
 
@@ -248,7 +258,6 @@ fun InterfazModuloSacLarge(
             if (listaCuentasActivasActuales!=listaCuentasActivas){
                 listaCuentasActivasActuales=listaCuentasActivas
             }
-
             if (isPrimeraVezCargando){
                 objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
                 isPrimeraVezCargando=false
@@ -264,58 +273,56 @@ fun InterfazModuloSacLarge(
             val listaCuentasActivas = mutableListOf<Mesa>()
             val result= objectoProcesadorDatosApi.obtenerListaMesas(datosIngresadosBarraBusqueda)
             if (result!=null){
-                val data = result.getJSONObject("data")
-                val datosMesas= data.getJSONArray("mesas")
-                for (i in 0 until datosMesas.length()){
-                    val datoMesa= datosMesas.getJSONObject(i)
-                    val mesa = Mesa(
-                        nombre = datoMesa.getString("mesa"),
-                        idMesa = datoMesa.getString("Consec"),
-                        cantidadSubcuentas = datoMesa.getString("cantidad_subcuentas"),
-                        tiempo = if(!datoMesa.isNull("minutos")) datoMesa.getInt("minutos") else 0,
-                        total = datoMesa.getString("monto"),
-                        estado = datoMesa.getString("CodEstado"),
-                        salon = datoMesa.getString("salon")
-                    )
-                    listaMesas.add(mesa)
-                }
+                if (result.getString("status")=="ok"){
+                    val data = result.getJSONObject("data")
+                    val datosMesas= data.getJSONArray("mesas")
+                    for (i in 0 until datosMesas.length()){
+                        val datoMesa= datosMesas.getJSONObject(i)
+                        val mesa = Mesa(
+                            nombre = datoMesa.getString("mesa"),
+                            idMesa = datoMesa.getString("Consec"),
+                            cantidadSubcuentas = datoMesa.getString("cantidad_subcuentas"),
+                            tiempo = if(!datoMesa.isNull("minutos")) datoMesa.getInt("minutos") else 0,
+                            total = datoMesa.getString("monto"),
+                            estado = datoMesa.getString("CodEstado"),
+                            salon = datoMesa.getString("salon")
+                        )
+                        listaMesas.add(mesa)
+                    }
 
-                val datosCuentasActivas = data.getJSONArray("cuentasActivas")
-                for (i in 0 until datosCuentasActivas.length()) {
-                    val datoMesa= datosCuentasActivas.getJSONObject(i)
-                    val mesa = Mesa(
-                        nombre = datoMesa.getString("mesa"),
-                        idMesa = datoMesa.getString("Consec"),
-                        cantidadSubcuentas = datoMesa.getString("cantidad_subcuentas"),
-                        tiempo = if(!datoMesa.isNull("minutos")) datoMesa.getInt("minutos") else 0,
-                        total = datoMesa.getString("monto"),
-                        estado = datoMesa.getString("CodEstado")
-                    )
-                    listaCuentasActivas.add(mesa)
+                    val datosCuentasActivas = data.getJSONArray("cuentasActivas")
+                    for (i in 0 until datosCuentasActivas.length()) {
+                        val datoMesa= datosCuentasActivas.getJSONObject(i)
+                        val mesa = Mesa(
+                            nombre = datoMesa.getString("mesa"),
+                            idMesa = datoMesa.getString("Consec"),
+                            cantidadSubcuentas = datoMesa.getString("cantidad_subcuentas"),
+                            tiempo = if(!datoMesa.isNull("minutos")) datoMesa.getInt("minutos") else 0,
+                            total = datoMesa.getString("monto"),
+                            estado = datoMesa.getString("CodEstado")
+                        )
+                        listaCuentasActivas.add(mesa)
+                    }
                 }
+                if (listaMesasActualesFiltradas!=listaMesas){
+                    listaMesasActualesFiltradas=listaMesas
+                }
+                if (listaCuentasActivasActuales!=listaCuentasActivas){
+                    listaCuentasActivasActuales=listaCuentasActivas
+                }
+                objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
+                actualizarListaMesas=false
             }
-
-            if (listaMesasActualesFiltradas!=listaMesas){
-                listaMesasActualesFiltradas=listaMesas
-            }
-            if (listaCuentasActivasActuales!=listaCuentasActivas){
-                listaCuentasActivasActuales=listaCuentasActivas
-            }
-            objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
-            actualizarListaMesas=false
         }
     }
 
     LaunchedEffect(iniciarMenuMesaComandada, estadoBtOkRespuestaApi) {
         if(iniciarMenuMesaComandada && !iniciarMenuMoverArticulo) {
+            articulosComandados.clear()
+            opcionesSubCuentas.value.clear()
             objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(true)
             val result = objectoProcesadorDatosApi.obtenerDatosMesaComandada(mesaActual.nombre)
             if (result != null) {
-                estadoRespuestaApi.cambiarEstadoRespuestaApi(
-                    mostrarSoloRespuestaError = true,
-                    datosRespuesta = result
-                )
-
                 if (result.getString("code")== "200"){
                     val data = result.getJSONObject("data")
                     val subCuentas = data.getJSONArray("Subcuentas")
@@ -361,11 +368,9 @@ fun InterfazModuloSacLarge(
                         }
                         articulosComandados.add(articuloComadado)
                     }
-                }
-                else{
+                }else{
                     iniciarMenuMesaComandada=false
                 }
-
             }
             objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
             iniciarCalculoMontos= true
@@ -443,15 +448,7 @@ fun InterfazModuloSacLarge(
         }
 
         if(eliminarArticulo && anotacionComanda.isEmpty()){
-            val jsonObject = JSONObject("""
-                    {
-                        "code": 400,
-                        "status": "error",
-                        "data": "Ingrese el motivo de la eliminacion del articulo"
-                    }
-                """
-            )
-            estadoRespuestaApi.cambiarEstadoRespuestaApi(mostrarRespuesta = true, datosRespuesta = jsonObject )
+            mostrarMensajeError("Ingrese el motivo de la eliminacion del articulo")
             actualizarListaMesas= true
             eliminarArticulo= false
             agregarArticulo= false
@@ -461,15 +458,27 @@ fun InterfazModuloSacLarge(
 
     LaunchedEffect(quitarMesa) {
         if(quitarMesa){
-            objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(true)
-            val result = objectoProcesadorDatosApi.quitarMesa(mesaActual.nombre)
-            if (result!=null){
-                estadoRespuestaApi.cambiarEstadoRespuestaApi(mostrarRespuesta = true, datosRespuesta = result)
+            if (passwordIngresada.isEmpty() || codUsuarioIngresado.isEmpty()){
+                mostrarMensajeError("Complete los campos para continuar")
+                quitarMesa=false
+            }else{
+                objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(true)
+                val result = objectoProcesadorDatosApi.quitarMesa(mesaActual.nombre, passwordIngresada, codUsuarioIngresado)
+                if (result!=null){
+                    estadoRespuestaApi.cambiarEstadoRespuestaApi(mostrarRespuesta = true, datosRespuesta = result)
+                    if (result.getString("status")=="ok"){
+                        iniciarMenuMesaComandada=false
+                        actualizarListaMesas= true
+                    }
+                }
+                iniciarMenuQuitarMesa=false
+                codUsuarioIngresado=codUsuario
+                passwordIngresada=""
+                objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
+                quitarMesa= false
             }
-            iniciarMenuQuitarMesa=false
-            iniciarMenuMesaComandada=false
-            actualizarListaMesas= true
-            quitarMesa= false
+
+
         }
     }
 
@@ -491,15 +500,20 @@ fun InterfazModuloSacLarge(
             var result = objectoProcesadorDatosApi.obetenerNombresMesas()
             if (result!=null){
                 estadoRespuestaApi.cambiarEstadoRespuestaApi(mostrarSoloRespuestaError = true, datosRespuesta = result)
-                val data= result.getJSONObject("data")
-                val mesas= data.getJSONArray("Mesas")
-                for(i in 0 until mesas.length()){
-                    val datosMesa = mesas.getJSONObject(i)
-                    opcionesMesas.value[datosMesa.getString("nombreMesa")] = datosMesa.getString("nombreMesa")+"-"+datosMesa.getString("nombreSalon")
+                if (result.getString("status")!="ok"){
+                    objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
+                }else{
+                    val data= result.getJSONObject("data")
+                    val mesas= data.getJSONArray("Mesas")
+                    for(i in 0 until mesas.length()){
+                        val datosMesa = mesas.getJSONObject(i)
+                        opcionesMesas.value[datosMesa.getString("nombreMesa")] = datosMesa.getString("nombreMesa")+"-"+datosMesa.getString("nombreSalon")
+                    }
+                    if (mesaDestino.isEmpty()) {
+                        mesaDestino = opcionesMesas.value[mesaActual.nombre].toString()
+                    }
                 }
-                if (mesaDestino.isEmpty()) {
-                    mesaDestino = opcionesMesas.value[mesaActual.nombre].toString()
-                }
+
 
             }
             subCuentaDestinoArticulo=""
@@ -508,13 +522,17 @@ fun InterfazModuloSacLarge(
                 result = objectoProcesadorDatosApi.obetenerSubCuentasMesa(mesaDestino)
                 if (result!= null){
                     estadoRespuestaApi.cambiarEstadoRespuestaApi(mostrarSoloRespuestaError = true, datosRespuesta = result)
-                    val data= result.getJSONObject("data")
-                    val subCuentas= data.getJSONArray("Subcuentas")
-                    for( i in 0 until subCuentas.length()){
-                        opcionesSubCuentasDestino.value[subCuentas.getString(i)] = subCuentas.getString(i)
-                    }
-                    if (subCuentaDestinoArticulo.isEmpty()){
-                        subCuentaDestinoArticulo= opcionesSubCuentasDestino.value.keys.first()
+                    if (result.getString("status")!="ok"){
+                        objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
+                    }else{
+                        val data= result.getJSONObject("data")
+                        val subCuentas= data.getJSONArray("Subcuentas")
+                        for( i in 0 until subCuentas.length()){
+                            opcionesSubCuentasDestino.value[subCuentas.getString(i)] = subCuentas.getString(i)
+                        }
+                        if (subCuentaDestinoArticulo.isEmpty()){
+                            subCuentaDestinoArticulo= opcionesSubCuentasDestino.value.keys.first()
+                        }
                     }
                 }
             }
@@ -552,15 +570,24 @@ fun InterfazModuloSacLarge(
 
     LaunchedEffect(moverMesa) {
         if(moverMesa){
-            objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(true)
-            val result = objectoProcesadorDatosApi.moverMesa(mesa = mesaActual.nombre, mesaDestino = mesaDestino)
-            if (result!= null){
-                estadoRespuestaApi.cambiarEstadoRespuestaApi(mostrarRespuesta = true, datosRespuesta = result)
+            if (passwordIngresada.isEmpty() || codUsuarioIngresado.isEmpty()){
+                mostrarMensajeError("Complete los campos para continuar")
+                moverMesa=false
+            }else{
+                objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(true)
+                val result = objectoProcesadorDatosApi.moverMesa(mesa = mesaActual.nombre, mesaDestino = mesaDestino, password = passwordIngresada, codUsuario = codUsuarioIngresado)
+                if (result!= null){
+                    estadoRespuestaApi.cambiarEstadoRespuestaApi(mostrarRespuesta = true, datosRespuesta = result)
+                }
+                iniciarMenuMoverMesa= false
+                mesaDestino=""
+                codUsuarioIngresado=codUsuario
+                passwordIngresada=""
+                objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
+                moverMesa= false
             }
-            mesaDestino=""
-            iniciarMenuMoverMesa= false
-            actualizarListaMesas= true
-            moverMesa= false
+
+
         }
     }
 
@@ -568,6 +595,35 @@ fun InterfazModuloSacLarge(
         if (regresarPantallaAnterior){
             navController.popBackStack()
             estadoRespuestaApi.cambiarEstadoRespuestaApi()
+        }
+    }
+
+    LaunchedEffect(iniciarCreacionNuevaPersona) {
+        if(iniciarCreacionNuevaPersona){
+            if (nombreNuevaPersona.isEmpty()){
+                mostrarMensajeError("Ingrese el nombre de la Persona")
+            }else{
+                mesaActual=Mesa(
+                    nombre =nombreNuevaPersona,
+                    salon = "PERSONA"
+                )
+                iniciarPantallaSacComanda = true
+                nombreNuevaPersona=""
+                iniciarMenuCrearPersona=false
+            }
+            iniciarCreacionNuevaMesa = false
+        }
+    }
+
+    LaunchedEffect(aplicarImp2) {
+        if(aplicarImp2){
+            objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(true)
+            val result = objectoProcesadorDatosApi.aplicarImp2( nombreMesa= mesaActual.nombre)
+            if (result!= null){
+                estadoRespuestaApi.cambiarEstadoRespuestaApi(mostrarRespuesta = true, datosRespuesta = result)
+            }
+            objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
+            aplicarImp2= false
         }
     }
 
@@ -847,60 +903,20 @@ fun InterfazModuloSacLarge(
             )
         }
 
-        BasicTextField(
+        BBasicTextField(
             value = datosIngresadosBarraBusqueda,
-            onValueChange = { nuevoValor ->
+            onValueChange =  { nuevoValor ->
                 datosIngresadosBarraBusqueda = nuevoValor
                 actualizarListaMesas= true
             },
-            singleLine = true,
-            textStyle = TextStyle(
-                fontFamily = fontAksharPrincipal,
-                fontWeight = FontWeight.Light,
-                color = Color.DarkGray,
-                textAlign = TextAlign.Justify
-            ),
-            keyboardOptions = KeyboardOptions.Default.copy(
-                imeAction = ImeAction.Done
-            ),
-            decorationBox = { innerTextField ->
-                Box(
-                    modifier = Modifier
-                        .width(objetoAdaptardor.ajustarAncho(250))
-                        .height(objetoAdaptardor.ajustarAltura(45))
-                        .background(Color.LightGray, RoundedCornerShape(objetoAdaptardor.ajustarAltura(18)))
-                        .padding(horizontal = 16.dp, vertical = 4.dp),
-                    contentAlignment = Alignment.CenterStart
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            imageVector = Icons.Filled.Search,
-                            contentDescription = "Icono Buscar",
-                            tint = Color.DarkGray,
-                            modifier = Modifier.size(objetoAdaptardor.ajustarAltura(30))
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        if (datosIngresadosBarraBusqueda.isEmpty()) {
-                            Text(
-                                text = "Buscar...",
-                                fontFamily = fontAksharPrincipal,
-                                fontWeight = FontWeight.Light,
-                                color = Color.Gray,
-                                maxLines = 1
-                            )
-                        }
-                        innerTextField()
-                    }
-                }
-            }, modifier = Modifier
-                .width(objetoAdaptardor.ajustarAncho(250))
-                .height(objetoAdaptardor.ajustarAltura(45))
-                .constrainAs(txfBarraBusqueda) {
-                    top.linkTo(bxSuperior.bottom, margin = objetoAdaptardor.ajustarAltura(8))
-                    start.linkTo(parent.start, margin = objetoAdaptardor.ajustarAncho(8))
-                }
+            fontFamily = fontAksharPrincipal,
+            alto = 45,
+            ancho = 200,
+            objetoAdaptardor = objetoAdaptardor,
+            modifier = Modifier.constrainAs(txfBarraBusqueda) {
+                top.linkTo(bxSuperior.bottom, margin = objetoAdaptardor.ajustarAltura(8))
+                start.linkTo(parent.start, margin = objetoAdaptardor.ajustarAncho(8))
+            }
         )
 
         Box(
@@ -945,7 +961,62 @@ fun InterfazModuloSacLarge(
                         )
                     }
                 }
-
+                Button(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxHeight()
+                        .padding(start = objetoAdaptardor.ajustarAltura(4), end =  objetoAdaptardor.ajustarAltura(4)),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFF244BC0), // Color de fondo del botón
+                        contentColor = Color.White,
+                        disabledContainerColor = Color(0xFF244BC0),
+                        disabledContentColor = Color.White
+                    ),
+                    elevation = ButtonDefaults.buttonElevation(defaultElevation = 5.dp),
+                    onClick = {
+                        iniciarMenuCrearPersona= true
+                    }, contentPadding = PaddingValues(2.dp)
+                ) {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center){
+                        Text(
+                            "Persona",
+                            fontFamily = fontAksharPrincipal,
+                            fontWeight = FontWeight.Medium,
+                            fontSize = obtenerEstiloBody(),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            textAlign = TextAlign.Center
+                        )
+                    }
+                }
+                Button(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxHeight()
+                        .padding(start = objetoAdaptardor.ajustarAltura(4), end =  objetoAdaptardor.ajustarAltura(4)),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFF244BC0), // Color de fondo del botón
+                        contentColor = Color.White,
+                        disabledContainerColor = Color(0xFF244BC0),
+                        disabledContentColor = Color.White
+                    ),
+                    elevation = ButtonDefaults.buttonElevation(defaultElevation = 5.dp),
+                    onClick = {
+                        iniciarMenuAjustes= true
+                    }, contentPadding = PaddingValues(2.dp)
+                ) {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center){
+                        Text(
+                            "Ajustes",
+                            fontFamily = fontAksharPrincipal,
+                            fontWeight = FontWeight.Medium,
+                            fontSize = obtenerEstiloBody(),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            textAlign = TextAlign.Center
+                        )
+                    }
+                }
                 Button(
                     modifier = Modifier
                         .weight(1f)
@@ -980,7 +1051,7 @@ fun InterfazModuloSacLarge(
         Box(
             modifier = Modifier
                 .background(Color.White)
-                .width(objetoAdaptardor.ajustarAncho(740))
+                .width(objetoAdaptardor.ajustarAncho(690))
                 .height(objetoAdaptardor.ajustarAltura(515))
                 .constrainAs(bxContenedorMesas) {
                     start.linkTo(parent.start, margin = objetoAdaptardor.ajustarAncho(12))
@@ -1026,7 +1097,6 @@ fun InterfazModuloSacLarge(
                         }
                     }
                     item { Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(16)))}
-
                 }
             }
 
@@ -1036,7 +1106,7 @@ fun InterfazModuloSacLarge(
         Card(
             modifier = Modifier
                 .background(Color.White)
-                .width(objetoAdaptardor.ajustarAncho(195))
+                .width(objetoAdaptardor.ajustarAncho(245))
                 .height(objetoAdaptardor.ajustarAltura(530))
                 .shadow(
                     elevation = objetoAdaptardor.ajustarAltura(2),
@@ -1062,7 +1132,7 @@ fun InterfazModuloSacLarge(
                         text = "Cuentas activas",
                         fontFamily = fontAksharPrincipal,
                         fontWeight =    FontWeight.SemiBold,
-                        fontSize = obtenerEstiloBody(),
+                        fontSize = obtenerEstiloTitle(),
                         color = Color.White,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
@@ -1075,21 +1145,24 @@ fun InterfazModuloSacLarge(
                     modifier = Modifier
                         .fillMaxWidth()
                         .wrapContentHeight()
-                        .background(Color(0xFFFAFAFA))
+                        .background(Color(0xFFFAFAFA)),
                 ){
-                    Row {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center
+                    ) {
                         Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(6)))
                         Text(
                             "Mesa",
                             fontFamily = fontAksharPrincipal,
                             color = Color(0xFF1D3FA4),
                             fontWeight = FontWeight.Medium,
-                            fontSize = obtenerEstiloLabel(),
+                            fontSize = obtenerEstiloTitle(),
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
                             textAlign = TextAlign.Center,
                             modifier = Modifier
-                                .width(objetoAdaptardor.ajustarAncho(55))
+                                .width(objetoAdaptardor.ajustarAncho(85))
                                 .padding(objetoAdaptardor.ajustarAncho(2))
                         )
 
@@ -1098,12 +1171,12 @@ fun InterfazModuloSacLarge(
                             fontFamily = fontAksharPrincipal,
                             color = Color(0xFF1D3FA4),
                             fontWeight = FontWeight.Medium,
-                            fontSize = obtenerEstiloLabel(),
+                            fontSize = obtenerEstiloTitle(),
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
                             textAlign = TextAlign.Center,
                             modifier = Modifier
-                                .width(objetoAdaptardor.ajustarAncho(55))
+                                .width(objetoAdaptardor.ajustarAncho(72))
                                 .padding(objetoAdaptardor.ajustarAncho(2))
                         )
 
@@ -1112,7 +1185,7 @@ fun InterfazModuloSacLarge(
                             fontFamily = fontAksharPrincipal,
                             color = Color(0xFF1D3FA4),
                             fontWeight = FontWeight.Medium,
-                            fontSize = obtenerEstiloLabel(),
+                            fontSize = obtenerEstiloTitle(),
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
                             textAlign = TextAlign.Center,
@@ -1126,7 +1199,7 @@ fun InterfazModuloSacLarge(
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .background(Color(0xFFFAFAFA))
+                        .background(Color(0xFFFAFAFA)),
                 ){
                     LazyColumn(
                         state = lazyStateCuentasActivas
@@ -1136,22 +1209,28 @@ fun InterfazModuloSacLarge(
                                 Box(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .background(Color(0xFFFAFAFA)),
-                                    contentAlignment = Alignment.Center
+                                        .background(Color(0xFFFAFAFA))
+                                        .clickable {
+                                            mesaActual=mesa
+                                            iniciarMenuMesaComandada=true
+                                        }
                                 ){
-                                    Row {
-                                        Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(6)))
+                                    Row(
+                                        horizontalArrangement = Arrangement.Center,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(2)))
                                         Text(
                                             mesa.nombre,
                                             fontFamily = fontAksharPrincipal,
                                             color = Color.Black,
                                             fontWeight = FontWeight.Medium,
-                                            fontSize = obtenerEstiloLabel(),
+                                            fontSize = obtenerEstiloBody(),
                                             overflow = TextOverflow.Ellipsis,
                                             maxLines = 1,
                                             textAlign = TextAlign.Center,
                                             modifier = Modifier
-                                                .width(objetoAdaptardor.ajustarAncho(55))
+                                                .width(objetoAdaptardor.ajustarAncho(85))
                                                 .padding(objetoAdaptardor.ajustarAncho(2))
                                         )
 
@@ -1170,11 +1249,12 @@ fun InterfazModuloSacLarge(
                                             fontFamily = fontAksharPrincipal,
                                             color = Color.Black,
                                             fontWeight = FontWeight.Medium,
-                                            fontSize = obtenerEstiloLabel(),
+                                            fontSize = obtenerEstiloBody(),
                                             overflow = TextOverflow.Ellipsis,
                                             textAlign = TextAlign.Center,
+                                            maxLines = 1,
                                             modifier = Modifier
-                                                .width(objetoAdaptardor.ajustarAncho(60))
+                                                .width(objetoAdaptardor.ajustarAncho(72))
                                                 .padding(objetoAdaptardor.ajustarAncho(2))
                                         )
 
@@ -1191,7 +1271,7 @@ fun InterfazModuloSacLarge(
                                             fontFamily = fontAksharPrincipal,
                                             color = Color.Black,
                                             fontWeight = FontWeight.Medium,
-                                            fontSize = obtenerEstiloLabel(),
+                                            fontSize = obtenerEstiloBody(),
                                             overflow = TextOverflow.Ellipsis,
                                             textAlign = TextAlign.End,
                                             modifier = Modifier
@@ -1232,115 +1312,34 @@ fun InterfazModuloSacLarge(
             text = {
                 Box{
                     Column {
-                        BasicTextField(
+
+                        BBasicTextField(
                             value = nombreNuevaMesa,
-                            onValueChange = { nuevoValor ->
+                            onValueChange =  { nuevoValor ->
                                 nombreNuevaMesa = nuevoValor
                             },
-                            singleLine = true,
-                            textStyle = TextStyle(
-                                fontFamily = fontAksharPrincipal,
-                                fontWeight = FontWeight.Light,
-                                color = Color.Black,
-                                textAlign = TextAlign.Justify
-                            ),
-                            keyboardOptions = KeyboardOptions.Default.copy(
-                                imeAction = ImeAction.Done
-                            ),
-                            decorationBox = { innerTextField ->
-                                Box(
-                                    modifier = Modifier
-                                        .width(objetoAdaptardor.ajustarAncho(300))
-                                        .height(objetoAdaptardor.ajustarAltura(70))
-                                        .background(Color.LightGray, RoundedCornerShape(objetoAdaptardor.ajustarAltura(18)))
-                                        .padding(horizontal = 16.dp, vertical = 4.dp),
-                                    contentAlignment = Alignment.CenterStart
-                                ) {
-                                    Row(
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Filled.TableBar,
-                                            contentDescription = "Icono Buscar",
-                                            tint = Color.DarkGray,
-                                            modifier = Modifier.size(objetoAdaptardor.ajustarAltura(30))
-                                        )
-                                        Spacer(modifier = Modifier.width(8.dp))
-                                        if (nombreNuevaMesa.isEmpty()) {
-                                            Text(
-                                                "Nombre de la Mesa",
-                                                color = Color.DarkGray,
-                                                fontFamily = fontAksharPrincipal,
-                                                fontWeight = FontWeight.Light,
-                                                fontSize = obtenerEstiloBody(),
-                                                maxLines = 1,
-                                                overflow = TextOverflow.Ellipsis
-                                            )
-                                        }
-                                        innerTextField()
-                                    }
-                                }
-                            }, modifier = Modifier
-                                .width(objetoAdaptardor.ajustarAncho(300))
-                                .height(objetoAdaptardor.ajustarAltura(70))
+                            fontFamily = fontAksharPrincipal,
+                            alto = 70,
+                            ancho = 300,
+                            placeholder = "Nombre de la Mesa",
+                            icono = Icons.Filled.TableBar,
+                            objetoAdaptardor = objetoAdaptardor
                         )
-
 
                         // Spacer separador de componente
                         Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(8)))
 
-                        BasicTextField(
+                        BBasicTextField(
                             value = nombreSalonNuevaMesa,
-                            onValueChange = { nuevoValor ->
+                            onValueChange =  { nuevoValor ->
                                 nombreSalonNuevaMesa = nuevoValor
                             },
-                            singleLine = true,
-                            textStyle = TextStyle(
-                                fontFamily = fontAksharPrincipal,
-                                fontWeight = FontWeight.Light,
-                                color = Color.Black,
-                                textAlign = TextAlign.Justify
-                            ),
-                            keyboardOptions = KeyboardOptions.Default.copy(
-                                imeAction = ImeAction.Done
-                            ),
-                            decorationBox = { innerTextField ->
-                                Box(
-                                    modifier = Modifier
-                                        .width(objetoAdaptardor.ajustarAncho(300))
-                                        .height(objetoAdaptardor.ajustarAltura(70))
-                                        .background(Color.LightGray, RoundedCornerShape(objetoAdaptardor.ajustarAltura(18)))
-                                        .padding(horizontal = 16.dp, vertical = 4.dp),
-                                    contentAlignment = Alignment.CenterStart
-                                ) {
-                                    Row(
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Filled.Place,
-                                            contentDescription = "Icono Buscar",
-                                            tint = Color.DarkGray,
-                                            modifier = Modifier.size(objetoAdaptardor.ajustarAltura(30))
-                                        )
-                                        Spacer(modifier = Modifier.width(8.dp))
-                                        if (nombreSalonNuevaMesa.isEmpty()) {
-                                            Text(
-                                                "Nombre del Salon",
-                                                color = Color.DarkGray,
-                                                fontFamily = fontAksharPrincipal,
-                                                fontWeight = FontWeight.Light,
-                                                fontSize = obtenerEstiloBody(),
-                                                maxLines = 1,
-                                                overflow = TextOverflow.Ellipsis
-                                            )
-
-                                        }
-                                        innerTextField()
-                                    }
-                                }
-                            }, modifier = Modifier
-                                .width(objetoAdaptardor.ajustarAncho(300))
-                                .height(objetoAdaptardor.ajustarAltura(70))
+                            fontFamily = fontAksharPrincipal,
+                            alto = 70,
+                            ancho = 300,
+                            placeholder = "Nombre de Salon",
+                            icono = Icons.Filled.Place,
+                            objetoAdaptardor = objetoAdaptardor
                         )
 
                         // Spacer separador de componente
@@ -1402,6 +1401,96 @@ fun InterfazModuloSacLarge(
         )
     }
 
+    if(iniciarMenuCrearPersona) {
+        AlertDialog(
+            modifier = Modifier.background(Color.White),
+            containerColor = Color.White,
+            onDismissRequest = { },
+            title = {
+                Text(
+                    "Crear Nueva Persona",
+                    fontFamily = fontAksharPrincipal,
+                    fontWeight = FontWeight.Medium,
+                    fontSize = objetoAdaptardor.ajustarFont(27),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    textAlign = TextAlign.Center,
+                    color = Color.Black
+                )
+            },
+            text = {
+                Box{
+                    Column {
+                        BBasicTextField(
+                            value = nombreNuevaPersona,
+                            onValueChange =  { nuevoValor ->
+                                nombreNuevaPersona = nuevoValor
+                            },
+                            fontFamily = fontAksharPrincipal,
+                            alto = 70,
+                            ancho = 300,
+                            placeholder = "Nombre de la Persona",
+                            icono = Icons.Filled.TableBar,
+                            objetoAdaptardor = objetoAdaptardor
+                        )
+                        // Spacer separador de componente
+                        Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(8)))
+                    }
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        iniciarCreacionNuevaPersona=true
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFF244BC0), // Color de fondo del botón
+                        contentColor = Color.White,
+                        disabledContainerColor = Color(0xFF244BC0),
+                        disabledContentColor = Color.White
+                    )
+                ) {
+                    Text(
+                        "Continuar",
+                        fontFamily = fontAksharPrincipal,
+                        fontWeight = FontWeight.Medium,
+                        fontSize = objetoAdaptardor.ajustarFont(15),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        textAlign = TextAlign.Center,
+                        color = Color.White
+                    )
+                }
+            },
+            dismissButton = {
+                Button(
+                    onClick = {
+                        iniciarMenuCrearPersona= false
+                        nombreNuevaPersona=""
+
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color.Red, // Color de fondo del botón
+                        contentColor = Color.White,
+                        disabledContainerColor = Color.Red,
+                        disabledContentColor = Color.White
+                    )
+                ) {
+                    Text(
+                        "Cancelar",
+                        fontFamily = fontAksharPrincipal,
+                        fontWeight = FontWeight.Medium,
+                        fontSize = objetoAdaptardor.ajustarFont(15),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        textAlign = TextAlign.Center,
+                        color = Color.White
+                    )
+                }
+            }
+        )
+    }
+
     if(iniciarMenuMesaComandada) {
         Box(
             modifier = Modifier
@@ -1427,7 +1516,7 @@ fun InterfazModuloSacLarge(
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Text(
-                            "Articulos Comandados ${mesaActual.nombre}",
+                            "Articulos Comandados ${mesaActual.nombre}-${mesaActual.salon}",
                             fontFamily = fontAksharPrincipal,
                             fontWeight = FontWeight.Medium,
                             fontSize = obtenerEstiloDisplay(),
@@ -1460,7 +1549,15 @@ fun InterfazModuloSacLarge(
                                         valor = subCuentaSeleccionada,
                                         isUltimo = true,
                                         tomarAnchoMaximo = false,
-                                        medidaAncho = 180
+                                        medidaAncho = 80
+                                    )
+                                    Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(4)))
+                                    AgregarBt(
+                                        text = "Quitar mesa",
+                                        color = 0xFFFF5722,
+                                        onClick = {
+                                            iniciarMenuQuitarMesa= true
+                                        }
                                     )
                                     Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(4)))
                                     AgregarBt(
@@ -1474,14 +1571,7 @@ fun InterfazModuloSacLarge(
 
                                     Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(4)))
 
-                                    AgregarBt(
-                                        text = "Pedir Cuenta",
-                                        color = 0xFF244BC0,
-                                        onClick = {
-                                            pedirCuenta= false
-                                            pedirCuenta= true
-                                        }
-                                    )
+
                                 }
                             }
                             Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(16)))
@@ -1553,17 +1643,26 @@ fun InterfazModuloSacLarge(
                                     verticalArrangement = Arrangement.Center
                                 ){
                                     AgregarBt(
-                                        text = "Quitar mesa",
-                                        color = 0xFFFF5722,
+                                        text = "Pedir Cuenta",
+                                        color = 0xFF244BC0,
                                         onClick = {
-                                            iniciarMenuQuitarMesa= true
+                                            pedirCuenta= false
+                                            pedirCuenta= true
+                                        }
+                                    )
+                                    Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(4)))
+                                    AgregarBt(
+                                        text = "+10",
+                                        color = 0xFF244BC0,
+                                        onClick = {
+                                            aplicarImp2=true
                                         }
                                     )
 
                                     Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(4)))
 
                                     AgregarBt(
-                                        text = "+ Comanda",
+                                        text = "Agregar",
                                         color =  0xFF22B14C,
                                         onClick = { iniciarPantallaSacComanda= true}
                                     )
@@ -1715,56 +1814,17 @@ fun InterfazModuloSacLarge(
                             }
                         }
 
-                        BasicTextField(
+                        BBasicTextField(
                             value = anotacionComanda,
-                            onValueChange = { nuevoValor ->
+                            onValueChange =  { nuevoValor ->
                                 anotacionComanda = nuevoValor
                             },
-                            singleLine = true,
-                            textStyle = TextStyle(
-                                fontFamily = fontAksharPrincipal,
-                                fontWeight = FontWeight.Light,
-                                color = Color.Black,
-                                textAlign = TextAlign.Justify
-                            ),
-                            keyboardOptions = KeyboardOptions.Default.copy(
-                                imeAction = ImeAction.Done
-                            ),
-                            decorationBox = { innerTextField ->
-                                Box(
-                                    modifier = Modifier
-                                        .width(objetoAdaptardor.ajustarAncho(300))
-                                        .height(objetoAdaptardor.ajustarAltura(70))
-                                        .background(Color.LightGray, RoundedCornerShape(objetoAdaptardor.ajustarAltura(18)))
-                                        .padding(horizontal = 16.dp, vertical = 4.dp),
-                                    contentAlignment = Alignment.CenterStart
-                                ) {
-                                    Row(
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Filled.EditNote,
-                                            contentDescription = "Icono Buscar",
-                                            tint = Color.DarkGray,
-                                            modifier = Modifier.size(objetoAdaptardor.ajustarAltura(30))
-                                        )
-                                        Spacer(modifier = Modifier.width(8.dp))
-                                        if (anotacionComanda.isEmpty()) {
-                                            Text(
-                                                if (iniciarVentanaAgregarArticulo) "Ingrese la anotacion" else "Ingrese el motivo",
-                                                fontFamily = fontAksharPrincipal,
-                                                fontWeight = FontWeight.Light,
-                                                fontSize = obtenerEstiloLabel(),
-                                                maxLines = 1,
-                                                overflow = TextOverflow.Ellipsis
-                                            )
-                                        }
-                                        innerTextField()
-                                    }
-                                }
-                            }, modifier = Modifier
-                                .width(objetoAdaptardor.ajustarAncho(300))
-                                .height(objetoAdaptardor.ajustarAltura(70))
+                            fontFamily = fontAksharPrincipal,
+                            alto = 70,
+                            ancho = 300,
+                            placeholder = if (iniciarVentanaAgregarArticulo) "Ingrese la anotacion" else "Ingrese el motivo",
+                            icono = Icons.Filled.EditNote,
+                            objetoAdaptardor = objetoAdaptardor
                         )
                         // Spacer separador de componente
                         Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(8)))
@@ -1778,9 +1838,9 @@ fun InterfazModuloSacLarge(
                         if (iniciarVentanaAgregarArticulo) agregarArticulo= true else eliminarArticulo= true
                     },
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFF244BC0), // Color de fondo del botón
+                        containerColor = Color.Red, // Color de fondo del botón
                         contentColor = Color.White,
-                        disabledContainerColor = Color(0xFF244BC0),
+                        disabledContainerColor = Color.Red,
                         disabledContentColor = Color.White
                     )
                 ) {
@@ -1805,9 +1865,9 @@ fun InterfazModuloSacLarge(
                         anotacionComanda= ""
                     },
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = Color.Red, // Color de fondo del botón
+                        containerColor = Color(0xFF244BC0),
                         contentColor = Color.White,
-                        disabledContainerColor = Color.Red,
+                        disabledContainerColor = Color(0xFF244BC0),
                         disabledContentColor = Color.White
                     )
                 ) {
@@ -1973,7 +2033,7 @@ fun InterfazModuloSacLarge(
                                 valor = opcionesMesas.value[mesaDestino]?:"Seleccione un Mesa",
                                 isUltimo = true,
                                 tomarAnchoMaximo = false,
-                                medidaAncho = 210
+                                medidaAncho = 100
                             )
                             AgregarTextFieldMultifuncional(
                                 label = "Sub-Cuenta Destino",
@@ -1986,7 +2046,7 @@ fun InterfazModuloSacLarge(
                                 valor = subCuentaDestinoArticulo,
                                 isUltimo = true,
                                 tomarAnchoMaximo = false,
-                                medidaAncho = 180,
+                                medidaAncho = 90,
                                 mostrarClave = true
                             )
                             Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(8)))
@@ -2096,6 +2156,33 @@ fun InterfazModuloSacLarge(
                         )
 
                         Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(8)))
+                        BBasicTextField(
+                            value = codUsuarioIngresado,
+                            onValueChange =  { nuevoValor ->
+                                codUsuarioIngresado = nuevoValor
+                            },
+                            fontFamily = fontAksharPrincipal,
+                            alto = 70,
+                            ancho = 300,
+                            placeholder = "Ingrese el codigo de usuario",
+                            icono = Icons.Filled.Person,
+                            objetoAdaptardor = objetoAdaptardor
+                        )
+                        Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(8)))
+                        BBasicTextField(
+                            value = passwordIngresada,
+                            onValueChange =  { nuevoValor ->
+                                passwordIngresada = nuevoValor
+                            },
+                            fontFamily = fontAksharPrincipal,
+                            alto = 70,
+                            ancho = 300,
+                            placeholder = "Ingrese la contraseña",
+                            icono = Icons.Filled.Password,
+                            objetoAdaptardor = objetoAdaptardor
+                        )
+
+                        Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(8)))
 
                         Box(
                             contentAlignment = Alignment.Center
@@ -2111,7 +2198,7 @@ fun InterfazModuloSacLarge(
                                 valor = opcionesMesas.value[mesaDestino]?:"Seleccione una Mesa",
                                 isUltimo = true,
                                 tomarAnchoMaximo = false,
-                                medidaAncho = 210,
+                                medidaAncho = 100
                             )
                         }
                         Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(8)))
@@ -2145,6 +2232,8 @@ fun InterfazModuloSacLarge(
 
                             Button(
                                 onClick = {
+                                    codUsuarioIngresado=codUsuario
+                                    passwordIngresada=""
                                     iniciarMenuMoverMesa= false
                                 },
                                 colors = ButtonDefaults.buttonColors(
@@ -2174,6 +2263,100 @@ fun InterfazModuloSacLarge(
 
     }
 
+    if (iniciarMenuAjustes){
+        var estado by remember { mutableStateOf(valorPrmImp2 != "0") }
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black.copy(alpha = 0.5f))
+                .clickable(enabled = false) {},
+            contentAlignment = Alignment.Center
+        ) {
+            Surface(
+                modifier = Modifier
+                    .wrapContentWidth(Alignment.CenterHorizontally)
+                    .wrapContentHeight()
+                    .align(Alignment.Center),
+                shape = RoundedCornerShape(16.dp),
+                color = Color.White
+            ) {
+                Box(
+                    modifier = Modifier.padding(objetoAdaptardor.ajustarAltura(24)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(
+                        verticalArrangement = Arrangement.Center,
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            "Ajustes",
+                            fontFamily = fontAksharPrincipal,
+                            fontWeight = FontWeight.Medium,
+                            fontSize = objetoAdaptardor.ajustarFont(27),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            textAlign = TextAlign.Center,
+                            color = Color.Black
+                        )
+
+                        Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(8)))
+                        Row(
+                            modifier = Modifier.padding(16.dp),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                "Cobrar impuesto de Servicio",
+                                fontFamily = fontAksharPrincipal,
+                                fontWeight = FontWeight.Medium,
+                                fontSize = obtenerEstiloTitle(),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                textAlign = TextAlign.Center,
+                                color = Color.Black
+                            )
+                            Switch(
+                                checked = estado,
+                                onCheckedChange = {
+                                    actualizarParametro(context, "prmImp2", if(valorPrmImp2=="0") "1" else "0")
+                                    valorPrmImp2 = obtenerParametro(context, "prmImp2")
+                                    estado = valorPrmImp2 != "0"
+                                },colors = SwitchDefaults.colors(
+                                    checkedTrackColor = Color(0xFF1D3FA4)
+                                )
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(8)))
+                        Button(
+                            onClick = {
+                                iniciarMenuAjustes= false
+                            },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color.Red, // Color de fondo del botón
+                                contentColor = Color.White,
+                                disabledContainerColor = Color.Red,
+                                disabledContentColor = Color.White
+                            )
+                        ) {
+                            Text(
+                                "Salir",
+                                fontFamily = fontAksharPrincipal,
+                                fontWeight = FontWeight.Medium,
+                                fontSize = obtenerEstiloBody(),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                textAlign = TextAlign.Center,
+                                color = Color.White
+                            )
+                        }
+
+                    }
+                }
+            }
+        }
+
+    }
+
     if(iniciarMenuAgregarSubCuenta) {
         AlertDialog(
             modifier = Modifier.background(Color.White),
@@ -2194,56 +2377,17 @@ fun InterfazModuloSacLarge(
             text = {
                 Box{
                     Column {
-                        BasicTextField(
+                        BBasicTextField(
                             value = nombreNuevaSubCuenta,
-                            onValueChange = { nuevoValor ->
+                            onValueChange =  { nuevoValor ->
                                 nombreNuevaSubCuenta = nuevoValor
                             },
-                            singleLine = true,
-                            textStyle = TextStyle(
-                                fontFamily = fontAksharPrincipal,
-                                fontWeight = FontWeight.Light,
-                                color = Color.Black,
-                                textAlign = TextAlign.Justify
-                            ),
-                            keyboardOptions = KeyboardOptions.Default.copy(
-                                imeAction = ImeAction.Done
-                            ),
-                            decorationBox = { innerTextField ->
-                                Box(
-                                    modifier = Modifier
-                                        .width(objetoAdaptardor.ajustarAncho(300))
-                                        .height(objetoAdaptardor.ajustarAltura(70))
-                                        .background(Color.LightGray, RoundedCornerShape(objetoAdaptardor.ajustarAltura(18)))
-                                        .padding(horizontal = 16.dp, vertical = 4.dp),
-                                    contentAlignment = Alignment.CenterStart
-                                ) {
-                                    Row(
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Filled.AccountTree,
-                                            contentDescription = "Icono Buscar",
-                                            tint = Color.DarkGray,
-                                            modifier = Modifier.size(objetoAdaptardor.ajustarAltura(30))
-                                        )
-                                        Spacer(modifier = Modifier.width(8.dp))
-                                        if (nombreNuevaSubCuenta.isEmpty()) {
-                                            Text(
-                                                "Nombre de la Sub-Cuenta",
-                                                fontFamily = fontAksharPrincipal,
-                                                fontWeight = FontWeight.Light,
-                                                fontSize = objetoAdaptardor.ajustarFont(16),
-                                                maxLines = 1,
-                                                overflow = TextOverflow.Ellipsis
-                                            )
-                                        }
-                                        innerTextField()
-                                    }
-                                }
-                            }, modifier = Modifier
-                                .width(objetoAdaptardor.ajustarAncho(300))
-                                .height(objetoAdaptardor.ajustarAltura(70))
+                            fontFamily = fontAksharPrincipal,
+                            alto = 70,
+                            ancho = 300,
+                            placeholder = "Nombre de la Sub-Cuenta",
+                            icono = Icons.Filled.AccountTree,
+                            objetoAdaptardor = objetoAdaptardor
                         )
                         // Spacer separador de componente
                         Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(8)))
@@ -2347,15 +2491,47 @@ fun InterfazModuloSacLarge(
             },
             text = {
                 Box(contentAlignment = Alignment.Center){
-                    Text(
-                        "¿Desea eliminar todos los articulos de la mesa?",
-                        fontFamily = fontAksharPrincipal,
-                        fontWeight = FontWeight.Medium,
-                        fontSize = obtenerEstiloBody(),
-                        overflow = TextOverflow.Ellipsis,
-                        textAlign = TextAlign.Justify,
-                        color = Color.Black
-                    )
+
+                    Column(
+                        verticalArrangement = Arrangement.Center,
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ){
+                        Text(
+                            "¿Desea eliminar todos los articulos de la mesa?",
+                            fontFamily = fontAksharPrincipal,
+                            fontWeight = FontWeight.Medium,
+                            fontSize = obtenerEstiloBody(),
+                            overflow = TextOverflow.Ellipsis,
+                            textAlign = TextAlign.Justify,
+                            color = Color.Black
+                        )
+                        Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(8)))
+                        BBasicTextField(
+                            value = codUsuarioIngresado,
+                            onValueChange =  { nuevoValor ->
+                                codUsuarioIngresado = nuevoValor
+                            },
+                            fontFamily = fontAksharPrincipal,
+                            alto = 70,
+                            ancho = 300,
+                            placeholder = "Ingrese el codigo de usuario",
+                            icono = Icons.Filled.Person,
+                            objetoAdaptardor = objetoAdaptardor
+                        )
+                        Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(8)))
+                        BBasicTextField(
+                            value = passwordIngresada,
+                            onValueChange =  { nuevoValor ->
+                                passwordIngresada = nuevoValor
+                            },
+                            fontFamily = fontAksharPrincipal,
+                            alto = 70,
+                            ancho = 300,
+                            placeholder = "Ingrese la contraseña",
+                            icono = Icons.Filled.Password,
+                            objetoAdaptardor = objetoAdaptardor
+                        )
+                    }
                 }
             },
             confirmButton = {
@@ -2364,9 +2540,9 @@ fun InterfazModuloSacLarge(
                         quitarMesa=true
                     },
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFF244BC0), // Color de fondo del botón
+                        containerColor = Color.Red, // Color de fondo del botón
                         contentColor = Color.White,
-                        disabledContainerColor = Color(0xFF244BC0),
+                        disabledContainerColor = Color.Red,
                         disabledContentColor = Color.White
                     )
                 ) {
@@ -2385,12 +2561,14 @@ fun InterfazModuloSacLarge(
             dismissButton = {
                 Button(
                     onClick = {
+                        codUsuarioIngresado=codUsuario
+                        passwordIngresada=""
                         iniciarMenuQuitarMesa= false
                     },
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = Color.Red, // Color de fondo del botón
+                        containerColor = Color(0xFF244BC0), // Color de fondo del botón
                         contentColor = Color.White,
-                        disabledContainerColor = Color.Red,
+                        disabledContainerColor = Color(0xFF244BC0),
                         disabledContentColor = Color.White
                     )
                 ) {
@@ -2449,7 +2627,7 @@ internal fun BxContendorDatosMesa(
     Card(
         modifier = Modifier
             .wrapContentHeight()
-            .width(objetoAdaptardor.ajustarAncho(55))
+            .width(objetoAdaptardor.ajustarAncho(51))
             .clickable {
                 mesaSeleccionada(datosMesa)
                 iniciarPantallaSacComanda = true
@@ -2464,7 +2642,7 @@ internal fun BxContendorDatosMesa(
     ) {
         Column {
             Box(modifier = Modifier
-                .width(objetoAdaptardor.ajustarAncho(147))
+                .width(objetoAdaptardor.ajustarAncho(130))
                 .wrapContentHeight()
                 .background(
                     when (datosMesa.estado) {
@@ -2571,27 +2749,7 @@ internal fun BxContendorDatosMesa(
 
 @Composable
 @Preview(widthDp = 964, heightDp = 523)
-//@Preview()
 private fun Preview(){
-    val m= Mesa(idMesa = "1", estado = "2", nombre = "Mesa 1", total= "10000", tiempo = 45, cantidadSubcuentas = "1")
-//    BxContendorDatosMesa(m)
     val nav = rememberNavController()
     InterfazModuloSacLarge("", null, nav, "","")
 }
-
-//@Preview
-//@Composable
-//private fun Preview2(){
-//    val articulo =  ArticuloComandado(
-//        Consec = "1185",
-//        Cod_Articulo = "01040001",
-//        Cantidad = 7.00,
-//        Precio = 100.00,
-//        Imp1 = "13.00",
-//        Imp2 = ".00",
-//        Linea = "2647",
-//        SubCuenta = "Yesler",
-//        nombre = "Hamburguesa con queso y papas"
-//    )
-//    AgregarBxContenedorArticulosComandados(articulo)
-//}-

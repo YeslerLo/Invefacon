@@ -1,4 +1,4 @@
-package com.soportereal.invefacon.interfaces.compact.inicio_sesion
+package com.soportereal.invefacon.interfaces.inicio_sesion
 
 import android.annotation.SuppressLint
 import android.app.Activity
@@ -93,8 +93,11 @@ import androidx.navigation.NavController
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.soportereal.invefacon.R
 import com.soportereal.invefacon.funciones_de_interfaces.RutasPatallas
-import com.soportereal.invefacon.interfaces.compact.FuncionesParaAdaptarContenidoCompact
-import com.soportereal.invefacon.interfaces.compact.pantallas_principales.objetoEstadoPantallaCarga
+import com.soportereal.invefacon.funciones_de_interfaces.actualizarParametro
+import com.soportereal.invefacon.funciones_de_interfaces.guardarParametroSiNoExiste
+import com.soportereal.invefacon.funciones_de_interfaces.obtenerParametro
+import com.soportereal.invefacon.interfaces.FuncionesParaAdaptarContenidoCompact
+import com.soportereal.invefacon.interfaces.pantallas_principales.objetoEstadoPantallaCarga
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -104,7 +107,7 @@ import kotlinx.coroutines.launch
 import java.util.regex.Pattern
 
 
-@SuppressLint("SourceLockedOrientationActivity")
+@SuppressLint("SourceLockedOrientationActivity", "ContextCastToActivity")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun IniciarInterfazInicioSesionCompact(
@@ -114,7 +117,6 @@ fun IniciarInterfazInicioSesionCompact(
     val systemUiController = rememberSystemUiController()
     systemUiController.setStatusBarColor(Color(0xFF244BC0))
     systemUiController.setNavigationBarColor(Color.Black)
-    var clienteCorreoEmpresa by remember { mutableStateOf("") }
     var clientePassword by remember { mutableStateOf("") }
     var clienteEmpresaSeleccionada by remember { mutableStateOf("") }
     val fontAksharPrincipal = FontFamily(Font(R.font.akshar_medium))
@@ -151,11 +153,14 @@ fun IniciarInterfazInicioSesionCompact(
     val cortinaConsultaApi= CoroutineScope(Dispatchers.IO)
     var isCorreoIngresadoValido by remember { mutableStateOf(false) }
     val scrollState= rememberScrollState(0)
+    guardarParametroSiNoExiste(contexto, "ultimoCorreo", "")
+    var clienteCorreoEmpresa by remember { mutableStateOf(obtenerParametro(contexto, "ultimoCorreo")) }
 
 
     LaunchedEffect(isInicioSesionAprobado) {
         if (isInicioSesionAprobado){
             navController?.navigate(RutasPatallas.Inicio.ruta+"/$apiToken/$clienteNombreEmpresa/$clienteNombreUsuario/$codUsuario")
+            actualizarParametro(contexto, "ultimoCorreo",clienteCorreoEmpresa)
         }
     }
 

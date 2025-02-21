@@ -1,5 +1,6 @@
 package com.soportereal.invefacon.funciones_de_interfaces
 
+import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.pm.ActivityInfo
 import androidx.compose.animation.core.FastOutSlowInEasing
@@ -15,8 +16,6 @@ import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
@@ -32,18 +31,18 @@ import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.soportereal.invefacon.funciones_de_interfaces.RutasPantallasMenuPrincipal.PantallaAjustes
 import com.soportereal.invefacon.funciones_de_interfaces.RutasPantallasMenuPrincipal.PantallaInicio
 import com.soportereal.invefacon.funciones_de_interfaces.RutasPantallasMenuPrincipal.PantallaSalir
-import com.soportereal.invefacon.interfaces.compact.inicio_sesion.IniciarInterfazInicioSesionCompact
-import com.soportereal.invefacon.interfaces.compact.modulos.clientes.IniciarInterfazAgregarCliente
-import com.soportereal.invefacon.interfaces.compact.modulos.clientes.IniciarInterfazInformacionCliente
-import com.soportereal.invefacon.interfaces.compact.modulos.clientes.IniciarInterfazModuloClientes
-import com.soportereal.invefacon.interfaces.compact.pantallas_principales.PantallaCarga
-import com.soportereal.invefacon.interfaces.compact.pantallas_principales.IniciarInterfazAjustes
-import com.soportereal.invefacon.interfaces.compact.pantallas_principales.IniciarInterfazInicio
-import com.soportereal.invefacon.interfaces.compact.pantallas_principales.IniciarInterfazMenuPrincipalCompact
-import com.soportereal.invefacon.interfaces.compact.pantallas_principales.IniciarInterfazSalir
-import com.soportereal.invefacon.interfaces.compact.pantallas_principales.objetoEstadoPantallaCarga
-import com.soportereal.invefacon.interfaces.large.sac.InterfazModuloSacLarge
-import com.soportereal.invefacon.interfaces.large.sac.InterfazSacComandaLarge
+import com.soportereal.invefacon.interfaces.inicio_sesion.IniciarInterfazInicioSesionCompact
+import com.soportereal.invefacon.interfaces.modulos.clientes.IniciarInterfazAgregarCliente
+import com.soportereal.invefacon.interfaces.modulos.clientes.IniciarInterfazInformacionCliente
+import com.soportereal.invefacon.interfaces.modulos.clientes.IniciarInterfazModuloClientes
+import com.soportereal.invefacon.interfaces.modulos.facturacion.IniciarInterfazFacturacion
+import com.soportereal.invefacon.interfaces.modulos.sac.InterfazModuloSacLarge
+import com.soportereal.invefacon.interfaces.modulos.sac.InterfazSacComandaLarge
+import com.soportereal.invefacon.interfaces.pantallas_principales.IniciarInterfazAjustes
+import com.soportereal.invefacon.interfaces.pantallas_principales.IniciarInterfazInicio
+import com.soportereal.invefacon.interfaces.pantallas_principales.IniciarInterfazMenuPrincipalCompact
+import com.soportereal.invefacon.interfaces.pantallas_principales.IniciarInterfazSalir
+import com.soportereal.invefacon.interfaces.pantallas_principales.PantallaCarga
 
 
 sealed class RutasPatallas(val ruta: String){
@@ -53,12 +52,11 @@ sealed class RutasPatallas(val ruta: String){
 
     // Principales ]
     data object Inicio : RutasPatallas("main/Inicio")
-    data object Ajustes : RutasPatallas("main/Ajustes")
-    data object Salir : RutasPatallas("main/Salir")
 
     // Modulos
     data object Clientes : RutasPatallas("mod/Clientes")
     data object Sac : RutasPatallas("mod/Sac")
+    data object Facturacion : RutasPatallas("mod/Facturacion")
 
     // Clientes
     data object ClientesInfo : RutasPatallas("Clientes/Info")
@@ -66,6 +64,7 @@ sealed class RutasPatallas(val ruta: String){
 
     // Sac
     data object SacComanda : RutasPatallas("Sac/Comanda")
+
 
 }
 
@@ -93,13 +92,12 @@ sealed class RutasPantallasMenuPrincipal(
 }
 
 
+@SuppressLint("ContextCastToActivity")
 @Composable
 fun NavegacionPantallas(
     navcontroller: NavHostController
 ){
     val systemUiController = rememberSystemUiController()
-    val isPantallaCargaActiva by objetoEstadoPantallaCarga.isCargandoPantalla.collectAsState()
-
     Box(
         modifier = Modifier.fillMaxSize()
     ){
@@ -325,6 +323,57 @@ fun NavegacionPantallas(
                         codUsuario = codUsuario,
                         salon= salon
 
+                    )
+                }
+            }
+
+            // Navigacion pantallas Modulo Facturacion
+            navigation(startDestination = RutasPatallas.Facturacion.ruta, route= "Facturacion") {
+
+                composable(
+                    route = RutasPatallas.Facturacion.ruta + "/{token}/{nombreEmpresa}/{codUsuario}",
+                    arguments = listOf(
+                        navArgument(name = "token") {
+                            type = NavType.StringType
+                            defaultValue = "Error"
+                        },
+                        navArgument(name = "nombreEmpresa") {
+                            type = NavType.StringType
+                            defaultValue = "Error"
+                        }, navArgument(name = "codUsuario") {
+                            type = NavType.StringType
+                            defaultValue = "Error"
+                        }
+                    ),
+                    enterTransition = {
+                        slideInHorizontally(
+                            animationSpec = tween(
+                                durationMillis = 500,
+                                easing = FastOutSlowInEasing
+                            )
+                        ) { it }
+                    },
+                    exitTransition = {
+                        slideOutHorizontally(
+                            animationSpec = tween(
+                                durationMillis = 500,
+                                easing = FastOutSlowInEasing
+                            )
+                        ) { -it }
+                    }
+                ) { backStackEntry ->
+                    val token = requireNotNull(backStackEntry.arguments?.getString("token"))
+                    val nombreEmpresa =
+                        requireNotNull(backStackEntry.arguments?.getString("nombreEmpresa"))
+                    val codUsuario =
+                        requireNotNull(backStackEntry.arguments?.getString("codUsuario"))
+
+                    IniciarInterfazFacturacion(
+                        token = token,
+                        systemUiController = systemUiController,
+                        navController = navcontroller,
+                        nombreEmpresa = nombreEmpresa,
+                        codUsuario = codUsuario
                     )
                 }
             }

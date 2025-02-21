@@ -1,4 +1,4 @@
-package com.soportereal.invefacon.interfaces.compact.modulos.clientes
+package com.soportereal.invefacon.interfaces.modulos.clientes
 
 import android.annotation.SuppressLint
 import androidx.compose.foundation.background
@@ -81,10 +81,10 @@ import com.google.accompanist.systemuicontroller.SystemUiController
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.soportereal.invefacon.R
 import com.soportereal.invefacon.funciones_de_interfaces.RutasPatallas
-import com.soportereal.invefacon.interfaces.compact.FuncionesParaAdaptarContenidoCompact
-import com.soportereal.invefacon.interfaces.compact.inicio_sesion.ocultarTeclado
-import com.soportereal.invefacon.interfaces.compact.pantallas_principales.EstadoPantallaCarga
-import com.soportereal.invefacon.interfaces.compact.pantallas_principales.objetoEstadoPantallaCarga
+import com.soportereal.invefacon.interfaces.FuncionesParaAdaptarContenidoCompact
+import com.soportereal.invefacon.interfaces.inicio_sesion.ocultarTeclado
+import com.soportereal.invefacon.interfaces.pantallas_principales.EstadoPantallaCarga
+import com.soportereal.invefacon.interfaces.pantallas_principales.objetoEstadoPantallaCarga
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
