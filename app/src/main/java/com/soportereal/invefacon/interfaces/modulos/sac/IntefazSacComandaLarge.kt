@@ -403,8 +403,10 @@ fun InterfazSacComandaLarge(
                         opcionesSubCuentas.value = LinkedHashMap(opcionesSubCuentas.value).apply {
                             remove(subCuentaSeleccionada)
                         }
+                        if(opcionesSubCuentas.value.isNotEmpty()){
+                            subCuentaSeleccionada= opcionesSubCuentas.value.keys.first()
+                        }
                         articulosSeleccionados.removeAll(articulosAEliminar)
-                        subCuentaSeleccionada= opcionesSubCuentas.value.keys.first()
                         actualizarMontos=true
                     }
                     articulosAEliminar.clear()
