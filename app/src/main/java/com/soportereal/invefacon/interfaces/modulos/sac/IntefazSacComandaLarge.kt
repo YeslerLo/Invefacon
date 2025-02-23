@@ -156,6 +156,7 @@ fun InterfazSacComandaLarge(
     var articuloActualSeleccionadoEdicion by remember { mutableStateOf(ArticulosSeleccionadosSac()) }
     val context = LocalContext.current
     val valorPrmImp2 by remember { mutableStateOf(obtenerParametro(context, "prmImp2")) }
+    var isPrimerComanda by remember { mutableStateOf(true) }
 
     LaunchedEffect(actualizarMontos) {
         montoTotal= 0.00
@@ -202,6 +203,9 @@ fun InterfazSacComandaLarge(
                     opcionesSubCuentas.value[subCuentas.getString(i)] = subCuentas.getString(i)
                 }
                 subCuentaSeleccionada= opcionesSubCuentas.value.keys.first()
+                if (opcionesSubCuentas.value.size>1){
+                    isPrimerComanda=false
+                }
             }
         }
     }
@@ -432,7 +436,7 @@ fun InterfazSacComandaLarge(
     }
 
     LaunchedEffect(regresarPantallaAnterior) {
-        if (regresarPantallaAnterior && opcionesSubCuentas.value.isEmpty() && listaArticulosActuales.isNotEmpty()){
+        if (regresarPantallaAnterior && (!isPrimerComanda || opcionesSubCuentas.value.isEmpty()) && listaArticulosActuales.isNotEmpty()){
             navControllerPantallasModuloSac?.popBackStack(RutasPatallas.Sac.ruta+"/$token"+"/$nombreEmpresa"+"/$codUsuario", inclusive = false)
             estadoRespuestaApi.cambiarEstadoRespuestaApi()
         }
