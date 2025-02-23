@@ -84,6 +84,7 @@ import androidx.navigation.NavController
 import coil.compose.SubcomposeAsyncImage
 import com.google.accompanist.systemuicontroller.SystemUiController
 import com.soportereal.invefacon.R
+import com.soportereal.invefacon.funciones_de_interfaces.RutasPatallas
 import com.soportereal.invefacon.funciones_de_interfaces.obtenerParametro
 import com.soportereal.invefacon.interfaces.FuncionesParaAdaptarContenidoCompact
 import com.soportereal.invefacon.interfaces.modulos.clientes.AgregarTextFieldMultifuncional
@@ -358,7 +359,6 @@ fun InterfazSacComandaLarge(
                         put("grupo", grupo)
                         put("isCombo", isCombo)
                     }
-                    println(jsonObject)
                     jsonComandaDetalle.put(jsonObject)
 
                     val articulosCombo = articulo.articulosCombo
@@ -384,7 +384,6 @@ fun InterfazSacComandaLarge(
                             put("grupo", grupoAr)
                             put("isCombo", isCombo)
                         }
-                        println(jsonObjectAr)
                         jsonComandaDetalle.put(jsonObjectAr)
                     }
                     articulosAEliminar.add(articulo)
@@ -392,10 +391,6 @@ fun InterfazSacComandaLarge(
             }
 
             if (jsonComandaDetalle.length()>0){
-                opcionesSubCuentas.value = LinkedHashMap(opcionesSubCuentas.value).apply {
-                    remove(subCuentaSeleccionada)
-                }
-                articulosSeleccionados.removeAll(articulosAEliminar)
                 val result= objectoProcesadorDatosApi.comandarSubCuentaEliminarArticulos(
                     codUsuario = codUsuario,
                     salon = salon,
@@ -404,6 +399,15 @@ fun InterfazSacComandaLarge(
                 )
                 if (result != null) {
                     estadoRespuestaApi.cambiarEstadoRespuestaApi(mostrarRespuesta = true, datosRespuesta = result )
+                    if (result.getString("status")=="ok"){
+                        opcionesSubCuentas.value = LinkedHashMap(opcionesSubCuentas.value).apply {
+                            remove(subCuentaSeleccionada)
+                        }
+                        articulosSeleccionados.removeAll(articulosAEliminar)
+                        subCuentaSeleccionada= opcionesSubCuentas.value.keys.first()
+                        actualizarMontos=true
+                    }
+                    articulosAEliminar.clear()
                 }
             }else{
                 val jsonObject = JSONObject("""
@@ -427,20 +431,14 @@ fun InterfazSacComandaLarge(
 
     LaunchedEffect(regresarPantallaAnterior) {
         if (regresarPantallaAnterior && opcionesSubCuentas.value.isEmpty() && listaArticulosActuales.isNotEmpty()){
-            navControllerPantallasModuloSac?.popBackStack()
-            estadoRespuestaApi.cambiarEstadoRespuestaApi()
-        }
-
-        if (regresarPantallaAnterior && opcionesSubCuentas.value.isNotEmpty()  && listaArticulosActuales.isNotEmpty()){
-            subCuentaSeleccionada= opcionesSubCuentas.value.keys.first()
-            actualizarMontos=true
+            navControllerPantallasModuloSac?.popBackStack(RutasPatallas.Sac.ruta+"/$token"+"/$nombreEmpresa"+"/$codUsuario", inclusive = false)
             estadoRespuestaApi.cambiarEstadoRespuestaApi()
         }
     }
 
     LaunchedEffect(regresarPantalla) {
         if (regresarPantalla){
-            navControllerPantallasModuloSac?.popBackStack()
+            navControllerPantallasModuloSac?.popBackStack(RutasPatallas.Sac.ruta+"/$token"+"/$nombreEmpresa"+"/$codUsuario", inclusive = false)
             estadoRespuestaApi.cambiarEstadoRespuestaApi()
         }
     }
@@ -1470,6 +1468,7 @@ fun InterfazSacComandaLarge(
                                 """
                             )
                             iniciarMenuAgregarSubCuenta=false
+                            subCuentaSeleccionada= opcionesSubCuentas.value.keys.first()
                             nombreNuevaSubCuenta=""
                             estadoRespuestaApi.cambiarEstadoRespuestaApi(mostrarRespuesta = true, datosRespuesta = jsonObject)
                         }
