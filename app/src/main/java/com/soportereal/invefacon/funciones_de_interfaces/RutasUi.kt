@@ -276,7 +276,7 @@ fun NavegacionPantallas(
                 }
 
                 composable(
-                    RutasPatallas.SacComanda.ruta+"/{nombreMesa}/{salon}/{token}/{nombreEmpresa}/{codUsuario}",
+                    RutasPatallas.SacComanda.ruta+"/{nombreMesa}/{salon}/{token}/{nombreEmpresa}/{codUsuario}/{estadoMesa}",
                     enterTransition = { slideInHorizontally(
                         animationSpec = tween(durationMillis = 500, easing = FastOutSlowInEasing)
                     ) { it } },
@@ -303,6 +303,10 @@ fun NavegacionPantallas(
                         navArgument(name= "codUsuario"){
                             type= NavType.StringType
                             defaultValue="error"
+                        },
+                        navArgument(name= "estadoMesa"){
+                            type= NavType.StringType
+                            defaultValue="error"
                         }
                     )
                 ){backstackEntry->
@@ -311,6 +315,7 @@ fun NavegacionPantallas(
                     val token= requireNotNull(backstackEntry.arguments?.getString("token"))
                     val nombreEmpresa= requireNotNull(backstackEntry.arguments?.getString("nombreEmpresa"))
                     val codUsuario= requireNotNull(backstackEntry.arguments?.getString("codUsuario"))
+                    val estadoMesa= requireNotNull(backstackEntry.arguments?.getString("estadoMesa"))
 
                     val activity = LocalContext.current as Activity
                     activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
@@ -321,7 +326,8 @@ fun NavegacionPantallas(
                         nombreMesa= nombreMesa,
                         nombreEmpresa= nombreEmpresa,
                         codUsuario = codUsuario,
-                        salon= salon
+                        salon= salon,
+                        estadoMesa = estadoMesa
 
                     )
                 }

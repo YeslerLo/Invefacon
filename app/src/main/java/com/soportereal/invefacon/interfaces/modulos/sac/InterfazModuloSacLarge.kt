@@ -182,7 +182,7 @@ fun InterfazModuloSacLarge(
             objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(true)
             delay(500)
             navController.navigate(
-                RutasPatallas.SacComanda.ruta+"/"+mesaActual.nombre+"/"+mesaActual.salon+"/"+token+"/"+nombreEmpresa+"/"+codUsuario
+                RutasPatallas.SacComanda.ruta+"/"+mesaActual.nombre+"/"+mesaActual.salon+"/"+token+"/"+nombreEmpresa+"/"+codUsuario+"/"+mesaActual.estado
             ){
                 restoreState= true
                 launchSingleTop=true
@@ -2612,7 +2612,7 @@ internal fun BxContendorDatosMesa(
             iniciarMenuDetalleComanda(false)
             delay(500)
             navControllerPantallasModuloSac?.navigate(
-                RutasPatallas.SacComanda.ruta+"/"+datosMesa.nombre+"/"+datosMesa.salon+"/"+token+"/"+nombreEmpresa+"/"+codUsuario
+                RutasPatallas.SacComanda.ruta+"/"+datosMesa.nombre+"/"+datosMesa.salon+"/"+token+"/"+nombreEmpresa+"/"+codUsuario+"/"+datosMesa.estado
             ){
                 restoreState= true
                 launchSingleTop=true
