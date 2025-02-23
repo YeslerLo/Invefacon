@@ -223,13 +223,14 @@ fun InterfazModuloSacLarge(
                     val datosMesas= data.getJSONArray("mesas")
                     for (i in 0 until datosMesas.length()){
                         val datoMesa= datosMesas.getJSONObject(i)
+                        val estado= if(datoMesa.getString("CodEstado")=="1" || datoMesa.getString("CodEstado")=="2") datoMesa.getString("CodEstado") else "0"
                         val mesa = Mesa(
                             nombre = datoMesa.getString("mesa"),
                             idMesa = datoMesa.getString("Consec"),
                             cantidadSubcuentas = datoMesa.getString("cantidad_subcuentas"),
                             tiempo = if(!datoMesa.isNull("minutos")) datoMesa.getInt("minutos") else 0,
                             total = datoMesa.getString("monto"),
-                            estado = datoMesa.getString("CodEstado"),
+                            estado = estado,
                             salon = datoMesa.getString("salon")
                         )
                         listaMesas.add(mesa)
@@ -278,13 +279,14 @@ fun InterfazModuloSacLarge(
                     val datosMesas= data.getJSONArray("mesas")
                     for (i in 0 until datosMesas.length()){
                         val datoMesa= datosMesas.getJSONObject(i)
+                        val estado= if(datoMesa.getString("CodEstado")=="1" || datoMesa.getString("CodEstado")=="2") datoMesa.getString("CodEstado") else "0"
                         val mesa = Mesa(
                             nombre = datoMesa.getString("mesa"),
                             idMesa = datoMesa.getString("Consec"),
                             cantidadSubcuentas = datoMesa.getString("cantidad_subcuentas"),
                             tiempo = if(!datoMesa.isNull("minutos")) datoMesa.getInt("minutos") else 0,
                             total = datoMesa.getString("monto"),
-                            estado = datoMesa.getString("CodEstado"),
+                            estado = estado,
                             salon = datoMesa.getString("salon")
                         )
                         listaMesas.add(mesa)
@@ -2607,7 +2609,7 @@ internal fun BxContendorDatosMesa(
     var iniciarPantallaSacComanda by remember { mutableStateOf(false) }
 
     LaunchedEffect(iniciarPantallaSacComanda) {
-        if (iniciarPantallaSacComanda && datosMesa.estado=="null"){
+        if (iniciarPantallaSacComanda && datosMesa.estado=="0"){
             objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(true)
             iniciarMenuDetalleComanda(false)
             delay(500)
@@ -2618,7 +2620,7 @@ internal fun BxContendorDatosMesa(
                 launchSingleTop=true
             }
         }
-        if (iniciarPantallaSacComanda && datosMesa.estado!="null"){
+        if (iniciarPantallaSacComanda && datosMesa.estado!="0"){
             iniciarMenuDetalleComanda(true)
             iniciarPantallaSacComanda=false
         }
@@ -2683,7 +2685,7 @@ internal fun BxContendorDatosMesa(
                 Column {
                     Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(4)))
                     Text(
-                        text =  if (datosMesa.estado == "null")  "Disponible" else "Sub Cuentas: ${datosMesa.cantidadSubcuentas}",
+                        text =  if (datosMesa.estado == "0")  "Disponible" else "Sub Cuentas: ${datosMesa.cantidadSubcuentas}",
                         fontFamily = fontAksharPrincipal,
                         fontWeight =    FontWeight.Light,
                         fontSize = obtenerEstiloBody(),
@@ -2707,7 +2709,7 @@ internal fun BxContendorDatosMesa(
                         tiempo= "${datosMesa.tiempo} m"
                     }
 
-                    Text(text =  if (datosMesa.estado == "null")  "" else "Tiempo: $tiempo",
+                    Text(text =  if (datosMesa.estado == "0")  "" else "Tiempo: $tiempo",
                         fontFamily = fontAksharPrincipal,
                         fontWeight =    FontWeight.Light,
                         fontSize = obtenerEstiloBody(),
@@ -2727,7 +2729,7 @@ internal fun BxContendorDatosMesa(
                     } catch (e: NumberFormatException) {
                         total
                     }
-                    Text(text =  if (datosMesa.estado == "null")  "" else "Total: $totalMiles",
+                    Text(text =  if (datosMesa.estado == "0")  "" else "Total: $totalMiles",
                         fontFamily = fontAksharPrincipal,
                         fontWeight =    FontWeight.Light,
                         fontSize = obtenerEstiloBody(),
