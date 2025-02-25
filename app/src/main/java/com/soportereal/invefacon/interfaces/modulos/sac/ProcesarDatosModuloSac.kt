@@ -42,11 +42,12 @@ class ProcesarDatosModuloSac(apiToken: String){
         return objetoFuncionesHttpInvefacon.metodoPost(formBody = formBody, apiDirectorio = "sacMovil/listaFamilias.php")
     }
 
-    suspend fun comandarSubCuentaEliminarArticulos(mesa: String, salon: String, codUsuario: String, jsonComandaDetalle: JSONArray): JSONObject?{
+    suspend fun comandarSubCuentaEliminarArticulos(mesa: String, salon: String, codUsuario: String, clienteId: String, jsonComandaDetalle: JSONArray): JSONObject?{
         val formBody = MultipartBody.Builder().setType(MultipartBody.FORM)
             .addFormDataPart("Mesa",mesa)
             .addFormDataPart("Salon",salon)
             .addFormDataPart("Cod_Usuario", codUsuario)
+            .addFormDataPart("ClienteId", clienteId)
             .addFormDataPart("JsonComandaDetalle",jsonComandaDetalle. toString())
             .build()
         return objetoFuncionesHttpInvefacon.metodoPost(formBody = formBody, apiDirectorio = "sacMovil/crearComanda.php")
@@ -144,7 +145,8 @@ data class Mesa(
     var tiempo: Int = 0,
     var total: String = "",
     var estado: String= "",
-    var salon: String= ""
+    var salon: String= "",
+    var clienteId: String = "SN"
 )
 
 data class ArticuloSac(

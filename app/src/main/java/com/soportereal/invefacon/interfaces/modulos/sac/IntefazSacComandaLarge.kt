@@ -114,7 +114,8 @@ fun InterfazSacComandaLarge(
     nombreEmpresa: String,
     codUsuario: String,
     salon: String,
-    estadoMesa : String
+    estadoMesa : String,
+    clienteId: String
 ){
     systemUiController?.setStatusBarColor(Color(0xFF244BC0))
     systemUiController?.setNavigationBarColor(Color.Black)
@@ -396,6 +397,7 @@ fun InterfazSacComandaLarge(
                     codUsuario = codUsuario,
                     salon = salon,
                     mesa = nombreMesa,
+                    clienteId = clienteId,
                     jsonComandaDetalle = jsonComandaDetalle
                 )
                 if (result != null) {
@@ -2167,5 +2169,5 @@ internal fun AgregarBxContenerdorMontosCuenta(
 @Composable
 @Preview(widthDp = 964, heightDp = 523, showBackground = true)
 private fun Preview(){
-    InterfazSacComandaLarge(null, "", null, "", "", "", "","")
+    InterfazSacComandaLarge(null, "", null, "", "", "", "","", "")
 }

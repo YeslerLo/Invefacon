@@ -1,6 +1,11 @@
 package com.soportereal.invefacon.interfaces.modulos.sac
 
  import android.annotation.SuppressLint
+ import androidx.compose.animation.AnimatedVisibility
+ import androidx.compose.animation.fadeIn
+ import androidx.compose.animation.fadeOut
+ import androidx.compose.animation.scaleIn
+ import androidx.compose.animation.scaleOut
  import androidx.compose.foundation.Image
  import androidx.compose.foundation.background
  import androidx.compose.foundation.clickable
@@ -20,6 +25,7 @@ package com.soportereal.invefacon.interfaces.modulos.sac
  import androidx.compose.foundation.layout.size
  import androidx.compose.foundation.layout.statusBarsPadding
  import androidx.compose.foundation.layout.width
+ import androidx.compose.foundation.layout.widthIn
  import androidx.compose.foundation.layout.wrapContentHeight
  import androidx.compose.foundation.layout.wrapContentWidth
  import androidx.compose.foundation.lazy.LazyColumn
@@ -32,6 +38,7 @@ package com.soportereal.invefacon.interfaces.modulos.sac
  import androidx.compose.material.icons.filled.ArrowBackIosNew
  import androidx.compose.material.icons.filled.Delete
  import androidx.compose.material.icons.filled.EditNote
+ import androidx.compose.material.icons.filled.MoreHoriz
  import androidx.compose.material.icons.filled.Password
  import androidx.compose.material.icons.filled.Person
  import androidx.compose.material.icons.filled.Place
@@ -55,6 +62,7 @@ package com.soportereal.invefacon.interfaces.modulos.sac
  import androidx.compose.runtime.LaunchedEffect
  import androidx.compose.runtime.MutableState
  import androidx.compose.runtime.collectAsState
+ import androidx.compose.runtime.derivedStateOf
  import androidx.compose.runtime.getValue
  import androidx.compose.runtime.mutableIntStateOf
  import androidx.compose.runtime.mutableStateListOf
@@ -66,8 +74,10 @@ package com.soportereal.invefacon.interfaces.modulos.sac
  import androidx.compose.ui.draw.shadow
  import androidx.compose.ui.graphics.Color
  import androidx.compose.ui.layout.ContentScale
+ import androidx.compose.ui.layout.onSizeChanged
  import androidx.compose.ui.platform.LocalConfiguration
  import androidx.compose.ui.platform.LocalContext
+ import androidx.compose.ui.platform.LocalDensity
  import androidx.compose.ui.res.painterResource
  import androidx.compose.ui.text.font.Font
  import androidx.compose.ui.text.font.FontFamily
@@ -90,6 +100,9 @@ package com.soportereal.invefacon.interfaces.modulos.sac
  import com.soportereal.invefacon.funciones_de_interfaces.obtenerParametro
  import com.soportereal.invefacon.interfaces.FuncionesParaAdaptarContenidoCompact
  import com.soportereal.invefacon.interfaces.modulos.clientes.AgregarTextFieldMultifuncional
+ import com.soportereal.invefacon.interfaces.modulos.clientes.Cliente
+ import com.soportereal.invefacon.interfaces.modulos.clientes.ProcesarDatosModuloClientes
+ import com.soportereal.invefacon.interfaces.modulos.clientes.quitarTildesYMinusculas
  import com.soportereal.invefacon.interfaces.obtenerEstiloBody
  import com.soportereal.invefacon.interfaces.obtenerEstiloDisplay
  import com.soportereal.invefacon.interfaces.obtenerEstiloHead
@@ -97,7 +110,11 @@ package com.soportereal.invefacon.interfaces.modulos.sac
  import com.soportereal.invefacon.interfaces.obtenerEstiloTitle
  import com.soportereal.invefacon.interfaces.pantallas_principales.estadoRespuestaApi
  import com.soportereal.invefacon.interfaces.pantallas_principales.objetoEstadoPantallaCarga
+ import kotlinx.coroutines.CoroutineScope
+ import kotlinx.coroutines.Dispatchers
+ import kotlinx.coroutines.Job
  import kotlinx.coroutines.delay
+ import kotlinx.coroutines.launch
  import org.json.JSONArray
  import org.json.JSONObject
  import java.util.Locale
@@ -121,11 +138,13 @@ fun InterfazModuloSacLarge(
     val dpFontPantalla= configuration.fontScale
     val objetoAdaptardor= FuncionesParaAdaptarContenidoCompact(dpAltoPantalla, dpAnchoPantalla, dpFontPantalla, true)
     var datosIngresadosBarraBusqueda by remember  { mutableStateOf("") }
+    var datosIngresadosBarraBusquedaCliente by remember  { mutableStateOf("") }
     val lazyStateMesas= rememberLazyListState()
     val lazyStateCuentasActivas= rememberLazyListState()
     var listaCuentasActivasActuales by remember { mutableStateOf<List<Mesa>>(emptyList()) }
     var listaMesasActualesFiltradas by remember { mutableStateOf<List<Mesa>>(emptyList()) }
     val objectoProcesadorDatosApi= ProcesarDatosModuloSac(token)
+    val objectoProcesadorDatosApiClientes= ProcesarDatosModuloClientes(token)
     var iniciarMenuCrearMesa by remember { mutableStateOf(false) }
     var nombreNuevaMesa by remember { mutableStateOf("") }
     var nombreNuevaPersona by remember { mutableStateOf("") }
@@ -169,6 +188,7 @@ fun InterfazModuloSacLarge(
     var cantidadArticulosComandados by remember { mutableIntStateOf(0) }
     var iniciarMenuCrearPersona by remember { mutableStateOf(false) }
     var iniciarCreacionNuevaPersona by remember { mutableStateOf(false) }
+    var iniciarMenuCrearExpress by remember { mutableStateOf(false) }
     var iniciarMenuAjustes by remember { mutableStateOf(false) }
     val context = LocalContext.current
     guardarParametroSiNoExiste(context, "prmImp2", "1")
@@ -176,13 +196,19 @@ fun InterfazModuloSacLarge(
     var codUsuarioIngresado by remember { mutableStateOf(codUsuario) }
     var passwordIngresada by remember { mutableStateOf("") }
     var aplicarImp2 by remember { mutableStateOf(false) }
+    val lazyStateListaClientes= rememberLazyListState()
+    var listaClientesActuales by remember { mutableStateOf<List<Cliente>>(emptyList()) }
+    var isCargandoClientes by remember { mutableStateOf(false) }
+    var apiConsultaActual by remember { mutableStateOf<Job?>(null) }
+    val cortinaConsultaApi= CoroutineScope(Dispatchers.IO)
+
 
     LaunchedEffect(iniciarPantallaSacComanda) {
         if (iniciarPantallaSacComanda){
             objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(true)
             delay(500)
             navController.navigate(
-                RutasPatallas.SacComanda.ruta+"/"+mesaActual.nombre+"/"+mesaActual.salon+"/"+token+"/"+nombreEmpresa+"/"+codUsuario+"/"+mesaActual.estado
+                RutasPatallas.SacComanda.ruta+"/"+mesaActual.nombre+"/"+mesaActual.salon+"/"+token+"/"+nombreEmpresa+"/"+codUsuario+"/"+mesaActual.estado+"/"+mesaActual.clienteId
             ){
                 restoreState= true
                 launchSingleTop=true
@@ -437,7 +463,8 @@ fun InterfazModuloSacLarge(
                     codUsuario = codUsuario,
                     salon = mesaActual.salon,
                     mesa = mesaActual.nombre,
-                    jsonComandaDetalle = jsonComandaDetalle
+                    jsonComandaDetalle = jsonComandaDetalle,
+                    clienteId = mesaActual.clienteId
                 )
                 if (result != null) {
                     estadoRespuestaApi.cambiarEstadoRespuestaApi(mostrarRespuesta = true, datosRespuesta = result )
@@ -628,6 +655,53 @@ fun InterfazModuloSacLarge(
             aplicarImp2= false
         }
     }
+
+    LaunchedEffect(datosIngresadosBarraBusquedaCliente, iniciarMenuCrearExpress) {
+
+        if (iniciarMenuCrearExpress) {
+            println("Ejecutando lógica dentro de LaunchedEffect")
+
+            listaClientesActuales = emptyList()
+
+            isCargandoClientes=true
+            apiConsultaActual?.cancel()
+            apiConsultaActual= cortinaConsultaApi.launch{
+                delay(500)
+                val result= objectoProcesadorDatosApiClientes.obtenerDatosClientes(
+                    clientesPorPagina = "10",
+                    paginaCliente = "1",
+                    clienteDatoBusqueda = datosIngresadosBarraBusquedaCliente.trim(),
+                    clienteEstado = "1",
+                    busquedaPor = quitarTildesYMinusculas("Busqueda Mixta")
+
+                )
+                if(result?.getString("status")=="ok" && result.getString("code")=="200"){
+                    val resultado= result.getJSONObject("resultado")
+                    val datosClientes= resultado.getJSONArray("data")
+                    val listaClientes = mutableListOf<Cliente>()
+                    for (i in 0 until datosClientes.length()) {
+                        val datosCliente = datosClientes.getJSONObject(i)
+                        val cliente = Cliente(
+                            codigo = datosCliente.getString("codigo"),
+                            nombreComercial = datosCliente.getString("nombrecomercial"),
+                            nombreJuridico = datosCliente.getString("nombrejuridico"),
+                            Telefonos = datosCliente.getString("telefonos"),
+                            correo = datosCliente.getString("emailgeneral"),
+                            estado = datosCliente.getString("estado"),
+                            Direccion = datosCliente.getString("direccion")
+                        )
+                        listaClientes.add(cliente)
+                    }
+
+                    listaClientesActuales=listaClientesActuales+listaClientes
+                }
+                isCargandoClientes=false
+                objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
+            }
+        }
+
+    }
+
 
     @Composable
     fun AgregarBt(
@@ -913,7 +987,7 @@ fun InterfazModuloSacLarge(
             },
             fontFamily = fontAksharPrincipal,
             alto = 45,
-            ancho = 200,
+            ancho = 170,
             objetoAdaptardor = objetoAdaptardor,
             modifier = Modifier.constrainAs(txfBarraBusqueda) {
                 top.linkTo(bxSuperior.bottom, margin = objetoAdaptardor.ajustarAltura(8))
@@ -925,7 +999,7 @@ fun InterfazModuloSacLarge(
             modifier = Modifier
                 .background(Color.White)
                 .height(objetoAdaptardor.ajustarAltura(45))
-                .width(objetoAdaptardor.ajustarAncho(487))
+                .width(objetoAdaptardor.ajustarAncho(517))
                 .constrainAs(bxContenedorBotones) {
                     start.linkTo(txfBarraBusqueda.end, margin = objetoAdaptardor.ajustarAncho(8))
                     top.linkTo(bxSuperior.bottom, margin = objetoAdaptardor.ajustarAltura(8))
@@ -991,6 +1065,36 @@ fun InterfazModuloSacLarge(
                         )
                     }
                 }
+
+                Button(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxHeight()
+                        .padding(start = objetoAdaptardor.ajustarAltura(4), end =  objetoAdaptardor.ajustarAltura(4)),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFF244BC0), // Color de fondo del botón
+                        contentColor = Color.White,
+                        disabledContainerColor = Color(0xFF244BC0),
+                        disabledContentColor = Color.White
+                    ),
+                    elevation = ButtonDefaults.buttonElevation(defaultElevation = 5.dp),
+                    onClick = {
+                        iniciarMenuCrearExpress= true
+                    }, contentPadding = PaddingValues(2.dp)
+                ) {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center){
+                        Text(
+                            "Express",
+                            fontFamily = fontAksharPrincipal,
+                            fontWeight = FontWeight.Medium,
+                            fontSize = obtenerEstiloBody(),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            textAlign = TextAlign.Center
+                        )
+                    }
+                }
+
                 Button(
                     modifier = Modifier
                         .weight(1f)
@@ -1896,229 +2000,236 @@ fun InterfazModuloSacLarge(
                 .clickable(enabled = false) {},
             contentAlignment = Alignment.Center
         ){
-            Surface(
-                modifier = Modifier
-                    .wrapContentWidth(Alignment.CenterHorizontally)
-                    .wrapContentHeight()
-                    .align(Alignment.Center),
-                shape = RoundedCornerShape(16.dp),
-                color = Color.White
+            AnimatedVisibility(
+                visible = iniciarMenuMoverArticulo,
+                enter = fadeIn() + scaleIn(initialScale = 0.8f),
+                exit = fadeOut() + scaleOut(targetScale = 0.8f)
             ) {
-                Box(
-                    modifier = Modifier.padding(objetoAdaptardor.ajustarAltura(24)),
-                    contentAlignment = Alignment.Center
+                Surface(
+                    modifier = Modifier
+                        .wrapContentWidth(Alignment.CenterHorizontally)
+                        .wrapContentHeight()
+                        .align(Alignment.Center),
+                    shape = RoundedCornerShape(16.dp),
+                    color = Color.White
                 ) {
-                    Column(
-                        verticalArrangement = Arrangement.Center,
-                        horizontalAlignment = Alignment.CenterHorizontally
+                    Box(
+                        modifier = Modifier.padding(objetoAdaptardor.ajustarAltura(24)),
+                        contentAlignment = Alignment.Center
                     ) {
-                        Text(
-                            "Mover Articulo",
-                            fontFamily = fontAksharPrincipal,
-                            fontWeight = FontWeight.Medium,
-                            fontSize = obtenerEstiloHead(),
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                            textAlign = TextAlign.Center,
-                            color = Color.Black
-                        )
-                        Box(
-                            modifier = Modifier
-                                .height(objetoAdaptardor.ajustarAltura(123))
-                                .width(objetoAdaptardor.ajustarAncho(123)),
-                            contentAlignment = Alignment.BottomCenter
+                        Column(
+                            verticalArrangement = Arrangement.Center,
+                            horizontalAlignment = Alignment.CenterHorizontally
                         ) {
-                            SubcomposeAsyncImage(
-                                model = "https://invefacon.com/img/demorest/articulos/${articuloActualSeleccionado.Cod_Articulo}.png",
-                                contentDescription = "Imagen Articulo",
+                            Text(
+                                "Mover Articulo",
+                                fontFamily = fontAksharPrincipal,
+                                fontWeight = FontWeight.Medium,
+                                fontSize = obtenerEstiloHead(),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                textAlign = TextAlign.Center,
+                                color = Color.Black
+                            )
+                            Box(
                                 modifier = Modifier
-                                    .fillMaxSize(),
-                                contentScale = ContentScale.FillBounds,
-                                loading = {
-                                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center){
-                                        CircularProgressIndicator(
-                                            color = Color(0xFF244BC0),
-                                            modifier = Modifier.size(objetoAdaptardor.ajustarAltura(50))
+                                    .height(objetoAdaptardor.ajustarAltura(123))
+                                    .width(objetoAdaptardor.ajustarAncho(123)),
+                                contentAlignment = Alignment.BottomCenter
+                            ) {
+                                SubcomposeAsyncImage(
+                                    model = "https://invefacon.com/img/demorest/articulos/${articuloActualSeleccionado.Cod_Articulo}.png",
+                                    contentDescription = "Imagen Articulo",
+                                    modifier = Modifier
+                                        .fillMaxSize(),
+                                    contentScale = ContentScale.FillBounds,
+                                    loading = {
+                                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center){
+                                            CircularProgressIndicator(
+                                                color = Color(0xFF244BC0),
+                                                modifier = Modifier.size(objetoAdaptardor.ajustarAltura(50))
+                                            )
+                                        }
+                                    },
+                                    error = {
+                                        Image(
+                                            modifier = Modifier
+                                                .fillMaxSize(),
+                                            painter = painterResource(id = R.drawable.sin_imagen),
+                                            contentDescription = "Descripción de la imagen",
+                                            contentScale = ContentScale.FillBounds
                                         )
                                     }
-                                },
-                                error = {
-                                    Image(
-                                        modifier = Modifier
-                                            .fillMaxSize(),
-                                        painter = painterResource(id = R.drawable.sin_imagen),
-                                        contentDescription = "Descripción de la imagen",
-                                        contentScale = ContentScale.FillBounds
+                                )
+                            }
+                            Text(
+                                articuloActualSeleccionado.nombre,
+                                fontFamily = fontAksharPrincipal,
+                                fontWeight = FontWeight.Medium,
+                                fontSize = obtenerEstiloTitle(),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                textAlign = TextAlign.Center,
+                                color = Color.Black
+                            )
+                            Box{
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text(
+                                        "Cantidad articulos a mover",
+                                        fontFamily = fontAksharPrincipal,
+                                        fontWeight = FontWeight.Medium,
+                                        fontSize = obtenerEstiloTitle(),
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis,
+                                        textAlign = TextAlign.Center,
+                                        color = Color.Black
+                                    )
+
+                                    if(cantidadArticulos>1){
+                                        IconButton(
+                                            onClick = {
+                                                cantidadArticulos-= if(cantidadArticulos==1) 0 else 1
+                                            },
+                                            modifier = Modifier.size(objetoAdaptardor.ajustarAltura(30))
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Filled.RemoveCircle,
+                                                contentDescription = "Basurero",
+                                                tint = Color.Black,
+                                                modifier = Modifier.size(objetoAdaptardor.ajustarAltura(30))
+                                            )
+                                        }
+                                    }
+
+                                    Text(
+                                        cantidadArticulos.toString(),
+                                        fontFamily = fontAksharPrincipal,
+                                        fontWeight = FontWeight.Medium,
+                                        fontSize = obtenerEstiloBody(),
+                                        overflow = TextOverflow.Ellipsis,
+                                        textAlign = TextAlign.Center,
+                                        modifier = Modifier.width(objetoAdaptardor.ajustarAncho(35)).padding(2.dp)
+                                    )
+
+                                    if (cantidadArticulos<articuloActualSeleccionado.Cantidad){
+                                        IconButton(
+                                            onClick = {
+                                                cantidadArticulos+=1
+                                            },
+                                            modifier = Modifier.size(objetoAdaptardor.ajustarAltura(30))
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Filled.AddCircle,
+                                                contentDescription = "Agregar Articulo",
+                                                tint = Color.Black,
+                                                modifier = Modifier.size(objetoAdaptardor.ajustarAltura(30))
+                                            )
+                                        }
+                                    }
+
+
+                                }
+                            }
+
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                AgregarTextFieldMultifuncional(
+                                    label = "Mesa Destino",
+                                    opciones2 = opcionesMesas,
+                                    usarOpciones2 = true,
+                                    contieneOpciones = true,
+                                    nuevoValor = { nuevoValor->
+                                        actualizarSubCuentasYMesas = true
+                                        mesaDestino= nuevoValor
+                                    },
+                                    valor = opcionesMesas.value[mesaDestino]?:"Seleccione un Mesa",
+                                    isUltimo = true,
+                                    tomarAnchoMaximo = false,
+                                    medidaAncho = 100
+                                )
+                                AgregarTextFieldMultifuncional(
+                                    label = "Sub-Cuenta Destino",
+                                    opciones2 = opcionesSubCuentasDestino,
+                                    usarOpciones2 = true,
+                                    contieneOpciones = true,
+                                    nuevoValor = { nuevoValor->
+                                        subCuentaDestinoArticulo= nuevoValor
+                                    },
+                                    valor = subCuentaDestinoArticulo,
+                                    isUltimo = true,
+                                    tomarAnchoMaximo = false,
+                                    medidaAncho = 90,
+                                    mostrarClave = true
+                                )
+                                Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(8)))
+                                IconButton(
+                                    onClick = {
+                                        iniciarMenuAgregarSubCuenta=true
+                                    }
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Filled.AddCircle,
+                                        contentDescription = "Agregar Sub Cuenta",
+                                        tint = Color(0xFF244BC0)
                                     )
                                 }
-                            )
-                        }
-                        Text(
-                            articuloActualSeleccionado.nombre,
-                            fontFamily = fontAksharPrincipal,
-                            fontWeight = FontWeight.Medium,
-                            fontSize = obtenerEstiloTitle(),
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                            textAlign = TextAlign.Center,
-                            color = Color.Black
-                        )
-                        Box{
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text(
-                                    "Cantidad articulos a mover",
-                                    fontFamily = fontAksharPrincipal,
-                                    fontWeight = FontWeight.Medium,
-                                    fontSize = obtenerEstiloTitle(),
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis,
-                                    textAlign = TextAlign.Center,
-                                    color = Color.Black
-                                )
+                            }
 
-                                if(cantidadArticulos>1){
-                                    IconButton(
-                                        onClick = {
-                                            cantidadArticulos-= if(cantidadArticulos==1) 0 else 1
-                                        },
-                                        modifier = Modifier.size(objetoAdaptardor.ajustarAltura(30))
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Filled.RemoveCircle,
-                                            contentDescription = "Basurero",
-                                            tint = Color.Black,
-                                            modifier = Modifier.size(objetoAdaptardor.ajustarAltura(30))
-                                        )
-                                    }
+                            Row {
+                                Button(
+                                    onClick = {
+                                        moverArticulo= true
+                                    },
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = Color.Red, // Color de fondo del botón
+                                        contentColor = Color.White,
+                                        disabledContainerColor = Color.Red,
+                                        disabledContentColor = Color.White
+                                    )
+                                ) {
+                                    Text(
+                                        "Mover",
+                                        fontFamily = fontAksharPrincipal,
+                                        fontWeight = FontWeight.Medium,
+                                        fontSize = objetoAdaptardor.ajustarFont(15),
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis,
+                                        textAlign = TextAlign.Center,
+                                        color = Color.White
+                                    )
                                 }
 
-                                Text(
-                                    cantidadArticulos.toString(),
-                                    fontFamily = fontAksharPrincipal,
-                                    fontWeight = FontWeight.Medium,
-                                    fontSize = obtenerEstiloBody(),
-                                    overflow = TextOverflow.Ellipsis,
-                                    textAlign = TextAlign.Center,
-                                    modifier = Modifier.width(objetoAdaptardor.ajustarAncho(35)).padding(2.dp)
-                                )
+                                Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(8)))
 
-                                if (cantidadArticulos<articuloActualSeleccionado.Cantidad){
-                                    IconButton(
-                                        onClick = {
-                                            cantidadArticulos+=1
-                                        },
-                                        modifier = Modifier.size(objetoAdaptardor.ajustarAltura(30))
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Filled.AddCircle,
-                                            contentDescription = "Agregar Articulo",
-                                            tint = Color.Black,
-                                            modifier = Modifier.size(objetoAdaptardor.ajustarAltura(30))
-                                        )
-                                    }
+                                Button(
+                                    onClick = {
+                                        iniciarMenuMoverArticulo= false
+                                        cantidadArticulos= 1
+                                    },
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = Color(0xFF244BC0), // Color de fondo del botón
+                                        contentColor = Color.White,
+                                        disabledContainerColor = Color(0xFF244BC0),
+                                        disabledContentColor = Color.White
+                                    )
+                                ) {
+                                    Text(
+                                        "Cancelar",
+                                        fontFamily = fontAksharPrincipal,
+                                        fontWeight = FontWeight.Medium,
+                                        fontSize = objetoAdaptardor.ajustarFont(15),
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis,
+                                        textAlign = TextAlign.Center,
+                                        color = Color.White
+                                    )
                                 }
-
-
                             }
                         }
 
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            AgregarTextFieldMultifuncional(
-                                label = "Mesa Destino",
-                                opciones2 = opcionesMesas,
-                                usarOpciones2 = true,
-                                contieneOpciones = true,
-                                nuevoValor = { nuevoValor->
-                                    actualizarSubCuentasYMesas = true
-                                    mesaDestino= nuevoValor
-                                },
-                                valor = opcionesMesas.value[mesaDestino]?:"Seleccione un Mesa",
-                                isUltimo = true,
-                                tomarAnchoMaximo = false,
-                                medidaAncho = 100
-                            )
-                            AgregarTextFieldMultifuncional(
-                                label = "Sub-Cuenta Destino",
-                                opciones2 = opcionesSubCuentasDestino,
-                                usarOpciones2 = true,
-                                contieneOpciones = true,
-                                nuevoValor = { nuevoValor->
-                                    subCuentaDestinoArticulo= nuevoValor
-                                },
-                                valor = subCuentaDestinoArticulo,
-                                isUltimo = true,
-                                tomarAnchoMaximo = false,
-                                medidaAncho = 90,
-                                mostrarClave = true
-                            )
-                            Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(8)))
-                            IconButton(
-                                onClick = {
-                                    iniciarMenuAgregarSubCuenta=true
-                                }
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Filled.AddCircle,
-                                    contentDescription = "Agregar Sub Cuenta",
-                                    tint = Color(0xFF244BC0)
-                                )
-                            }
-                        }
-
-                        Row {
-                            Button(
-                                onClick = {
-                                    moverArticulo= true
-                                },
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = Color.Red, // Color de fondo del botón
-                                    contentColor = Color.White,
-                                    disabledContainerColor = Color.Red,
-                                    disabledContentColor = Color.White
-                                )
-                            ) {
-                                Text(
-                                    "Mover",
-                                    fontFamily = fontAksharPrincipal,
-                                    fontWeight = FontWeight.Medium,
-                                    fontSize = objetoAdaptardor.ajustarFont(15),
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis,
-                                    textAlign = TextAlign.Center,
-                                    color = Color.White
-                                )
-                            }
-
-                            Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(8)))
-
-                            Button(
-                                onClick = {
-                                    iniciarMenuMoverArticulo= false
-                                    cantidadArticulos= 1
-                                },
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = Color(0xFF244BC0), // Color de fondo del botón
-                                    contentColor = Color.White,
-                                    disabledContainerColor = Color(0xFF244BC0),
-                                    disabledContentColor = Color.White
-                                )
-                            ) {
-                                Text(
-                                    "Cancelar",
-                                    fontFamily = fontAksharPrincipal,
-                                    fontWeight = FontWeight.Medium,
-                                    fontSize = objetoAdaptardor.ajustarFont(15),
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis,
-                                    textAlign = TextAlign.Center,
-                                    color = Color.White
-                                )
-                            }
-                        }
                     }
-
                 }
             }
+
         }
     }
 
@@ -2332,6 +2443,239 @@ fun InterfazModuloSacLarge(
                         Button(
                             onClick = {
                                 iniciarMenuAjustes= false
+                            },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color.Red, // Color de fondo del botón
+                                contentColor = Color.White,
+                                disabledContainerColor = Color.Red,
+                                disabledContentColor = Color.White
+                            )
+                        ) {
+                            Text(
+                                "Salir",
+                                fontFamily = fontAksharPrincipal,
+                                fontWeight = FontWeight.Medium,
+                                fontSize = obtenerEstiloBody(),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                textAlign = TextAlign.Center,
+                                color = Color.White
+                            )
+                        }
+
+                    }
+                }
+            }
+        }
+
+    }
+
+    if (iniciarMenuCrearExpress){
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black.copy(alpha = 0.5f))
+                .clickable(enabled = false) {},
+            contentAlignment = Alignment.Center
+        ) {
+            Surface(
+                modifier = Modifier
+                    .widthIn(max = objetoAdaptardor.ajustarAncho(400))
+                    .heightIn(max = objetoAdaptardor.ajustarAltura(500))
+                    .align(Alignment.Center),
+                shape = RoundedCornerShape(16.dp),
+                color = Color.White
+            ) {
+                Box(
+                    modifier = Modifier
+                        .padding(objetoAdaptardor.ajustarAltura(24)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(
+                        verticalArrangement = Arrangement.Center,
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            "Crear Express",
+                            fontFamily = fontAksharPrincipal,
+                            fontWeight = FontWeight.Medium,
+                            fontSize = objetoAdaptardor.ajustarFont(27),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            textAlign = TextAlign.Center,
+                            color = Color.Black
+                        )
+                        Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(6)))
+
+                        BBasicTextField(
+                            value = datosIngresadosBarraBusquedaCliente,
+                            onValueChange = {
+                                datosIngresadosBarraBusquedaCliente = it
+                            },
+                            fontFamily = fontAksharPrincipal,
+                            objetoAdaptardor = objetoAdaptardor,
+                            alto = 60,
+                            ancho = 360
+                        )
+                        Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(6)))
+                        Box(
+                            modifier = Modifier
+                                .height(objetoAdaptardor.ajustarAltura(300))
+                                .background(Color.White)
+                                .fillMaxWidth(),
+                            contentAlignment = Alignment.Center
+                        ){
+                            LazyColumn(
+                                modifier = Modifier.fillMaxSize(),
+                                verticalArrangement = Arrangement.spacedBy(objetoAdaptardor.ajustarAltura(12)),
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                state = lazyStateListaClientes
+                            ) {
+                                items(listaClientesActuales) { datosCliente ->
+                                    var alturaBoxPx by remember { mutableStateOf(0) }
+                                    val density = LocalDensity.current
+                                    val alturaBoxDpInt by remember { derivedStateOf { (alturaBoxPx / density.density).toInt() } }
+                                    Card(
+                                        modifier = Modifier
+                                            .wrapContentHeight()
+                                            .onSizeChanged { size ->
+                                                alturaBoxPx = size.height.coerceIn(0, 2000)
+                                            }
+                                            .clickable {
+                                                mesaActual=Mesa(
+                                                    nombre =datosCliente.codigo,
+                                                    salon = "EXPRESS",
+                                                    clienteId = datosCliente.codigo
+                                                )
+                                                iniciarPantallaSacComanda = true
+                                            }
+                                            .width(objetoAdaptardor.ajustarAncho(370))
+                                            .shadow(
+                                                elevation = objetoAdaptardor.ajustarAltura(7),
+                                                shape = RoundedCornerShape(objetoAdaptardor.ajustarAltura(20))
+                                            ),
+                                        shape = RoundedCornerShape(objetoAdaptardor.ajustarAltura(20)),
+                                        colors = CardDefaults.cardColors(containerColor = Color.White)
+                                    ) {
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.Start
+                                        ) {
+                                            Box(modifier = Modifier
+                                                .height(objetoAdaptardor.ajustarAltura(alturaBoxDpInt+10))
+                                                .width(objetoAdaptardor.ajustarAncho(20))
+                                                .background(Color(0xFF244BC0))
+                                            )
+                                            Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(8)))
+                                            Column {
+                                                Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(2)))
+
+                                                // Codigo Cliente
+                                                Text(text = "#"+datosCliente.codigo,
+                                                    fontFamily = fontAksharPrincipal,
+                                                    fontWeight =    FontWeight.SemiBold,
+                                                    fontSize =  obtenerEstiloBody(),
+                                                    color = Color.Black,
+                                                    maxLines = 1,
+                                                    overflow = TextOverflow.Ellipsis,
+                                                    textAlign = TextAlign.Start,
+                                                    modifier = Modifier
+                                                        .width(objetoAdaptardor.ajustarAncho(260))
+                                                )
+                                                // Nombre Juridico
+                                                Text(datosCliente.nombreJuridico
+                                                    ,fontFamily = fontAksharPrincipal,
+                                                    fontWeight =    FontWeight.SemiBold,
+                                                    fontSize =  obtenerEstiloBody(),
+                                                    color = Color(0xFF626262),
+                                                    maxLines = 1,
+                                                    overflow = TextOverflow.Ellipsis,
+                                                    textAlign = TextAlign.Start,
+                                                    modifier = Modifier
+                                                        .width(objetoAdaptardor.ajustarAncho(260))
+                                                )
+
+                                                // Telefono
+                                                Text(datosCliente.Telefonos
+                                                    ,fontFamily = fontAksharPrincipal,
+                                                    fontWeight =    FontWeight.SemiBold,
+                                                    fontSize =  obtenerEstiloBody(),
+                                                    color = Color(0xFF626262),
+                                                    maxLines = 1,
+                                                    overflow = TextOverflow.Ellipsis,
+                                                    textAlign = TextAlign.Start,
+                                                    modifier = Modifier
+                                                        .width(objetoAdaptardor.ajustarAncho(260))
+                                                )
+
+                                                // Correo
+                                                Text(datosCliente.correo
+                                                    ,fontFamily = fontAksharPrincipal,
+                                                    fontWeight =    FontWeight.SemiBold,
+                                                    fontSize =  obtenerEstiloBody(),
+                                                    color = Color(0xFF626262),
+                                                    maxLines = 1,
+                                                    overflow = TextOverflow.Ellipsis,
+                                                    textAlign = TextAlign.Start,
+                                                    modifier = Modifier
+                                                        .height(objetoAdaptardor.ajustarAltura(23))
+                                                        .width(objetoAdaptardor.ajustarAncho(260))
+                                                )
+                                                // Diredcion
+                                                Text(datosCliente.Direccion
+                                                    ,fontFamily = fontAksharPrincipal,
+                                                    fontWeight =    FontWeight.SemiBold,
+                                                    fontSize =  obtenerEstiloBody(),
+                                                    color = Color(0xFF626262),
+                                                    maxLines = 1,
+                                                    overflow = TextOverflow.Ellipsis,
+                                                    textAlign = TextAlign.Start,
+                                                    modifier = Modifier
+                                                        .height(objetoAdaptardor.ajustarAltura(23))
+                                                        .width(objetoAdaptardor.ajustarAncho(260))
+                                                )
+                                            }
+
+                                            // Opciones
+                                            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center){
+
+                                                IconButton(
+                                                    onClick = {
+
+                                                    }
+                                                ) {
+                                                    Icon(
+                                                        imageVector = Icons.Filled.MoreHoriz,
+                                                        contentDescription = "Icono mostrar opciones clientes",
+                                                        tint = Color.DarkGray,
+                                                        modifier = Modifier.size(objetoAdaptardor.ajustarAltura(50))
+                                                    )
+                                                }
+                                            }
+                                        }
+
+                                    }
+                                }
+
+                                // Muestra el indicador de carga al final de la lista mientras se cargan nuevos elementos
+                                if (isCargandoClientes) {
+                                    item {
+                                        CircularProgressIndicator(
+                                            color = Color(0xFF244BC0),
+                                            modifier = Modifier
+                                                .size(objetoAdaptardor.ajustarAltura(30))
+                                                .padding(2.dp)
+                                        )
+                                    }
+                                }
+                                item { Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(4))) }
+
+                            }
+                        }
+
+                        Button(
+                            onClick = {
+                                iniciarMenuCrearExpress= false
                             },
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = Color.Red, // Color de fondo del botón
@@ -2614,7 +2958,7 @@ internal fun BxContendorDatosMesa(
             iniciarMenuDetalleComanda(false)
             delay(500)
             navControllerPantallasModuloSac?.navigate(
-                RutasPatallas.SacComanda.ruta+"/"+datosMesa.nombre+"/"+datosMesa.salon+"/"+token+"/"+nombreEmpresa+"/"+codUsuario+"/"+datosMesa.estado
+                RutasPatallas.SacComanda.ruta+"/"+datosMesa.nombre+"/"+datosMesa.salon+"/"+token+"/"+nombreEmpresa+"/"+codUsuario+"/"+datosMesa.estado+"/"+datosMesa.clienteId
             ){
                 restoreState= true
                 launchSingleTop=true
