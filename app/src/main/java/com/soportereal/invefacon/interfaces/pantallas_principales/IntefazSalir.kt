@@ -24,6 +24,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -33,6 +34,8 @@ import androidx.compose.ui.unit.dp
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.navigation.NavController
 import com.soportereal.invefacon.R
+import com.soportereal.invefacon.funciones_de_interfaces.actualizarParametro
+import com.soportereal.invefacon.funciones_de_interfaces.obtenerParametro
 import com.soportereal.invefacon.interfaces.FuncionesParaAdaptarContenidoCompact
 
 
@@ -45,6 +48,7 @@ fun IniciarInterfazSalir(navControllerPrincipal: NavController){
     val dpAltoPantalla = configuration.screenHeightDp
     val dpFontPantalla= configuration.fontScale
     val objetoAdaptardor= FuncionesParaAdaptarContenidoCompact(dpAltoPantalla, dpAnchoPantalla, dpFontPantalla)
+    val contexto = LocalContext.current
 
     ConstraintLayout(
         modifier = Modifier
@@ -101,7 +105,17 @@ fun IniciarInterfazSalir(navControllerPrincipal: NavController){
                 modifier =
                 Modifier.wrapContentSize(),
                 onClick = {
-                    navControllerPrincipal.popBackStack()
+                    if (obtenerParametro(contexto, "token") =="0"){
+                        navControllerPrincipal.popBackStack()
+                    }else{
+                        actualizarParametro(contexto, "token","0")
+                        actualizarParametro(contexto, "nombreUsuario","0")
+                        actualizarParametro(contexto, "nombreEmpresa","0")
+                        actualizarParametro(contexto, "codUsuario","0")
+                        navControllerPrincipal.navigate("auth") {
+                            popUpTo("main") { inclusive = true }
+                        }
+                    }
                 },
                 colors = ButtonDefaults.buttonColors(
                     containerColor =Color.Red, // Color de fondo del botón

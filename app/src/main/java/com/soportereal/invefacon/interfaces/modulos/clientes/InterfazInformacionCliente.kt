@@ -1,6 +1,7 @@
 package com.soportereal.invefacon.interfaces.modulos.clientes
 
 
+import android.annotation.SuppressLint
 import android.app.DatePickerDialog
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -899,7 +900,7 @@ internal fun AgregarTextFieldMultifuncional(
     contieneOpciones: Boolean = false,
     opciones: SnapshotStateMap<String, String> = mutableStateMapOf("1" to "1"),
     usarOpciones2: Boolean = false,
-    opciones2: MutableState<LinkedHashMap<String, String>> = mutableStateOf(LinkedHashMap()),
+    @SuppressLint("MutableCollectionMutableState") opciones2: MutableState<LinkedHashMap<String, String>> = mutableStateOf(LinkedHashMap()),
     isSeleccionarFecha: Boolean = false,
     darFormatoMiles: Boolean = false,
     soloPermitirValoresNumericos: Boolean = false,

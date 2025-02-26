@@ -52,6 +52,7 @@ sealed class RutasPatallas(val ruta: String){
 
     // Principales ]
     data object Inicio : RutasPatallas("main/Inicio")
+    data object InicioAuto : RutasPatallas("main/InicioAuto")
 
     // Modulos
     data object Clientes : RutasPatallas("mod/Clientes")
@@ -98,10 +99,16 @@ fun NavegacionPantallas(
     navcontroller: NavHostController
 ){
     val systemUiController = rememberSystemUiController()
+    val contexto = LocalContext.current
+    guardarParametroSiNoExiste(contexto, "ultimoCorreo", "")
+    guardarParametroSiNoExiste(contexto, "token", "0")
+    guardarParametroSiNoExiste(contexto, "nombreUsuario", "0")
+    guardarParametroSiNoExiste(contexto, "nombreEmpresa", "0")
+    guardarParametroSiNoExiste(contexto, "codUsuario", "0")
     Box(
         modifier = Modifier.fillMaxSize()
     ){
-        NavHost(navController= navcontroller, startDestination = "auth"){
+        NavHost(navController= navcontroller, startDestination = if(obtenerParametro(contexto, "token")=="0") "auth" else "main"){
 
             // Navigacion pantalla Auntenticacion
             navigation(startDestination= RutasPatallas.InicioSesion.ruta, route = "auth"){
@@ -114,39 +121,55 @@ fun NavegacionPantallas(
             }
 
             // Navigacion pantallas Principales
-            navigation(startDestination = RutasPatallas.Inicio.ruta, route = "main"){
+            navigation(
+                startDestination = if(obtenerParametro(contexto, "token")=="0") RutasPatallas.Inicio.ruta else RutasPatallas.InicioAuto.ruta,
+                route = "main"
+            ) {
                 composable(
-                    route = RutasPatallas.Inicio.ruta+"/{token}"+"/{nombreEmpresa}"+"/{nombreUsuario}"+"/{codUsuario}",
+                    route = RutasPatallas.Inicio.ruta + "/{token}" + "/{nombreEmpresa}" + "/{nombreUsuario}" + "/{codUsuario}",
                     arguments = listOf(
-                        navArgument(name= "token"){
-                            type= NavType.StringType
-                            defaultValue="error"
+                        navArgument(name = "token") {
+                            type = NavType.StringType
+                            defaultValue = "error"
                         },
-                        navArgument(name= "nombreEmpresa"){
-                            type= NavType.StringType
-                            defaultValue="error"
+                        navArgument(name = "nombreEmpresa") {
+                            type = NavType.StringType
+                            defaultValue = "error"
                         },
-                        navArgument(name= "nombreUsuario"){
-                            type= NavType.StringType
-                            defaultValue="error"
+                        navArgument(name = "nombreUsuario") {
+                            type = NavType.StringType
+                            defaultValue = "error"
                         },
-                        navArgument(name= "codUsuario"){
-                            type= NavType.StringType
-                            defaultValue="error"
+                        navArgument(name = "codUsuario") {
+                            type = NavType.StringType
+                            defaultValue = "error"
                         }
                     ),
-                    enterTransition = { slideInHorizontally(
-                        animationSpec = tween(durationMillis = 500, easing = FastOutSlowInEasing)
-                    ) { it } },
-                    exitTransition = { slideOutHorizontally(
-                        animationSpec = tween(durationMillis = 500, easing = FastOutSlowInEasing)
-                    ) { -it } }
+                    enterTransition = {
+                        slideInHorizontally(
+                            animationSpec = tween(
+                                durationMillis = 500,
+                                easing = FastOutSlowInEasing
+                            )
+                        ) { it }
+                    },
+                    exitTransition = {
+                        slideOutHorizontally(
+                            animationSpec = tween(
+                                durationMillis = 500,
+                                easing = FastOutSlowInEasing
+                            )
+                        ) { -it }
+                    }
 
-                ) { backstackEntry->
-                    val token= requireNotNull(backstackEntry.arguments?.getString("token"))
-                    val nombreEmpresa= requireNotNull(backstackEntry.arguments?.getString("nombreEmpresa"))
-                    val nombreUsuario= requireNotNull(backstackEntry.arguments?.getString("nombreUsuario"))
-                    val codUsuario= requireNotNull(backstackEntry.arguments?.getString("codUsuario"))
+                ) { backstackEntry ->
+                    val token = requireNotNull(backstackEntry.arguments?.getString("token"))
+                    val nombreEmpresa =
+                        requireNotNull(backstackEntry.arguments?.getString("nombreEmpresa"))
+                    val nombreUsuario =
+                        requireNotNull(backstackEntry.arguments?.getString("nombreUsuario"))
+                    val codUsuario =
+                        requireNotNull(backstackEntry.arguments?.getString("codUsuario"))
 
                     IniciarInterfazMenuPrincipalCompact(
                         token = token,
@@ -155,6 +178,19 @@ fun NavegacionPantallas(
                         navControllerPrincipal = navcontroller,
                         systemUiController = systemUiController,
                         codUsuario = codUsuario
+                    )
+                }
+
+                composable(
+                    RutasPatallas.InicioAuto.ruta
+                ) {
+                    IniciarInterfazMenuPrincipalCompact(
+                        token = obtenerParametro(contexto, "token"),
+                        nombreEmpresa = obtenerParametro(contexto, "nombreEmpresa"),
+                        nombreUsuario = obtenerParametro(contexto, "nombreUsuario"),
+                        navControllerPrincipal = navcontroller,
+                        systemUiController = systemUiController,
+                        codUsuario = obtenerParametro(contexto, "codUsuario")
                     )
                 }
             }

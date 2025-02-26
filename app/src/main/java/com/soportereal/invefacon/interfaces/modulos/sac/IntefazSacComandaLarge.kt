@@ -1,5 +1,6 @@
 package com.soportereal.invefacon.interfaces.modulos.sac
 
+import android.annotation.SuppressLint
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -105,6 +106,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
+@SuppressLint("MutableCollectionMutableState")
 @Composable
 fun InterfazSacComandaLarge(
     systemUiController: SystemUiController?,

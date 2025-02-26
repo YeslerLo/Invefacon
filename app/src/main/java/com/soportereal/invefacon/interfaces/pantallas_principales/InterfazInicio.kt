@@ -71,6 +71,8 @@ import com.google.accompanist.systemuicontroller.SystemUiController
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.soportereal.invefacon.R
 import com.soportereal.invefacon.funciones_de_interfaces.RutasPatallas
+import com.soportereal.invefacon.funciones_de_interfaces.actualizarParametro
+import com.soportereal.invefacon.funciones_de_interfaces.obtenerParametro
 import com.soportereal.invefacon.interfaces.FuncionesParaAdaptarContenidoCompact
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -99,6 +101,7 @@ fun IniciarInterfazInicio(
     val objetoAdaptardor= FuncionesParaAdaptarContenidoCompact(dpAltoPantalla, dpAnchoPantalla, dpFontPantalla)
     var iniciarPantallaModulo by remember { mutableStateOf(false) }
     var rutaPantallaModulo by remember { mutableStateOf("") }
+    val contexto = LocalContext.current
 
     // Estado para controlar la visibilidad del diálogo
     val showDialog = remember { mutableStateOf(false) }
@@ -142,7 +145,17 @@ fun IniciarInterfazInicio(
                     contentColor = Color.White // Color del contenido (texto e iconos)
                 ),
                     onClick = {
-                        navControllerPrincipal.popBackStack() // Salir de la pantalla
+                        if (obtenerParametro(contexto, "token") =="0"){
+                            navControllerPrincipal.popBackStack()
+                        }else{
+                            actualizarParametro(contexto, "token","0")
+                            actualizarParametro(contexto, "nombreUsuario","0")
+                            actualizarParametro(contexto, "nombreEmpresa","0")
+                            actualizarParametro(contexto, "codUsuario","0")
+                            navControllerPrincipal.navigate("auth") {
+                                popUpTo("main") { inclusive = true }
+                            }
+                        }
                         showDialog.value = false // Cerrar el diálog
                     }
                 ) {
@@ -332,7 +345,8 @@ fun IniciarInterfazInicio(
                         verticalArrangement = Arrangement.spacedBy(objetoAdaptardor.ajustarAltura(12))
                     ) {
                         item { Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(8))) }
-                        item { btOpcionesModulos("Facturación", Icons.Default.Description, RutasPatallas.Facturacion.ruta+"/$token"+"/$nombreEmpresa"+"/$codUsuario") }
+//                        item { btOpcionesModulos("Facturación", Icons.Default.Description, RutasPatallas.Facturacion.ruta+"/$token"+"/$nombreEmpresa"+"/$codUsuario") }
+                        item { btOpcionesModulos("Facturación", Icons.Default.Description, null) }
                         item { btOpcionesModulos("Ventas", Icons.AutoMirrored.Filled.ShowChart, null) }
                         item { btOpcionesModulos("Inventario", Icons.Default.Inventory, null) }
                         item { btOpcionesModulos("CxC", Icons.Default.CreditCard, null) }

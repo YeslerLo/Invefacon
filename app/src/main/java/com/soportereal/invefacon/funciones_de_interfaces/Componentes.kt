@@ -1,9 +1,12 @@
 package com.soportereal.invefacon.funciones_de_interfaces
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -43,7 +46,10 @@ internal fun BBasicTextField(
     icono: ImageVector = Icons.Filled.Search,
     objetoAdaptardor: FuncionesParaAdaptarContenidoCompact,
     alto: Int,
-    ancho:Int
+    ancho:Int,
+    trailingIcon : ImageVector = Icons.Filled.Search,
+    onTrailingIconClick: (Boolean)->Unit = {},
+    mostrarTrailingIcon : Boolean = false
 ) {
     BasicTextField(
         value = value,
@@ -68,26 +74,43 @@ internal fun BBasicTextField(
                 contentAlignment = Alignment.CenterStart
             ) {
                 Row(
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Icon(
-                        imageVector = icono,
-                        contentDescription = "Icono Buscar",
-                        tint = iconTint,
-                        modifier = Modifier.size(objetoAdaptardor.ajustarAltura(30))
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Box(modifier = Modifier.weight(1f)) {
-                        if (value.isEmpty()) {
-                            Text(
-                                text = placeholder,
-                                fontFamily = fontFamily,
-                                fontWeight = fontWeight,
-                                color = placeholderColor,
-                                maxLines = 1
-                            )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Icon(
+                            imageVector = icono,
+                            contentDescription = "Icono Buscar",
+                            tint = iconTint,
+                            modifier = Modifier.size(objetoAdaptardor.ajustarAltura(30))
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Box(modifier = Modifier.weight(1f)) {
+                            if (value.isEmpty()) {
+                                Text(
+                                    text = placeholder,
+                                    fontFamily = fontFamily,
+                                    fontWeight = fontWeight,
+                                    color = placeholderColor,
+                                    maxLines = 1
+                                )
+                            }
+                            innerTextField()
                         }
-                        innerTextField()
+                    }
+                    if (mostrarTrailingIcon){
+                        Icon(
+                            imageVector = trailingIcon,
+                            contentDescription = "Trailing Icon",
+                            tint = iconTint,
+                            modifier = Modifier
+                                .size(objetoAdaptardor.ajustarAltura(30))
+                                .clickable { onTrailingIconClick(true) }
+                        )
                     }
                 }
             }
@@ -97,3 +120,4 @@ internal fun BBasicTextField(
             .then(modifier)
     )
 }
+

@@ -41,6 +41,8 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -94,7 +96,6 @@ import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.soportereal.invefacon.R
 import com.soportereal.invefacon.funciones_de_interfaces.RutasPatallas
 import com.soportereal.invefacon.funciones_de_interfaces.actualizarParametro
-import com.soportereal.invefacon.funciones_de_interfaces.guardarParametroSiNoExiste
 import com.soportereal.invefacon.funciones_de_interfaces.obtenerParametro
 import com.soportereal.invefacon.interfaces.FuncionesParaAdaptarContenidoCompact
 import com.soportereal.invefacon.interfaces.pantallas_principales.objetoEstadoPantallaCarga
@@ -130,8 +131,8 @@ fun IniciarInterfazInicioSesionCompact(
     var existenCorreos by remember { mutableStateOf<Boolean?>(true) }
     var isInicioSesionAprobado by remember { mutableStateOf(false) }
     var apiToken by remember { mutableStateOf("") }
-    var clienteNombreEmpresa by remember { mutableStateOf("") }
-    var clienteNombreUsuario by remember { mutableStateOf("") }
+    var nombreEmpresa by remember { mutableStateOf("") }
+    var nombreUsuario by remember { mutableStateOf("") }
     var codUsuario by remember { mutableStateOf("") }
     val objetoProcesamientoDatosApi= ProcesamientoDatosInterfazInicioSesion()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -152,22 +153,27 @@ fun IniciarInterfazInicioSesionCompact(
     var apiConsultaActual by remember { mutableStateOf<Job?>(null) }
     val cortinaConsultaApi= CoroutineScope(Dispatchers.IO)
     var isCorreoIngresadoValido by remember { mutableStateOf(false) }
+    var guardarDatosSesion by remember { mutableStateOf(false) }
     val scrollState= rememberScrollState(0)
-    guardarParametroSiNoExiste(contexto, "ultimoCorreo", "")
-    var clienteCorreoEmpresa by remember { mutableStateOf(obtenerParametro(contexto, "ultimoCorreo")) }
+    var usuarioCorreoEmpresa by remember { mutableStateOf(obtenerParametro(contexto, "ultimoCorreo")) }
 
 
     LaunchedEffect(isInicioSesionAprobado) {
         if (isInicioSesionAprobado){
-            navController?.navigate(RutasPatallas.Inicio.ruta+"/$apiToken/$clienteNombreEmpresa/$clienteNombreUsuario/$codUsuario")
-            actualizarParametro(contexto, "ultimoCorreo",clienteCorreoEmpresa)
+            navController?.navigate(RutasPatallas.Inicio.ruta+"/$apiToken/$nombreEmpresa/$nombreUsuario/$codUsuario")
+            actualizarParametro(contexto, "ultimoCorreo",usuarioCorreoEmpresa)
+            if (guardarDatosSesion){
+                actualizarParametro(contexto, "token",apiToken)
+                actualizarParametro(contexto, "nombreUsuario",nombreUsuario)
+                actualizarParametro(contexto, "nombreEmpresa",nombreEmpresa)
+                actualizarParametro(contexto, "codUsuario",codUsuario)
+            }
         }
     }
 
 
     LaunchedEffect(snackbarHostState) {
         snackbarHostState.currentSnackbarData?.dismiss()
-
     }
 
     ConstraintLayout (
@@ -245,7 +251,7 @@ fun IniciarInterfazInicioSesionCompact(
         //Card contenedora de componetes de entrada de datos
         Card(
             modifier = Modifier
-                .height(objetoAdaptardor.ajustarAltura(455))
+                .height(objetoAdaptardor.ajustarAltura(475))
                 .width(objetoAdaptardor.ajustarAncho(339))
                 .shadow(
                     elevation = objetoAdaptardor.ajustarAltura(7),
@@ -277,7 +283,7 @@ fun IniciarInterfazInicioSesionCompact(
 
                     // Texto Inicio Sesion
                     Text(
-                        text = "Inicio Sesion",
+                        text = "Inicio Sesión",
                         fontSize = objetoAdaptardor.ajustarFont(45),
                         fontFamily = fontAksharPrincipal,
                         fontWeight = FontWeight.Bold,
@@ -287,20 +293,20 @@ fun IniciarInterfazInicioSesionCompact(
                         modifier = Modifier.height(objetoAdaptardor.ajustarAltura(57))
                     )
 
-                    LaunchedEffect(clienteCorreoEmpresa) {
-                        clienteCorreoEmpresa= clienteCorreoEmpresa.replace(" ", "")
+                    LaunchedEffect(usuarioCorreoEmpresa) {
+                        usuarioCorreoEmpresa= usuarioCorreoEmpresa.replace(" ", "")
                         arrayEmpresasDisponibles.clear()
                         clienteEmpresaSeleccionada=""
                         existenCorreos= true
                         apiConsultaActual?.cancel()
-                        isCorreoIngresadoValido= objetoValidadorCorreo.matcher(clienteCorreoEmpresa).matches()
+                        isCorreoIngresadoValido= objetoValidadorCorreo.matcher(usuarioCorreoEmpresa).matches()
                         //Si el correo ingresado es valido ingresa la if
                         if(isCorreoIngresadoValido){
                             //Se pone null para iniciar el circulo de carga
                             existenCorreos=null
                             apiConsultaActual= cortinaConsultaApi.launch{
                                 delay(1000)
-                                val resultApi= objetoProcesamientoDatosApi.obtenerNombresEmpresasPorCorreo(clienteCorreoEmpresa) // Datos retornados del API
+                                val resultApi= objetoProcesamientoDatosApi.obtenerNombresEmpresasPorCorreo(usuarioCorreoEmpresa) // Datos retornados del API
 
                                 //Si la respuesta del api es null es porque no hay conexion a Internet o hubo problemas con la conexion al servidor
                                 if(resultApi==null){
@@ -338,9 +344,9 @@ fun IniciarInterfazInicioSesionCompact(
 
                     // Input Correo Cliente
                     OutlinedTextField(
-                        value = clienteCorreoEmpresa,
+                        value = usuarioCorreoEmpresa,
                         onValueChange =  {
-                            clienteCorreoEmpresa = it
+                            usuarioCorreoEmpresa = it
                         },
                         enabled = isBtIniciarSesionActivo.value,
                         label = {
@@ -426,7 +432,7 @@ fun IniciarInterfazInicioSesionCompact(
 
                         }// Mostrar Circulo de carga
                         false->{
-                            val txtEstadoBusquedaCorreo="No se encontró ninguna empresa asociada a $clienteCorreoEmpresa"
+                            val txtEstadoBusquedaCorreo="No se encontró ninguna empresa asociada a $usuarioCorreoEmpresa"
                             Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center){
                                 Text(
                                     text = txtEstadoBusquedaCorreo,
@@ -682,13 +688,11 @@ fun IniciarInterfazInicioSesionCompact(
                         )
                     )
 
-                    // Spacer separador de componente
-                    Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(20)))
 
                     if (!isBtIniciarSesionActivo.value){
                         LaunchedEffect(isBtIniciarSesionActivo) {
                             apiConsultaActual= cortinaConsultaApi.launch{
-                                val result= objetoProcesamientoDatosApi.validarInicioSesion(clienteCorreoEmpresa, clienteEmpresaSeleccionada, clientePassword)
+                                val result= objetoProcesamientoDatosApi.validarInicioSesion(usuarioCorreoEmpresa, clienteEmpresaSeleccionada, clientePassword)
                                 if(result==null){
                                     if (!snackbarVisible) {
                                         errorResultadoApi=true
@@ -719,8 +723,8 @@ fun IniciarInterfazInicioSesionCompact(
                                 }else if (result.getString("status")=="ok"){
                                     coroutineScope.cancel()
                                     val datos= result.getJSONObject("data")
-                                    clienteNombreUsuario= datos.getString("Nombre")
-                                    clienteNombreEmpresa= datos.getString("Empresa")
+                                    nombreUsuario= datos.getString("Nombre")
+                                    nombreEmpresa= datos.getString("Empresa")
                                     apiToken= datos.getString("Token")
                                     codUsuario= datos.getString("Codigo")
                                     delay(1000)
@@ -729,6 +733,30 @@ fun IniciarInterfazInicioSesionCompact(
                                 }
                             }
                         }
+                    }
+
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Spacer(modifier = Modifier.width(16.dp))
+                        Checkbox(
+                            checked = guardarDatosSesion,
+                            onCheckedChange = { guardarDatosSesion = it },
+                            colors = CheckboxDefaults.colors(
+                                checkedColor = Color(0xFF244BC0),
+                                uncheckedColor = Color.DarkGray,
+                                checkmarkColor = Color.White
+                            )
+                        )
+                        Text("Iniciar sesión automáticamente",
+                            fontFamily =  fontAksharPrincipal,
+                            fontWeight = FontWeight.Light,
+                            color = Color.DarkGray,
+                            fontSize = objetoAdaptardor.ajustarFont(15),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
                     }
 
                     //Boton Iniciar Sesion
@@ -768,7 +796,7 @@ fun IniciarInterfazInicioSesionCompact(
                     ){
                         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center){
                             Text(
-                                "Iniciar Sesion",
+                                "Iniciar Sesión",
                                 fontFamily = fontAksharPrincipal,
                                 fontWeight = FontWeight.Medium,
                                 fontSize = objetoAdaptardor.ajustarFont(25),

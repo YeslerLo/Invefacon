@@ -10,8 +10,8 @@ import androidx.compose.ui.unit.times
 
 
 internal class FuncionesParaAdaptarContenidoCompact(
-    val alturaPantalla: Int,
-    val anchoPantalla: Int,
+    private val alturaPantalla: Int,
+    private val anchoPantalla: Int,
     var dpFontPantalla: Float,
     val isPantallaHorizontal: Boolean = false
 ){

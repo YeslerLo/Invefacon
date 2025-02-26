@@ -27,6 +27,7 @@ package com.soportereal.invefacon.interfaces.modulos.sac
  import androidx.compose.foundation.layout.width
  import androidx.compose.foundation.layout.widthIn
  import androidx.compose.foundation.layout.wrapContentHeight
+ import androidx.compose.foundation.layout.wrapContentSize
  import androidx.compose.foundation.layout.wrapContentWidth
  import androidx.compose.foundation.lazy.LazyColumn
  import androidx.compose.foundation.lazy.items
@@ -36,11 +37,14 @@ package com.soportereal.invefacon.interfaces.modulos.sac
  import androidx.compose.material.icons.filled.AccountTree
  import androidx.compose.material.icons.filled.AddCircle
  import androidx.compose.material.icons.filled.ArrowBackIosNew
+ import androidx.compose.material.icons.filled.Badge
  import androidx.compose.material.icons.filled.Delete
  import androidx.compose.material.icons.filled.EditNote
+ import androidx.compose.material.icons.filled.Email
  import androidx.compose.material.icons.filled.MoreHoriz
  import androidx.compose.material.icons.filled.Password
  import androidx.compose.material.icons.filled.Person
+ import androidx.compose.material.icons.filled.Phone
  import androidx.compose.material.icons.filled.Place
  import androidx.compose.material.icons.filled.RemoveCircle
  import androidx.compose.material.icons.filled.RestaurantMenu
@@ -62,7 +66,6 @@ package com.soportereal.invefacon.interfaces.modulos.sac
  import androidx.compose.runtime.LaunchedEffect
  import androidx.compose.runtime.MutableState
  import androidx.compose.runtime.collectAsState
- import androidx.compose.runtime.derivedStateOf
  import androidx.compose.runtime.getValue
  import androidx.compose.runtime.mutableIntStateOf
  import androidx.compose.runtime.mutableStateListOf
@@ -74,10 +77,8 @@ package com.soportereal.invefacon.interfaces.modulos.sac
  import androidx.compose.ui.draw.shadow
  import androidx.compose.ui.graphics.Color
  import androidx.compose.ui.layout.ContentScale
- import androidx.compose.ui.layout.onSizeChanged
  import androidx.compose.ui.platform.LocalConfiguration
  import androidx.compose.ui.platform.LocalContext
- import androidx.compose.ui.platform.LocalDensity
  import androidx.compose.ui.res.painterResource
  import androidx.compose.ui.text.font.Font
  import androidx.compose.ui.text.font.FontFamily
@@ -97,6 +98,7 @@ package com.soportereal.invefacon.interfaces.modulos.sac
  import com.soportereal.invefacon.funciones_de_interfaces.actualizarParametro
  import com.soportereal.invefacon.funciones_de_interfaces.guardarParametroSiNoExiste
  import com.soportereal.invefacon.funciones_de_interfaces.mostrarMensajeError
+ import com.soportereal.invefacon.funciones_de_interfaces.obtenerDatosClienteByCedula
  import com.soportereal.invefacon.funciones_de_interfaces.obtenerParametro
  import com.soportereal.invefacon.interfaces.FuncionesParaAdaptarContenidoCompact
  import com.soportereal.invefacon.interfaces.modulos.clientes.AgregarTextFieldMultifuncional
@@ -201,6 +203,14 @@ fun InterfazModuloSacLarge(
     var isCargandoClientes by remember { mutableStateOf(false) }
     var apiConsultaActual by remember { mutableStateOf<Job?>(null) }
     val cortinaConsultaApi= CoroutineScope(Dispatchers.IO)
+    var iniciarMenuCrearCliente by remember { mutableStateOf(false) }
+    var iniciarBusquedaClienteByCedula by remember { mutableStateOf(false) }
+    var cedulaCliente by remember { mutableStateOf("") }
+    var nombreCliente by remember { mutableStateOf("") }
+    var telefonoCliente by remember { mutableStateOf("") }
+    var correoCliente by remember { mutableStateOf("") }
+    var direccionCliente by remember { mutableStateOf("") }
+    var agregarCliente by remember { mutableStateOf(false) }
 
 
     LaunchedEffect(iniciarPantallaSacComanda) {
@@ -659,16 +669,13 @@ fun InterfazModuloSacLarge(
     LaunchedEffect(datosIngresadosBarraBusquedaCliente, iniciarMenuCrearExpress) {
 
         if (iniciarMenuCrearExpress) {
-            println("Ejecutando lógica dentro de LaunchedEffect")
-
             listaClientesActuales = emptyList()
-
             isCargandoClientes=true
             apiConsultaActual?.cancel()
             apiConsultaActual= cortinaConsultaApi.launch{
                 delay(500)
                 val result= objectoProcesadorDatosApiClientes.obtenerDatosClientes(
-                    clientesPorPagina = "10",
+                    clientesPorPagina = "30",
                     paginaCliente = "1",
                     clienteDatoBusqueda = datosIngresadosBarraBusquedaCliente.trim(),
                     clienteEstado = "1",
@@ -683,6 +690,7 @@ fun InterfazModuloSacLarge(
                         val datosCliente = datosClientes.getJSONObject(i)
                         val cliente = Cliente(
                             codigo = datosCliente.getString("codigo"),
+                            Cedula = datosCliente.getString("cedula"),
                             nombreComercial = datosCliente.getString("nombrecomercial"),
                             nombreJuridico = datosCliente.getString("nombrejuridico"),
                             Telefonos = datosCliente.getString("telefonos"),
@@ -692,14 +700,81 @@ fun InterfazModuloSacLarge(
                         )
                         listaClientes.add(cliente)
                     }
-
                     listaClientesActuales=listaClientesActuales+listaClientes
                 }
                 isCargandoClientes=false
                 objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
             }
         }
+    }
 
+    LaunchedEffect(iniciarBusquedaClienteByCedula) {
+        if(iniciarBusquedaClienteByCedula){
+            if (cedulaCliente.length >=9){
+                objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(true)
+                val result = obtenerDatosClienteByCedula(numeroCedula = cedulaCliente)
+                if (result!=null){
+                    if ((result.optString("resultcount", "0")) == "1"){
+                        val results = result.getJSONArray("results")
+                        val datos = results.getJSONObject(0)
+                        nombreCliente = datos.getString("fullname")
+                    }else{
+                        mostrarMensajeError("El cliente no encontrado")
+                    }
+                }
+                objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
+            }else{
+                mostrarMensajeError("Ingrese una cedula valida")
+            }
+        }
+        iniciarBusquedaClienteByCedula = false
+    }
+
+    LaunchedEffect(agregarCliente) {
+        if(agregarCliente){
+            objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(true)
+            if (
+                nombreCliente.isNotEmpty() &&
+                telefonoCliente.isNotEmpty() &&
+                correoCliente.isNotEmpty() &&
+                direccionCliente.isNotEmpty() &&
+                cedulaCliente.length >= 9
+            ){
+                val cliente = Cliente(
+                    nombreComercial = nombreCliente,
+                    Nombre = nombreCliente,
+                    Telefonos = telefonoCliente,
+                    EmailFactura = correoCliente,
+                    EmailCobro = correoCliente,
+                    Email = correoCliente,
+                    Cedula = cedulaCliente,
+                    Cod_Zona = "1",
+                    AgenteVentas = codUsuario,
+                    noForzaCredito = "0",
+                    TipoPrecioVenta = "1",
+                    TipoIdentificacion = "00",
+                    Cod_Moneda = "CRC"
+                )
+
+                val result = objectoProcesadorDatosApiClientes.agregarCliente(cliente)
+                if (result!=null){
+                    estadoRespuestaApi.cambiarEstadoRespuestaApi(mostrarSoloRespuestaError = true, datosRespuesta = result)
+                    if (result.getString("status")=="ok" && result.getString("code")=="200"){
+                        mesaActual=Mesa(
+                            nombre =result.getString("Id_Cliente"),
+                            salon = "EXPRESS"
+                        )
+                        iniciarPantallaSacComanda = true
+                    }else{
+                        objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
+                    }
+                }
+            }else{
+                objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
+                mostrarMensajeError("Complete los campos de datos validos")
+            }
+        }
+        agregarCliente=false
     }
 
 
@@ -707,12 +782,13 @@ fun InterfazModuloSacLarge(
     fun AgregarBt(
         text: String,
         color: Long,
+        alto: Int = 35,
         onClick: (Boolean)->Unit,
         quitarPadInterno: Boolean = false
     ){
         Button(
             modifier = if (quitarPadInterno) {
-                Modifier.height(objetoAdaptardor.ajustarAltura(35))
+                Modifier.height(objetoAdaptardor.ajustarAltura(alto))
             } else {
                 Modifier.width(objetoAdaptardor.ajustarAncho(120))
             },
@@ -726,16 +802,21 @@ fun InterfazModuloSacLarge(
                 disabledContentColor = Color.White
             ),contentPadding = if (quitarPadInterno) PaddingValues(0.dp) else PaddingValues(8.dp)
         ) {
-            Text(
-                text,
-                fontFamily = fontAksharPrincipal,
-                fontWeight = FontWeight.Medium,
-                fontSize = obtenerEstiloLabel(),
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                textAlign = TextAlign.Center,
-                color = Color.White
-            )
+            Box(
+                contentAlignment = Alignment.Center
+            ){
+                Text(
+                    text,
+                    fontFamily = fontAksharPrincipal,
+                    fontWeight = FontWeight.Medium,
+                    fontSize = obtenerEstiloLabel(),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    textAlign = TextAlign.Center,
+                    color = Color.White
+                )
+            }
+
         }
     }
 
@@ -1244,7 +1325,7 @@ fun InterfazModuloSacLarge(
                         overflow = TextOverflow.Ellipsis,
                         textAlign = TextAlign.Center,
                         modifier = Modifier
-                            .width(objetoAdaptardor.ajustarAncho(130))
+                            .width(objetoAdaptardor.ajustarAncho(230))
                     )
                 }
                 Box(
@@ -2471,6 +2552,7 @@ fun InterfazModuloSacLarge(
     }
 
     if (iniciarMenuCrearExpress){
+        var isNuevoCliente by remember { mutableStateOf(false) }
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -2478,229 +2560,320 @@ fun InterfazModuloSacLarge(
                 .clickable(enabled = false) {},
             contentAlignment = Alignment.Center
         ) {
-            Surface(
-                modifier = Modifier
-                    .widthIn(max = objetoAdaptardor.ajustarAncho(400))
-                    .heightIn(max = objetoAdaptardor.ajustarAltura(500))
-                    .align(Alignment.Center),
-                shape = RoundedCornerShape(16.dp),
-                color = Color.White
-            ) {
-                Box(
+            if(iniciarMenuCrearCliente){
+                Surface(
                     modifier = Modifier
-                        .padding(objetoAdaptardor.ajustarAltura(24)),
-                    contentAlignment = Alignment.Center
+                        .wrapContentWidth()
+                        .heightIn(max = objetoAdaptardor.ajustarAltura(500))
+                        .align(Alignment.Center),
+                    shape = RoundedCornerShape(16.dp),
+                    color = Color.White
                 ) {
-                    Column(
-                        verticalArrangement = Arrangement.Center,
-                        horizontalAlignment = Alignment.CenterHorizontally
+                    Box(
+                        modifier = Modifier
+                            .padding(objetoAdaptardor.ajustarAltura(24)),
+                        contentAlignment = Alignment.Center
                     ) {
-                        Text(
-                            "Crear Express",
-                            fontFamily = fontAksharPrincipal,
-                            fontWeight = FontWeight.Medium,
-                            fontSize = objetoAdaptardor.ajustarFont(27),
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                            textAlign = TextAlign.Center,
-                            color = Color.Black
-                        )
-                        Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(6)))
-
-                        BBasicTextField(
-                            value = datosIngresadosBarraBusquedaCliente,
-                            onValueChange = {
-                                datosIngresadosBarraBusquedaCliente = it
-                            },
-                            fontFamily = fontAksharPrincipal,
-                            objetoAdaptardor = objetoAdaptardor,
-                            alto = 60,
-                            ancho = 360
-                        )
-                        Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(6)))
-                        Box(
-                            modifier = Modifier
-                                .height(objetoAdaptardor.ajustarAltura(300))
-                                .background(Color.White)
-                                .fillMaxWidth(),
-                            contentAlignment = Alignment.Center
-                        ){
-                            LazyColumn(
-                                modifier = Modifier.fillMaxSize(),
-                                verticalArrangement = Arrangement.spacedBy(objetoAdaptardor.ajustarAltura(12)),
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                state = lazyStateListaClientes
+                        Column(
+                            verticalArrangement = Arrangement.Center,
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text(
+                                if(isNuevoCliente)"Agregar Cliente" else "Editar Cliente",
+                                fontFamily = fontAksharPrincipal,
+                                fontWeight = FontWeight.Medium,
+                                fontSize = objetoAdaptardor.ajustarFont(27),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                textAlign = TextAlign.Center,
+                                color = Color.Black
+                            )
+                            Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(8)))
+                            Row(
+                                verticalAlignment = Alignment.Top
                             ) {
-                                items(listaClientesActuales) { datosCliente ->
-                                    var alturaBoxPx by remember { mutableStateOf(0) }
-                                    val density = LocalDensity.current
-                                    val alturaBoxDpInt by remember { derivedStateOf { (alturaBoxPx / density.density).toInt() } }
-                                    Card(
-                                        modifier = Modifier
-                                            .wrapContentHeight()
-                                            .onSizeChanged { size ->
-                                                alturaBoxPx = size.height.coerceIn(0, 2000)
+                                Column {
+                                    Text(
+                                        "Cedula:",
+                                        fontFamily = fontAksharPrincipal,
+                                        fontWeight = FontWeight.Medium,
+                                        fontSize = obtenerEstiloTitle(),
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis,
+                                        textAlign = TextAlign.Center,
+                                        color = Color.Black
+                                    )
+                                    Row {
+                                        BBasicTextField(
+                                            value = cedulaCliente,
+                                            onValueChange = {
+                                                cedulaCliente = it
+                                                nombreCliente = ""
+                                            },
+                                            placeholder = "Ingrese la cedula",
+                                            fontFamily = fontAksharPrincipal,
+                                            objetoAdaptardor = objetoAdaptardor,
+                                            alto = 60,
+                                            ancho = 230,
+                                            icono = Icons.Filled.Badge
+                                        )
+                                        Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(8)))
+                                        if(nombreCliente.isEmpty()){
+                                            AgregarBt(
+                                                text = "Buscar",
+                                                color = 0xFF244BC0,
+                                                onClick = {
+                                                    iniciarBusquedaClienteByCedula = true
+                                                },
+                                                quitarPadInterno = true,
+                                                alto = 60
+                                            )
+                                        }
+                                    }
+                                    Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(8)))
+                                    Text(
+                                        "Nombre:",
+                                        fontFamily = fontAksharPrincipal,
+                                        fontWeight = FontWeight.Medium,
+                                        fontSize = obtenerEstiloTitle(),
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis,
+                                        textAlign = TextAlign.Center,
+                                        color = Color.Black
+                                    )
+                                    BBasicTextField(
+                                        value = nombreCliente,
+                                        onValueChange = {
+                                            nombreCliente = it
+                                        },
+                                        placeholder = "Ingrese el nombre",
+                                        fontFamily = fontAksharPrincipal,
+                                        objetoAdaptardor = objetoAdaptardor,
+                                        alto = 60,
+                                        ancho = 360,
+                                        icono = Icons.Filled.Person
+                                    )
+                                    Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(8)))
+                                    Text(
+                                        "Telefono:",
+                                        fontFamily = fontAksharPrincipal,
+                                        fontWeight = FontWeight.Medium,
+                                        fontSize = obtenerEstiloTitle(),
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis,
+                                        textAlign = TextAlign.Center,
+                                        color = Color.Black
+                                    )
+                                    BBasicTextField(
+                                        value = telefonoCliente,
+                                        onValueChange = {
+                                            telefonoCliente = it
+                                        },
+                                        fontFamily = fontAksharPrincipal,
+                                        placeholder = "Ingrese el telefono",
+                                        objetoAdaptardor = objetoAdaptardor,
+                                        alto = 60,
+                                        ancho = 360,
+                                        icono = Icons.Filled.Phone
+                                    )
+                                }
+                                Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(8)))
+                                Column {
+                                    Text(
+                                        "Correo:",
+                                        fontFamily = fontAksharPrincipal,
+                                        fontWeight = FontWeight.Medium,
+                                        fontSize = obtenerEstiloTitle(),
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis,
+                                        textAlign = TextAlign.Center,
+                                        color = Color.Black
+                                    )
+                                    BBasicTextField(
+                                        value = correoCliente,
+                                        onValueChange = {
+                                            correoCliente = it
+                                        },
+                                        fontFamily = fontAksharPrincipal,
+                                        placeholder = "Ingrese el correo",
+                                        objetoAdaptardor = objetoAdaptardor,
+                                        alto = 60,
+                                        ancho = 360,
+                                        icono = Icons.Filled.Email
+                                    )
+                                    Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(8)))
+                                    Text(
+                                        "Direccion:",
+                                        fontFamily = fontAksharPrincipal,
+                                        fontWeight = FontWeight.Medium,
+                                        fontSize = obtenerEstiloTitle(),
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis,
+                                        textAlign = TextAlign.Center,
+                                        color = Color.Black
+                                    )
+                                    BBasicTextField(
+                                        value = direccionCliente,
+                                        onValueChange = {
+                                            direccionCliente = it
+                                        },
+                                        fontFamily = fontAksharPrincipal,
+                                        placeholder = "Ingrese la direccion",
+                                        objetoAdaptardor = objetoAdaptardor,
+                                        alto = 60,
+                                        ancho = 360,
+                                        icono = Icons.Filled.Place
+                                    )
+                                    Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(40)))
+
+                                    Row {
+                                        Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(60)))
+                                        AgregarBt(
+                                            text = "Regresar",
+                                            color = 0xFFEB3324,
+                                            onClick = {
+                                                iniciarMenuCrearCliente= false
                                             }
-                                            .clickable {
-                                                mesaActual=Mesa(
+                                        )
+                                        Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(8)))
+                                        AgregarBt(
+                                            text = "Continuar",
+                                            color = 0xFF244BC0,
+                                            onClick = {
+                                                if(isNuevoCliente){
+                                                    agregarCliente = true
+                                                }
+                                            }
+                                        )
+                                    }
+                                }
+
+                            }
+                        }
+                    }
+                }
+            }
+            else{
+                Surface(
+                    modifier = Modifier
+                        .widthIn(max = objetoAdaptardor.ajustarAncho(400))
+                        .heightIn(max = objetoAdaptardor.ajustarAltura(570))
+                        .align(Alignment.Center),
+                    shape = RoundedCornerShape(16.dp),
+                    color = Color.White
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .padding(objetoAdaptardor.ajustarAltura(24)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(
+                            verticalArrangement = Arrangement.Center,
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text(
+                                "Crear Express",
+                                fontFamily = fontAksharPrincipal,
+                                fontWeight = FontWeight.Medium,
+                                fontSize = objetoAdaptardor.ajustarFont(27),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                textAlign = TextAlign.Center,
+                                color = Color.Black
+                            )
+                            Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(6)))
+                            Row {
+                                BBasicTextField(
+                                    value = datosIngresadosBarraBusquedaCliente,
+                                    onValueChange = {
+                                        datosIngresadosBarraBusquedaCliente = it
+                                    },
+                                    fontFamily = fontAksharPrincipal,
+                                    objetoAdaptardor = objetoAdaptardor,
+                                    alto = 60,
+                                    ancho = 292,
+                                    mostrarTrailingIcon = true,
+                                    trailingIcon = Icons.Filled.AddCircle,
+                                    onTrailingIconClick = {
+                                        cedulaCliente = ""
+                                        nombreCliente = ""
+                                        telefonoCliente = ""
+                                        correoCliente = ""
+                                        direccionCliente = ""
+                                        isNuevoCliente = true
+                                        iniciarMenuCrearCliente = it
+                                    }
+                                )
+                                Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(8)))
+                                AgregarBt(
+                                    text = "Salir",
+                                    color = 0xFFEB3324,
+                                    onClick = {
+                                        iniciarMenuCrearExpress = false
+                                    },
+                                    quitarPadInterno = true,
+                                    alto = 60
+                                )
+                            }
+
+                            Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(6)))
+                            Box(
+                                modifier = Modifier
+                                    .height(objetoAdaptardor.ajustarAltura(400))
+                                    .background(Color.White)
+                                    .fillMaxWidth(),
+                                contentAlignment = Alignment.Center
+                            ){
+                                LazyColumn(
+                                    modifier = Modifier.fillMaxSize(),
+                                    verticalArrangement = Arrangement.spacedBy(objetoAdaptardor.ajustarAltura(12)),
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    state = lazyStateListaClientes
+                                ) {
+                                    items(listaClientesActuales) { datosCliente ->
+                                        BxContenerdorCliente(
+                                            datosCliente = datosCliente,
+                                            onClick = {
+                                                mesaActual= it
+                                                iniciarPantallaSacComanda = true
+                                            },
+                                            iconOnClick = {
+                                                mesaActual= Mesa(
                                                     nombre =datosCliente.codigo,
                                                     salon = "EXPRESS",
                                                     clienteId = datosCliente.codigo
                                                 )
-                                                iniciarPantallaSacComanda = true
+                                                cedulaCliente = datosCliente.Cedula
+                                                nombreCliente = datosCliente.nombreJuridico
+                                                telefonoCliente = datosCliente.Telefonos
+                                                correoCliente = datosCliente.correo
+                                                direccionCliente = datosCliente.Direccion
+                                                isNuevoCliente= false
+                                                iniciarMenuCrearCliente = it
                                             }
-                                            .width(objetoAdaptardor.ajustarAncho(370))
-                                            .shadow(
-                                                elevation = objetoAdaptardor.ajustarAltura(7),
-                                                shape = RoundedCornerShape(objetoAdaptardor.ajustarAltura(20))
-                                            ),
-                                        shape = RoundedCornerShape(objetoAdaptardor.ajustarAltura(20)),
-                                        colors = CardDefaults.cardColors(containerColor = Color.White)
-                                    ) {
-                                        Row(
-                                            verticalAlignment = Alignment.CenterVertically,
-                                            horizontalArrangement = Arrangement.Start
-                                        ) {
-                                            Box(modifier = Modifier
-                                                .height(objetoAdaptardor.ajustarAltura(alturaBoxDpInt+10))
-                                                .width(objetoAdaptardor.ajustarAncho(20))
-                                                .background(Color(0xFF244BC0))
-                                            )
-                                            Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(8)))
-                                            Column {
-                                                Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(2)))
-
-                                                // Codigo Cliente
-                                                Text(text = "#"+datosCliente.codigo,
-                                                    fontFamily = fontAksharPrincipal,
-                                                    fontWeight =    FontWeight.SemiBold,
-                                                    fontSize =  obtenerEstiloBody(),
-                                                    color = Color.Black,
-                                                    maxLines = 1,
-                                                    overflow = TextOverflow.Ellipsis,
-                                                    textAlign = TextAlign.Start,
-                                                    modifier = Modifier
-                                                        .width(objetoAdaptardor.ajustarAncho(260))
-                                                )
-                                                // Nombre Juridico
-                                                Text(datosCliente.nombreJuridico
-                                                    ,fontFamily = fontAksharPrincipal,
-                                                    fontWeight =    FontWeight.SemiBold,
-                                                    fontSize =  obtenerEstiloBody(),
-                                                    color = Color(0xFF626262),
-                                                    maxLines = 1,
-                                                    overflow = TextOverflow.Ellipsis,
-                                                    textAlign = TextAlign.Start,
-                                                    modifier = Modifier
-                                                        .width(objetoAdaptardor.ajustarAncho(260))
-                                                )
-
-                                                // Telefono
-                                                Text(datosCliente.Telefonos
-                                                    ,fontFamily = fontAksharPrincipal,
-                                                    fontWeight =    FontWeight.SemiBold,
-                                                    fontSize =  obtenerEstiloBody(),
-                                                    color = Color(0xFF626262),
-                                                    maxLines = 1,
-                                                    overflow = TextOverflow.Ellipsis,
-                                                    textAlign = TextAlign.Start,
-                                                    modifier = Modifier
-                                                        .width(objetoAdaptardor.ajustarAncho(260))
-                                                )
-
-                                                // Correo
-                                                Text(datosCliente.correo
-                                                    ,fontFamily = fontAksharPrincipal,
-                                                    fontWeight =    FontWeight.SemiBold,
-                                                    fontSize =  obtenerEstiloBody(),
-                                                    color = Color(0xFF626262),
-                                                    maxLines = 1,
-                                                    overflow = TextOverflow.Ellipsis,
-                                                    textAlign = TextAlign.Start,
-                                                    modifier = Modifier
-                                                        .height(objetoAdaptardor.ajustarAltura(23))
-                                                        .width(objetoAdaptardor.ajustarAncho(260))
-                                                )
-                                                // Diredcion
-                                                Text(datosCliente.Direccion
-                                                    ,fontFamily = fontAksharPrincipal,
-                                                    fontWeight =    FontWeight.SemiBold,
-                                                    fontSize =  obtenerEstiloBody(),
-                                                    color = Color(0xFF626262),
-                                                    maxLines = 1,
-                                                    overflow = TextOverflow.Ellipsis,
-                                                    textAlign = TextAlign.Start,
-                                                    modifier = Modifier
-                                                        .height(objetoAdaptardor.ajustarAltura(23))
-                                                        .width(objetoAdaptardor.ajustarAncho(260))
-                                                )
-                                            }
-
-                                            // Opciones
-                                            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center){
-
-                                                IconButton(
-                                                    onClick = {
-
-                                                    }
-                                                ) {
-                                                    Icon(
-                                                        imageVector = Icons.Filled.MoreHoriz,
-                                                        contentDescription = "Icono mostrar opciones clientes",
-                                                        tint = Color.DarkGray,
-                                                        modifier = Modifier.size(objetoAdaptardor.ajustarAltura(50))
-                                                    )
-                                                }
-                                            }
-                                        }
-
-                                    }
-                                }
-
-                                // Muestra el indicador de carga al final de la lista mientras se cargan nuevos elementos
-                                if (isCargandoClientes) {
-                                    item {
-                                        CircularProgressIndicator(
-                                            color = Color(0xFF244BC0),
-                                            modifier = Modifier
-                                                .size(objetoAdaptardor.ajustarAltura(30))
-                                                .padding(2.dp)
                                         )
                                     }
-                                }
-                                item { Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(4))) }
 
+                                    // Muestra el indicador de carga al final de la lista mientras se cargan nuevos elementos
+                                    if (isCargandoClientes) {
+                                        item {
+                                            CircularProgressIndicator(
+                                                color = Color(0xFF244BC0),
+                                                modifier = Modifier
+                                                    .size(objetoAdaptardor.ajustarAltura(60))
+                                                    .padding(4.dp)
+                                            )
+                                        }
+                                    }
+                                    item { Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(4))) }
+
+                                }
                             }
                         }
-
-                        Button(
-                            onClick = {
-                                iniciarMenuCrearExpress= false
-                            },
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = Color.Red, // Color de fondo del botón
-                                contentColor = Color.White,
-                                disabledContainerColor = Color.Red,
-                                disabledContentColor = Color.White
-                            )
-                        ) {
-                            Text(
-                                "Salir",
-                                fontFamily = fontAksharPrincipal,
-                                fontWeight = FontWeight.Medium,
-                                fontSize = obtenerEstiloBody(),
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                                textAlign = TextAlign.Center,
-                                color = Color.White
-                            )
-                        }
-
                     }
                 }
             }
         }
-
     }
 
     if(iniciarMenuAgregarSubCuenta) {
@@ -3091,6 +3264,145 @@ internal fun BxContendorDatosMesa(
 
     }
 }
+
+@Composable
+fun BxContenerdorCliente(
+    datosCliente: Cliente,
+    onClick: (Mesa)-> Unit,
+    iconOnClick: (Boolean)-> Unit
+
+){
+    val configuration = LocalConfiguration.current
+    val dpAnchoPantalla = configuration.screenWidthDp
+    val dpAltoPantalla = configuration.screenHeightDp
+    val dpFontPantalla= configuration.fontScale
+    val objetoAdaptardor= FuncionesParaAdaptarContenidoCompact(dpAltoPantalla, dpAnchoPantalla, dpFontPantalla, isPantallaHorizontal = true)
+    val fontAksharPrincipal = FontFamily(Font(R.font.akshar_medium))
+    Card(
+        modifier = Modifier
+            .wrapContentHeight()
+            .clickable {
+                val mesaActual=Mesa(
+                    nombre =datosCliente.codigo,
+                    salon = "EXPRESS",
+                    clienteId = datosCliente.codigo
+                )
+                onClick(mesaActual)
+            }
+            .width(objetoAdaptardor.ajustarAncho(370))
+            .shadow(
+                elevation = objetoAdaptardor.ajustarAltura(7),
+                shape = RoundedCornerShape(objetoAdaptardor.ajustarAltura(20))
+            ),
+        shape = RoundedCornerShape(objetoAdaptardor.ajustarAltura(20)),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFF244BC0))
+    ) {
+        Row (
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically
+        ){
+            Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(20)))
+            Box(modifier = Modifier
+                .wrapContentSize()
+                .background(Color.White)
+            ){
+                Row (
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically
+                ){
+                    Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(8)))
+                    Column {
+                        Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(2)))
+
+                        // Codigo Cliente
+                        Text(text = "#"+datosCliente.codigo,
+                            fontFamily = fontAksharPrincipal,
+                            fontWeight =    FontWeight.SemiBold,
+                            fontSize =  obtenerEstiloBody(),
+                            color = Color.Black,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            textAlign = TextAlign.Start,
+                            modifier = Modifier
+                                .width(objetoAdaptardor.ajustarAncho(260))
+                        )
+                        // Nombre Juridico
+                        Text(datosCliente.nombreJuridico
+                            ,fontFamily = fontAksharPrincipal,
+                            fontWeight =    FontWeight.SemiBold,
+                            fontSize =  obtenerEstiloBody(),
+                            color = Color(0xFF626262),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            textAlign = TextAlign.Start,
+                            modifier = Modifier
+                                .width(objetoAdaptardor.ajustarAncho(260))
+                        )
+
+                        // Telefono
+                        Text(datosCliente.Telefonos
+                            ,fontFamily = fontAksharPrincipal,
+                            fontWeight =    FontWeight.SemiBold,
+                            fontSize =  obtenerEstiloBody(),
+                            color = Color(0xFF626262),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            textAlign = TextAlign.Start,
+                            modifier = Modifier
+                                .width(objetoAdaptardor.ajustarAncho(260))
+                        )
+
+                        // Correo
+                        Text(datosCliente.correo
+                            ,fontFamily = fontAksharPrincipal,
+                            fontWeight =    FontWeight.SemiBold,
+                            fontSize =  obtenerEstiloBody(),
+                            color = Color(0xFF626262),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            textAlign = TextAlign.Start,
+                            modifier = Modifier
+                                .width(objetoAdaptardor.ajustarAncho(260))
+                        )
+                        // Diredcion
+                        Text(datosCliente.Direccion
+                            ,fontFamily = fontAksharPrincipal,
+                            fontWeight =    FontWeight.SemiBold,
+                            fontSize =  obtenerEstiloBody(),
+                            color = Color(0xFF626262),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            textAlign = TextAlign.Start,
+                            modifier = Modifier
+                                .width(objetoAdaptardor.ajustarAncho(260))
+                        )
+                    }
+                    Box(
+                        modifier = Modifier
+                            .background(Color.White)
+                            .fillMaxWidth(),
+                        contentAlignment = Alignment.Center
+                    ){
+
+                        IconButton(
+                            onClick = {
+                                iconOnClick(true)
+                            }
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.MoreHoriz,
+                                contentDescription = "Icono mostrar opciones clientes",
+                                tint = Color.DarkGray,
+                                modifier = Modifier.size(objetoAdaptardor.ajustarAltura(50))
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
 
 
 @Composable
