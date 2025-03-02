@@ -680,7 +680,7 @@ fun IniciarInterfazInicioSesionCompact(
                                         }
                                     }
                                 }
-                                else if(clientePassword.length<= 4){
+                                else if(clientePassword.length< 4){
                                     errorResultadoApi=true
                                     if (!snackbarVisible) {
                                         coroutineScope.launch {
@@ -786,7 +786,7 @@ fun IniciarInterfazInicioSesionCompact(
                                     }
                                 }
                             }
-                            else if(clientePassword.length<= 4){
+                            else if(clientePassword.length< 4){
                                 errorResultadoApi=true
                                 if (!snackbarVisible) {
                                     coroutineScope.launch {
