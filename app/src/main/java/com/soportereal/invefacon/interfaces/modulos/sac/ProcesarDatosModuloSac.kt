@@ -1,7 +1,6 @@
 package com.soportereal.invefacon.interfaces.modulos.sac
 
 import com.soportereal.invefacon.funciones_de_interfaces.FuncionesHttp
-import com.soportereal.invefacon.interfaces.modulos.clientes.Cliente
 import okhttp3.MultipartBody
 import org.json.JSONArray
 import org.json.JSONObject
