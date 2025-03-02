@@ -1,6 +1,7 @@
 package com.soportereal.invefacon.interfaces.modulos.sac
 
 import com.soportereal.invefacon.funciones_de_interfaces.FuncionesHttp
+import com.soportereal.invefacon.interfaces.modulos.clientes.Cliente
 import okhttp3.MultipartBody
 import org.json.JSONArray
 import org.json.JSONObject
@@ -69,9 +70,10 @@ class ProcesarDatosModuloSac(apiToken: String){
         return objetoFuncionesHttpInvefacon.metodoPost(formBody = formBody, apiDirectorio = "sacMovil/vaciarMesa.php")
     }
 
-    suspend fun pedirCuenta(nombreMesa: String):JSONObject?{
+    suspend fun pedirCuenta(nombreMesa: String, subCuenta: String):JSONObject?{
         val formBody = MultipartBody.Builder().setType(MultipartBody.FORM)
             .addFormDataPart("Mesa", nombreMesa)
+            .addFormDataPart("SubCuenta", subCuenta)
             .build()
         return objetoFuncionesHttpInvefacon.metodoPost(formBody = formBody, apiDirectorio = "sacMovil/pedirCuenta.php")
     }
@@ -101,13 +103,15 @@ class ProcesarDatosModuloSac(apiToken: String){
         mesa: String,
         mesaDestino: String,
         password: String,
-        codUsuario: String
+        codUsuario: String,
+        idCliente: String
     ):JSONObject?{
         val formBody = MultipartBody.Builder().setType(MultipartBody.FORM)
             .addFormDataPart("MesaActual", mesa)
             .addFormDataPart("MesaDestino", mesaDestino)
             .addFormDataPart("password", password)
             .addFormDataPart("cod_usuario", codUsuario)
+            .addFormDataPart("IdCliente", idCliente)
             .build()
         return objetoFuncionesHttpInvefacon.metodoPost(formBody = formBody, apiDirectorio = "sacMovil/MoverMesaCompleta.php")
     }
@@ -121,7 +125,8 @@ class ProcesarDatosModuloSac(apiToken: String){
         subCuentaDestino: String,
         codUsuario: String,
         linea : String,
-        isCombo: Int
+        isCombo: Int,
+        idCliente: String
     ):JSONObject?{
         val formBody = MultipartBody.Builder().setType(MultipartBody.FORM)
             .addFormDataPart("MesaActual", mesa)
@@ -133,6 +138,7 @@ class ProcesarDatosModuloSac(apiToken: String){
             .addFormDataPart("Cod_Usuario", codUsuario)
             .addFormDataPart("linea", linea)
             .addFormDataPart("isCombo", isCombo.toString())
+            .addFormDataPart("IdCliente", idCliente)
             .build()
         return objetoFuncionesHttpInvefacon.metodoPost(formBody = formBody, apiDirectorio = "sacMovil/moverArticulo.php")
     }
@@ -171,7 +177,8 @@ data class ArticuloSacGrupo(
     var codigo: String= "",
     var cantidad: Int = 0,
     var precio: Double = 0.00,
-    var imp1: String = ""
+    var imp1: String = "",
+    var isOpcional : Int = 0
 )
 
 data class FamiliaSac(

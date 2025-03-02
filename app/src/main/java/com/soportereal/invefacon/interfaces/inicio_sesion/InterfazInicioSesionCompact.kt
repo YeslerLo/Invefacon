@@ -103,7 +103,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.util.regex.Pattern
 
@@ -305,7 +304,6 @@ fun IniciarInterfazInicioSesionCompact(
                             //Se pone null para iniciar el circulo de carga
                             existenCorreos=null
                             apiConsultaActual= cortinaConsultaApi.launch{
-                                delay(1000)
                                 val resultApi= objetoProcesamientoDatosApi.obtenerNombresEmpresasPorCorreo(usuarioCorreoEmpresa) // Datos retornados del API
 
                                 //Si la respuesta del api es null es porque no hay conexion a Internet o hubo problemas con la conexion al servidor
@@ -681,6 +679,19 @@ fun IniciarInterfazInicioSesionCompact(
                                             snackbarVisible=false
                                         }
                                     }
+                                }
+                                else if(clientePassword.length<= 4){
+                                    errorResultadoApi=true
+                                    if (!snackbarVisible) {
+                                        coroutineScope.launch {
+                                            snackbarVisible=true
+                                            snackbarHostState.showSnackbar(
+                                                message = "Error: Ingrese una contraseña correcta."
+                                            )
+                                            snackbarHostState.currentSnackbarData?.dismiss()
+                                            snackbarVisible=false
+                                        }
+                                    }
                                 }else{
                                     isBtIniciarSesionActivo.value= false
                                 }
@@ -707,7 +718,6 @@ fun IniciarInterfazInicioSesionCompact(
                                         }
                                     }
                                 }else if (result.getString("status")=="error"){
-                                    delay(1000)
                                     errorResultadoApi=true
                                     isBtIniciarSesionActivo.value= true
                                     if (!snackbarVisible) {
@@ -727,7 +737,6 @@ fun IniciarInterfazInicioSesionCompact(
                                     nombreEmpresa= datos.getString("Empresa")
                                     apiToken= datos.getString("Token")
                                     codUsuario= datos.getString("Codigo")
-                                    delay(1000)
                                     isInicioSesionAprobado=true
 
                                 }
@@ -771,6 +780,19 @@ fun IniciarInterfazInicioSesionCompact(
                                         snackbarVisible=true
                                         snackbarHostState.showSnackbar(
                                             message = "Error: seleccione una empresa"
+                                        )
+                                        snackbarHostState.currentSnackbarData?.dismiss()
+                                        snackbarVisible=false
+                                    }
+                                }
+                            }
+                            else if(clientePassword.length<= 4){
+                                errorResultadoApi=true
+                                if (!snackbarVisible) {
+                                    coroutineScope.launch {
+                                        snackbarVisible=true
+                                        snackbarHostState.showSnackbar(
+                                            message = "Error: Ingrese una contraseña correcta."
                                         )
                                         snackbarHostState.currentSnackbarData?.dismiss()
                                         snackbarVisible=false

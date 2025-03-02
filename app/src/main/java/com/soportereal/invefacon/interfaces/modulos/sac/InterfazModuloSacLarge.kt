@@ -156,14 +156,14 @@ fun InterfazModuloSacLarge(
     var isCargandoMesas by remember { mutableStateOf(true) }
     var iniciarMenuMesaComandada by remember { mutableStateOf(false) }
     var mesaActual by remember { mutableStateOf(Mesa()) }
-    var subCuentaSeleccionada by remember { mutableStateOf("") }
+    var subCuentaSeleccionada by remember { mutableStateOf("") }  // manejar el estado se las subcuentas comandadas
     var subCuentaDestinoArticulo by remember { mutableStateOf("") }
     val opcionesSubCuentas: MutableState<LinkedHashMap<String, String>> = remember { mutableStateOf(LinkedHashMap()) }
+    var opcionesSubCuentasComandadas by remember { mutableStateOf<List<String>>(emptyList()) }
     val opcionesSubCuentasDestino: MutableState<LinkedHashMap<String, String>> = remember { mutableStateOf(LinkedHashMap()) }
     val opcionesMesas: MutableState<LinkedHashMap<String, String>> = remember { mutableStateOf(LinkedHashMap()) }
     var mesaDestino by remember { mutableStateOf("") }
     val articulosComandados = remember { mutableStateListOf<ArticuloComandado>() }
-    val lazyStateArticulosSeleccionados= rememberLazyListState()
     var iniciarPantallaSacComanda by remember { mutableStateOf(false) }
     var montoTotalComandado by remember { mutableStateOf("\u20A1 "+"0.00") }
     var iniciarCalculoMontos by remember { mutableStateOf(false) }
@@ -211,14 +211,16 @@ fun InterfazModuloSacLarge(
     var correoCliente by remember { mutableStateOf("") }
     var direccionCliente by remember { mutableStateOf("") }
     var agregarCliente by remember { mutableStateOf(false) }
-
+    var isSubCuentaPedida by remember { mutableStateOf(true) }
 
     LaunchedEffect(iniciarPantallaSacComanda) {
         if (iniciarPantallaSacComanda){
             objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(true)
             delay(500)
             navController.navigate(
-                RutasPatallas.SacComanda.ruta+"/"+mesaActual.nombre+"/"+mesaActual.salon+"/"+token+"/"+nombreEmpresa+"/"+codUsuario+"/"+mesaActual.estado+"/"+mesaActual.clienteId
+                RutasPatallas.SacComanda.ruta+"/"+mesaActual.nombre+"/"+mesaActual.salon+
+                        "/"+token+"/"+nombreEmpresa+"/"+codUsuario+"/"+mesaActual.estado+"/"
+                        +mesaActual.clienteId+"/"+ subCuentaSeleccionada.ifEmpty { "JUNTOS" }
             ){
                 restoreState= true
                 launchSingleTop=true
@@ -232,8 +234,7 @@ fun InterfazModuloSacLarge(
                 mostrarMensajeError("Complete los campos")
             }else{
                 objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(true)
-                delay(500)
-                val result = objectoProcesadorDatosApi.crearNuevaMesa(nombreNuevaMesa, nombreSalonNuevaMesa)
+                val result = objectoProcesadorDatosApi.crearNuevaMesa(nombreNuevaMesa.uppercase(), nombreSalonNuevaMesa.uppercase())
                 if (result!=null){
                     estadoRespuestaApi.cambiarEstadoRespuestaApi(mostrarRespuesta = true, datosRespuesta = result)
                 }
@@ -366,12 +367,19 @@ fun InterfazModuloSacLarge(
                     val subCuentas = data.getJSONArray("Subcuentas")
                     val datosLineas = data.getJSONArray("datosLineas")
                     opcionesSubCuentas.value.clear()
+                    opcionesSubCuentasComandadas = emptyList()
 
                     for (i in 0 until subCuentas.length()) {
-                        opcionesSubCuentas.value[subCuentas[i].toString()] = subCuentas[i].toString()
+                        val datosSubCuenta = subCuentas.getJSONObject(i)
+                        val nombre= datosSubCuenta.getString("nombre")
+                        val estado= datosSubCuenta.getInt("estado")
+                        if(estado==2){
+                            opcionesSubCuentasComandadas = opcionesSubCuentasComandadas + nombre
+                        }
+                        opcionesSubCuentas.value[nombre] = nombre
                     }
 
-                    subCuentaSeleccionada= subCuentas[0].toString()
+                    subCuentaSeleccionada= subCuentas.getJSONObject(0).getString("nombre")
                     articulosComandados.clear()
 
                     for (i in 0 until datosLineas.length()) {
@@ -481,7 +489,6 @@ fun InterfazModuloSacLarge(
                 }
             }
             actualizarListaMesas= true
-            delay(100)
             eliminarArticulo= false
             agregarArticulo= false
         }
@@ -508,29 +515,33 @@ fun InterfazModuloSacLarge(
                     if (result.getString("status")=="ok"){
                         iniciarMenuMesaComandada=false
                         actualizarListaMesas= true
+                        iniciarMenuQuitarMesa=false
+                        codUsuarioIngresado=codUsuario
+                        passwordIngresada=""
+                    }else{
+                        objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
                     }
                 }
-                iniciarMenuQuitarMesa=false
-                codUsuarioIngresado=codUsuario
-                passwordIngresada=""
-                objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
                 quitarMesa= false
             }
-
-
         }
     }
 
     LaunchedEffect(pedirCuenta) {
         if(pedirCuenta){
             objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(true)
-            val result = objectoProcesadorDatosApi.pedirCuenta(mesaActual.nombre)
+            val result = objectoProcesadorDatosApi.pedirCuenta(mesaActual.nombre, subCuentaSeleccionada)
             if (result!=null){
                 estadoRespuestaApi.cambiarEstadoRespuestaApi(mostrarRespuesta = true, datosRespuesta = result)
+                if (result.getString("status")=="ok" && result.getString("code")=="200"){
+                    iniciarMenuMesaComandada = false
+                    actualizarListaMesas= true
+                }else{
+                    objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
+                }
             }
-            actualizarListaMesas= true
-            pedirCuenta= false
         }
+        pedirCuenta= false
     }
 
     LaunchedEffect(actualizarSubCuentasYMesas, mesaDestino) {
@@ -552,8 +563,6 @@ fun InterfazModuloSacLarge(
                         mesaDestino = opcionesMesas.value[mesaActual.nombre].toString()
                     }
                 }
-
-
             }
             subCuentaDestinoArticulo=""
             opcionesSubCuentasDestino.value.clear()
@@ -594,7 +603,8 @@ fun InterfazModuloSacLarge(
                 subCuentaDestino = subCuentaDestinoArticulo,
                 codUsuario = codUsuario,
                 linea = articuloActualSeleccionado.Linea,
-                isCombo = articuloActualSeleccionado.isCombo
+                isCombo = articuloActualSeleccionado.isCombo,
+                idCliente = mesaActual.clienteId
             )
             if (result!=null){
                 estadoRespuestaApi.cambiarEstadoRespuestaApi(mostrarRespuesta = true, datosRespuesta = result)
@@ -614,16 +624,29 @@ fun InterfazModuloSacLarge(
                 moverMesa=false
             }else{
                 objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(true)
-                val result = objectoProcesadorDatosApi.moverMesa(mesa = mesaActual.nombre, mesaDestino = mesaDestino, password = passwordIngresada, codUsuario = codUsuarioIngresado)
+                val result = objectoProcesadorDatosApi.moverMesa(
+                    mesa = mesaActual.nombre,
+                    mesaDestino = mesaDestino,
+                    password = passwordIngresada,
+                    codUsuario = codUsuarioIngresado,
+                    idCliente = mesaActual.clienteId
+                )
                 if (result!= null){
                     estadoRespuestaApi.cambiarEstadoRespuestaApi(mostrarRespuesta = true, datosRespuesta = result)
+                    if (result.getString("status")=="ok"){
+                        actualizarListaMesas = true
+                        iniciarMenuMesaComandada = false
+                        iniciarMenuMoverMesa= false
+                        mesaDestino=""
+                        codUsuarioIngresado=codUsuario
+                        passwordIngresada=""
+                        moverMesa= false
+                    }else{
+                        objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
+                    }
+
                 }
-                iniciarMenuMoverMesa= false
-                mesaDestino=""
-                codUsuarioIngresado=codUsuario
-                passwordIngresada=""
-                objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
-                moverMesa= false
+
             }
 
 
@@ -643,7 +666,7 @@ fun InterfazModuloSacLarge(
                 mostrarMensajeError("Ingrese el nombre de la Persona")
             }else{
                 mesaActual=Mesa(
-                    nombre =nombreNuevaPersona,
+                    nombre =nombreNuevaPersona.uppercase(),
                     salon = "PERSONA"
                 )
                 iniciarPantallaSacComanda = true
@@ -777,14 +800,14 @@ fun InterfazModuloSacLarge(
         agregarCliente=false
     }
 
-
     @Composable
     fun AgregarBt(
         text: String,
         color: Long,
         alto: Int = 35,
         onClick: (Boolean)->Unit,
-        quitarPadInterno: Boolean = false
+        quitarPadInterno: Boolean = false,
+        isActivo: Boolean = true
     ){
         Button(
             modifier = if (quitarPadInterno) {
@@ -796,11 +819,12 @@ fun InterfazModuloSacLarge(
                 onClick(true)
             },
             colors = ButtonDefaults.buttonColors(
-                containerColor =Color(color), // Color de fondo del botón
+                containerColor =Color(color),
                 contentColor = Color.White,
-                disabledContainerColor = Color.Red,
+                disabledContainerColor = Color.White,
                 disabledContentColor = Color.White
-            ),contentPadding = if (quitarPadInterno) PaddingValues(0.dp) else PaddingValues(8.dp)
+            ),contentPadding = if (quitarPadInterno) PaddingValues(0.dp) else PaddingValues(8.dp),
+            enabled = isActivo
         ) {
             Box(
                 contentAlignment = Alignment.Center
@@ -810,7 +834,6 @@ fun InterfazModuloSacLarge(
                     fontFamily = fontAksharPrincipal,
                     fontWeight = FontWeight.Medium,
                     fontSize = obtenerEstiloLabel(),
-                    maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     textAlign = TextAlign.Center,
                     color = Color.White
@@ -828,7 +851,7 @@ fun InterfazModuloSacLarge(
         Box(
             modifier = Modifier
                 .background(Color.White)
-                .width(objetoAdaptardor.ajustarAncho(365)),
+                .widthIn(max =objetoAdaptardor.ajustarAncho(365)),
             contentAlignment = Alignment.CenterEnd
         ){
             Column(
@@ -841,7 +864,8 @@ fun InterfazModuloSacLarge(
                     Box(
                         modifier = Modifier
                             .height(objetoAdaptardor.ajustarAltura(50))
-                            .width(objetoAdaptardor.ajustarAncho(50)),
+                            .width(objetoAdaptardor.ajustarAncho(50))
+                            .padding(2.dp),
                         contentAlignment = Alignment.Center
                     ) {
                         SubcomposeAsyncImage(
@@ -880,63 +904,79 @@ fun InterfazModuloSacLarge(
                         modifier = Modifier.width(objetoAdaptardor.ajustarAncho(165)).padding(2.dp)
                     )
                     Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(4)))
-                    Box{
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            IconButton(
-                                onClick = {
-                                    articuloActualSeleccionado= articuloComandado
-                                    iniciarVentanaEliminarArticulo= true
+                    if (isSubCuentaPedida){
+                        Text(
+                            "Cantidad: "+articuloComandado.Cantidad.toString(),
+                            fontFamily = fontAksharPrincipal,
+                            fontWeight = FontWeight.Medium,
+                            fontSize = obtenerEstiloBody(),
+                            overflow = TextOverflow.Ellipsis,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    }else{
+                        IconButton(
+                            onClick = {
+                                if(articuloComandado.Cantidad>0 && !isSubCuentaPedida){
+                                    articuloActualSeleccionado = articuloComandado
+                                    iniciarVentanaEliminarArticulo = true
+                                }
+                            },
+                            modifier = Modifier.size(objetoAdaptardor.ajustarAltura(22)),
+                            enabled = !isSubCuentaPedida
+                        ) {
+                            Icon(
+                                imageVector = if(articuloComandado.Cantidad==1 && !isSubCuentaPedida) Icons.Filled.Delete else Icons.Filled.RemoveCircle,
+                                contentDescription = "Basurero",
+                                tint = when {
+                                    isSubCuentaPedida -> Color.White
+                                    articuloComandado.Cantidad == 1 -> Color.Red
+                                    else -> Color.Black
                                 },
                                 modifier = Modifier.size(objetoAdaptardor.ajustarAltura(22))
-                            ) {
-                                Icon(
-                                    imageVector = if(articuloComandado.Cantidad==1) Icons.Filled.Delete else Icons.Filled.RemoveCircle,
-                                    contentDescription = "Basurero",
-                                    tint = if(articuloComandado.Cantidad==1)Color.Red else Color.Black,
-                                    modifier = Modifier.size(objetoAdaptardor.ajustarAltura(22))
-                                )
-                            }
-
-                            Text(
-                                articuloComandado.Cantidad.toString(),
-                                fontFamily = fontAksharPrincipal,
-                                fontWeight = FontWeight.Medium,
-                                fontSize = obtenerEstiloBody(),
-                                overflow = TextOverflow.Ellipsis,
-                                textAlign = TextAlign.Center,
-                                modifier = Modifier.width(objetoAdaptardor.ajustarAncho(35)).padding(2.dp)
                             )
-                            IconButton(
-                                onClick = {
-                                    if(articuloComandado.articulos.isEmpty()){
-                                        articuloActualSeleccionado= articuloComandado
-                                        iniciarVentanaAgregarArticulo = true
-                                    }
-                                },
-                                modifier = Modifier.size(objetoAdaptardor.ajustarAltura(22))
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Filled.AddCircle,
-                                    contentDescription = "Agregar Articulo",
-                                    tint =  if(articuloComandado.articulos.isEmpty()) Color.Black else Color.White,
-                                    modifier = Modifier.size(objetoAdaptardor.ajustarAltura(22))
-                                )
-                            }
                         }
+                        Text(
+                            articuloComandado.Cantidad.toString(),
+                            fontFamily = fontAksharPrincipal,
+                            fontWeight = FontWeight.Medium,
+                            fontSize = obtenerEstiloBody(),
+                            overflow = TextOverflow.Ellipsis,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.width(objetoAdaptardor.ajustarAncho(35)).padding(2.dp)
+                        )
+                        IconButton(
+                            onClick = {
+                                if(articuloComandado.articulos.isEmpty() && !isSubCuentaPedida){
+                                    articuloActualSeleccionado= articuloComandado
+                                    iniciarVentanaAgregarArticulo = true
+                                }
+                            },
+                            modifier = Modifier.size(objetoAdaptardor.ajustarAltura(22)),
+                            enabled =  !isSubCuentaPedida
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.AddCircle,
+                                contentDescription = "Agregar Articulo",
+                                tint =  if(articuloComandado.articulos.isEmpty() && !isSubCuentaPedida) Color.Black else Color.White,
+                                modifier = Modifier.size(objetoAdaptardor.ajustarAltura(22))
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(6)))
+                        AgregarBt(
+                            text = "Mover",
+                            color = 0xFF244BC0,
+                            onClick = {
+                                articuloActualSeleccionado= articuloComandado
+                                iniciarMenuMoverArticulo = true
+                                mesaDestino= mesaActual.nombre
+                                actualizarSubCuentasYMesas = true
+                            },
+                            quitarPadInterno = true,
+                            isActivo = !isSubCuentaPedida
+                        )
+                        Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(6)))
                     }
-                    Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(6)))
-
-                    AgregarBt(
-                        text = "Mover",
-                        color = 0xFF244BC0,
-                        onClick = {
-                            articuloActualSeleccionado= articuloComandado
-                            iniciarMenuMoverArticulo = true
-                            actualizarSubCuentasYMesas = true
-                        },
-                        quitarPadInterno = true
-                    )
-                    Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(6)))
                 }
                 HorizontalDivider()
                 for (i in 0 until articuloComandado.articulos.size){
@@ -982,7 +1022,7 @@ fun InterfazModuloSacLarge(
                 Row {
                     Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(6)))
                     Text(
-                        "\u20A1 "+String.format(Locale.US, "%,.2f", articuloComandado.montoTotal.toString().replace(",", "").toDouble()),
+                        "Total artículo: \u20A1 "+String.format(Locale.US, "%,.2f", articuloComandado.montoTotal.toString().replace(",", "").toDouble()),
                         fontFamily = fontAksharPrincipal,
                         fontWeight = FontWeight.Light,
                         fontSize = obtenerEstiloBody(),
@@ -1276,18 +1316,16 @@ fun InterfazModuloSacLarge(
                                     mesaSeleccionada = {datosMesaActual-> mesaActual= datosMesaActual },
                                     token = token,
                                     nombreEmpresa = nombreEmpresa,
-                                    codUsuario = codUsuario
+                                    codUsuario = codUsuario,
+                                    subCuentaSeleccionada = subCuentaSeleccionada
                                 )
                                 Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(12)))
                             }
-
                         }
                     }
                     item { Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(16)))}
                 }
             }
-
-
         }
 
         Card(
@@ -1738,27 +1776,37 @@ fun InterfazModuloSacLarge(
                                         tomarAnchoMaximo = false,
                                         medidaAncho = 80
                                     )
-                                    Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(4)))
-                                    AgregarBt(
-                                        text = "Quitar mesa",
-                                        color = 0xFFFF5722,
-                                        onClick = {
-                                            iniciarMenuQuitarMesa= true
-                                        }
-                                    )
-                                    Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(4)))
-                                    AgregarBt(
-                                        text = "Mover Mesa",
-                                        color = 0xFF244BC0,
-                                        onClick = {
-                                            iniciarMenuMoverMesa = true
-                                            actualizarSubCuentasYMesas = true
-                                        }
-                                    )
+                                    if(isSubCuentaPedida){
+                                        Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(4)))
+                                        AgregarBt(
+                                            text = "Reactivar",
+                                            color = 0xFF16417C,
+                                            onClick = {
 
-                                    Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(4)))
+                                            }
+                                        )
+                                    }
+                                    if(!isSubCuentaPedida){
+                                        Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(4)))
+                                        AgregarBt(
+                                            text = "Quitar mesa",
+                                            color = 0xFFFF5722,
+                                            onClick = {
+                                                iniciarMenuQuitarMesa= true
+                                            }
+                                        )
+                                        Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(4)))
+                                        AgregarBt(
+                                            text = "Mover Mesa",
+                                            color = 0xFF244BC0,
+                                            onClick = {
+                                                iniciarMenuMoverMesa = true
+                                                actualizarSubCuentasYMesas = true
+                                            }
+                                        )
 
-
+                                        Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(4)))
+                                    }
                                 }
                             }
                             Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(16)))
@@ -1773,12 +1821,17 @@ fun InterfazModuloSacLarge(
                                         .wrapContentWidth(),
                                     contentAlignment = Alignment.Center
                                 ){
-                                    LazyColumn(
-                                        state = lazyStateArticulosSeleccionados,
-                                    ) {
+                                    LazyColumn{
                                         items(articulosComandados){ producto->
                                             if (producto.SubCuenta.uppercase()==subCuentaSeleccionada.uppercase()){
+                                                val existeCuentaInLista = opcionesSubCuentasComandadas.find { it==subCuentaSeleccionada}
+                                                isSubCuentaPedida = existeCuentaInLista!=null
                                                 AgregarBxContenedorArticulosComandados(producto)
+                                                HorizontalDivider(
+                                                    thickness = 2.dp,
+                                                    color = Color.Black,
+                                                    modifier = Modifier.width(objetoAdaptardor.ajustarAncho(365)).padding(2.dp)
+                                                )
                                             }
                                         }
                                     }
@@ -1829,25 +1882,26 @@ fun InterfazModuloSacLarge(
                                     horizontalAlignment = Alignment.CenterHorizontally,
                                     verticalArrangement = Arrangement.Center
                                 ){
-                                    AgregarBt(
-                                        text = "Pedir Cuenta",
-                                        color = 0xFF244BC0,
-                                        onClick = {
-                                            pedirCuenta= false
-                                            pedirCuenta= true
-                                        }
-                                    )
-                                    Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(4)))
-                                    AgregarBt(
-                                        text = "+10",
-                                        color = 0xFF244BC0,
-                                        onClick = {
-                                            aplicarImp2=true
-                                        }
-                                    )
+                                    if (!isSubCuentaPedida){
+                                        AgregarBt(
+                                            text = "Pedir Cuenta",
+                                            color = 0xFF16417C,
+                                            onClick = {
+                                                pedirCuenta= true
+                                            }
+                                        )
+                                        Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(4)))
+                                        AgregarBt(
+                                            text = "+10",
+                                            color = 0xFF244BC0,
+                                            onClick = {
+                                                aplicarImp2=true
+                                            }
+                                        )
 
-                                    Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(4)))
+                                        Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(4)))
 
+                                    }
                                     AgregarBt(
                                         text = "Agregar",
                                         color =  0xFF22B14C,
@@ -1855,6 +1909,7 @@ fun InterfazModuloSacLarge(
                                     )
 
                                     Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(4)))
+
 
                                     AgregarBt(
                                         text = "Salir",
@@ -2207,8 +2262,6 @@ fun InterfazModuloSacLarge(
                                             )
                                         }
                                     }
-
-
                                 }
                             }
 
@@ -2222,7 +2275,7 @@ fun InterfazModuloSacLarge(
                                         actualizarSubCuentasYMesas = true
                                         mesaDestino= nuevoValor
                                     },
-                                    valor = opcionesMesas.value[mesaDestino]?:"Seleccione un Mesa",
+                                    valor = opcionesMesas.value[mesaDestino]?: "Seleccione una mesa",
                                     isUltimo = true,
                                     tomarAnchoMaximo = false,
                                     medidaAncho = 100
@@ -2258,31 +2311,6 @@ fun InterfazModuloSacLarge(
                             Row {
                                 Button(
                                     onClick = {
-                                        moverArticulo= true
-                                    },
-                                    colors = ButtonDefaults.buttonColors(
-                                        containerColor = Color.Red, // Color de fondo del botón
-                                        contentColor = Color.White,
-                                        disabledContainerColor = Color.Red,
-                                        disabledContentColor = Color.White
-                                    )
-                                ) {
-                                    Text(
-                                        "Mover",
-                                        fontFamily = fontAksharPrincipal,
-                                        fontWeight = FontWeight.Medium,
-                                        fontSize = objetoAdaptardor.ajustarFont(15),
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis,
-                                        textAlign = TextAlign.Center,
-                                        color = Color.White
-                                    )
-                                }
-
-                                Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(8)))
-
-                                Button(
-                                    onClick = {
                                         iniciarMenuMoverArticulo= false
                                         cantidadArticulos= 1
                                     },
@@ -2304,13 +2332,36 @@ fun InterfazModuloSacLarge(
                                         color = Color.White
                                     )
                                 }
+
+                                Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(8)))
+
+                                Button(
+                                    onClick = {
+                                        moverArticulo= true
+                                    },
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = Color.Red, // Color de fondo del botón
+                                        contentColor = Color.White,
+                                        disabledContainerColor = Color.Red,
+                                        disabledContentColor = Color.White
+                                    )
+                                ) {
+                                    Text(
+                                        "Mover",
+                                        fontFamily = fontAksharPrincipal,
+                                        fontWeight = FontWeight.Medium,
+                                        fontSize = objetoAdaptardor.ajustarFont(15),
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis,
+                                        textAlign = TextAlign.Center,
+                                        color = Color.White
+                                    )
+                                }
                             }
                         }
-
                     }
                 }
             }
-
         }
     }
 
@@ -2399,33 +2450,6 @@ fun InterfazModuloSacLarge(
                         Row {
                             Button(
                                 onClick = {
-                                    moverMesa= true
-                                    iniciarMenuMoverMesa= false
-                                },
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = Color.Red, // Color de fondo del botón
-                                    contentColor = Color.White,
-                                    disabledContainerColor = Color.Red,
-                                    disabledContentColor = Color.White
-
-                                )
-                            ) {
-                                Text(
-                                    "Mover",
-                                    fontFamily = fontAksharPrincipal,
-                                    fontWeight = FontWeight.Medium,
-                                    fontSize = objetoAdaptardor.ajustarFont(15),
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis,
-                                    textAlign = TextAlign.Center,
-                                    color = Color.White
-                                )
-                            }
-
-                            Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(8)))
-
-                            Button(
-                                onClick = {
                                     codUsuarioIngresado=codUsuario
                                     passwordIngresada=""
                                     iniciarMenuMoverMesa= false
@@ -2448,8 +2472,32 @@ fun InterfazModuloSacLarge(
                                     color = Color.White
                                 )
                             }
-                        }
+                            Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(8)))
+                            Button(
+                                onClick = {
+                                    moverMesa= true
+                                    iniciarMenuMoverMesa= false
+                                },
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = Color.Red, // Color de fondo del botón
+                                    contentColor = Color.White,
+                                    disabledContainerColor = Color.Red,
+                                    disabledContentColor = Color.White
 
+                                )
+                            ) {
+                                Text(
+                                    "Mover",
+                                    fontFamily = fontAksharPrincipal,
+                                    fontWeight = FontWeight.Medium,
+                                    fontSize = objetoAdaptardor.ajustarFont(15),
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    textAlign = TextAlign.Center,
+                                    color = Color.White
+                                )
+                            }
+                        }
                     }
                 }
             }
@@ -2928,8 +2976,8 @@ fun InterfazModuloSacLarge(
                             )
                             estadoRespuestaApi.cambiarEstadoRespuestaApi(mostrarRespuesta = true, datosRespuesta = jsonObject)
                         }else{
-                            opcionesSubCuentasDestino.value[nombreNuevaSubCuenta]=nombreNuevaSubCuenta
-                            subCuentaDestinoArticulo= nombreNuevaSubCuenta
+                            opcionesSubCuentasDestino.value[nombreNuevaSubCuenta.uppercase()]=nombreNuevaSubCuenta.uppercase()
+                            subCuentaDestinoArticulo= nombreNuevaSubCuenta.uppercase()
                             val jsonObject = JSONObject("""
                                 {
                                     "code": 200,
@@ -3115,7 +3163,8 @@ internal fun BxContendorDatosMesa(
     mesaSeleccionada: (Mesa)->Unit,
     token : String,
     nombreEmpresa: String,
-    codUsuario: String
+    codUsuario: String,
+    subCuentaSeleccionada : String
 ){
     val configuration = LocalConfiguration.current
     val dpAnchoPantalla = configuration.screenWidthDp
@@ -3131,7 +3180,8 @@ internal fun BxContendorDatosMesa(
             iniciarMenuDetalleComanda(false)
             delay(500)
             navControllerPantallasModuloSac?.navigate(
-                RutasPatallas.SacComanda.ruta+"/"+datosMesa.nombre+"/"+datosMesa.salon+"/"+token+"/"+nombreEmpresa+"/"+codUsuario+"/"+datosMesa.estado+"/"+datosMesa.clienteId
+                RutasPatallas.SacComanda.ruta+"/"+datosMesa.nombre+"/"+datosMesa.salon+"/"+token+"/"
+                        +nombreEmpresa+"/"+codUsuario+"/"+datosMesa.estado+"/"+datosMesa.clienteId+"/"+ subCuentaSeleccionada.ifEmpty { "JUNTOS" }
             ){
                 restoreState= true
                 launchSingleTop=true
@@ -3409,5 +3459,5 @@ fun BxContenerdorCliente(
 @Preview(widthDp = 964, heightDp = 523)
 private fun Preview(){
     val nav = rememberNavController()
-    InterfazModuloSacLarge("", null, nav, "","")
+    InterfazModuloSacLarge("eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJDb2RpZ28iOiIwMDA1MCIsIk5vbWJyZSI6IllFU0xFUiBBRE1JTiIsIkVtYWlsIjoieWVzbGVybG9yaW9AZ21haWwuY29tIiwiUHVlcnRvIjoiODAxIiwiRW1wcmVzYSI6IlpHVnRiM0psYzNRPSIsIlNlcnZlcklwIjoiTVRreUxqRTJPQzQzTGpNNCIsInRpbWUiOiIyMDI1MDMwMTEwMDMyMCJ9.U3F_80TsKwjSps06XXayvmV8CaYsb4GjQ5KmQqTS7mo", null, nav, "demorest","00050")
 }

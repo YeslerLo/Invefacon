@@ -117,7 +117,8 @@ fun InterfazSacComandaLarge(
     codUsuario: String,
     salon: String,
     estadoMesa : String,
-    clienteId: String
+    clienteId: String,
+    subCuentaInicial: String
 ){
     systemUiController?.setStatusBarColor(Color(0xFF244BC0))
     systemUiController?.setNavigationBarColor(Color.Black)
@@ -142,7 +143,7 @@ fun InterfazSacComandaLarge(
     var isCargandoArticulos by remember { mutableStateOf(true) }
     val articulosSeleccionados = remember { mutableStateListOf<ArticulosSeleccionadosSac>() }
     val articulosComboSeleccionados = remember { mutableStateListOf<ArticuloSacGrupo>() }
-    var subCuentaSeleccionada by remember { mutableStateOf("") }
+    var subCuentaSeleccionada by remember { mutableStateOf(subCuentaInicial) }
     val opcionesSubCuentas: MutableState<LinkedHashMap<String, String>> = remember { mutableStateOf(LinkedHashMap()) }
     var nombreNuevaSubCuenta by remember { mutableStateOf("") }
     var iniciarMenuAgregarSubCuenta by remember { mutableStateOf(false) }
@@ -160,6 +161,7 @@ fun InterfazSacComandaLarge(
     var articuloActualSeleccionadoEdicion by remember { mutableStateOf(ArticulosSeleccionadosSac()) }
     val context = LocalContext.current
     val valorPrmImp2 by remember { mutableStateOf(obtenerParametro(context, "prmImp2")) }
+    var permitirRegresarPantalla by remember { mutableStateOf(false) }
 
     LaunchedEffect(actualizarMontos) {
         montoTotal= 0.00
@@ -193,6 +195,8 @@ fun InterfazSacComandaLarge(
                 }
                 listaFamiliasSac=listaFamilias
                 familiaActualSeleccionada= listaFamilias[0]
+            }else{
+                objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
             }
         }
 
@@ -205,7 +209,8 @@ fun InterfazSacComandaLarge(
                 for( i in 0 until subCuentas.length()){
                     opcionesSubCuentas.value[subCuentas.getString(i)] = subCuentas.getString(i)
                 }
-                subCuentaSeleccionada= opcionesSubCuentas.value.keys.first()
+            }else{
+                objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
             }
         }
     }
@@ -283,13 +288,15 @@ fun InterfazSacComandaLarge(
                                     .setScale(2, RoundingMode.DOWN)
                                     .toDouble()
                                 val imp13 = datosArticuloGrupo.getString("imp1")
+                                val isOpcional = if (cantidadArticulos==0) 1 else 0
 
                                 val articuloGrupo = ArticuloSacGrupo(
                                     codigo = codigo,
                                     nombre = nombreArticulo,
                                     nombreGrupo = nombreGrupo,
                                     precio = precio+impuestoServicioArticulosGrupo,
-                                    imp1 = imp13
+                                    imp1 = imp13,
+                                    isOpcional = isOpcional
                                 )
                                 listaArticulosGrupo.add(articuloGrupo)
                             }
@@ -313,6 +320,8 @@ fun InterfazSacComandaLarge(
                         )
                         listaArticulos.add(articulo)
                     }
+                }else{
+                    objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
                 }
             }
             listaArticulosActuales= listaArticulos
@@ -342,14 +351,14 @@ fun InterfazSacComandaLarge(
             val jsonComandaDetalle = JSONArray()
             val articulosAEliminar = mutableListOf<ArticulosSeleccionadosSac>()
             articulosSeleccionados.forEach{articulo ->
-                if (subCuentaSeleccionada==articulo.subCuenta){
+                if (subCuentaSeleccionada.uppercase()==articulo.subCuenta.uppercase()){
                     val codigo=articulo.codigo
                     val cantidad=articulo.cantidad
                     val precio = articulo.precioUnitario
                     val imp1= articulo.imp1
                     val imp2 = if(valorPrmImp2=="0") "0.00" else "10.00"
                     val anotacion = articulo.anotacion
-                    val subCuenta = articulo.subCuenta
+                    val subCuenta = articulo.subCuenta.uppercase()
                     val grupo = articulo.idGrupo
                     val isCombo = articulo.isCombo
                     val jsonObject = JSONObject().apply {
@@ -375,7 +384,7 @@ fun InterfazSacComandaLarge(
                         val imp1Ar = articuloCombo.imp1
                         val imp2Ar = if(valorPrmImp2=="0") "0.00" else "10.00"
                         val anotacionAr = articulo.anotacion
-                        val subCuentaAr = articulo.subCuenta
+                        val subCuentaAr = articulo.subCuenta.uppercase()
                         val grupoAr = articulo.idGrupo
                         val jsonObjectAr = JSONObject().apply {
                             put("codigo", codigoAr)
@@ -413,6 +422,10 @@ fun InterfazSacComandaLarge(
                             subCuentaSeleccionada= opcionesSubCuentas.value.keys.first()
                         }
                         actualizarMontos=true
+                        permitirRegresarPantalla = true
+                        objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
+                        delay(2000)
+                        estadoRespuestaApi.cambiarEstadoRespuestaApi(regresarPantallaAnterior = true)
                     }
                     articulosAEliminar.clear()
                 }
@@ -427,17 +440,13 @@ fun InterfazSacComandaLarge(
                 )
                 estadoRespuestaApi.cambiarEstadoRespuestaApi(mostrarRespuesta = true, datosRespuesta = jsonObject )
             }
-            delay(100)
             objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
-            delay(2000)
-            estadoRespuestaApi.cambiarEstadoRespuestaApi(regresarPantallaAnterior=true)
-            println(regresarPantallaAnterior)
             iniciarComandaSubCuenta= false
         }
     }
 
     LaunchedEffect(regresarPantallaAnterior) {
-        if (regresarPantallaAnterior && ( estadoMesa=="1" || estadoMesa=="2" || opcionesSubCuentas.value.isEmpty()) && listaArticulosActuales.isNotEmpty()){
+        if (regresarPantallaAnterior && permitirRegresarPantalla && ( estadoMesa=="1" || estadoMesa=="2" || opcionesSubCuentas.value.isEmpty()) && listaArticulosActuales.isNotEmpty()){
             navControllerPantallasModuloSac?.popBackStack(RutasPatallas.Sac.ruta+"/$token"+"/$nombreEmpresa"+"/$codUsuario", inclusive = false)
             estadoRespuestaApi.cambiarEstadoRespuestaApi()
         }
@@ -511,12 +520,16 @@ fun InterfazSacComandaLarge(
             modifier = Modifier
                 .width(objetoAdaptardor.ajustarAncho(260))
                 .background(Color(0xFFF6F6F6))
-                .clickable {
+                .then(
                     if (articulo.isCombo == 0) {
-                        articuloActualSeleccionadoEdicion = articulo
-                        iniciarEdicionArticulo = true
+                        Modifier.clickable {
+                            articuloActualSeleccionadoEdicion = articulo
+                            iniciarEdicionArticulo = true
+                        }
+                    }else{
+                        Modifier
                     }
-                }
+                )
         ){
             Column {
                 Row(
@@ -807,6 +820,8 @@ fun InterfazSacComandaLarge(
     ){
         var actualizarArticulos by remember { mutableStateOf(true) }
         var itemsRestantes by remember { mutableIntStateOf(grupo.cantidadItems) }
+
+        // Se agregan los articulos a la lista para evitar la recomposicion de los articulos cuando se agregan
         LaunchedEffect(actualizarArticulos) {
             if (iniciarVentanaAgregarCombo && actualizarArticulos){
                 for(i in 0 until grupo.articulos.size){
@@ -818,7 +833,8 @@ fun InterfazSacComandaLarge(
                         codigo = articulo.codigo,
                         cantidad = 0,
                         precio = articulo.precio,
-                        imp1 = articulo.imp1
+                        imp1 = articulo.imp1,
+                        isOpcional = articulo.isOpcional
                     )
                     agregarOActualizarArticuloCombo(
                         articulo = nuevoArticulo
@@ -827,7 +843,6 @@ fun InterfazSacComandaLarge(
                 actualizarArticulos = false
             }
         }
-
 
         Card(
             modifier = Modifier
@@ -847,7 +862,7 @@ fun InterfazSacComandaLarge(
             ) {
                 Row {
                     Text(
-                        "${grupo.nombre} (${grupo.cantidadItems})",
+                        if(grupo.cantidadItems>0)"${grupo.nombre} (${grupo.cantidadItems})" else "${grupo.nombre} (Opcional)",
                         fontFamily = fontAksharPrincipal,
                         fontWeight = FontWeight.Light,
                         fontSize = obtenerEstiloHead(),
@@ -859,7 +874,7 @@ fun InterfazSacComandaLarge(
                             .padding(objetoAdaptardor.ajustarAltura(8))
                     )
                     Text(
-                        "Faltan: $itemsRestantes",
+                        if (grupo.cantidadItems> 0)"Faltan: $itemsRestantes" else "",
                         fontFamily = fontAksharPrincipal,
                         fontWeight = FontWeight.Light,
                         fontSize = obtenerEstiloBody(),
@@ -881,7 +896,21 @@ fun InterfazSacComandaLarge(
                     if(articulo.nombreGrupo==grupo.nombre){
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.Center
+                            horizontalArrangement = Arrangement.Center,
+                            modifier = Modifier
+                                .then(
+                                    if ((itemsRestantes<=0 && articulo.cantidad<1 && grupo.cantidadItems==0) || (itemsRestantes>0 && grupo.cantidadItems>0)){
+                                        Modifier.clickable {
+                                            agregarOActualizarArticuloCombo(
+                                                cantidad = 1,
+                                                articulo = articulo
+                                            )
+                                            itemsRestantes -= 1
+                                        }
+                                    }else{
+                                        Modifier
+                                    }
+                                )
                         ) {
                             Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(30)))
                             Text(
@@ -912,20 +941,21 @@ fun InterfazSacComandaLarge(
                                 )
                                 IconButton(
                                     onClick = {
-                                        if (itemsRestantes>=0 && articulo.cantidad>0){
+                                        if (articulo.cantidad>0){
                                             agregarOActualizarArticuloCombo(
                                                 cantidad = -1,
                                                 articulo = articulo
                                             )
-                                            itemsRestantes+=1
+                                            itemsRestantes += 1
                                         }
                                     },
-                                    modifier = Modifier.size(objetoAdaptardor.ajustarAltura(25))
+                                    modifier = Modifier.size(objetoAdaptardor.ajustarAltura(25)),
+                                    enabled = articulo.cantidad>0
                                 ) {
                                     Icon(
                                         imageVector = Icons.Filled.RemoveCircle,
                                         contentDescription = "Basurero",
-                                        tint =  if (itemsRestantes>=0 && articulo.cantidad>0) Color.Black else Color.White,
+                                        tint =  if (articulo.cantidad>0) Color.Black else Color.White,
                                         modifier = Modifier.size(objetoAdaptardor.ajustarAltura(25))
                                     )
                                 }
@@ -943,20 +973,21 @@ fun InterfazSacComandaLarge(
 
                                 IconButton(
                                     onClick = {
-                                        if (itemsRestantes>0){
+                                        if ((itemsRestantes<=0 && articulo.cantidad<1 && grupo.cantidadItems==0) || (itemsRestantes>0 && grupo.cantidadItems>0)){
                                             agregarOActualizarArticuloCombo(
                                                 cantidad = 1,
                                                 articulo = articulo
                                             )
-                                            itemsRestantes-=1
+                                            itemsRestantes -= 1
                                         }
                                     },
-                                    modifier = Modifier.size(objetoAdaptardor.ajustarAltura(25))
+                                    modifier = Modifier.size(objetoAdaptardor.ajustarAltura(25)),
+                                    enabled = (itemsRestantes<=0 && articulo.cantidad<1 && grupo.cantidadItems==0) || (itemsRestantes>0 && grupo.cantidadItems>0)
                                 ) {
                                     Icon(
                                         imageVector = Icons.Filled.AddCircle,
-                                        contentDescription = "Basurero",
-                                        tint =  if (itemsRestantes>0) Color.Black else Color.White,
+                                        contentDescription = "Agregar",
+                                        tint =  if ((itemsRestantes<=0 && articulo.cantidad<1 && grupo.cantidadItems==0) || (itemsRestantes>0 && grupo.cantidadItems>0)) Color.Black else Color.White,
                                         modifier = Modifier.size(objetoAdaptardor.ajustarAltura(25))
                                     )
                                 }
@@ -1460,10 +1491,11 @@ fun InterfazSacComandaLarge(
                                 }
                                 """
                             )
-                            estadoRespuestaApi.cambiarEstadoRespuestaApi(mostrarRespuesta = true, datosRespuesta = jsonObject)
+                            permitirRegresarPantalla = false
+                            estadoRespuestaApi.cambiarEstadoRespuestaApi(mostrarRespuesta = true, datosRespuesta = jsonObject, regresarPantallaAnterior = false)
                         }else{
                             val nuevoMapa = LinkedHashMap<String, String>()
-                            nuevoMapa[nombreNuevaSubCuenta] = nombreNuevaSubCuenta
+                            nuevoMapa[nombreNuevaSubCuenta.uppercase()] = nombreNuevaSubCuenta.uppercase()
                             nuevoMapa.putAll(opcionesSubCuentas.value)
                             opcionesSubCuentas.value = nuevoMapa
                             val jsonObject = JSONObject("""
@@ -1474,10 +1506,11 @@ fun InterfazSacComandaLarge(
                                 }
                                 """
                             )
-                            iniciarMenuAgregarSubCuenta=false
                             subCuentaSeleccionada= opcionesSubCuentas.value.keys.first()
                             nombreNuevaSubCuenta=""
-                            estadoRespuestaApi.cambiarEstadoRespuestaApi(mostrarRespuesta = true, datosRespuesta = jsonObject)
+                            iniciarMenuAgregarSubCuenta = false
+                            permitirRegresarPantalla = false
+                            estadoRespuestaApi.cambiarEstadoRespuestaApi(mostrarRespuesta = true, datosRespuesta = jsonObject,regresarPantallaAnterior = false)
                         }
                     },
                     colors = ButtonDefaults.buttonColors(
@@ -1762,6 +1795,32 @@ fun InterfazSacComandaLarge(
 
                         Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(8)))
                         Row {
+
+                            Button(
+                                onClick = {
+                                    iniciarVentanaAgregarArticulo=false
+                                    iniciarEdicionArticulo= false
+                                },
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = Color.Red, // Color de fondo del botón
+                                    contentColor = Color.White,
+                                    disabledContainerColor = Color.Red,
+                                    disabledContentColor = Color.White
+                                )
+                            ) {
+                                Text(
+                                    "Cancelar",
+                                    fontFamily = fontAksharPrincipal,
+                                    fontWeight = FontWeight.Medium,
+                                    fontSize = objetoAdaptardor.ajustarFont(15),
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    textAlign = TextAlign.Center,
+                                    color = Color.White
+                                )
+                            }
+
+                            Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(8)))
                             Button(
                                 onClick = {
                                     val formatter = SimpleDateFormat("HHmmssSSS", Locale.getDefault())
@@ -1789,30 +1848,6 @@ fun InterfazSacComandaLarge(
                             ) {
                                 Text(
                                     if(iniciarVentanaAgregarArticulo) "Agregar" else "Editar",
-                                    fontFamily = fontAksharPrincipal,
-                                    fontWeight = FontWeight.Medium,
-                                    fontSize = objetoAdaptardor.ajustarFont(15),
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis,
-                                    textAlign = TextAlign.Center,
-                                    color = Color.White
-                                )
-                            }
-                            Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(8)))
-                            Button(
-                                onClick = {
-                                    iniciarVentanaAgregarArticulo=false
-                                    iniciarEdicionArticulo= false
-                                },
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = Color.Red, // Color de fondo del botón
-                                    contentColor = Color.White,
-                                    disabledContainerColor = Color.Red,
-                                    disabledContentColor = Color.White
-                                )
-                            ) {
-                                Text(
-                                    "Cancelar",
                                     fontFamily = fontAksharPrincipal,
                                     fontWeight = FontWeight.Medium,
                                     fontSize = objetoAdaptardor.ajustarFont(15),
@@ -2013,18 +2048,45 @@ fun InterfazSacComandaLarge(
                                 Row {
                                     Button(
                                         onClick = {
+                                            iniciarVentanaAgregarCombo = false
+                                        },
+                                        colors = ButtonDefaults.buttonColors(
+                                            containerColor = Color.Red, // Color de fondo del botón
+                                            contentColor = Color.White,
+                                            disabledContainerColor = Color.Red,
+                                            disabledContentColor = Color.White
+                                        )
+                                    ) {
+                                        Text(
+                                            "Cancelar",
+                                            fontFamily = fontAksharPrincipal,
+                                            fontWeight = FontWeight.Medium,
+                                            fontSize = objetoAdaptardor.ajustarFont(15),
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis,
+                                            textAlign = TextAlign.Center,
+                                            color = Color.White
+                                        )
+                                    }
+
+                                    Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(8)))
+
+                                    Button(
+                                        onClick = {
                                             val formatter = SimpleDateFormat("HHmmssSSS", Locale.getDefault())
                                             val hora = formatter.format(Date())
                                             var cantidadArticulosAgre = 0
                                             for (i in 0 until articulosComboSeleccionados.size){
                                                 val articulo = articulosComboSeleccionados[i]
                                                 if (articulo.cantidad>0){
-                                                    cantidadArticulosAgre += articulo.cantidad
+                                                    if(articulo.isOpcional==0){
+                                                        cantidadArticulosAgre += articulo.cantidad
+                                                    }
                                                     articulo.idGrupo = hora
                                                     listaArticulosCombo.add(articulo)
                                                 }
                                             }
-                                            if (articuloActualSeleccionado.cantidadArticulosObli== cantidadArticulosAgre){
+                                            if (cantidadArticulosAgre == articuloActualSeleccionado.cantidadArticulosObli){
                                                 val articuloSeleccionado = ArticulosSeleccionadosSac(
                                                     nombre = articuloActualSeleccionado.nombre,
                                                     codigo =  articuloActualSeleccionado.codigo,
@@ -2062,29 +2124,6 @@ fun InterfazSacComandaLarge(
                                     ) {
                                         Text(
                                             if(iniciarVentanaAgregarCombo) "Agregar" else "Editar",
-                                            fontFamily = fontAksharPrincipal,
-                                            fontWeight = FontWeight.Medium,
-                                            fontSize = objetoAdaptardor.ajustarFont(15),
-                                            maxLines = 1,
-                                            overflow = TextOverflow.Ellipsis,
-                                            textAlign = TextAlign.Center,
-                                            color = Color.White
-                                        )
-                                    }
-                                    Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(8)))
-                                    Button(
-                                        onClick = {
-                                            iniciarVentanaAgregarCombo = false
-                                        },
-                                        colors = ButtonDefaults.buttonColors(
-                                            containerColor = Color.Red, // Color de fondo del botón
-                                            contentColor = Color.White,
-                                            disabledContainerColor = Color.Red,
-                                            disabledContentColor = Color.White
-                                        )
-                                    ) {
-                                        Text(
-                                            "Cancelar",
                                             fontFamily = fontAksharPrincipal,
                                             fontWeight = FontWeight.Medium,
                                             fontSize = objetoAdaptardor.ajustarFont(15),
@@ -2171,5 +2210,5 @@ internal fun AgregarBxContenerdorMontosCuenta(
 @Composable
 @Preview(widthDp = 964, heightDp = 523, showBackground = true)
 private fun Preview(){
-    InterfazSacComandaLarge(null, "", null, "", "", "", "","", "")
+    InterfazSacComandaLarge(null, "", null, "", "", "", "","", "","")
 }

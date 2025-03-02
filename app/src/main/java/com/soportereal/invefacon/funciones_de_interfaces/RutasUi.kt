@@ -312,7 +312,7 @@ fun NavegacionPantallas(
                 }
 
                 composable(
-                    RutasPatallas.SacComanda.ruta+"/{nombreMesa}/{salon}/{token}/{nombreEmpresa}/{codUsuario}/{estadoMesa}/{clienteId}",
+                    RutasPatallas.SacComanda.ruta+"/{nombreMesa}/{salon}/{token}/{nombreEmpresa}/{codUsuario}/{estadoMesa}/{clienteId}/{subCuenta}",
                     enterTransition = { slideInHorizontally(
                         animationSpec = tween(durationMillis = 500, easing = FastOutSlowInEasing)
                     ) { it } },
@@ -347,7 +347,12 @@ fun NavegacionPantallas(
                         navArgument(name= "clienteId"){
                         type= NavType.StringType
                         defaultValue="error"
+                        },
+                        navArgument(name= "subCuenta"){
+                            type= NavType.StringType
+                            defaultValue="error"
                         }
+
                     )
                 ){backstackEntry->
                     val nombreMesa= requireNotNull(backstackEntry.arguments?.getString("nombreMesa"))
@@ -357,6 +362,7 @@ fun NavegacionPantallas(
                     val codUsuario= requireNotNull(backstackEntry.arguments?.getString("codUsuario"))
                     val estadoMesa= requireNotNull(backstackEntry.arguments?.getString("estadoMesa"))
                     val clienteId= requireNotNull(backstackEntry.arguments?.getString("clienteId"))
+                    val subCuenta= requireNotNull(backstackEntry.arguments?.getString("subCuenta"))
 
                     val activity = LocalContext.current as Activity
                     activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
@@ -369,7 +375,8 @@ fun NavegacionPantallas(
                         codUsuario = codUsuario,
                         salon= salon,
                         estadoMesa = estadoMesa,
-                        clienteId = clienteId
+                        clienteId = clienteId,
+                        subCuentaInicial = subCuenta
 
                     )
                 }
