@@ -71,6 +71,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
@@ -118,7 +119,8 @@ fun InterfazSacComanda(
     salon: String,
     estadoMesa : String,
     clienteId: String,
-    subCuentaInicial: String
+    subCuentaInicial: String,
+    nombreUsuario: String
 ){
     systemUiController?.setStatusBarColor(Color(0xFF244BC0))
     systemUiController?.setNavigationBarColor(Color.Black)
@@ -447,14 +449,14 @@ fun InterfazSacComanda(
 
     LaunchedEffect(regresarPantallaAnterior) {
         if (regresarPantallaAnterior && permitirRegresarPantalla && ( estadoMesa=="1" || estadoMesa=="2" || opcionesSubCuentas.value.isEmpty()) && listaArticulosActuales.isNotEmpty()){
-            navControllerPantallasModuloSac?.popBackStack(RutasPatallas.Sac.ruta+"/$token"+"/$nombreEmpresa"+"/$codUsuario", inclusive = false)
+            navControllerPantallasModuloSac?.popBackStack(RutasPatallas.Sac.ruta+"/$token"+"/$nombreEmpresa"+"/$codUsuario"+"/$nombreUsuario", inclusive = false)
             estadoRespuestaApi.cambiarEstadoRespuestaApi()
         }
     }
 
     LaunchedEffect(regresarPantalla) {
         if (regresarPantalla){
-            navControllerPantallasModuloSac?.popBackStack(RutasPatallas.Sac.ruta+"/$token"+"/$nombreEmpresa"+"/$codUsuario", inclusive = false)
+            navControllerPantallasModuloSac?.popBackStack(RutasPatallas.Sac.ruta+"/$token"+"/$nombreEmpresa"+"/$codUsuario"+"/$nombreUsuario", inclusive = false)
             estadoRespuestaApi.cambiarEstadoRespuestaApi()
         }
     }
@@ -1009,7 +1011,7 @@ fun InterfazSacComanda(
             .navigationBarsPadding()
     ) {
         val (bxSuperior, bxContenedorArticulos, txfBarraBusqueda,
-            bxContenerdorArticulosSeleccionados,
+            bxContenerdorArticulosSeleccionados,bxInferior,
             bxContenedorFamilias, bxContenedorSubFamilias,flechaRegresar) = createRefs()
 
         Box(
@@ -1223,7 +1225,7 @@ fun InterfazSacComanda(
             modifier = Modifier
                 .background(Color.White)
                 .width(objetoAdaptardor.ajustarAncho(675))
-                .height(objetoAdaptardor.ajustarAltura(465))
+                .height(objetoAdaptardor.ajustarAltura(445))
                 .constrainAs(bxContenedorArticulos) {
                     start.linkTo(parent.start, margin = objetoAdaptardor.ajustarAncho(8))
                     top.linkTo(
@@ -1270,7 +1272,7 @@ fun InterfazSacComanda(
             modifier = Modifier
                 .background(Color.White)
                 .width(objetoAdaptardor.ajustarAncho(260))
-                .height(objetoAdaptardor.ajustarAltura(530))
+                .height(objetoAdaptardor.ajustarAltura(510))
                 .shadow(
                     elevation = objetoAdaptardor.ajustarAltura(2),
                     shape = RoundedCornerShape(objetoAdaptardor.ajustarAltura(20))
@@ -1395,6 +1397,58 @@ fun InterfazSacComanda(
                     }
                 }
             }
+        }
+
+        ConstraintLayout(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(Color(0xFF000000))
+                .height(objetoAdaptardor.ajustarAltura(20))
+                .constrainAs(bxInferior) {
+                    start.linkTo(parent.start)
+                    bottom.linkTo(parent.bottom)
+                }
+        ) {
+            val (tx1, tx2, tx3)= createRefs()
+            val versionApp = stringResource(R.string.app_version)
+            Text(
+                text = "Version: $versionApp",
+                color = Color.White,
+                fontFamily = fontAksharPrincipal,
+                fontWeight = FontWeight.Light,
+                fontSize = obtenerEstiloLabel(),
+                textAlign = TextAlign.Center,
+                modifier = Modifier.constrainAs(tx1){
+                    start.linkTo(parent.start, margin = 8.dp)
+                    bottom.linkTo(parent.bottom)
+                }
+            )
+
+            Text(
+                text = "Invefacon ©2025",
+                color = Color.White,
+                fontFamily = fontAksharPrincipal,
+                fontWeight = FontWeight.Light,
+                fontSize = obtenerEstiloLabel(),
+                textAlign = TextAlign.Center,
+                modifier = Modifier.constrainAs(tx2){
+                    start.linkTo(parent.start)
+                    end.linkTo(parent.end)
+                    bottom.linkTo(parent.bottom)
+                }
+            )
+
+            Text(
+                text = "#$codUsuario _ $nombreUsuario _ $nombreEmpresa",
+                color = Color.White,
+                fontFamily = fontAksharPrincipal,
+                fontWeight = FontWeight.Light,
+                fontSize = obtenerEstiloLabel(),
+                modifier = Modifier.constrainAs(tx3){
+                    end.linkTo(parent.end, margin = 8.dp)
+                    bottom.linkTo(parent.bottom)
+                }
+            )
         }
     }
 
@@ -2210,5 +2264,5 @@ internal fun AgregarBxContenerdorMontosCuenta(
 @Composable
 @Preview(widthDp = 964, heightDp = 523, showBackground = true)
 private fun Preview(){
-    InterfazSacComanda(null, "", null, "", "", "", "","", "","")
+    InterfazSacComanda(null, "", null, "", "", "", "","", "","","")
 }

@@ -78,6 +78,7 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
@@ -98,6 +99,7 @@ import com.soportereal.invefacon.funciones_de_interfaces.RutasPatallas
 import com.soportereal.invefacon.funciones_de_interfaces.actualizarParametro
 import com.soportereal.invefacon.funciones_de_interfaces.obtenerParametro
 import com.soportereal.invefacon.interfaces.FuncionesParaAdaptarContenidoCompact
+import com.soportereal.invefacon.interfaces.obtenerEstiloLabel
 import com.soportereal.invefacon.interfaces.pantallas_principales.objetoEstadoPantallaCarga
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -184,7 +186,7 @@ fun IniciarInterfazInicioSesionCompact(
     ) {
         //Referencias para ajustar componetes en la Interfaz
         val (bxCirculoSuperiorAzulInterfaz, crdContenedoraComponetesEntradaDatos, bxContenedorLogo,
-            txBienvenido, snhtMensajesSuperiores)= createRefs()
+            txBienvenido, snhtMensajesSuperiores,bxInferior)= createRefs()
 
         // Box Circular Superior azul con degradado
         Canvas(
@@ -845,6 +847,46 @@ fun IniciarInterfazInicioSesionCompact(
                     )
                 }
             }
+        }
+
+        ConstraintLayout(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(Color(0xFF000000))
+                .height(objetoAdaptardor.ajustarAltura(20))
+                .constrainAs(bxInferior) {
+                    start.linkTo(parent.start)
+                    bottom.linkTo(parent.bottom)
+                }
+        ) {
+            val (tx1, tx2)= createRefs()
+            val versionApp = stringResource(R.string.app_version)
+            Text(
+                text = "Version: $versionApp",
+                color = Color.White,
+                fontFamily = fontAksharPrincipal,
+                fontWeight = FontWeight.Light,
+                fontSize = obtenerEstiloLabel(),
+                textAlign = TextAlign.Center,
+                modifier = Modifier.constrainAs(tx1){
+                    start.linkTo(parent.start, margin = 8.dp)
+                    bottom.linkTo(parent.bottom)
+                }
+            )
+
+            Text(
+                text = "Invefacon ©2025",
+                color = Color.White,
+                fontFamily = fontAksharPrincipal,
+                fontWeight = FontWeight.Light,
+                fontSize = obtenerEstiloLabel(),
+                textAlign = TextAlign.Center,
+                modifier = Modifier.constrainAs(tx2){
+                    start.linkTo(parent.start)
+                    end.linkTo(parent.end)
+                    bottom.linkTo(parent.bottom)
+                }
+            )
         }
 
         // Snackbar inferior para mostrar mensajes emergentes para el usuario como:

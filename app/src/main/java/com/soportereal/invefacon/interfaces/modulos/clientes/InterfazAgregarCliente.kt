@@ -393,7 +393,7 @@ fun IniciarInterfazAgregarCliente(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(objetoAdaptardor.ajustarAltura(742))
+                .height(objetoAdaptardor.ajustarAltura(722))
                 .background(Color.White)
                 .constrainAs(bxContenedorLzColum){
                     start.linkTo(parent.start)

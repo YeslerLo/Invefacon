@@ -81,6 +81,7 @@ package com.soportereal.invefacon.interfaces.modulos.sac
  import androidx.compose.ui.platform.LocalConfiguration
  import androidx.compose.ui.platform.LocalContext
  import androidx.compose.ui.res.painterResource
+ import androidx.compose.ui.res.stringResource
  import androidx.compose.ui.text.font.Font
  import androidx.compose.ui.text.font.FontFamily
  import androidx.compose.ui.text.font.FontWeight
@@ -130,7 +131,8 @@ fun InterfazModuloSac(
     systemUiController: SystemUiController?,
     navController: NavController,
     nombreEmpresa: String,
-    codUsuario: String
+    codUsuario: String,
+    nombreUsuario : String
 ){
     systemUiController?.setStatusBarColor(Color(0xFF244BC0))
     systemUiController?.setNavigationBarColor(Color.Black)
@@ -196,7 +198,7 @@ fun InterfazModuloSac(
     var iniciarMenuCrearExpress by remember { mutableStateOf(false) }
     var iniciarMenuAjustes by remember { mutableStateOf(false) }
     val context = LocalContext.current
-    guardarParametroSiNoExiste(context, "prmImp2$nombreEmpresa$codUsuario", "1")
+//    guardarParametroSiNoExiste(context, "prmImp2$nombreEmpresa$codUsuario", "1")
     var valorPrmImp2 by remember { mutableStateOf(obtenerParametro(context, "prmImp2$nombreEmpresa$codUsuario")) }
     var codUsuarioIngresado by remember { mutableStateOf(codUsuario) }
     var passwordIngresada by remember { mutableStateOf("") }
@@ -227,7 +229,7 @@ fun InterfazModuloSac(
             navController.navigate(
                 RutasPatallas.SacComanda.ruta+"/"+mesaActual.nombre+"/"+mesaActual.salon+
                         "/"+token+"/"+nombreEmpresa+"/"+codUsuario+"/"+mesaActual.estado+"/"
-                        +mesaActual.clienteId+"/"+ subCuentaSeleccionada.ifEmpty { "JUNTOS" }
+                        +mesaActual.clienteId+"/"+ subCuentaSeleccionada.ifEmpty { "JUNTOS" }+"/"+nombreUsuario
             ){
                 restoreState= true
                 launchSingleTop=true
@@ -1112,7 +1114,7 @@ fun InterfazModuloSac(
             .navigationBarsPadding()
     ){
         val (bxSuperior, bxContenedorMesas ,txfBarraBusqueda, bxContenedorSalones,
-            bxContenerdorCuentasActivas, bxContenedorBotones, flechaRegresar)= createRefs()
+            bxContenerdorCuentasActivas, bxContenedorBotones, flechaRegresar, bxInferior)= createRefs()
 
         Box(
             modifier = Modifier
@@ -1314,6 +1316,7 @@ fun InterfazModuloSac(
                         )
                     }
                 }
+
                 Button(
                     modifier = Modifier
                         .weight(1f)
@@ -1429,7 +1432,7 @@ fun InterfazModuloSac(
             modifier = Modifier
                 .background(Color.White)
                 .width(objetoAdaptardor.ajustarAncho(690))
-                .height(objetoAdaptardor.ajustarAltura(470))
+                .height(objetoAdaptardor.ajustarAltura(450))
                 .constrainAs(bxContenedorMesas) {
                     start.linkTo(parent.start, margin = objetoAdaptardor.ajustarAncho(12))
                     top.linkTo(bxContenedorSalones.bottom, margin = objetoAdaptardor.ajustarAltura(4))
@@ -1467,7 +1470,8 @@ fun InterfazModuloSac(
                                     token = token,
                                     nombreEmpresa = nombreEmpresa,
                                     codUsuario = codUsuario,
-                                    subCuentaSeleccionada = subCuentaSeleccionada
+                                    subCuentaSeleccionada = subCuentaSeleccionada,
+                                    nombreUsuario = nombreUsuario
                                 )
                                 Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(12)))
                             }
@@ -1482,7 +1486,7 @@ fun InterfazModuloSac(
             modifier = Modifier
                 .background(Color.White)
                 .width(objetoAdaptardor.ajustarAncho(245))
-                .height(objetoAdaptardor.ajustarAltura(530))
+                .height(objetoAdaptardor.ajustarAltura(510))
                 .shadow(
                     elevation = objetoAdaptardor.ajustarAltura(2),
                     shape = RoundedCornerShape(objetoAdaptardor.ajustarAltura(20))
@@ -1664,6 +1668,58 @@ fun InterfazModuloSac(
                 }
             }
 
+        }
+
+        ConstraintLayout(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(Color(0xFF000000))
+                .height(objetoAdaptardor.ajustarAltura(20))
+                .constrainAs(bxInferior) {
+                    start.linkTo(parent.start)
+                    bottom.linkTo(parent.bottom)
+                }
+        ) {
+            val (tx1, tx2, tx3)= createRefs()
+            val versionApp = stringResource(R.string.app_version)
+            Text(
+                text = "Version: $versionApp",
+                color = Color.White,
+                fontFamily = fontAksharPrincipal,
+                fontWeight = FontWeight.Light,
+                fontSize = obtenerEstiloLabel(),
+                textAlign = TextAlign.Center,
+                modifier = Modifier.constrainAs(tx1){
+                    start.linkTo(parent.start, margin = 8.dp)
+                    bottom.linkTo(parent.bottom)
+                }
+            )
+
+            Text(
+                text = "Invefacon ©2025",
+                color = Color.White,
+                fontFamily = fontAksharPrincipal,
+                fontWeight = FontWeight.Light,
+                fontSize = obtenerEstiloLabel(),
+                textAlign = TextAlign.Center,
+                modifier = Modifier.constrainAs(tx2){
+                    start.linkTo(parent.start)
+                    end.linkTo(parent.end)
+                    bottom.linkTo(parent.bottom)
+                }
+            )
+
+            Text(
+                text = "#$codUsuario _ $nombreUsuario _ $nombreEmpresa",
+                color = Color.White,
+                fontFamily = fontAksharPrincipal,
+                fontWeight = FontWeight.Light,
+                fontSize = obtenerEstiloLabel(),
+                modifier = Modifier.constrainAs(tx3){
+                    end.linkTo(parent.end, margin = 8.dp)
+                    bottom.linkTo(parent.bottom)
+                }
+            )
         }
     }
 
@@ -3426,7 +3482,8 @@ internal fun BxContendorDatosMesa(
     token : String,
     nombreEmpresa: String,
     codUsuario: String,
-    subCuentaSeleccionada : String
+    subCuentaSeleccionada : String,
+    nombreUsuario: String
 ){
     val configuration = LocalConfiguration.current
     val dpAnchoPantalla = configuration.screenWidthDp
@@ -3443,7 +3500,8 @@ internal fun BxContendorDatosMesa(
             delay(500)
             navControllerPantallasModuloSac?.navigate(
                 RutasPatallas.SacComanda.ruta+"/"+datosMesa.nombre+"/"+datosMesa.salon+"/"+token+"/"
-                        +nombreEmpresa+"/"+codUsuario+"/"+datosMesa.estado+"/"+datosMesa.clienteId+"/"+ subCuentaSeleccionada.ifEmpty { "JUNTOS" }
+                        +nombreEmpresa+"/"+codUsuario+"/"+datosMesa.estado+"/"+datosMesa.clienteId+"/"
+                        +subCuentaSeleccionada.ifEmpty { "JUNTOS" }+"/"+nombreUsuario
             ){
                 restoreState= true
                 launchSingleTop=true
@@ -3721,5 +3779,5 @@ fun BxContenerdorCliente(
 @Preview(widthDp = 964, heightDp = 523)
 private fun Preview(){
     val nav = rememberNavController()
-    InterfazModuloSac("eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJDb2RpZ28iOiIwMDA1MCIsIk5vbWJyZSI6IllFU0xFUiBBRE1JTiIsIkVtYWlsIjoieWVzbGVybG9yaW9AZ21haWwuY29tIiwiUHVlcnRvIjoiODAxIiwiRW1wcmVzYSI6IlpHVnRiM0psYzNRPSIsIlNlcnZlcklwIjoiTVRreUxqRTJPQzQzTGpNNCIsInRpbWUiOiIyMDI1MDMwMTEwMDMyMCJ9.U3F_80TsKwjSps06XXayvmV8CaYsb4GjQ5KmQqTS7mo", null, nav, "demorest","00050")
+    InterfazModuloSac("eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJDb2RpZ28iOiIwMDA1MCIsIk5vbWJyZSI6IllFU0xFUiBBRE1JTiIsIkVtYWlsIjoieWVzbGVybG9yaW9AZ21haWwuY29tIiwiUHVlcnRvIjoiODAxIiwiRW1wcmVzYSI6IlpHVnRiM0psYzNRPSIsIlNlcnZlcklwIjoiTVRreUxqRTJPQzQzTGpNNCIsInRpbWUiOiIyMDI1MDMwMTEwMDMyMCJ9.U3F_80TsKwjSps06XXayvmV8CaYsb4GjQ5KmQqTS7mo", null, nav, "demorest","00050", "YESLER LORIO")
 }

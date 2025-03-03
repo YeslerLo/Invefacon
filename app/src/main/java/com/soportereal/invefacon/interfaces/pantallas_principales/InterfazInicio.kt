@@ -364,11 +364,10 @@ fun IniciarInterfazInicio(
                         item { Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(8))) }
                         item { btOpcionesModulos("Proformas", Icons.Default.Receipt, null) }
                         item { btOpcionesModulos("Clientes", Icons.Default.People, RutasPatallas.Clientes.ruta+"/$token") }
-                        item { btOpcionesModulos("SAC", Icons.Default.RestaurantMenu, RutasPatallas.Sac.ruta+"/$token"+"/$nombreEmpresa"+"/$codUsuario") }
+                        item { btOpcionesModulos("SAC", Icons.Default.RestaurantMenu, RutasPatallas.Sac.ruta+"/$token"+"/$nombreEmpresa"+"/$codUsuario/$nombreUsuario") }
                         item { btOpcionesModulos("CxP", Icons.Default.MonetizationOn, null) }
                         item { btOpcionesModulos("Compras", Icons.Default.ShoppingCart, null) }
                         item { btOpcionesModulos("Resumen", Icons.Default.Assessment, null) }
-
                     }
                 }
             }

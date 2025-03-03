@@ -27,11 +27,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.navigation.NavController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
@@ -92,17 +95,51 @@ fun IniciarInterfazMenuPrincipalCompact(
                     )
             }
         }
-        Box(modifier = Modifier
-            .fillMaxWidth()
-            .background(Color(0xFF000000))
-            .height(objetoAdaptardor.ajustarAltura(20)),
-            contentAlignment = Alignment.Center
-        ){
-            Text(text = "Invefacon ©2025",
+        ConstraintLayout(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(Color(0xFF000000))
+                .height(objetoAdaptardor.ajustarAltura(20))
+        ) {
+            val (tx1, tx2, tx3)= createRefs()
+            val versionApp = stringResource(R.string.app_version)
+            Text(
+                text = "Version: $versionApp",
                 color = Color.White,
                 fontFamily = aksharFont,
                 fontWeight = FontWeight.Light,
-                fontSize = obtenerEstiloLabel()
+                fontSize = obtenerEstiloLabel(),
+                textAlign = TextAlign.Center,
+                modifier = Modifier.constrainAs(tx1){
+                    start.linkTo(parent.start, margin = 8.dp)
+                    bottom.linkTo(parent.bottom)
+                }
+            )
+
+            Text(
+                text = "Invefacon ©2025",
+                color = Color.White,
+                fontFamily = aksharFont,
+                fontWeight = FontWeight.Light,
+                fontSize = obtenerEstiloLabel(),
+                textAlign = TextAlign.Center,
+                modifier = Modifier.constrainAs(tx2){
+                    start.linkTo(parent.start)
+                    end.linkTo(parent.end)
+                    bottom.linkTo(parent.bottom)
+                }
+            )
+
+            Text(
+                text = "#$codUsuario _ $nombreUsuario _ $nombreEmpresa",
+                color = Color.White,
+                fontFamily = aksharFont,
+                fontWeight = FontWeight.Light,
+                fontSize = obtenerEstiloLabel(),
+                modifier = Modifier.constrainAs(tx3){
+                    end.linkTo(parent.end, margin = 8.dp)
+                    bottom.linkTo(parent.bottom)
+                }
             )
         }
 
