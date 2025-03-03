@@ -200,7 +200,7 @@ fun InterfazModuloSac(
     var valorPrmImp2 by remember { mutableStateOf(obtenerParametro(context, "prmImp2$nombreEmpresa$codUsuario")) }
     var codUsuarioIngresado by remember { mutableStateOf(codUsuario) }
     var passwordIngresada by remember { mutableStateOf("") }
-    var aplicarImp2 by remember { mutableStateOf(false) }
+    var agregarImpuestoServicio by remember { mutableStateOf(false) }
     val lazyStateListaClientes= rememberLazyListState()
     var listaClientesActuales by remember { mutableStateOf<List<Cliente>>(emptyList()) }
     var isCargandoClientes by remember { mutableStateOf(false) }
@@ -328,6 +328,7 @@ fun InterfazModuloSac(
             isCargandoMesas = true
             val listaMesas = mutableListOf<Mesa>()
             val listaCuentasActivas = mutableListOf<Mesa>()
+            val listaSalones = mutableListOf<String>()
             val result= objectoProcesadorDatosApi.obtenerListaMesas(datosIngresadosBarraBusqueda, if(salonActual=="TODOS") "" else salonActual)
             if (result!=null){
                 if (result.getString("status")=="ok"){
@@ -361,12 +362,22 @@ fun InterfazModuloSac(
                         )
                         listaCuentasActivas.add(mesa)
                     }
+
+                    val salones= data.getJSONArray("salones")
+                    for( i in 0 until salones.length()){
+                        val datoSalon = salones.getJSONObject(i)
+                        listaSalones.add(datoSalon.getString("SalonNombre"))
+                    }
                 }
                 if (listaMesasActualesFiltradas!=listaMesas){
                     listaMesasActualesFiltradas=listaMesas
                 }
                 if (listaCuentasActivasActuales!=listaCuentasActivas){
                     listaCuentasActivasActuales=listaCuentasActivas
+                }
+
+                if(listaSalones!= listaSalonesAtuales){
+                    listaSalonesAtuales = listaSalones
                 }
                 objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
                 actualizarListaMesas=false
@@ -377,6 +388,7 @@ fun InterfazModuloSac(
 
     LaunchedEffect(iniciarMenuMesaComandada, estadoBtOkRespuestaApi) {
         if(iniciarMenuMesaComandada && !iniciarMenuMoverArticulo) {
+            actualizarListaMesas=true
             articulosComandados.clear()
             opcionesSubCuentas.value.clear()
             objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(true)
@@ -673,20 +685,15 @@ fun InterfazModuloSac(
                         actualizarListaMesas = true
                         iniciarMenuMesaComandada = false
                         iniciarMenuMoverMesa= false
-                        mesaDestino=""
-                        codUsuarioIngresado=codUsuario
-                        passwordIngresada=""
-                        moverMesa= false
                     }else{
                         objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
                     }
-
                 }
-
+                mesaDestino=""
+                passwordIngresada=""
             }
-
-
         }
+        moverMesa= false
     }
 
     LaunchedEffect(regresarPantallaAnterior) {
@@ -713,22 +720,16 @@ fun InterfazModuloSac(
         }
     }
 
-    LaunchedEffect(aplicarImp2) {
-        if(aplicarImp2){
-            if (passwordIngresada.length<3 || codUsuarioIngresado.isEmpty()){
-                mostrarMensajeError("Complete los campos para continuar")
-                aplicarImp2=false
-            }else{
-                objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(true)
-                val result = objectoProcesadorDatosApi.aplicarImp2( nombreMesa= mesaActual.nombre)
-                if (result!= null){
-                    estadoRespuestaApi.cambiarEstadoRespuestaApi(mostrarRespuesta = true, datosRespuesta = result)
-                }
-                objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
+    LaunchedEffect(agregarImpuestoServicio) {
+        if(agregarImpuestoServicio){
+            objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(true)
+            val result = objectoProcesadorDatosApi.aplicarImp2( nombreMesa= mesaActual.nombre)
+            if (result!= null){
+                estadoRespuestaApi.cambiarEstadoRespuestaApi(mostrarRespuesta = true, datosRespuesta = result)
             }
+            objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
         }
-        iniciarMenuConfCambPrm=false
-        aplicarImp2= false
+        agregarImpuestoServicio= false
     }
 
     LaunchedEffect(datosIngresadosBarraBusquedaCliente, iniciarMenuCrearExpress) {
@@ -844,18 +845,27 @@ fun InterfazModuloSac(
 
     LaunchedEffect(cambiarPrmImp2) {
         if(cambiarPrmImp2){
-            objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(true)
-            val result = objectoProcesadorDatosApi.cambiarPrmImp2(passwordIngresada, codUsuarioIngresado)
-            if (result!=null){
-                estadoRespuestaApi.cambiarEstadoRespuestaApi(mostrarRespuesta = true, datosRespuesta = result)
-                if (result.getString("status")=="ok" && result.getString("code")=="200"){
-                    actualizarParametro(context, "prmImp2$nombreEmpresa$codUsuario", if(valorPrmImp2=="0") "1" else "0")
-                    valorPrmImp2 = obtenerParametro(context, "prmImp2$nombreEmpresa$codUsuario")
-                    estadoImp2 = valorPrmImp2 != "0"
+            if (passwordIngresada.length<4 || codUsuarioIngresado.isEmpty()){
+                mostrarMensajeError("Complete los campos para continuar")
+                agregarImpuestoServicio=false
+            }else{
+                objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(true)
+                val result = objectoProcesadorDatosApi.cambiarPrmImp2(passwordIngresada, codUsuarioIngresado)
+                if (result!=null){
+                    estadoRespuestaApi.cambiarEstadoRespuestaApi(mostrarRespuesta = true, datosRespuesta = result)
+                    if (result.getString("status")=="ok" && result.getString("code")=="200"){
+                        actualizarParametro(context, "prmImp2$nombreEmpresa$codUsuario", if(valorPrmImp2=="0") "1" else "0")
+                        valorPrmImp2 = obtenerParametro(context, "prmImp2$nombreEmpresa$codUsuario")
+                        estadoImp2 = valorPrmImp2 != "0"
+                    }
                 }
+                objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
+                passwordIngresada=""
+                codUsuarioIngresado=codUsuario
             }
-            objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
         }
+        cambiarPrmImp2=false
+        iniciarMenuConfCambPrm=false
     }
 
     @Composable
@@ -2035,7 +2045,7 @@ fun InterfazModuloSac(
                                             text = "+10",
                                             color = 0xFF244BC0,
                                             onClick = {
-                                                aplicarImp2=true
+                                                agregarImpuestoServicio=true
                                             }
                                         )
 
@@ -2078,7 +2088,7 @@ fun InterfazModuloSac(
             onDismissRequest = { },
             title = {
                 Text(
-                    if (iniciarVentanaEliminarArticulo) "Eliminar Articulo" else "Agregar Articulo",
+                    if (iniciarVentanaEliminarArticulo) "Eliminar Articulo de ${mesaActual.nombre}-${mesaActual.salon}" else "Agregar Articulo a ${mesaActual.nombre}-${mesaActual.salon}",
                     fontFamily = fontAksharPrincipal,
                     fontWeight = FontWeight.Medium,
                     fontSize = obtenerEstiloHead(),
@@ -2298,7 +2308,7 @@ fun InterfazModuloSac(
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
                             Text(
-                                "Mover Articulo",
+                                "Mover Articulo ${mesaActual.nombre}-${mesaActual.salon}",
                                 fontFamily = fontAksharPrincipal,
                                 fontWeight = FontWeight.Medium,
                                 fontSize = obtenerEstiloHead(),
@@ -2530,7 +2540,7 @@ fun InterfazModuloSac(
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Text(
-                            "Mover Mesa",
+                            "Mover Mesa ${mesaActual.nombre}-${mesaActual.salon}",
                             fontFamily = fontAksharPrincipal,
                             fontWeight = FontWeight.Medium,
                             fontSize = objetoAdaptardor.ajustarFont(27),
@@ -3366,7 +3376,7 @@ fun InterfazModuloSac(
                     )
                 ) {
                     Text(
-                        "Quitar",
+                        "Continuar",
                         fontFamily = fontAksharPrincipal,
                         fontWeight = FontWeight.Medium,
                         fontSize = objetoAdaptardor.ajustarFont(15),
