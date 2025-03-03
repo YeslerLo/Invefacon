@@ -867,7 +867,7 @@ fun IniciarInterfazInicioSesionCompact(
 
             ){
                 Text(
-                    text = "Soporte Real SRL",
+                    text = "",
                     color = Color.White,
                     fontFamily = fontAksharPrincipal,
                     fontWeight = FontWeight.Light,

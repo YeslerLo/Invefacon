@@ -2,10 +2,14 @@ package com.soportereal.invefacon.interfaces.modulos.sac
 
  import android.annotation.SuppressLint
  import androidx.compose.animation.AnimatedVisibility
+ import androidx.compose.animation.core.tween
+ import androidx.compose.animation.expandVertically
  import androidx.compose.animation.fadeIn
  import androidx.compose.animation.fadeOut
- import androidx.compose.animation.scaleIn
- import androidx.compose.animation.scaleOut
+ import androidx.compose.animation.shrinkVertically
+ import androidx.compose.animation.slideInHorizontally
+ import androidx.compose.animation.slideInVertically
+ import androidx.compose.animation.slideOutVertically
  import androidx.compose.foundation.Image
  import androidx.compose.foundation.background
  import androidx.compose.foundation.clickable
@@ -32,6 +36,7 @@ package com.soportereal.invefacon.interfaces.modulos.sac
  import androidx.compose.foundation.lazy.LazyColumn
  import androidx.compose.foundation.lazy.LazyRow
  import androidx.compose.foundation.lazy.items
+ import androidx.compose.foundation.lazy.itemsIndexed
  import androidx.compose.foundation.lazy.rememberLazyListState
  import androidx.compose.foundation.shape.RoundedCornerShape
  import androidx.compose.material.icons.Icons
@@ -42,6 +47,8 @@ package com.soportereal.invefacon.interfaces.modulos.sac
  import androidx.compose.material.icons.filled.Delete
  import androidx.compose.material.icons.filled.EditNote
  import androidx.compose.material.icons.filled.Email
+ import androidx.compose.material.icons.filled.KeyboardArrowDown
+ import androidx.compose.material.icons.filled.KeyboardArrowUp
  import androidx.compose.material.icons.filled.MoreHoriz
  import androidx.compose.material.icons.filled.Password
  import androidx.compose.material.icons.filled.Person
@@ -159,7 +166,7 @@ fun InterfazModuloSac(
     var isCargandoMesas by remember { mutableStateOf(true) }
     var iniciarMenuMesaComandada by remember { mutableStateOf(false) }
     var mesaActual by remember { mutableStateOf(Mesa()) }
-    var subCuentaSeleccionada by remember { mutableStateOf("") }  // manejar el estado se las subcuentas comandadas
+    var subCuentaSeleccionada by remember { mutableStateOf("") }
     var subCuentaDestinoArticulo by remember { mutableStateOf("") }
     val opcionesSubCuentas: MutableState<LinkedHashMap<String, String>> = remember { mutableStateOf(LinkedHashMap()) }
     var opcionesSubCuentasComandadas by remember { mutableStateOf<List<String>>(emptyList()) }
@@ -299,6 +306,7 @@ fun InterfazModuloSac(
                     }
 
                     val salones= data.getJSONArray("salones")
+                    listaSalones.add("TODOS")
                     for( i in 0 until salones.length()){
                         val datoSalon = salones.getJSONObject(i)
                         listaSalones.add(datoSalon.getString("SalonNombre"))
@@ -366,6 +374,7 @@ fun InterfazModuloSac(
                     }
 
                     val salones= data.getJSONArray("salones")
+                    listaSalones.add("TODOS")
                     for( i in 0 until salones.length()){
                         val datoSalon = salones.getJSONObject(i)
                         listaSalones.add(datoSalon.getString("SalonNombre"))
@@ -917,11 +926,21 @@ fun InterfazModuloSac(
     fun AgregarBxContenedorArticulosComandados(
         articuloComandado: ArticuloComandado
     ){
+        var expanded by remember { mutableStateOf(false) }
         articuloComandado.calcularMontoTotal()
         Box(
             modifier = Modifier
                 .background(Color.White)
-                .widthIn(max =objetoAdaptardor.ajustarAncho(365)),
+                .widthIn(max =objetoAdaptardor.ajustarAncho(365))
+                .then(
+                    if(articuloComandado.articulos.isNotEmpty()){
+                        Modifier.clickable {
+                            expanded = !expanded
+                        }
+                    }else{
+                        Modifier
+                    }
+                ),
             contentAlignment = Alignment.CenterEnd
         ){
             Column(
@@ -982,8 +1001,31 @@ fun InterfazModuloSac(
                             fontSize = obtenerEstiloBody(),
                             overflow = TextOverflow.Ellipsis,
                             textAlign = TextAlign.Center,
-                            modifier = Modifier.fillMaxSize()
+                            modifier = Modifier
+                                .then(
+                                    if(articuloComandado.articulos.isNotEmpty()){
+                                        Modifier.width(objetoAdaptardor.ajustarAncho(110))
+                                    }else{
+                                        Modifier.fillMaxSize()
+                                    }
+                                )
                         )
+                        if(articuloComandado.articulos.isNotEmpty()){
+                            IconButton(
+                                onClick = {
+                                    expanded = !expanded
+                                },
+                                modifier = Modifier.size(objetoAdaptardor.ajustarAltura(30))
+                            ) {
+                                Icon(
+                                    imageVector = if (expanded) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown,
+                                    contentDescription = "Flechas",
+                                    tint = Color.Black,
+                                    modifier = Modifier.size(objetoAdaptardor.ajustarAltura(30))
+                                )
+                            }
+                        }
+
                     }else{
                         IconButton(
                             onClick = {
@@ -1015,23 +1057,37 @@ fun InterfazModuloSac(
                             textAlign = TextAlign.Center,
                             modifier = Modifier.width(objetoAdaptardor.ajustarAncho(35)).padding(2.dp)
                         )
-                        IconButton(
-                            onClick = {
-                                if(articuloComandado.articulos.isEmpty() && !isSubCuentaPedida){
+                        if(articuloComandado.articulos.isEmpty()){
+                            IconButton(
+                                onClick = {
                                     articuloActualSeleccionado= articuloComandado
                                     iniciarVentanaAgregarArticulo = true
-                                }
-                            },
-                            modifier = Modifier.size(objetoAdaptardor.ajustarAltura(22)),
-                            enabled =  !isSubCuentaPedida
-                        ) {
-                            Icon(
-                                imageVector = Icons.Filled.AddCircle,
-                                contentDescription = "Agregar Articulo",
-                                tint =  if(articuloComandado.articulos.isEmpty() && !isSubCuentaPedida) Color.Black else Color.White,
+                                },
                                 modifier = Modifier.size(objetoAdaptardor.ajustarAltura(22))
-                            )
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Filled.AddCircle,
+                                    contentDescription = "Agregar Articulo",
+                                    tint =   Color.Black,
+                                    modifier = Modifier.size(objetoAdaptardor.ajustarAltura(22))
+                                )
+                            }
+                        }else{
+                            IconButton(
+                                onClick = {
+                                    expanded = !expanded
+                                },
+                                modifier = Modifier.size(objetoAdaptardor.ajustarAltura(30))
+                            ) {
+                                Icon(
+                                    imageVector = if (expanded) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown,
+                                    contentDescription = "Flechas",
+                                    tint = Color.Black,
+                                    modifier = Modifier.size(objetoAdaptardor.ajustarAltura(30))
+                                )
+                            }
                         }
+
                         Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(6)))
                         AgregarBt(
                             text = "Mover",
@@ -1049,46 +1105,66 @@ fun InterfazModuloSac(
                     }
                 }
                 HorizontalDivider()
-                for (i in 0 until articuloComandado.articulos.size){
-                    val articuloCombo = articuloComandado.articulos[i]
-                    Row(
-                        horizontalArrangement = Arrangement.End,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(10)))
-                        Text(
-                            articuloCombo.cantidad.toString(),
-                            fontFamily = fontAksharPrincipal,
-                            fontWeight = FontWeight.Light,
-                            fontSize = obtenerEstiloLabel(),
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                            textAlign = TextAlign.Center,
-                            modifier = Modifier.width(objetoAdaptardor.ajustarAncho(20)).padding(2.dp),
-                            color = Color.DarkGray
-                        )
-                        Text(
-                            articuloCombo.nombre,
-                            fontFamily = fontAksharPrincipal,
-                            fontWeight = FontWeight.Light,
-                            fontSize = obtenerEstiloLabel(),
-                            overflow = TextOverflow.Ellipsis,
-                            textAlign = TextAlign.Start,
-                            modifier = Modifier.width(objetoAdaptardor.ajustarAncho(200)).padding(2.dp),
-                            color = Color.DarkGray
-                        )
-                        Text(
-                            "+ \u20A1 "+String.format(Locale.US, "%,.2f", "${articuloCombo.precio*articuloCombo.cantidad}".replace(",", "").toDouble()),
-                            fontFamily = fontAksharPrincipal,
-                            fontWeight = FontWeight.Light,
-                            fontSize = obtenerEstiloLabel(),
-                            overflow = TextOverflow.Ellipsis,
-                            textAlign = TextAlign.End,
-                            modifier = Modifier.width(objetoAdaptardor.ajustarAncho(100)).padding(2.dp)
-                        )
+                AnimatedVisibility(
+                    visible = expanded,
+                    enter = expandVertically(animationSpec = tween(300)) + fadeIn(),
+                    exit = shrinkVertically(animationSpec = tween(300)) + fadeOut()
+                ) {
+                    Column(modifier = Modifier.fillMaxWidth()) { // Agrupar los elementos dentro de la Column
+                        articuloComandado.articulos.forEach { articuloCombo ->
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 2.dp),
+                                horizontalArrangement = Arrangement.End, // Alinea los elementos a la derecha
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(10)))
+
+                                Text(
+                                    text = articuloCombo.cantidad.toString(),
+                                    fontFamily = fontAksharPrincipal,
+                                    fontWeight = FontWeight.Light,
+                                    fontSize = obtenerEstiloLabel(),
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    textAlign = TextAlign.Center,
+                                    modifier = Modifier
+                                        .width(objetoAdaptardor.ajustarAncho(20))
+                                        .padding(2.dp),
+                                    color = Color.DarkGray
+                                )
+
+                                Text(
+                                    text = articuloCombo.nombre,
+                                    fontFamily = fontAksharPrincipal,
+                                    fontWeight = FontWeight.Light,
+                                    fontSize = obtenerEstiloLabel(),
+                                    overflow = TextOverflow.Ellipsis,
+                                    textAlign = TextAlign.Start,
+                                    modifier = Modifier
+                                        .width(objetoAdaptardor.ajustarAncho(200))
+                                        .padding(2.dp),
+                                    color = Color.DarkGray
+                                )
+
+                                Text(
+                                    text = "+ \u20A1 ${String.format(Locale.US, "%,.2f", articuloCombo.precio * articuloCombo.cantidad)}",
+                                    fontFamily = fontAksharPrincipal,
+                                    fontWeight = FontWeight.Light,
+                                    fontSize = obtenerEstiloLabel(),
+                                    overflow = TextOverflow.Ellipsis,
+                                    textAlign = TextAlign.End,
+                                    modifier = Modifier
+                                        .width(objetoAdaptardor.ajustarAncho(100))
+                                        .padding(2.dp)
+                                )
+                            }
+                            HorizontalDivider()
+                        }
                     }
-                    HorizontalDivider()
                 }
+
                 Row {
                     Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(6)))
                     Text(
@@ -1101,6 +1177,13 @@ fun InterfazModuloSac(
                         modifier = Modifier.width(objetoAdaptardor.ajustarAncho(422)).padding(2.dp)
                     )
                 }
+                HorizontalDivider(
+                    thickness = 2.dp,
+                    color = Color.Black,
+                    modifier = Modifier
+                        .width(objetoAdaptardor.ajustarAncho(365))
+                        .padding(2.dp)
+                )
             }
         }
     }
@@ -1358,73 +1441,58 @@ fun InterfazModuloSac(
                 }
             , contentAlignment = Alignment.CenterStart
         ){
-            LazyRow{
-                item { Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(6))) }
-                item {
-                    Button(
-                        modifier = Modifier.height(objetoAdaptardor.ajustarAltura(35)),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = if (salonActual=="TODOS") Color(0xFFBFBFBF) else Color(0xFFEAEAEA), // Color de fondo del botón
-                            contentColor = Color.White,
-                            disabledContainerColor = if (salonActual=="TODOS") Color(0xFFBFBFBF) else Color(0xFFEAEAEA),
-                            disabledContentColor = Color.White
-                        ),
-                        elevation = ButtonDefaults.buttonElevation(defaultElevation = 7.dp),
-                        onClick = {
-                            datosIngresadosBarraBusqueda = ""
-                            salonActual= "TODOS"
-                            actualizarListaMesas = true
-                        },
-                        contentPadding = PaddingValues(start = 12.dp, end = 12.dp, top = 0.dp, bottom = 0.dp)
-                    ) {
-                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center){
-                            Text(
-                                "TODOS",
-                                fontFamily = fontAksharPrincipal,
-                                fontWeight = FontWeight.Medium,
-                                fontSize = obtenerEstiloBody(),
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                                textAlign = TextAlign.Center,
-                                color = Color.Black
-                            )
-                        }
-                    }
-                    Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(8)))
+            if (listaSalonesAtuales.isNotEmpty()){
+                val isSalonesVisible = remember { mutableStateOf(false) }
+
+                LaunchedEffect(Unit) {
+                    delay(100)
+                    isSalonesVisible.value = true
                 }
-                items(listaSalonesAtuales) { salon ->
-                    Button(
-                        modifier = Modifier.height(objetoAdaptardor.ajustarAltura(35)),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = if (salonActual==salon) Color(0xFFBFBFBF) else Color(0xFFEAEAEA), // Color de fondo del botón
-                            contentColor = Color.White,
-                            disabledContainerColor = if (salonActual==salon) Color(0xFFBFBFBF) else Color(0xFFEAEAEA),
-                            disabledContentColor = Color.White
-                        ),
-                        elevation = ButtonDefaults.buttonElevation(defaultElevation = 7.dp),
-                        onClick = {
-                            datosIngresadosBarraBusqueda = ""
-                            salonActual= salon
-                            actualizarListaMesas = true
-                        },
-                        contentPadding = PaddingValues(start = 12.dp, end = 12.dp, top = 0.dp, bottom = 0.dp)
-                    ) {
-                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center){
-                            Text(
-                                salon,
-                                fontFamily = fontAksharPrincipal,
-                                fontWeight = FontWeight.Medium,
-                                fontSize = obtenerEstiloBody(),
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                                textAlign = TextAlign.Center,
-                                color = Color.Black
-                            )
-                        }
+                LazyRow {
+                    item {
+                        Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(6)))
                     }
-                    Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(8)))
+                    items(listaSalonesAtuales) { salon ->
+                        AnimatedVisibility(
+                            visible = isSalonesVisible.value,
+                            enter = fadeIn(animationSpec = tween(500)) + slideInHorizontally(initialOffsetX = { it }),
+                            exit = fadeOut()
+                        ) {
+                            Button(
+                                modifier = Modifier.height(objetoAdaptardor.ajustarAltura(35)),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = if (salonActual == salon) Color(0xFFBFBFBF) else Color(0xFFEAEAEA),
+                                    contentColor = Color.White,
+                                    disabledContainerColor = if (salonActual == salon) Color(0xFFBFBFBF) else Color(0xFFEAEAEA),
+                                    disabledContentColor = Color.White
+                                ),
+                                elevation = ButtonDefaults.buttonElevation(defaultElevation = 7.dp),
+                                onClick = {
+                                    datosIngresadosBarraBusqueda = ""
+                                    salonActual = salon
+                                    actualizarListaMesas = true
+                                },
+                                contentPadding = PaddingValues(start = 12.dp, end = 12.dp, top = 0.dp, bottom = 0.dp)
+                            ) {
+                                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                    Text(
+                                        salon,
+                                        fontFamily = fontAksharPrincipal,
+                                        fontWeight = FontWeight.Medium,
+                                        fontSize = obtenerEstiloBody(),
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis,
+                                        textAlign = TextAlign.Center,
+                                        color = Color.Black
+                                    )
+                                }
+                            }
+                        }
+                        Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(8)))
+                    }
                 }
             }
+
         }
 
         Box(
@@ -1450,34 +1518,48 @@ fun InterfazModuloSac(
                             .padding(2.dp)
                     )
                 }
-            }else{
+            }
+            else{
+                val isMesasVisible = remember { mutableStateOf(false) }
+                LaunchedEffect(Unit) {
+                    delay(100)
+                    isMesasVisible.value = true
+                }
                 LazyColumn(
                     verticalArrangement = Arrangement.spacedBy(objetoAdaptardor.ajustarAltura(16)),
                     state = lazyStateMesas,
                 ) {
-                    items(listaMesasActualesFiltradas.chunked(5)) { rowItems ->
-                        Row(
-                            horizontalArrangement = Arrangement.Start,
-                            verticalAlignment = Alignment.Top
+                    itemsIndexed(listaMesasActualesFiltradas.chunked(5)) { index, rowItems ->
+                        AnimatedVisibility(
+                            visible = isMesasVisible.value,
+                            enter = fadeIn(animationSpec = tween(500)) + slideInVertically(
+                                initialOffsetY = { it * (index + 1) }
+                            )
                         ) {
-                            rowItems.forEach { mesa ->
-                                BxContendorDatosMesa(
-                                    datosMesa = mesa,
-                                    navControllerPantallasModuloSac = navController,
-                                    iniciarMenuDetalleComanda = { valor-> iniciarMenuMesaComandada=valor},
-                                    mesaSeleccionada = {datosMesaActual-> mesaActual= datosMesaActual },
-                                    token = token,
-                                    nombreEmpresa = nombreEmpresa,
-                                    codUsuario = codUsuario,
-                                    subCuentaSeleccionada = subCuentaSeleccionada,
-                                    nombreUsuario = nombreUsuario
-                                )
-                                Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(12)))
+                            Row(
+                                horizontalArrangement = Arrangement.Start,
+                                verticalAlignment = Alignment.Top
+                            ) {
+                                rowItems.forEach { mesa ->
+                                    BxContendorDatosMesa(
+                                        datosMesa = mesa,
+                                        navControllerPantallasModuloSac = navController,
+                                        iniciarMenuDetalleComanda = { valor -> iniciarMenuMesaComandada = valor },
+                                        mesaSeleccionada = { datosMesaActual -> mesaActual = datosMesaActual },
+                                        token = token,
+                                        nombreEmpresa = nombreEmpresa,
+                                        codUsuario = codUsuario,
+                                        subCuentaSeleccionada = subCuentaSeleccionada,
+                                        nombreUsuario = nombreUsuario
+                                    )
+                                    Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(12)))
+                                }
                             }
                         }
                     }
-                    item { Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(24)))}
+                    item { Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(24))) }
                 }
+
             }
         }
 
@@ -1540,7 +1622,7 @@ fun InterfazModuloSac(
                             overflow = TextOverflow.Ellipsis,
                             textAlign = TextAlign.Center,
                             modifier = Modifier
-                                .width(objetoAdaptardor.ajustarAncho(85))
+                                .width(objetoAdaptardor.ajustarAncho(80))
                                 .padding(objetoAdaptardor.ajustarAncho(2))
                         )
 
@@ -1568,7 +1650,7 @@ fun InterfazModuloSac(
                             overflow = TextOverflow.Ellipsis,
                             textAlign = TextAlign.Center,
                             modifier = Modifier
-                                .width(objetoAdaptardor.ajustarAncho(80))
+                                .width(objetoAdaptardor.ajustarAncho(85))
                                 .padding(objetoAdaptardor.ajustarAncho(2))
                         )
                     }
@@ -1579,91 +1661,104 @@ fun InterfazModuloSac(
                         .fillMaxSize()
                         .background(Color(0xFFFAFAFA)),
                 ){
-                    LazyColumn(
-                        state = lazyStateCuentasActivas
-                    ) {
-                        items(listaCuentasActivasActuales){ mesa->
-                            if (mesa.estado!="null"){
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .background(Color(0xFFFAFAFA))
-                                        .clickable {
-                                            mesaActual=mesa
-                                            iniciarMenuMesaComandada=true
+                    if (listaCuentasActivasActuales.isNotEmpty()){
+                        var isCuentasVisible by remember { mutableStateOf(false) }
+                        LaunchedEffect(Unit) {
+                            delay(100)
+                            isCuentasVisible = true
+                        }
+                        LazyColumn(state = lazyStateCuentasActivas) {
+                            items(listaCuentasActivasActuales) { mesa ->
+                                if (mesa.estado != "null") {
+                                    Column {
+                                        AnimatedVisibility(
+                                            visible = isCuentasVisible,
+                                            enter = fadeIn(animationSpec = tween(500)) + slideInVertically(initialOffsetY = { it }),
+                                            exit = fadeOut()
+                                        ) {
+                                            Box(
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .background(Color(0xFFFAFAFA))
+                                                    .clickable {
+                                                        mesaActual = mesa
+                                                        iniciarMenuMesaComandada = true
+                                                    }
+                                            ) {
+                                                Row(
+                                                    horizontalArrangement = Arrangement.Center,
+                                                    verticalAlignment = Alignment.CenterVertically
+                                                ) {
+                                                    Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(2)))
+
+                                                    Text(
+                                                        mesa.nombre,
+                                                        fontFamily = fontAksharPrincipal,
+                                                        color = Color.Black,
+                                                        fontWeight = FontWeight.Medium,
+                                                        fontSize = obtenerEstiloBody(),
+                                                        overflow = TextOverflow.Ellipsis,
+                                                        maxLines = 1,
+                                                        textAlign = TextAlign.Center,
+                                                        modifier = Modifier
+                                                            .width(objetoAdaptardor.ajustarAncho(80))
+                                                            .padding(objetoAdaptardor.ajustarAncho(2))
+                                                    )
+
+                                                    var tiempo by remember { mutableStateOf("") }
+                                                    tiempo = if (mesa.tiempo >= 60) {
+                                                        val minutos = mesa.tiempo
+                                                        val horas = minutos / 60
+                                                        val minutosRestantes = minutos % 60
+                                                        "$horas:$minutosRestantes h"
+                                                    } else {
+                                                        "${mesa.tiempo} m"
+                                                    }
+
+                                                    Text(
+                                                        tiempo,
+                                                        fontFamily = fontAksharPrincipal,
+                                                        color = Color.Black,
+                                                        fontWeight = FontWeight.Medium,
+                                                        fontSize = obtenerEstiloBody(),
+                                                        overflow = TextOverflow.Ellipsis,
+                                                        textAlign = TextAlign.Center,
+                                                        maxLines = 1,
+                                                        modifier = Modifier
+                                                            .width(objetoAdaptardor.ajustarAncho(72))
+                                                            .padding(objetoAdaptardor.ajustarAncho(2))
+                                                    )
+
+                                                    val total = mesa.total
+                                                    val totalMiles = try {
+                                                        String.format(Locale.US, "%,.2f", total.replace(",", "").toDouble())
+                                                    } catch (e: NumberFormatException) {
+                                                        total
+                                                    }
+
+                                                    Text(
+                                                        totalMiles,
+                                                        fontFamily = fontAksharPrincipal,
+                                                        color = Color.Black,
+                                                        fontWeight = FontWeight.Medium,
+                                                        fontSize = obtenerEstiloBody(),
+                                                        maxLines = 1,
+                                                        textAlign = TextAlign.End,
+                                                        modifier = Modifier
+                                                            .width(objetoAdaptardor.ajustarAncho(85))
+                                                            .padding(objetoAdaptardor.ajustarAncho(2))
+                                                    )
+                                                    Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(4)))
+                                                }
+                                            }
                                         }
-                                ){
-                                    Row(
-                                        horizontalArrangement = Arrangement.Center,
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(2)))
-                                        Text(
-                                            mesa.nombre,
-                                            fontFamily = fontAksharPrincipal,
-                                            color = Color.Black,
-                                            fontWeight = FontWeight.Medium,
-                                            fontSize = obtenerEstiloBody(),
-                                            overflow = TextOverflow.Ellipsis,
-                                            maxLines = 1,
-                                            textAlign = TextAlign.Center,
-                                            modifier = Modifier
-                                                .width(objetoAdaptardor.ajustarAncho(85))
-                                                .padding(objetoAdaptardor.ajustarAncho(2))
-                                        )
-
-                                        var tiempo by remember { mutableStateOf("") }
-                                        if (mesa.tiempo>=60){
-                                            val minutos =  mesa.tiempo
-                                            val horas = minutos / 60
-                                            val minutosRestantes = minutos % 60
-                                            tiempo="$horas:$minutosRestantes h"
-                                        }else{
-                                            tiempo= "${mesa.tiempo} m"
-                                        }
-
-                                        Text(
-                                            tiempo,
-                                            fontFamily = fontAksharPrincipal,
-                                            color = Color.Black,
-                                            fontWeight = FontWeight.Medium,
-                                            fontSize = obtenerEstiloBody(),
-                                            overflow = TextOverflow.Ellipsis,
-                                            textAlign = TextAlign.Center,
-                                            maxLines = 1,
-                                            modifier = Modifier
-                                                .width(objetoAdaptardor.ajustarAncho(72))
-                                                .padding(objetoAdaptardor.ajustarAncho(2))
-                                        )
-
-                                        val total= mesa.total
-                                        var totalMiles by remember { mutableStateOf("") }
-                                        totalMiles = try {
-                                            String.format(Locale.US, "%,.2f", total.replace(",", "").toDouble())
-                                        } catch (e: NumberFormatException) {
-                                            total
-                                        }
-
-                                        Text(
-                                            totalMiles,
-                                            fontFamily = fontAksharPrincipal,
-                                            color = Color.Black,
-                                            fontWeight = FontWeight.Medium,
-                                            fontSize = obtenerEstiloBody(),
-                                            overflow = TextOverflow.Ellipsis,
-                                            textAlign = TextAlign.End,
-                                            modifier = Modifier
-                                                .width(objetoAdaptardor.ajustarAncho(80))
-                                                .padding(objetoAdaptardor.ajustarAncho(2))
-                                        )
-                                        Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(4)))
                                     }
                                 }
                             }
-
+                            item { Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(16))) }
                         }
-                        item { Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(16)))}
                     }
+
                 }
             }
 
@@ -1924,216 +2019,233 @@ fun InterfazModuloSac(
         )
     }
 
-    if(iniciarMenuMesaComandada) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(Color.Black.copy(alpha = 0.5f))
-                .clickable(enabled = false) {},
-            contentAlignment = Alignment.Center
-        ){
-            Surface(
-                modifier = Modifier
-                    .wrapContentWidth()
-                    .heightIn(max = objetoAdaptardor.ajustarAltura(500))
-                    .align(Alignment.Center),
-                shape = RoundedCornerShape(16.dp),
-                color = Color.White
-            )  {
-                Box(
-                    modifier = Modifier.padding(objetoAdaptardor.ajustarAltura(30)),
-                    contentAlignment = Alignment.Center
-                ){
-                    Column(
-                        verticalArrangement = Arrangement.Center,
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Text(
-                            "Articulos Comandados ${mesaActual.nombre}-${mesaActual.salon}",
-                            fontFamily = fontAksharPrincipal,
-                            fontWeight = FontWeight.Medium,
-                            fontSize = obtenerEstiloDisplay(),
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                            textAlign = TextAlign.Center,
-                            color = Color.Black,
-                        )
-                        Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(4)))
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.Center
-                        ) {
-                            Box(
-                                contentAlignment = Alignment.Center
-                            ){
-                                Column(
-                                    horizontalAlignment = Alignment.CenterHorizontally,
-                                    verticalArrangement = Arrangement.Center
-                                ){
-                                    AgregarTextFieldMultifuncional(
-                                        label = "Sub-Cuentas",
-                                        opciones2 = opcionesSubCuentas,
-                                        usarOpciones2 = true,
-                                        contieneOpciones = true,
-                                        nuevoValor = { nuevoValor->
-                                            subCuentaSeleccionada=nuevoValor
-                                            iniciarCalculoMontos=true
-                                        },
-                                        valor = subCuentaSeleccionada,
-                                        isUltimo = true,
-                                        tomarAnchoMaximo = false,
-                                        medidaAncho = 80
-                                    )
-                                    if(isSubCuentaPedida){
-                                        Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(4)))
-                                        AgregarBt(
-                                            text = "Reactivar",
-                                            color = 0xFF16417C,
-                                            onClick = {
-                                                reactivarCuenta = true
-                                            }
-                                        )
-                                    }
-                                    if(!isSubCuentaPedida){
-                                        Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(4)))
-                                        AgregarBt(
-                                            text = "Quitar mesa",
-                                            color = 0xFFFF5722,
-                                            onClick = {
-                                                iniciarMenuQuitarMesa= true
-                                            }
-                                        )
-                                        Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(4)))
-                                        AgregarBt(
-                                            text = "Mover Mesa",
-                                            color = 0xFF244BC0,
-                                            onClick = {
-                                                iniciarMenuMoverMesa = true
-                                                actualizarSubCuentasYMesas = true
-                                            }
-                                        )
+    if (iniciarMenuMesaComandada) {
+        var isMenuVisible by remember { mutableStateOf(false) }
 
-                                        Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(4)))
-                                    }
-                                }
-                            }
-                            Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(16)))
-                            Column(
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                verticalArrangement = Arrangement.Center
-                            ){
-                                Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(12)))
+        LaunchedEffect(Unit) {
+            isMenuVisible = true
+        }
+
+        AnimatedVisibility(
+            visible = isMenuVisible,
+            enter = fadeIn(animationSpec = tween(500)) + slideInVertically(initialOffsetY = { it }),
+            exit = fadeOut(animationSpec = tween(500)) + slideOutVertically(targetOffsetY = { it })
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.5f))
+                    .clickable(enabled = false) {},
+                contentAlignment = Alignment.Center
+            ) {
+                Surface(
+                    modifier = Modifier
+                        .wrapContentWidth()
+                        .heightIn(max = objetoAdaptardor.ajustarAltura(500))
+                        .align(Alignment.Center),
+                    shape = RoundedCornerShape(16.dp),
+                    color = Color.White
+                )  {
+                    Box(
+                        modifier = Modifier.padding(objetoAdaptardor.ajustarAltura(30)),
+                        contentAlignment = Alignment.Center
+                    ){
+                        Column(
+                            verticalArrangement = Arrangement.Center,
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text(
+                                "Articulos Comandados ${mesaActual.nombre}-${mesaActual.salon}",
+                                fontFamily = fontAksharPrincipal,
+                                fontWeight = FontWeight.Medium,
+                                fontSize = obtenerEstiloDisplay(),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                textAlign = TextAlign.Center,
+                                color = Color.Black,
+                            )
+                            Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(4)))
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.Center
+                            ) {
                                 Box(
-                                    modifier = Modifier
-                                        .heightIn(max = objetoAdaptardor.ajustarAltura(320))
-                                        .wrapContentWidth(),
                                     contentAlignment = Alignment.Center
                                 ){
-                                    LazyColumn{
-                                        items(articulosComandados){ producto->
-                                            if (producto.SubCuenta.uppercase()==subCuentaSeleccionada.uppercase()){
-                                                val existeCuentaInLista = opcionesSubCuentasComandadas.find { it==subCuentaSeleccionada}
-                                                isSubCuentaPedida = existeCuentaInLista!=null
-                                                AgregarBxContenedorArticulosComandados(producto)
-                                                HorizontalDivider(
-                                                    thickness = 2.dp,
-                                                    color = Color.Black,
-                                                    modifier = Modifier.width(objetoAdaptardor.ajustarAncho(365)).padding(2.dp)
-                                                )
-                                            }
+                                    Column(
+                                        horizontalAlignment = Alignment.CenterHorizontally,
+                                        verticalArrangement = Arrangement.Center
+                                    ){
+                                        AgregarTextFieldMultifuncional(
+                                            label = "Sub-Cuentas",
+                                            opciones2 = opcionesSubCuentas,
+                                            usarOpciones2 = true,
+                                            contieneOpciones = true,
+                                            nuevoValor = { nuevoValor ->
+                                                subCuentaSeleccionada = nuevoValor
+                                                iniciarCalculoMontos = true
+                                            },
+                                            valor = subCuentaSeleccionada,
+                                            isUltimo = true,
+                                            tomarAnchoMaximo = false,
+                                            medidaAncho = 80
+                                        )
+                                        if (isSubCuentaPedida) {
+                                            Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(4)))
+                                            AgregarBt(
+                                                text = "Reactivar",
+                                                color = 0xFF16417C,
+                                                onClick = {
+                                                    reactivarCuenta = true
+                                                }
+                                            )
+                                        }
+                                        if (!isSubCuentaPedida) {
+                                            Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(4)))
+                                            AgregarBt(
+                                                text = "Quitar mesa",
+                                                color = 0xFFFF5722,
+                                                onClick = {
+                                                    iniciarMenuQuitarMesa = true
+                                                }
+                                            )
+                                            Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(4)))
+                                            AgregarBt(
+                                                text = "Mover Mesa",
+                                                color = 0xFF244BC0,
+                                                onClick = {
+                                                    iniciarMenuMoverMesa = true
+                                                    actualizarSubCuentasYMesas = true
+                                                }
+                                            )
+                                            Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(4)))
                                         }
                                     }
                                 }
-                                Row {
-                                    Box(
-                                        contentAlignment = Alignment.CenterStart,
-                                        modifier = Modifier
-                                            .height(objetoAdaptardor.ajustarAltura(50))
-                                            .width(objetoAdaptardor.ajustarAncho(165))
-                                    ){
-                                        Text(
-                                            "Articulos: $cantidadArticulosComandados",
-                                            fontFamily = fontAksharPrincipal,
-                                            fontWeight = FontWeight.Medium,
-                                            fontSize = obtenerEstiloLabel(),
-                                            maxLines = 1,
-                                            overflow = TextOverflow.Ellipsis,
-                                            textAlign = TextAlign.Start,
-                                            color = Color.Black,
-                                        )
-                                    }
-                                    Box(
-                                        contentAlignment = Alignment.CenterEnd,
-                                        modifier = Modifier
-                                            .height(objetoAdaptardor.ajustarAltura(50))
-                                            .width(objetoAdaptardor.ajustarAncho(200))
-                                    ){
-                                        Text(
-                                            "Total $montoTotalComandado",
-                                            fontFamily = fontAksharPrincipal,
-                                            fontWeight = FontWeight.Medium,
-                                            fontSize = obtenerEstiloTitle(),
-                                            maxLines = 1,
-                                            overflow = TextOverflow.Ellipsis,
-                                            textAlign = TextAlign.End,
-                                            color = Color.Black,
-                                        )
-                                    }
-                                }
-
-                            }
-                            Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(16)))
-                            Box(
-                                contentAlignment = Alignment.Center
-                            ){
+                                Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(16)))
                                 Column(
                                     horizontalAlignment = Alignment.CenterHorizontally,
                                     verticalArrangement = Arrangement.Center
                                 ){
-                                    if (!isSubCuentaPedida){
-                                        AgregarBt(
-                                            text = "Pedir Cuenta",
-                                            color = 0xFF16417C,
-                                            onClick = {
-                                                pedirCuenta= true
+                                    Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(12)))
+                                    Box(
+                                        modifier = Modifier
+                                            .heightIn(max = objetoAdaptardor.ajustarAltura(320))
+                                            .wrapContentWidth(),
+                                        contentAlignment = Alignment.Center
+                                    ){
+                                        if(articulosComandados.isNotEmpty()){
+                                            var isArticuloVisible by remember { mutableStateOf(false) }
+                                            LaunchedEffect(Unit) {
+                                                delay(100)
+                                                isArticuloVisible = true
                                             }
-                                        )
-                                        Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(4)))
+                                            LazyColumn {
+                                                items(articulosComandados) { producto ->
+                                                    if (producto.SubCuenta.uppercase() == subCuentaSeleccionada.uppercase()) {
+                                                        val existeCuentaInLista = opcionesSubCuentasComandadas.find { it == subCuentaSeleccionada }
+                                                        isSubCuentaPedida = existeCuentaInLista != null
+                                                        Column {
+                                                            AnimatedVisibility(
+                                                                visible = isArticuloVisible,
+                                                                enter = fadeIn(animationSpec = tween(500)) + slideInVertically(initialOffsetY = { it })
+                                                            ) {
+                                                                AgregarBxContenedorArticulosComandados(producto)
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                    Row {
+                                        Box(
+                                            contentAlignment = Alignment.CenterStart,
+                                            modifier = Modifier
+                                                .height(objetoAdaptardor.ajustarAltura(50))
+                                                .width(objetoAdaptardor.ajustarAncho(165))
+                                        ){
+                                            Text(
+                                                "Articulos: $cantidadArticulosComandados",
+                                                fontFamily = fontAksharPrincipal,
+                                                fontWeight = FontWeight.Medium,
+                                                fontSize = obtenerEstiloLabel(),
+                                                maxLines = 1,
+                                                overflow = TextOverflow.Ellipsis,
+                                                textAlign = TextAlign.Start,
+                                                color = Color.Black,
+                                            )
+                                        }
+                                        Box(
+                                            contentAlignment = Alignment.CenterEnd,
+                                            modifier = Modifier
+                                                .height(objetoAdaptardor.ajustarAltura(50))
+                                                .width(objetoAdaptardor.ajustarAncho(200))
+                                        ){
+                                            Text(
+                                                "Total $montoTotalComandado",
+                                                fontFamily = fontAksharPrincipal,
+                                                fontWeight = FontWeight.Medium,
+                                                fontSize = obtenerEstiloTitle(),
+                                                maxLines = 1,
+                                                overflow = TextOverflow.Ellipsis,
+                                                textAlign = TextAlign.End,
+                                                color = Color.Black,
+                                            )
+                                        }
+                                    }
+
+                                }
+                                Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(16)))
+                                Box(
+                                    contentAlignment = Alignment.Center
+                                ){
+                                    Column(
+                                        horizontalAlignment = Alignment.CenterHorizontally,
+                                        verticalArrangement = Arrangement.Center
+                                    ){
+                                        if (!isSubCuentaPedida){
+                                            AgregarBt(
+                                                text = "Pedir Cuenta",
+                                                color = 0xFF16417C,
+                                                onClick = {
+                                                    pedirCuenta = true
+                                                }
+                                            )
+                                            Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(4)))
+                                        }
                                         AgregarBt(
                                             text = "+10",
                                             color = 0xFF244BC0,
                                             onClick = {
-                                                agregarImpuestoServicio=true
+                                                agregarImpuestoServicio = true
                                             }
+                                        )
+                                        Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(4)))
+                                        AgregarBt(
+                                            text = "Agregar",
+                                            color = 0xFF22B14C,
+                                            onClick = { iniciarPantallaSacComanda = true }
                                         )
 
                                         Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(4)))
 
+
+                                        AgregarBt(
+                                            text = "Salir",
+                                            color = 0xFFE10000,
+                                            onClick = {
+                                                iniciarMenuMesaComandada = false
+                                                mesaActual = Mesa()
+                                                articulosComandados.clear()
+                                                opcionesSubCuentas.value.clear()
+                                            }
+                                        )
                                     }
-                                    AgregarBt(
-                                        text = "Agregar",
-                                        color =  0xFF22B14C,
-                                        onClick = { iniciarPantallaSacComanda= true}
-                                    )
-
-                                    Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(4)))
-
-
-                                    AgregarBt(
-                                        text = "Salir",
-                                        color = 0xFFE10000,
-                                        onClick = {
-                                            iniciarMenuMesaComandada= false
-                                            mesaActual= Mesa()
-                                            articulosComandados.clear()
-                                            opcionesSubCuentas.value.clear()
-                                        }
-                                    )
                                 }
                             }
                         }
                     }
-
                 }
             }
         }
@@ -2171,7 +2283,7 @@ fun InterfazModuloSac(
                             contentAlignment = Alignment.BottomCenter
                         ) {
                             SubcomposeAsyncImage(
-                                model = "https://invefacon.com/img/demorest/articulos/${articuloActualSeleccionado.Cod_Articulo}.png",
+                                model = "https://invefacon.com/img/$nombreEmpresa/articulos/${articuloActualSeleccionado.Cod_Articulo}.png",
                                 contentDescription = "Imagen Articulo",
                                 modifier = Modifier
                                     .fillMaxSize(),
@@ -2337,18 +2449,24 @@ fun InterfazModuloSac(
     }
 
     if (iniciarMenuMoverArticulo){
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(Color.Black.copy(alpha = 0.5f))
-                .clickable(enabled = false) {},
-            contentAlignment = Alignment.Center
-        ){
-            AnimatedVisibility(
-                visible = iniciarMenuMoverArticulo,
-                enter = fadeIn() + scaleIn(initialScale = 0.8f),
-                exit = fadeOut() + scaleOut(targetScale = 0.8f)
-            ) {
+        var isMenuVisible by remember { mutableStateOf(false) }
+
+        LaunchedEffect(Unit) {
+            isMenuVisible = true
+        }
+
+        AnimatedVisibility(
+            visible = isMenuVisible,
+            enter = fadeIn(animationSpec = tween(500)) + slideInVertically(initialOffsetY = { it }),
+            exit = fadeOut(animationSpec = tween(500)) + slideOutVertically(targetOffsetY = { it })
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.5f))
+                    .clickable(enabled = false) {},
+                contentAlignment = Alignment.Center
+            ){
                 Surface(
                     modifier = Modifier
                         .wrapContentWidth(Alignment.CenterHorizontally)
@@ -2382,7 +2500,7 @@ fun InterfazModuloSac(
                                 contentAlignment = Alignment.BottomCenter
                             ) {
                                 SubcomposeAsyncImage(
-                                    model = "https://invefacon.com/img/demorest/articulos/${articuloActualSeleccionado.Cod_Articulo}.png",
+                                    model = "https://invefacon.com/img/$nombreEmpresa/articulos/${articuloActualSeleccionado.Cod_Articulo}.png",
                                     contentDescription = "Imagen Articulo",
                                     modifier = Modifier
                                         .fillMaxSize(),
@@ -2571,555 +2689,596 @@ fun InterfazModuloSac(
                 }
             }
         }
+
     }
 
     if (iniciarMenuMoverMesa){
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(Color.Black.copy(alpha = 0.5f))
-                .clickable(enabled = false) {},
-            contentAlignment = Alignment.Center
+
+        var isMenuVisible by remember { mutableStateOf(false) }
+
+        LaunchedEffect(Unit) {
+            isMenuVisible = true
+        }
+
+        AnimatedVisibility(
+            visible = isMenuVisible,
+            enter = fadeIn(animationSpec = tween(500)) + slideInVertically(initialOffsetY = { it }),
+            exit = fadeOut(animationSpec = tween(500)) + slideOutVertically(targetOffsetY = { it })
         ) {
-            Surface(
+            Box(
                 modifier = Modifier
-                    .wrapContentWidth(Alignment.CenterHorizontally)
-                    .wrapContentHeight()
-                    .align(Alignment.Center),
-                shape = RoundedCornerShape(16.dp),
-                color = Color.White
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.5f))
+                    .clickable(enabled = false) {},
+                contentAlignment = Alignment.Center
             ) {
-                Box(
-                    modifier = Modifier.padding(objetoAdaptardor.ajustarAltura(24)),
-                    contentAlignment = Alignment.Center
+                Surface(
+                    modifier = Modifier
+                        .wrapContentWidth(Alignment.CenterHorizontally)
+                        .wrapContentHeight()
+                        .align(Alignment.Center),
+                    shape = RoundedCornerShape(16.dp),
+                    color = Color.White
                 ) {
-                    Column(
-                        verticalArrangement = Arrangement.Center,
-                        horizontalAlignment = Alignment.CenterHorizontally
+                    Box(
+                        modifier = Modifier.padding(objetoAdaptardor.ajustarAltura(24)),
+                        contentAlignment = Alignment.Center
                     ) {
-                        Text(
-                            "Mover Mesa ${mesaActual.nombre}-${mesaActual.salon}",
-                            fontFamily = fontAksharPrincipal,
-                            fontWeight = FontWeight.Medium,
-                            fontSize = objetoAdaptardor.ajustarFont(27),
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                            textAlign = TextAlign.Center,
-                            color = Color.Black
-                        )
-
-                        Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(8)))
-                        BBasicTextField(
-                            value = codUsuarioIngresado,
-                            onValueChange =  { nuevoValor ->
-                                codUsuarioIngresado = nuevoValor
-                            },
-                            fontFamily = fontAksharPrincipal,
-                            alto = 70,
-                            ancho = 300,
-                            placeholder = "Ingrese el codigo de usuario",
-                            icono = Icons.Filled.Person,
-                            objetoAdaptardor = objetoAdaptardor
-                        )
-                        Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(8)))
-                        BBasicTextField(
-                            value = passwordIngresada,
-                            onValueChange =  { nuevoValor ->
-                                passwordIngresada = nuevoValor
-                            },
-                            fontFamily = fontAksharPrincipal,
-                            alto = 70,
-                            ancho = 300,
-                            placeholder = "Ingrese la contraseña",
-                            icono = Icons.Filled.Password,
-                            objetoAdaptardor = objetoAdaptardor
-                        )
-
-                        Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(8)))
-
-                        Box(
-                            contentAlignment = Alignment.Center
-                        ){
-                            AgregarTextFieldMultifuncional(
-                                label = "Mesa Destino",
-                                opciones2 = opcionesMesas,
-                                usarOpciones2 = true,
-                                contieneOpciones = true,
-                                nuevoValor = { nuevoValor->
-                                    mesaDestino= nuevoValor
-                                },
-                                valor = opcionesMesas.value[mesaDestino]?:"Seleccione una Mesa",
-                                isUltimo = true,
-                                tomarAnchoMaximo = false,
-                                medidaAncho = 100
+                        Column(
+                            verticalArrangement = Arrangement.Center,
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text(
+                                "Mover Mesa ${mesaActual.nombre}-${mesaActual.salon}",
+                                fontFamily = fontAksharPrincipal,
+                                fontWeight = FontWeight.Medium,
+                                fontSize = objetoAdaptardor.ajustarFont(27),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                textAlign = TextAlign.Center,
+                                color = Color.Black
                             )
-                        }
-                        Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(8)))
-                        Row {
-                            Button(
-                                onClick = {
-                                    codUsuarioIngresado=codUsuario
-                                    passwordIngresada=""
-                                    iniciarMenuMoverMesa= false
+
+                            Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(8)))
+                            BBasicTextField(
+                                value = codUsuarioIngresado,
+                                onValueChange =  { nuevoValor ->
+                                    codUsuarioIngresado = nuevoValor
                                 },
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = Color(0xFF244BC0), // Color de fondo del botón
-                                    contentColor = Color.White,
-                                    disabledContainerColor = Color(0xFF244BC0),
-                                    disabledContentColor = Color.White
+                                fontFamily = fontAksharPrincipal,
+                                alto = 70,
+                                ancho = 300,
+                                placeholder = "Ingrese el codigo de usuario",
+                                icono = Icons.Filled.Person,
+                                objetoAdaptardor = objetoAdaptardor
+                            )
+                            Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(8)))
+                            BBasicTextField(
+                                value = passwordIngresada,
+                                onValueChange =  { nuevoValor ->
+                                    passwordIngresada = nuevoValor
+                                },
+                                fontFamily = fontAksharPrincipal,
+                                alto = 70,
+                                ancho = 300,
+                                placeholder = "Ingrese la contraseña",
+                                icono = Icons.Filled.Password,
+                                objetoAdaptardor = objetoAdaptardor
+                            )
+
+                            Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(8)))
+
+                            Box(
+                                contentAlignment = Alignment.Center
+                            ){
+                                AgregarTextFieldMultifuncional(
+                                    label = "Mesa Destino",
+                                    opciones2 = opcionesMesas,
+                                    usarOpciones2 = true,
+                                    contieneOpciones = true,
+                                    nuevoValor = { nuevoValor->
+                                        mesaDestino= nuevoValor
+                                    },
+                                    valor = opcionesMesas.value[mesaDestino]?:"Seleccione una Mesa",
+                                    isUltimo = true,
+                                    tomarAnchoMaximo = false,
+                                    medidaAncho = 100
                                 )
+                            }
+                            Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(8)))
+                            Row {
+                                Button(
+                                    onClick = {
+                                        codUsuarioIngresado=codUsuario
+                                        passwordIngresada=""
+                                        iniciarMenuMoverMesa= false
+                                    },
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = Color(0xFF244BC0), // Color de fondo del botón
+                                        contentColor = Color.White,
+                                        disabledContainerColor = Color(0xFF244BC0),
+                                        disabledContentColor = Color.White
+                                    )
+                                ) {
+                                    Text(
+                                        "Cancelar",
+                                        fontFamily = fontAksharPrincipal,
+                                        fontWeight = FontWeight.Medium,
+                                        fontSize = objetoAdaptardor.ajustarFont(15),
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis,
+                                        textAlign = TextAlign.Center,
+                                        color = Color.White
+                                    )
+                                }
+                                Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(8)))
+                                Button(
+                                    onClick = {
+                                        moverMesa= true
+                                        iniciarMenuMoverMesa= false
+                                    },
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = Color.Red, // Color de fondo del botón
+                                        contentColor = Color.White,
+                                        disabledContainerColor = Color.Red,
+                                        disabledContentColor = Color.White
+
+                                    )
+                                ) {
+                                    Text(
+                                        "Mover",
+                                        fontFamily = fontAksharPrincipal,
+                                        fontWeight = FontWeight.Medium,
+                                        fontSize = objetoAdaptardor.ajustarFont(15),
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis,
+                                        textAlign = TextAlign.Center,
+                                        color = Color.White
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+
+    }
+
+    if (iniciarMenuAjustes){
+
+        var isMenuVisible by remember { mutableStateOf(false) }
+
+        LaunchedEffect(Unit) {
+            isMenuVisible = true
+        }
+
+        AnimatedVisibility(
+            visible = isMenuVisible,
+            enter = fadeIn(animationSpec = tween(500)) + slideInVertically(initialOffsetY = { it }),
+            exit = fadeOut(animationSpec = tween(500)) + slideOutVertically(targetOffsetY = { it })
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.5f))
+                    .clickable(enabled = false) {},
+                contentAlignment = Alignment.Center
+            ) {
+                Surface(
+                    modifier = Modifier
+                        .wrapContentWidth(Alignment.CenterHorizontally)
+                        .wrapContentHeight()
+                        .align(Alignment.Center),
+                    shape = RoundedCornerShape(16.dp),
+                    color = Color.White
+                ) {
+                    Box(
+                        modifier = Modifier.padding(objetoAdaptardor.ajustarAltura(24)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(
+                            verticalArrangement = Arrangement.Center,
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text(
+                                "Ajustes",
+                                fontFamily = fontAksharPrincipal,
+                                fontWeight = FontWeight.Medium,
+                                fontSize = objetoAdaptardor.ajustarFont(27),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                textAlign = TextAlign.Center,
+                                color = Color.Black
+                            )
+
+                            Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(8)))
+                            Row(
+                                modifier = Modifier.padding(16.dp),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Text(
-                                    "Cancelar",
+                                    "Cobrar impuesto de Servicio",
                                     fontFamily = fontAksharPrincipal,
                                     fontWeight = FontWeight.Medium,
-                                    fontSize = objetoAdaptardor.ajustarFont(15),
+                                    fontSize = obtenerEstiloTitle(),
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis,
                                     textAlign = TextAlign.Center,
-                                    color = Color.White
+                                    color = Color.Black
+                                )
+                                Switch(
+                                    checked = estadoImp2,
+                                    onCheckedChange = {
+                                        iniciarMenuConfCambPrm=true
+                                    },colors = SwitchDefaults.colors(
+                                        checkedTrackColor = Color(0xFF1D3FA4)
+                                    )
                                 )
                             }
-                            Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(8)))
+                            Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(8)))
                             Button(
                                 onClick = {
-                                    moverMesa= true
-                                    iniciarMenuMoverMesa= false
+                                    iniciarMenuAjustes= false
                                 },
                                 colors = ButtonDefaults.buttonColors(
                                     containerColor = Color.Red, // Color de fondo del botón
                                     contentColor = Color.White,
                                     disabledContainerColor = Color.Red,
                                     disabledContentColor = Color.White
-
                                 )
                             ) {
                                 Text(
-                                    "Mover",
+                                    "Salir",
                                     fontFamily = fontAksharPrincipal,
                                     fontWeight = FontWeight.Medium,
-                                    fontSize = objetoAdaptardor.ajustarFont(15),
+                                    fontSize = obtenerEstiloBody(),
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis,
                                     textAlign = TextAlign.Center,
                                     color = Color.White
                                 )
                             }
+
                         }
                     }
                 }
             }
         }
 
-    }
-
-    if (iniciarMenuAjustes){
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(Color.Black.copy(alpha = 0.5f))
-                .clickable(enabled = false) {},
-            contentAlignment = Alignment.Center
-        ) {
-            Surface(
-                modifier = Modifier
-                    .wrapContentWidth(Alignment.CenterHorizontally)
-                    .wrapContentHeight()
-                    .align(Alignment.Center),
-                shape = RoundedCornerShape(16.dp),
-                color = Color.White
-            ) {
-                Box(
-                    modifier = Modifier.padding(objetoAdaptardor.ajustarAltura(24)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Column(
-                        verticalArrangement = Arrangement.Center,
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Text(
-                            "Ajustes",
-                            fontFamily = fontAksharPrincipal,
-                            fontWeight = FontWeight.Medium,
-                            fontSize = objetoAdaptardor.ajustarFont(27),
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                            textAlign = TextAlign.Center,
-                            color = Color.Black
-                        )
-
-                        Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(8)))
-                        Row(
-                            modifier = Modifier.padding(16.dp),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                "Cobrar impuesto de Servicio",
-                                fontFamily = fontAksharPrincipal,
-                                fontWeight = FontWeight.Medium,
-                                fontSize = obtenerEstiloTitle(),
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                                textAlign = TextAlign.Center,
-                                color = Color.Black
-                            )
-                            Switch(
-                                checked = estadoImp2,
-                                onCheckedChange = {
-                                    iniciarMenuConfCambPrm=true
-                                },colors = SwitchDefaults.colors(
-                                    checkedTrackColor = Color(0xFF1D3FA4)
-                                )
-                            )
-                        }
-                        Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(8)))
-                        Button(
-                            onClick = {
-                                iniciarMenuAjustes= false
-                            },
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = Color.Red, // Color de fondo del botón
-                                contentColor = Color.White,
-                                disabledContainerColor = Color.Red,
-                                disabledContentColor = Color.White
-                            )
-                        ) {
-                            Text(
-                                "Salir",
-                                fontFamily = fontAksharPrincipal,
-                                fontWeight = FontWeight.Medium,
-                                fontSize = obtenerEstiloBody(),
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                                textAlign = TextAlign.Center,
-                                color = Color.White
-                            )
-                        }
-
-                    }
-                }
-            }
-        }
 
     }
 
     if (iniciarMenuCrearExpress){
-        var isNuevoCliente by remember { mutableStateOf(false) }
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(Color.Black.copy(alpha = 0.5f))
-                .clickable(enabled = false) {},
-            contentAlignment = Alignment.Center
+        var isMenuVisible by remember { mutableStateOf(false) }
+
+        LaunchedEffect(Unit) {
+            isMenuVisible = true
+        }
+
+        AnimatedVisibility(
+            visible = isMenuVisible,
+            enter = fadeIn(animationSpec = tween(500)) + slideInVertically(initialOffsetY = { it }),
+            exit = fadeOut(animationSpec = tween(500)) + slideOutVertically(targetOffsetY = { it })
         ) {
-            if(iniciarMenuCrearCliente){
-                Surface(
-                    modifier = Modifier
-                        .wrapContentWidth()
-                        .heightIn(max = objetoAdaptardor.ajustarAltura(500))
-                        .align(Alignment.Center),
-                    shape = RoundedCornerShape(16.dp),
-                    color = Color.White
-                ) {
-                    Box(
+            var isNuevoCliente by remember { mutableStateOf(false) }
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.5f))
+                    .clickable(enabled = false) {},
+                contentAlignment = Alignment.Center
+            ) {
+                if(iniciarMenuCrearCliente){
+                    Surface(
                         modifier = Modifier
-                            .padding(objetoAdaptardor.ajustarAltura(24)),
-                        contentAlignment = Alignment.Center
+                            .wrapContentWidth()
+                            .heightIn(max = objetoAdaptardor.ajustarAltura(500))
+                            .align(Alignment.Center),
+                        shape = RoundedCornerShape(16.dp),
+                        color = Color.White
                     ) {
-                        Column(
-                            verticalArrangement = Arrangement.Center,
-                            horizontalAlignment = Alignment.CenterHorizontally
+                        Box(
+                            modifier = Modifier
+                                .padding(objetoAdaptardor.ajustarAltura(24)),
+                            contentAlignment = Alignment.Center
                         ) {
-                            Text(
-                                if(isNuevoCliente)"Agregar Cliente" else "Editar Cliente",
-                                fontFamily = fontAksharPrincipal,
-                                fontWeight = FontWeight.Medium,
-                                fontSize = objetoAdaptardor.ajustarFont(27),
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                                textAlign = TextAlign.Center,
-                                color = Color.Black
-                            )
-                            Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(8)))
-                            Row(
-                                verticalAlignment = Alignment.Top
+                            Column(
+                                verticalArrangement = Arrangement.Center,
+                                horizontalAlignment = Alignment.CenterHorizontally
                             ) {
-                                Column {
-                                    Text(
-                                        "Cedula:",
-                                        fontFamily = fontAksharPrincipal,
-                                        fontWeight = FontWeight.Medium,
-                                        fontSize = obtenerEstiloTitle(),
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis,
-                                        textAlign = TextAlign.Center,
-                                        color = Color.Black
-                                    )
-                                    Row {
+                                Text(
+                                    if(isNuevoCliente)"Agregar Cliente" else "Editar Cliente",
+                                    fontFamily = fontAksharPrincipal,
+                                    fontWeight = FontWeight.Medium,
+                                    fontSize = objetoAdaptardor.ajustarFont(27),
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    textAlign = TextAlign.Center,
+                                    color = Color.Black
+                                )
+                                Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(8)))
+                                Row(
+                                    verticalAlignment = Alignment.Top
+                                ) {
+                                    Column {
+                                        Text(
+                                            "Cedula:",
+                                            fontFamily = fontAksharPrincipal,
+                                            fontWeight = FontWeight.Medium,
+                                            fontSize = obtenerEstiloTitle(),
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis,
+                                            textAlign = TextAlign.Center,
+                                            color = Color.Black
+                                        )
+                                        Row {
+                                            BBasicTextField(
+                                                value = cedulaCliente,
+                                                onValueChange = {
+                                                    cedulaCliente = it
+                                                    nombreCliente = ""
+                                                },
+                                                placeholder = "Ingrese la cedula",
+                                                fontFamily = fontAksharPrincipal,
+                                                objetoAdaptardor = objetoAdaptardor,
+                                                alto = 60,
+                                                ancho = 230,
+                                                icono = Icons.Filled.Badge
+                                            )
+                                            Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(8)))
+                                            if(nombreCliente.isEmpty()){
+                                                AgregarBt(
+                                                    text = "Buscar",
+                                                    color = 0xFF244BC0,
+                                                    onClick = {
+                                                        iniciarBusquedaClienteByCedula = true
+                                                    },
+                                                    quitarPadInterno = true,
+                                                    alto = 60
+                                                )
+                                            }
+                                        }
+                                        Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(8)))
+                                        Text(
+                                            "Nombre:",
+                                            fontFamily = fontAksharPrincipal,
+                                            fontWeight = FontWeight.Medium,
+                                            fontSize = obtenerEstiloTitle(),
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis,
+                                            textAlign = TextAlign.Center,
+                                            color = Color.Black
+                                        )
                                         BBasicTextField(
-                                            value = cedulaCliente,
+                                            value = nombreCliente,
                                             onValueChange = {
-                                                cedulaCliente = it
-                                                nombreCliente = ""
+                                                nombreCliente = it
                                             },
-                                            placeholder = "Ingrese la cedula",
+                                            placeholder = "Ingrese el nombre",
                                             fontFamily = fontAksharPrincipal,
                                             objetoAdaptardor = objetoAdaptardor,
                                             alto = 60,
-                                            ancho = 230,
-                                            icono = Icons.Filled.Badge
+                                            ancho = 360,
+                                            icono = Icons.Filled.Person
                                         )
-                                        Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(8)))
-                                        if(nombreCliente.isEmpty()){
+                                        Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(8)))
+                                        Text(
+                                            "Telefono:",
+                                            fontFamily = fontAksharPrincipal,
+                                            fontWeight = FontWeight.Medium,
+                                            fontSize = obtenerEstiloTitle(),
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis,
+                                            textAlign = TextAlign.Center,
+                                            color = Color.Black
+                                        )
+                                        BBasicTextField(
+                                            value = telefonoCliente,
+                                            onValueChange = {
+                                                telefonoCliente = it
+                                            },
+                                            fontFamily = fontAksharPrincipal,
+                                            placeholder = "Ingrese el telefono",
+                                            objetoAdaptardor = objetoAdaptardor,
+                                            alto = 60,
+                                            ancho = 360,
+                                            icono = Icons.Filled.Phone
+                                        )
+                                    }
+                                    Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(8)))
+                                    Column {
+                                        Text(
+                                            "Correo:",
+                                            fontFamily = fontAksharPrincipal,
+                                            fontWeight = FontWeight.Medium,
+                                            fontSize = obtenerEstiloTitle(),
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis,
+                                            textAlign = TextAlign.Center,
+                                            color = Color.Black
+                                        )
+                                        BBasicTextField(
+                                            value = correoCliente,
+                                            onValueChange = {
+                                                correoCliente = it
+                                            },
+                                            fontFamily = fontAksharPrincipal,
+                                            placeholder = "Ingrese el correo",
+                                            objetoAdaptardor = objetoAdaptardor,
+                                            alto = 60,
+                                            ancho = 360,
+                                            icono = Icons.Filled.Email
+                                        )
+                                        Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(8)))
+                                        Text(
+                                            "Direccion:",
+                                            fontFamily = fontAksharPrincipal,
+                                            fontWeight = FontWeight.Medium,
+                                            fontSize = obtenerEstiloTitle(),
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis,
+                                            textAlign = TextAlign.Center,
+                                            color = Color.Black
+                                        )
+                                        BBasicTextField(
+                                            value = direccionCliente,
+                                            onValueChange = {
+                                                direccionCliente = it
+                                            },
+                                            fontFamily = fontAksharPrincipal,
+                                            placeholder = "Ingrese la direccion",
+                                            objetoAdaptardor = objetoAdaptardor,
+                                            alto = 60,
+                                            ancho = 360,
+                                            icono = Icons.Filled.Place
+                                        )
+                                        Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(40)))
+
+                                        Row {
+                                            Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(60)))
                                             AgregarBt(
-                                                text = "Buscar",
+                                                text = "Regresar",
+                                                color = 0xFFEB3324,
+                                                onClick = {
+                                                    iniciarMenuCrearCliente= false
+                                                }
+                                            )
+                                            Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(8)))
+                                            AgregarBt(
+                                                text = "Continuar",
                                                 color = 0xFF244BC0,
                                                 onClick = {
-                                                    iniciarBusquedaClienteByCedula = true
-                                                },
-                                                quitarPadInterno = true,
-                                                alto = 60
+                                                    if(isNuevoCliente){
+                                                        agregarCliente = true
+                                                    }
+                                                }
                                             )
                                         }
                                     }
-                                    Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(8)))
-                                    Text(
-                                        "Nombre:",
-                                        fontFamily = fontAksharPrincipal,
-                                        fontWeight = FontWeight.Medium,
-                                        fontSize = obtenerEstiloTitle(),
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis,
-                                        textAlign = TextAlign.Center,
-                                        color = Color.Black
-                                    )
-                                    BBasicTextField(
-                                        value = nombreCliente,
-                                        onValueChange = {
-                                            nombreCliente = it
-                                        },
-                                        placeholder = "Ingrese el nombre",
-                                        fontFamily = fontAksharPrincipal,
-                                        objetoAdaptardor = objetoAdaptardor,
-                                        alto = 60,
-                                        ancho = 360,
-                                        icono = Icons.Filled.Person
-                                    )
-                                    Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(8)))
-                                    Text(
-                                        "Telefono:",
-                                        fontFamily = fontAksharPrincipal,
-                                        fontWeight = FontWeight.Medium,
-                                        fontSize = obtenerEstiloTitle(),
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis,
-                                        textAlign = TextAlign.Center,
-                                        color = Color.Black
-                                    )
-                                    BBasicTextField(
-                                        value = telefonoCliente,
-                                        onValueChange = {
-                                            telefonoCliente = it
-                                        },
-                                        fontFamily = fontAksharPrincipal,
-                                        placeholder = "Ingrese el telefono",
-                                        objetoAdaptardor = objetoAdaptardor,
-                                        alto = 60,
-                                        ancho = 360,
-                                        icono = Icons.Filled.Phone
-                                    )
-                                }
-                                Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(8)))
-                                Column {
-                                    Text(
-                                        "Correo:",
-                                        fontFamily = fontAksharPrincipal,
-                                        fontWeight = FontWeight.Medium,
-                                        fontSize = obtenerEstiloTitle(),
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis,
-                                        textAlign = TextAlign.Center,
-                                        color = Color.Black
-                                    )
-                                    BBasicTextField(
-                                        value = correoCliente,
-                                        onValueChange = {
-                                            correoCliente = it
-                                        },
-                                        fontFamily = fontAksharPrincipal,
-                                        placeholder = "Ingrese el correo",
-                                        objetoAdaptardor = objetoAdaptardor,
-                                        alto = 60,
-                                        ancho = 360,
-                                        icono = Icons.Filled.Email
-                                    )
-                                    Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(8)))
-                                    Text(
-                                        "Direccion:",
-                                        fontFamily = fontAksharPrincipal,
-                                        fontWeight = FontWeight.Medium,
-                                        fontSize = obtenerEstiloTitle(),
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis,
-                                        textAlign = TextAlign.Center,
-                                        color = Color.Black
-                                    )
-                                    BBasicTextField(
-                                        value = direccionCliente,
-                                        onValueChange = {
-                                            direccionCliente = it
-                                        },
-                                        fontFamily = fontAksharPrincipal,
-                                        placeholder = "Ingrese la direccion",
-                                        objetoAdaptardor = objetoAdaptardor,
-                                        alto = 60,
-                                        ancho = 360,
-                                        icono = Icons.Filled.Place
-                                    )
-                                    Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(40)))
 
-                                    Row {
-                                        Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(60)))
-                                        AgregarBt(
-                                            text = "Regresar",
-                                            color = 0xFFEB3324,
-                                            onClick = {
-                                                iniciarMenuCrearCliente= false
-                                            }
-                                        )
-                                        Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(8)))
-                                        AgregarBt(
-                                            text = "Continuar",
-                                            color = 0xFF244BC0,
-                                            onClick = {
-                                                if(isNuevoCliente){
-                                                    agregarCliente = true
-                                                }
-                                            }
-                                        )
-                                    }
                                 }
-
                             }
                         }
                     }
                 }
-            }
-            else{
-                Surface(
-                    modifier = Modifier
-                        .widthIn(max = objetoAdaptardor.ajustarAncho(400))
-                        .heightIn(max = objetoAdaptardor.ajustarAltura(570))
-                        .align(Alignment.Center),
-                    shape = RoundedCornerShape(16.dp),
-                    color = Color.White
-                ) {
-                    Box(
+                else{
+                    Surface(
                         modifier = Modifier
-                            .padding(objetoAdaptardor.ajustarAltura(24)),
-                        contentAlignment = Alignment.Center
+                            .widthIn(max = objetoAdaptardor.ajustarAncho(400))
+                            .heightIn(max = objetoAdaptardor.ajustarAltura(570))
+                            .align(Alignment.Center),
+                        shape = RoundedCornerShape(16.dp),
+                        color = Color.White
                     ) {
-                        Column(
-                            verticalArrangement = Arrangement.Center,
-                            horizontalAlignment = Alignment.CenterHorizontally
+                        Box(
+                            modifier = Modifier
+                                .padding(objetoAdaptardor.ajustarAltura(24)),
+                            contentAlignment = Alignment.Center
                         ) {
-                            Text(
-                                "Crear Express",
-                                fontFamily = fontAksharPrincipal,
-                                fontWeight = FontWeight.Medium,
-                                fontSize = objetoAdaptardor.ajustarFont(27),
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                                textAlign = TextAlign.Center,
-                                color = Color.Black
-                            )
-                            Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(6)))
-                            Row {
-                                BBasicTextField(
-                                    value = datosIngresadosBarraBusquedaCliente,
-                                    onValueChange = {
-                                        datosIngresadosBarraBusquedaCliente = it
-                                    },
+                            Column(
+                                verticalArrangement = Arrangement.Center,
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Text(
+                                    "Crear Express",
                                     fontFamily = fontAksharPrincipal,
-                                    objetoAdaptardor = objetoAdaptardor,
-                                    alto = 60,
-                                    ancho = 292,
-                                    mostrarTrailingIcon = true,
-                                    trailingIcon = Icons.Filled.AddCircle,
-                                    onTrailingIconClick = {
-                                        cedulaCliente = ""
-                                        nombreCliente = ""
-                                        telefonoCliente = ""
-                                        correoCliente = ""
-                                        direccionCliente = ""
-                                        isNuevoCliente = true
-                                        iniciarMenuCrearCliente = it
-                                    }
+                                    fontWeight = FontWeight.Medium,
+                                    fontSize = objetoAdaptardor.ajustarFont(27),
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    textAlign = TextAlign.Center,
+                                    color = Color.Black
                                 )
-                                Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(8)))
-                                AgregarBt(
-                                    text = "Salir",
-                                    color = 0xFFEB3324,
-                                    onClick = {
-                                        iniciarMenuCrearExpress = false
-                                    },
-                                    quitarPadInterno = true,
-                                    alto = 60
-                                )
-                            }
+                                Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(6)))
+                                Row {
+                                    BBasicTextField(
+                                        value = datosIngresadosBarraBusquedaCliente,
+                                        onValueChange = {
+                                            datosIngresadosBarraBusquedaCliente = it
+                                        },
+                                        fontFamily = fontAksharPrincipal,
+                                        objetoAdaptardor = objetoAdaptardor,
+                                        alto = 60,
+                                        ancho = 292,
+                                        mostrarTrailingIcon = true,
+                                        trailingIcon = Icons.Filled.AddCircle,
+                                        onTrailingIconClick = {
+                                            cedulaCliente = ""
+                                            nombreCliente = ""
+                                            telefonoCliente = ""
+                                            correoCliente = ""
+                                            direccionCliente = ""
+                                            isNuevoCliente = true
+                                            iniciarMenuCrearCliente = it
+                                        }
+                                    )
+                                    Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(8)))
+                                    AgregarBt(
+                                        text = "Salir",
+                                        color = 0xFFEB3324,
+                                        onClick = {
+                                            iniciarMenuCrearExpress = false
+                                        },
+                                        quitarPadInterno = true,
+                                        alto = 60
+                                    )
+                                }
 
-                            Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(6)))
-                            Box(
-                                modifier = Modifier
-                                    .height(objetoAdaptardor.ajustarAltura(400))
-                                    .background(Color.White)
-                                    .fillMaxWidth(),
-                                contentAlignment = Alignment.Center
-                            ){
-                                LazyColumn(
-                                    modifier = Modifier.fillMaxSize(),
-                                    verticalArrangement = Arrangement.spacedBy(objetoAdaptardor.ajustarAltura(12)),
-                                    horizontalAlignment = Alignment.CenterHorizontally,
-                                    state = lazyStateListaClientes
-                                ) {
-                                    items(listaClientesActuales) { datosCliente ->
-                                        BxContenerdorCliente(
-                                            datosCliente = datosCliente,
-                                            onClick = {
-                                                mesaActual= it
-                                                iniciarPantallaSacComanda = true
-                                            },
-                                            iconOnClick = {
-                                                mesaActual= Mesa(
-                                                    nombre =datosCliente.codigo,
-                                                    salon = "EXPRESS",
-                                                    clienteId = datosCliente.codigo
-                                                )
-                                                cedulaCliente = datosCliente.Cedula
-                                                nombreCliente = datosCliente.nombreJuridico
-                                                telefonoCliente = datosCliente.Telefonos
-                                                correoCliente = datosCliente.correo
-                                                direccionCliente = datosCliente.Direccion
-                                                isNuevoCliente= false
-                                                iniciarMenuCrearCliente = it
-                                            }
-                                        )
-                                    }
-
-                                    // Muestra el indicador de carga al final de la lista mientras se cargan nuevos elementos
-                                    if (isCargandoClientes) {
-                                        item {
-                                            CircularProgressIndicator(
-                                                color = Color(0xFF244BC0),
-                                                modifier = Modifier
-                                                    .size(objetoAdaptardor.ajustarAltura(60))
-                                                    .padding(4.dp)
+                                Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(6)))
+                                Box(
+                                    modifier = Modifier
+                                        .height(objetoAdaptardor.ajustarAltura(400))
+                                        .background(Color.White)
+                                        .fillMaxWidth(),
+                                    contentAlignment = Alignment.Center
+                                ){
+                                    LazyColumn(
+                                        modifier = Modifier.fillMaxSize(),
+                                        verticalArrangement = Arrangement.spacedBy(objetoAdaptardor.ajustarAltura(12)),
+                                        horizontalAlignment = Alignment.CenterHorizontally,
+                                        state = lazyStateListaClientes
+                                    ) {
+                                        items(listaClientesActuales) { datosCliente ->
+                                            BxContenerdorCliente(
+                                                datosCliente = datosCliente,
+                                                onClick = {
+                                                    mesaActual= it
+                                                    iniciarPantallaSacComanda = true
+                                                },
+                                                iconOnClick = {
+                                                    mesaActual= Mesa(
+                                                        nombre =datosCliente.codigo,
+                                                        salon = "EXPRESS",
+                                                        clienteId = datosCliente.codigo
+                                                    )
+                                                    cedulaCliente = datosCliente.Cedula
+                                                    nombreCliente = datosCliente.nombreJuridico
+                                                    telefonoCliente = datosCliente.Telefonos
+                                                    correoCliente = datosCliente.correo
+                                                    direccionCliente = datosCliente.Direccion
+                                                    isNuevoCliente= false
+                                                    iniciarMenuCrearCliente = it
+                                                }
                                             )
                                         }
-                                    }
-                                    item { Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(4))) }
 
+                                        // Muestra el indicador de carga al final de la lista mientras se cargan nuevos elementos
+                                        if (isCargandoClientes) {
+                                            item {
+                                                CircularProgressIndicator(
+                                                    color = Color(0xFF244BC0),
+                                                    modifier = Modifier
+                                                        .size(objetoAdaptardor.ajustarAltura(60))
+                                                        .padding(4.dp)
+                                                )
+                                            }
+                                        }
+                                        item { Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(4))) }
+
+                                    }
                                 }
                             }
                         }
