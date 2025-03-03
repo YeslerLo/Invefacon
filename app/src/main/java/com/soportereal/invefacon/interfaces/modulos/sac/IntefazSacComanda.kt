@@ -1,4 +1,4 @@
-package com.soportereal.invefacon.interfaces.modulos.sac
+ package com.soportereal.invefacon.interfaces.modulos.sac
 
 import android.annotation.SuppressLint
 import androidx.compose.foundation.Image
@@ -1293,7 +1293,7 @@ fun InterfazSacComanda(
                 Box(modifier = Modifier
                     .background(Color(0xFFF6F6F6))
                     .width(objetoAdaptardor.ajustarAncho(260))
-                    .height(objetoAdaptardor.ajustarAltura(445)),
+                    .height(objetoAdaptardor.ajustarAltura(425)),
                     contentAlignment = Alignment.TopCenter
                 ){
                     Column {
@@ -1399,56 +1399,59 @@ fun InterfazSacComanda(
             }
         }
 
-        ConstraintLayout(
+        Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .background(Color(0xFF000000))
-                .height(objetoAdaptardor.ajustarAltura(20))
+                .height(objetoAdaptardor.ajustarAltura(25))
                 .constrainAs(bxInferior) {
                     start.linkTo(parent.start)
                     bottom.linkTo(parent.bottom)
-                }
+                }, contentAlignment = Alignment.TopCenter
         ) {
-            val (tx1, tx2, tx3)= createRefs()
             val versionApp = stringResource(R.string.app_version)
-            Text(
-                text = "Version: $versionApp",
-                color = Color.White,
-                fontFamily = fontAksharPrincipal,
-                fontWeight = FontWeight.Light,
-                fontSize = obtenerEstiloLabel(),
-                textAlign = TextAlign.Center,
-                modifier = Modifier.constrainAs(tx1){
-                    start.linkTo(parent.start, margin = 8.dp)
-                    bottom.linkTo(parent.bottom)
-                }
-            )
 
-            Text(
-                text = "Invefacon ©2025",
-                color = Color.White,
-                fontFamily = fontAksharPrincipal,
-                fontWeight = FontWeight.Light,
-                fontSize = obtenerEstiloLabel(),
-                textAlign = TextAlign.Center,
-                modifier = Modifier.constrainAs(tx2){
-                    start.linkTo(parent.start)
-                    end.linkTo(parent.end)
-                    bottom.linkTo(parent.bottom)
-                }
-            )
+            Row(
+                verticalAlignment = Alignment.Top,
+                horizontalArrangement = Arrangement.Center
 
-            Text(
-                text = "#$codUsuario _ $nombreUsuario _ $nombreEmpresa",
-                color = Color.White,
-                fontFamily = fontAksharPrincipal,
-                fontWeight = FontWeight.Light,
-                fontSize = obtenerEstiloLabel(),
-                modifier = Modifier.constrainAs(tx3){
-                    end.linkTo(parent.end, margin = 8.dp)
-                    bottom.linkTo(parent.bottom)
-                }
-            )
+            ){
+                Text(
+                    text = "#$codUsuario _ $nombreUsuario _ $nombreEmpresa",
+                    color = Color.White,
+                    fontFamily = fontAksharPrincipal,
+                    fontWeight = FontWeight.Light,
+                    fontSize = obtenerEstiloLabel(),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    textAlign = TextAlign.Start,
+                    modifier = Modifier.width(objetoAdaptardor.ajustarAncho(382)).padding(start = 6.dp)
+                )
+
+                Text(
+                    text = "Invefacon ©2025",
+                    color = Color.White,
+                    fontFamily = fontAksharPrincipal,
+                    fontWeight = FontWeight.Light,
+                    fontSize = obtenerEstiloLabel(),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.width(objetoAdaptardor.ajustarAncho(200))
+                )
+
+                Text(
+                    text = "Version: $versionApp",
+                    color = Color.White,
+                    fontFamily = fontAksharPrincipal,
+                    fontWeight = FontWeight.Light,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    fontSize = obtenerEstiloLabel(),
+                    textAlign = TextAlign.End,
+                    modifier = Modifier.width(objetoAdaptardor.ajustarAncho(382)).padding(end = 6.dp)
+                )
+            }
         }
     }
 

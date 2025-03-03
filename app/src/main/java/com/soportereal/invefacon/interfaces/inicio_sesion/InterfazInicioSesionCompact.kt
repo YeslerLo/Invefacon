@@ -849,44 +849,59 @@ fun IniciarInterfazInicioSesionCompact(
             }
         }
 
-        ConstraintLayout(
+        Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .background(Color(0xFF000000))
-                .height(objetoAdaptardor.ajustarAltura(20))
+                .height(objetoAdaptardor.ajustarAltura(25))
                 .constrainAs(bxInferior) {
                     start.linkTo(parent.start)
                     bottom.linkTo(parent.bottom)
-                }
+                }, contentAlignment = Alignment.TopCenter
         ) {
-            val (tx1, tx2)= createRefs()
             val versionApp = stringResource(R.string.app_version)
-            Text(
-                text = "Version: $versionApp",
-                color = Color.White,
-                fontFamily = fontAksharPrincipal,
-                fontWeight = FontWeight.Light,
-                fontSize = obtenerEstiloLabel(),
-                textAlign = TextAlign.Center,
-                modifier = Modifier.constrainAs(tx1){
-                    start.linkTo(parent.start, margin = 8.dp)
-                    bottom.linkTo(parent.bottom)
-                }
-            )
 
-            Text(
-                text = "Invefacon ©2025",
-                color = Color.White,
-                fontFamily = fontAksharPrincipal,
-                fontWeight = FontWeight.Light,
-                fontSize = obtenerEstiloLabel(),
-                textAlign = TextAlign.Center,
-                modifier = Modifier.constrainAs(tx2){
-                    start.linkTo(parent.start)
-                    end.linkTo(parent.end)
-                    bottom.linkTo(parent.bottom)
-                }
-            )
+            Row(
+                verticalAlignment = Alignment.Top,
+                horizontalArrangement = Arrangement.Center
+
+            ){
+                Text(
+                    text = "Soporte Real SRL",
+                    color = Color.White,
+                    fontFamily = fontAksharPrincipal,
+                    fontWeight = FontWeight.Light,
+                    fontSize = obtenerEstiloLabel(),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.width(objetoAdaptardor.ajustarAncho(142)).padding(start = 6.dp)
+                )
+
+                Text(
+                    text = "Invefacon ©2025",
+                    color = Color.White,
+                    fontFamily = fontAksharPrincipal,
+                    fontWeight = FontWeight.Light,
+                    fontSize = obtenerEstiloLabel(),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.width(objetoAdaptardor.ajustarAncho(100))
+                )
+
+                Text(
+                    text = "Version: $versionApp",
+                    color = Color.White,
+                    fontFamily = fontAksharPrincipal,
+                    fontWeight = FontWeight.Light,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    fontSize = obtenerEstiloLabel(),
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.width(objetoAdaptardor.ajustarAncho(142)).padding(end = 6.dp)
+                )
+            }
         }
 
         // Snackbar inferior para mostrar mensajes emergentes para el usuario como:

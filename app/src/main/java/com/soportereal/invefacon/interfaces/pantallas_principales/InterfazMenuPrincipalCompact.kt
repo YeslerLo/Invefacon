@@ -3,8 +3,10 @@ package com.soportereal.invefacon.interfaces.pantallas_principales
 
 import android.annotation.SuppressLint
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -12,6 +14,7 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -32,6 +35,7 @@ import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.constraintlayout.compose.ConstraintLayout
@@ -60,7 +64,7 @@ fun IniciarInterfazMenuPrincipalCompact(
     systemUiController: SystemUiController,
     codUsuario: String
 ) {
-    val aksharFont = FontFamily(Font(R.font.akshar_medium))
+    val fontAksharPrincipal = FontFamily(Font(R.font.akshar_medium))
     val configuration = LocalConfiguration.current
     val dpAnchoPantalla = configuration.screenWidthDp
     val dpAltoPantalla = configuration.screenHeightDp
@@ -95,52 +99,56 @@ fun IniciarInterfazMenuPrincipalCompact(
                     )
             }
         }
-        ConstraintLayout(
+        Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .background(Color(0xFF000000))
-                .height(objetoAdaptardor.ajustarAltura(20))
+                .height(objetoAdaptardor.ajustarAltura(25)),
+            contentAlignment = Alignment.TopCenter
         ) {
-            val (tx1, tx2, tx3)= createRefs()
             val versionApp = stringResource(R.string.app_version)
-            Text(
-                text = "Version: $versionApp",
-                color = Color.White,
-                fontFamily = aksharFont,
-                fontWeight = FontWeight.Light,
-                fontSize = obtenerEstiloLabel(),
-                textAlign = TextAlign.Center,
-                modifier = Modifier.constrainAs(tx1){
-                    start.linkTo(parent.start, margin = 8.dp)
-                    bottom.linkTo(parent.bottom)
-                }
-            )
 
-            Text(
-                text = "Invefacon ©2025",
-                color = Color.White,
-                fontFamily = aksharFont,
-                fontWeight = FontWeight.Light,
-                fontSize = obtenerEstiloLabel(),
-                textAlign = TextAlign.Center,
-                modifier = Modifier.constrainAs(tx2){
-                    start.linkTo(parent.start)
-                    end.linkTo(parent.end)
-                    bottom.linkTo(parent.bottom)
-                }
-            )
+            Row(
+                verticalAlignment = Alignment.Top,
+                horizontalArrangement = Arrangement.Center
 
-            Text(
-                text = "#$codUsuario _ $nombreUsuario _ $nombreEmpresa",
-                color = Color.White,
-                fontFamily = aksharFont,
-                fontWeight = FontWeight.Light,
-                fontSize = obtenerEstiloLabel(),
-                modifier = Modifier.constrainAs(tx3){
-                    end.linkTo(parent.end, margin = 8.dp)
-                    bottom.linkTo(parent.bottom)
-                }
-            )
+            ){
+                Text(
+                    text = "Soporte Real SRL",
+                    color = Color.White,
+                    fontFamily = fontAksharPrincipal,
+                    fontWeight = FontWeight.Light,
+                    fontSize = obtenerEstiloLabel(),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.width(objetoAdaptardor.ajustarAncho(142)).padding(start = 6.dp)
+                )
+
+                Text(
+                    text = "Invefacon ©2025",
+                    color = Color.White,
+                    fontFamily = fontAksharPrincipal,
+                    fontWeight = FontWeight.Light,
+                    fontSize = obtenerEstiloLabel(),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.width(objetoAdaptardor.ajustarAncho(100))
+                )
+
+                Text(
+                    text = "Version: $versionApp",
+                    color = Color.White,
+                    fontFamily = fontAksharPrincipal,
+                    fontWeight = FontWeight.Light,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    fontSize = obtenerEstiloLabel(),
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.width(objetoAdaptardor.ajustarAncho(142)).padding(end = 6.dp)
+                )
+            }
         }
 
         if(isCargandoPantallaMenuPrincipal || mostrarRespuestaApi){
