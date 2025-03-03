@@ -30,6 +30,7 @@ package com.soportereal.invefacon.interfaces.modulos.sac
  import androidx.compose.foundation.layout.wrapContentSize
  import androidx.compose.foundation.layout.wrapContentWidth
  import androidx.compose.foundation.lazy.LazyColumn
+ import androidx.compose.foundation.lazy.LazyRow
  import androidx.compose.foundation.lazy.items
  import androidx.compose.foundation.lazy.rememberLazyListState
  import androidx.compose.foundation.shape.RoundedCornerShape
@@ -124,7 +125,7 @@ package com.soportereal.invefacon.interfaces.modulos.sac
 
 @SuppressLint("MutableCollectionMutableState")
 @Composable
-fun InterfazModuloSacLarge(
+fun InterfazModuloSac(
     token: String,
     systemUiController: SystemUiController?,
     navController: NavController,
@@ -160,6 +161,7 @@ fun InterfazModuloSacLarge(
     var subCuentaDestinoArticulo by remember { mutableStateOf("") }
     val opcionesSubCuentas: MutableState<LinkedHashMap<String, String>> = remember { mutableStateOf(LinkedHashMap()) }
     var opcionesSubCuentasComandadas by remember { mutableStateOf<List<String>>(emptyList()) }
+    var listaSalonesAtuales by remember { mutableStateOf<List<String>>(emptyList()) }
     val opcionesSubCuentasDestino: MutableState<LinkedHashMap<String, String>> = remember { mutableStateOf(LinkedHashMap()) }
     val opcionesMesas: MutableState<LinkedHashMap<String, String>> = remember { mutableStateOf(LinkedHashMap()) }
     var mesaDestino by remember { mutableStateOf("") }
@@ -179,6 +181,7 @@ fun InterfazModuloSacLarge(
     var eliminarArticulo by remember { mutableStateOf(false) }
     var quitarMesa by remember { mutableStateOf(false) }
     var pedirCuenta by remember { mutableStateOf(false) }
+    var reactivarCuenta by remember { mutableStateOf(false) }
     var moverArticulo by remember { mutableStateOf(false) }
     var moverMesa by remember { mutableStateOf(false) }
     var nombreNuevaSubCuenta by remember { mutableStateOf("") }
@@ -193,8 +196,8 @@ fun InterfazModuloSacLarge(
     var iniciarMenuCrearExpress by remember { mutableStateOf(false) }
     var iniciarMenuAjustes by remember { mutableStateOf(false) }
     val context = LocalContext.current
-    guardarParametroSiNoExiste(context, "prmImp2", "1")
-    var valorPrmImp2 by remember { mutableStateOf(obtenerParametro(context, "prmImp2")) }
+    guardarParametroSiNoExiste(context, "prmImp2$nombreEmpresa$codUsuario", "1")
+    var valorPrmImp2 by remember { mutableStateOf(obtenerParametro(context, "prmImp2$nombreEmpresa$codUsuario")) }
     var codUsuarioIngresado by remember { mutableStateOf(codUsuario) }
     var passwordIngresada by remember { mutableStateOf("") }
     var aplicarImp2 by remember { mutableStateOf(false) }
@@ -212,6 +215,10 @@ fun InterfazModuloSacLarge(
     var direccionCliente by remember { mutableStateOf("") }
     var agregarCliente by remember { mutableStateOf(false) }
     var isSubCuentaPedida by remember { mutableStateOf(true) }
+    var salonActual by remember { mutableStateOf("") }
+    var cambiarPrmImp2 by remember { mutableStateOf(false) }
+    var estadoImp2 by remember { mutableStateOf(valorPrmImp2 != "0") }
+    var iniciarMenuConfCambPrm by remember { mutableStateOf(false) }
 
     LaunchedEffect(iniciarPantallaSacComanda) {
         if (iniciarPantallaSacComanda){
@@ -253,7 +260,8 @@ fun InterfazModuloSacLarge(
         while (true){
             val listaMesas = mutableListOf<Mesa>()
             val listaCuentasActivas = mutableListOf<Mesa>()
-            val result= objectoProcesadorDatosApi.obtenerListaMesas(datosIngresadosBarraBusqueda)
+            val listaSalones = mutableListOf<String>()
+            val result= objectoProcesadorDatosApi.obtenerListaMesas(datosIngresadosBarraBusqueda, if(salonActual=="TODOS") "" else salonActual)
             if (result!=null){
                 if (result.getString("status")=="ok"){
                     val data = result.getJSONObject("data")
@@ -287,6 +295,12 @@ fun InterfazModuloSacLarge(
                         )
                         listaCuentasActivas.add(mesa)
                     }
+
+                    val salones= data.getJSONArray("salones")
+                    for( i in 0 until salones.length()){
+                        val datoSalon = salones.getJSONObject(i)
+                        listaSalones.add(datoSalon.getString("SalonNombre"))
+                    }
                 }
             }
 
@@ -295,6 +309,10 @@ fun InterfazModuloSacLarge(
             }
             if (listaCuentasActivasActuales!=listaCuentasActivas){
                 listaCuentasActivasActuales=listaCuentasActivas
+            }
+
+            if(listaSalones!= listaSalonesAtuales){
+                listaSalonesAtuales = listaSalones
             }
             if (isPrimeraVezCargando){
                 objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
@@ -305,11 +323,12 @@ fun InterfazModuloSacLarge(
         }
     }
 
-    LaunchedEffect(actualizarListaMesas,datosIngresadosBarraBusqueda) {
+    LaunchedEffect(actualizarListaMesas,datosIngresadosBarraBusqueda,salonActual) {
         if (actualizarListaMesas){
+            isCargandoMesas = true
             val listaMesas = mutableListOf<Mesa>()
             val listaCuentasActivas = mutableListOf<Mesa>()
-            val result= objectoProcesadorDatosApi.obtenerListaMesas(datosIngresadosBarraBusqueda)
+            val result= objectoProcesadorDatosApi.obtenerListaMesas(datosIngresadosBarraBusqueda, if(salonActual=="TODOS") "" else salonActual)
             if (result!=null){
                 if (result.getString("status")=="ok"){
                     val data = result.getJSONObject("data")
@@ -352,6 +371,7 @@ fun InterfazModuloSacLarge(
                 objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
                 actualizarListaMesas=false
             }
+            isCargandoMesas = false
         }
     }
 
@@ -544,6 +564,22 @@ fun InterfazModuloSacLarge(
         pedirCuenta= false
     }
 
+    LaunchedEffect(reactivarCuenta) {
+        if(reactivarCuenta){
+            objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(true)
+            val result = objectoProcesadorDatosApi.reactivarCuenta(mesaActual.nombre, subCuentaSeleccionada)
+            if (result!=null){
+                estadoRespuestaApi.cambiarEstadoRespuestaApi(mostrarRespuesta = true, datosRespuesta = result)
+                if (result.getString("status")=="ok" && result.getString("code")=="200"){
+                    actualizarListaMesas= true
+                }else{
+                    objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
+                }
+            }
+        }
+        reactivarCuenta= false
+    }
+
     LaunchedEffect(actualizarSubCuentasYMesas, mesaDestino) {
         if(actualizarSubCuentasYMesas){
             objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(true)
@@ -679,14 +715,20 @@ fun InterfazModuloSacLarge(
 
     LaunchedEffect(aplicarImp2) {
         if(aplicarImp2){
-            objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(true)
-            val result = objectoProcesadorDatosApi.aplicarImp2( nombreMesa= mesaActual.nombre)
-            if (result!= null){
-                estadoRespuestaApi.cambiarEstadoRespuestaApi(mostrarRespuesta = true, datosRespuesta = result)
+            if (passwordIngresada.length<3 || codUsuarioIngresado.isEmpty()){
+                mostrarMensajeError("Complete los campos para continuar")
+                aplicarImp2=false
+            }else{
+                objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(true)
+                val result = objectoProcesadorDatosApi.aplicarImp2( nombreMesa= mesaActual.nombre)
+                if (result!= null){
+                    estadoRespuestaApi.cambiarEstadoRespuestaApi(mostrarRespuesta = true, datosRespuesta = result)
+                }
+                objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
             }
-            objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
-            aplicarImp2= false
         }
+        iniciarMenuConfCambPrm=false
+        aplicarImp2= false
     }
 
     LaunchedEffect(datosIngresadosBarraBusquedaCliente, iniciarMenuCrearExpress) {
@@ -800,6 +842,22 @@ fun InterfazModuloSacLarge(
         agregarCliente=false
     }
 
+    LaunchedEffect(cambiarPrmImp2) {
+        if(cambiarPrmImp2){
+            objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(true)
+            val result = objectoProcesadorDatosApi.cambiarPrmImp2(passwordIngresada, codUsuarioIngresado)
+            if (result!=null){
+                estadoRespuestaApi.cambiarEstadoRespuestaApi(mostrarRespuesta = true, datosRespuesta = result)
+                if (result.getString("status")=="ok" && result.getString("code")=="200"){
+                    actualizarParametro(context, "prmImp2$nombreEmpresa$codUsuario", if(valorPrmImp2=="0") "1" else "0")
+                    valorPrmImp2 = obtenerParametro(context, "prmImp2$nombreEmpresa$codUsuario")
+                    estadoImp2 = valorPrmImp2 != "0"
+                }
+            }
+            objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
+        }
+    }
+
     @Composable
     fun AgregarBt(
         text: String,
@@ -842,6 +900,7 @@ fun InterfazModuloSacLarge(
 
         }
     }
+
 
     @Composable
     fun AgregarBxContenedorArticulosComandados(
@@ -1042,7 +1101,7 @@ fun InterfazModuloSacLarge(
             .statusBarsPadding()
             .navigationBarsPadding()
     ){
-        val (bxSuperior, bxContenedorMesas ,txfBarraBusqueda,
+        val (bxSuperior, bxContenedorMesas ,txfBarraBusqueda, bxContenedorSalones,
             bxContenerdorCuentasActivas, bxContenedorBotones, flechaRegresar)= createRefs()
 
         Box(
@@ -1103,6 +1162,7 @@ fun InterfazModuloSacLarge(
         BBasicTextField(
             value = datosIngresadosBarraBusqueda,
             onValueChange =  { nuevoValor ->
+                salonActual = if(nuevoValor.isEmpty()) "TODOS" else ""
                 datosIngresadosBarraBusqueda = nuevoValor
                 actualizarListaMesas= true
             },
@@ -1278,11 +1338,91 @@ fun InterfazModuloSacLarge(
         Box(
             modifier = Modifier
                 .background(Color.White)
+                .height(objetoAdaptardor.ajustarAltura(45))
                 .width(objetoAdaptardor.ajustarAncho(690))
-                .height(objetoAdaptardor.ajustarAltura(515))
-                .constrainAs(bxContenedorMesas) {
+                .constrainAs(bxContenedorSalones) {
                     start.linkTo(parent.start, margin = objetoAdaptardor.ajustarAncho(12))
                     top.linkTo(txfBarraBusqueda.bottom, margin = objetoAdaptardor.ajustarAltura(4))
+                }
+            , contentAlignment = Alignment.CenterStart
+        ){
+            LazyRow{
+                item { Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(6))) }
+                item {
+                    Button(
+                        modifier = Modifier.height(objetoAdaptardor.ajustarAltura(35)),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = if (salonActual=="TODOS") Color(0xFFBFBFBF) else Color(0xFFEAEAEA), // Color de fondo del botón
+                            contentColor = Color.White,
+                            disabledContainerColor = if (salonActual=="TODOS") Color(0xFFBFBFBF) else Color(0xFFEAEAEA),
+                            disabledContentColor = Color.White
+                        ),
+                        elevation = ButtonDefaults.buttonElevation(defaultElevation = 7.dp),
+                        onClick = {
+                            datosIngresadosBarraBusqueda = ""
+                            salonActual= "TODOS"
+                            actualizarListaMesas = true
+                        },
+                        contentPadding = PaddingValues(start = 12.dp, end = 12.dp, top = 0.dp, bottom = 0.dp)
+                    ) {
+                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center){
+                            Text(
+                                "TODOS",
+                                fontFamily = fontAksharPrincipal,
+                                fontWeight = FontWeight.Medium,
+                                fontSize = obtenerEstiloBody(),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                textAlign = TextAlign.Center,
+                                color = Color.Black
+                            )
+                        }
+                    }
+                    Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(8)))
+                }
+                items(listaSalonesAtuales) { salon ->
+                    Button(
+                        modifier = Modifier.height(objetoAdaptardor.ajustarAltura(35)),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = if (salonActual==salon) Color(0xFFBFBFBF) else Color(0xFFEAEAEA), // Color de fondo del botón
+                            contentColor = Color.White,
+                            disabledContainerColor = if (salonActual==salon) Color(0xFFBFBFBF) else Color(0xFFEAEAEA),
+                            disabledContentColor = Color.White
+                        ),
+                        elevation = ButtonDefaults.buttonElevation(defaultElevation = 7.dp),
+                        onClick = {
+                            datosIngresadosBarraBusqueda = ""
+                            salonActual= salon
+                            actualizarListaMesas = true
+                        },
+                        contentPadding = PaddingValues(start = 12.dp, end = 12.dp, top = 0.dp, bottom = 0.dp)
+                    ) {
+                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center){
+                            Text(
+                                salon,
+                                fontFamily = fontAksharPrincipal,
+                                fontWeight = FontWeight.Medium,
+                                fontSize = obtenerEstiloBody(),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                textAlign = TextAlign.Center,
+                                color = Color.Black
+                            )
+                        }
+                    }
+                    Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(8)))
+                }
+            }
+        }
+
+        Box(
+            modifier = Modifier
+                .background(Color.White)
+                .width(objetoAdaptardor.ajustarAncho(690))
+                .height(objetoAdaptardor.ajustarAltura(470))
+                .constrainAs(bxContenedorMesas) {
+                    start.linkTo(parent.start, margin = objetoAdaptardor.ajustarAncho(12))
+                    top.linkTo(bxContenedorSalones.bottom, margin = objetoAdaptardor.ajustarAltura(4))
                 },
             contentAlignment = Alignment.TopStart
         ){
@@ -1782,7 +1922,7 @@ fun InterfazModuloSacLarge(
                                             text = "Reactivar",
                                             color = 0xFF16417C,
                                             onClick = {
-
+                                                reactivarCuenta = true
                                             }
                                         )
                                     }
@@ -2506,7 +2646,6 @@ fun InterfazModuloSacLarge(
     }
 
     if (iniciarMenuAjustes){
-        var estado by remember { mutableStateOf(valorPrmImp2 != "0") }
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -2558,11 +2697,9 @@ fun InterfazModuloSacLarge(
                                 color = Color.Black
                             )
                             Switch(
-                                checked = estado,
+                                checked = estadoImp2,
                                 onCheckedChange = {
-                                    actualizarParametro(context, "prmImp2", if(valorPrmImp2=="0") "1" else "0")
-                                    valorPrmImp2 = obtenerParametro(context, "prmImp2")
-                                    estado = valorPrmImp2 != "0"
+                                    iniciarMenuConfCambPrm=true
                                 },colors = SwitchDefaults.colors(
                                     checkedTrackColor = Color(0xFF1D3FA4)
                                 )
@@ -3046,7 +3183,7 @@ fun InterfazModuloSacLarge(
             onDismissRequest = { },
             title = {
                 Text(
-                    "Quitar Mesa",
+                    "Quitar Mesa ${mesaActual.nombre}-${mesaActual.salon}",
                     fontFamily = fontAksharPrincipal,
                     fontWeight = FontWeight.Medium,
                     fontSize = objetoAdaptardor.ajustarFont(25),
@@ -3131,6 +3268,121 @@ fun InterfazModuloSacLarge(
                         codUsuarioIngresado=codUsuario
                         passwordIngresada=""
                         iniciarMenuQuitarMesa= false
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFF244BC0), // Color de fondo del botón
+                        contentColor = Color.White,
+                        disabledContainerColor = Color(0xFF244BC0),
+                        disabledContentColor = Color.White
+                    )
+                ) {
+                    Text(
+                        "Cancelar",
+                        fontFamily = fontAksharPrincipal,
+                        fontWeight = FontWeight.Medium,
+                        fontSize = objetoAdaptardor.ajustarFont(15),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        textAlign = TextAlign.Center,
+                        color = Color.White
+                    )
+                }
+            }
+        )
+    }
+
+    if(iniciarMenuConfCambPrm) {
+        AlertDialog(
+            modifier = Modifier.background(Color.White),
+            containerColor = Color.White,
+            onDismissRequest = { },
+            title = {
+                Text(
+                    "Confirmacion de Cambios",
+                    fontFamily = fontAksharPrincipal,
+                    fontWeight = FontWeight.Medium,
+                    fontSize = objetoAdaptardor.ajustarFont(25),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    textAlign = TextAlign.Center,
+                    color = Color.Black
+                )
+            },
+            text = {
+                Box(contentAlignment = Alignment.Center){
+
+                    Column(
+                        verticalArrangement = Arrangement.Center,
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ){
+                        Text(
+                            "¿Desea confirmar los cambios?",
+                            fontFamily = fontAksharPrincipal,
+                            fontWeight = FontWeight.Medium,
+                            fontSize = obtenerEstiloBody(),
+                            overflow = TextOverflow.Ellipsis,
+                            textAlign = TextAlign.Justify,
+                            color = Color.Black
+                        )
+                        Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(8)))
+                        BBasicTextField(
+                            value = codUsuarioIngresado,
+                            onValueChange =  { nuevoValor ->
+                                codUsuarioIngresado = nuevoValor
+                            },
+                            fontFamily = fontAksharPrincipal,
+                            alto = 70,
+                            ancho = 300,
+                            placeholder = "Ingrese el codigo de usuario",
+                            icono = Icons.Filled.Person,
+                            objetoAdaptardor = objetoAdaptardor
+                        )
+                        Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(8)))
+                        BBasicTextField(
+                            value = passwordIngresada,
+                            onValueChange =  { nuevoValor ->
+                                passwordIngresada = nuevoValor
+                            },
+                            fontFamily = fontAksharPrincipal,
+                            alto = 70,
+                            ancho = 300,
+                            placeholder = "Ingrese la contraseña",
+                            icono = Icons.Filled.Password,
+                            objetoAdaptardor = objetoAdaptardor
+                        )
+                    }
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        cambiarPrmImp2=true
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color.Red, // Color de fondo del botón
+                        contentColor = Color.White,
+                        disabledContainerColor = Color.Red,
+                        disabledContentColor = Color.White
+                    )
+                ) {
+                    Text(
+                        "Quitar",
+                        fontFamily = fontAksharPrincipal,
+                        fontWeight = FontWeight.Medium,
+                        fontSize = objetoAdaptardor.ajustarFont(15),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        textAlign = TextAlign.Center,
+                        color = Color.White
+                    )
+                }
+            },
+            dismissButton = {
+                Button(
+                    onClick = {
+                        codUsuarioIngresado=codUsuario
+                        passwordIngresada=""
+                        iniciarMenuConfCambPrm= false
                     },
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Color(0xFF244BC0), // Color de fondo del botón
@@ -3459,5 +3711,5 @@ fun BxContenerdorCliente(
 @Preview(widthDp = 964, heightDp = 523)
 private fun Preview(){
     val nav = rememberNavController()
-    InterfazModuloSacLarge("eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJDb2RpZ28iOiIwMDA1MCIsIk5vbWJyZSI6IllFU0xFUiBBRE1JTiIsIkVtYWlsIjoieWVzbGVybG9yaW9AZ21haWwuY29tIiwiUHVlcnRvIjoiODAxIiwiRW1wcmVzYSI6IlpHVnRiM0psYzNRPSIsIlNlcnZlcklwIjoiTVRreUxqRTJPQzQzTGpNNCIsInRpbWUiOiIyMDI1MDMwMTEwMDMyMCJ9.U3F_80TsKwjSps06XXayvmV8CaYsb4GjQ5KmQqTS7mo", null, nav, "demorest","00050")
+    InterfazModuloSac("eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJDb2RpZ28iOiIwMDA1MCIsIk5vbWJyZSI6IllFU0xFUiBBRE1JTiIsIkVtYWlsIjoieWVzbGVybG9yaW9AZ21haWwuY29tIiwiUHVlcnRvIjoiODAxIiwiRW1wcmVzYSI6IlpHVnRiM0psYzNRPSIsIlNlcnZlcklwIjoiTVRreUxqRTJPQzQzTGpNNCIsInRpbWUiOiIyMDI1MDMwMTEwMDMyMCJ9.U3F_80TsKwjSps06XXayvmV8CaYsb4GjQ5KmQqTS7mo", null, nav, "demorest","00050")
 }

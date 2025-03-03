@@ -36,8 +36,8 @@ import com.soportereal.invefacon.interfaces.modulos.clientes.IniciarInterfazAgre
 import com.soportereal.invefacon.interfaces.modulos.clientes.IniciarInterfazInformacionCliente
 import com.soportereal.invefacon.interfaces.modulos.clientes.IniciarInterfazModuloClientes
 import com.soportereal.invefacon.interfaces.modulos.facturacion.IniciarInterfazFacturacion
-import com.soportereal.invefacon.interfaces.modulos.sac.InterfazModuloSacLarge
-import com.soportereal.invefacon.interfaces.modulos.sac.InterfazSacComandaLarge
+import com.soportereal.invefacon.interfaces.modulos.sac.InterfazModuloSac
+import com.soportereal.invefacon.interfaces.modulos.sac.InterfazSacComanda
 import com.soportereal.invefacon.interfaces.pantallas_principales.IniciarInterfazAjustes
 import com.soportereal.invefacon.interfaces.pantallas_principales.IniciarInterfazInicio
 import com.soportereal.invefacon.interfaces.pantallas_principales.IniciarInterfazMenuPrincipalCompact
@@ -302,7 +302,7 @@ fun NavegacionPantallas(
                     val activity = LocalContext.current as Activity
                     activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
 
-                    InterfazModuloSacLarge(
+                    InterfazModuloSac(
                         token = token,
                         systemUiController = systemUiController,
                         navController = navcontroller,
@@ -366,7 +366,7 @@ fun NavegacionPantallas(
 
                     val activity = LocalContext.current as Activity
                     activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
-                    InterfazSacComandaLarge(
+                    InterfazSacComanda(
                         systemUiController = systemUiController,
                         navControllerPantallasModuloSac = navcontroller,
                         token = token,

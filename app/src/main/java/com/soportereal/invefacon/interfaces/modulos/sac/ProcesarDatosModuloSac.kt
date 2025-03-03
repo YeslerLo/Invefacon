@@ -9,12 +9,21 @@ class ProcesarDatosModuloSac(apiToken: String){
 
     private val objetoFuncionesHttpInvefacon= FuncionesHttp(apiToken = apiToken)
 
-    suspend fun obtenerListaMesas(mesa: String=""): JSONObject?{
+    suspend fun obtenerListaMesas(mesa: String="", salon: String): JSONObject?{
 
         val formBody = MultipartBody.Builder().setType(MultipartBody.FORM)
             .addFormDataPart("mesa",mesa)
+            .addFormDataPart("salon",salon)
             .build()
         return objetoFuncionesHttpInvefacon.metodoPost(formBody = formBody, apiDirectorio = "sacMovil/listaMesas.php")
+    }
+
+    suspend fun cambiarPrmImp2(password: String, codUsuario: String): JSONObject?{
+        val formBody = MultipartBody.Builder().setType(MultipartBody.FORM)
+            .addFormDataPart("password", password)
+            .addFormDataPart("cod_usuario", codUsuario)
+            .build()
+        return objetoFuncionesHttpInvefacon.metodoPost(formBody = formBody, apiDirectorio = "sacMovil/cambiarParametroImp2.php")
     }
 
     suspend fun crearNuevaMesa(nombreMesa: String, nombreSalon: String):JSONObject?{
@@ -75,6 +84,14 @@ class ProcesarDatosModuloSac(apiToken: String){
             .addFormDataPart("SubCuenta", subCuenta)
             .build()
         return objetoFuncionesHttpInvefacon.metodoPost(formBody = formBody, apiDirectorio = "sacMovil/pedirCuenta.php")
+    }
+
+    suspend fun reactivarCuenta(nombreMesa: String, subCuenta: String):JSONObject?{
+        val formBody = MultipartBody.Builder().setType(MultipartBody.FORM)
+            .addFormDataPart("Mesa", nombreMesa)
+            .addFormDataPart("SubCuenta", subCuenta)
+            .build()
+        return objetoFuncionesHttpInvefacon.metodoPost(formBody = formBody, apiDirectorio = "sacMovil/reactivarSubCuenta.php")
     }
 
     suspend fun obetenerNombresMesas():JSONObject?{
