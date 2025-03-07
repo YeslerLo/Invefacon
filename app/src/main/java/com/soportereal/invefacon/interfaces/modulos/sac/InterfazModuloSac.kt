@@ -205,7 +205,7 @@ fun InterfazModuloSac(
     var iniciarMenuCrearExpress by remember { mutableStateOf(false) }
     var iniciarMenuAjustes by remember { mutableStateOf(false) }
     val context = LocalContext.current
-    guardarParametroSiNoExiste(context, "prmImp2$nombreEmpresa$codUsuario", "1")
+//    guardarParametroSiNoExiste(context, "prmImp2$nombreEmpresa$codUsuario", "1")
     var valorPrmImp2 by remember { mutableStateOf(obtenerParametro(context, "prmImp2$nombreEmpresa$codUsuario")) }
     var codUsuarioIngresado by remember { mutableStateOf(codUsuario) }
     var passwordIngresada by remember { mutableStateOf("") }
@@ -722,6 +722,7 @@ fun InterfazModuloSac(
                     nombre =nombreNuevaPersona.uppercase(),
                     salon = "PERSONA"
                 )
+                subCuentaSeleccionada="JUNTOS"
                 iniciarPantallaSacComanda = true
                 nombreNuevaPersona=""
                 iniciarMenuCrearPersona=false
@@ -758,6 +759,9 @@ fun InterfazModuloSac(
                     busquedaPor = quitarTildesYMinusculas("Busqueda Mixta")
 
                 )
+                if(result!=null){
+                    estadoRespuestaApi.cambiarEstadoRespuestaApi(mostrarSoloRespuestaError = true, datosRespuesta = result)
+                }
                 if(result?.getString("status")=="ok" && result.getString("code")=="200"){
                     val resultado= result.getJSONObject("resultado")
                     val datosClientes= resultado.getJSONArray("data")
@@ -840,6 +844,7 @@ fun InterfazModuloSac(
                             nombre =result.getString("Id_Cliente"),
                             salon = "EXPRESS"
                         )
+                        subCuentaSeleccionada="JUNTOS"
                         iniciarPantallaSacComanda = true
                     }else{
                         objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
@@ -3933,8 +3938,6 @@ fun BxContenerdorCliente(
         }
     }
 }
-
-
 
 @Composable
 @Preview(widthDp = 964, heightDp = 523)
