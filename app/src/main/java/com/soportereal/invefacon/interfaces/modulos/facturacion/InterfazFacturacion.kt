@@ -237,7 +237,6 @@ fun IniciarInterfazFacturacion(
                         listaArticulosProforma = listaArticulos
                     }
                 }
-                delay(500)
                 actuzalizarDatosProforma= false
                 isCargandoDatos= false
             }
