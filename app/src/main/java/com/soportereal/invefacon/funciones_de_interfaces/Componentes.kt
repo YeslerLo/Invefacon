@@ -186,17 +186,19 @@ internal fun TText(
     fontSize: TextUnit = obtenerEstiloTitle(),
     color: Color = Color.Black,
     textAlign: TextAlign = TextAlign.Start,
-    maxLines: Int = 1
+    maxLines: Int = 1,
+    fontWeight: FontWeight = FontWeight.SemiBold
 ){
     Text(
         text = text,
         fontFamily = FontFamily(Font(R.font.akshar_medium)),
-        fontWeight = FontWeight.SemiBold,
+        fontWeight = fontWeight,
         fontSize = fontSize,
         color = color,
         maxLines = maxLines,
         textAlign = textAlign,
-        modifier = Modifier.then(modifier)
+        modifier = Modifier.then(modifier),
+        overflow = TextOverflow.Ellipsis
     )
 }
 

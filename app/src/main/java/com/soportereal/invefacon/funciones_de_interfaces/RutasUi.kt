@@ -398,7 +398,7 @@ fun NavegacionPantallas(
             navigation(startDestination = RutasPatallas.Facturacion.ruta, route= "Facturacion") {
 
                 composable(
-                    route = RutasPatallas.Facturacion.ruta + "/{token}/{nombreEmpresa}/{codUsuario}",
+                    route = RutasPatallas.Facturacion.ruta + "/{token}/{nombreEmpresa}/{codUsuario}/{nombreUsuario}",
                     arguments = listOf(
                         navArgument(name = "token") {
                             type = NavType.StringType
@@ -410,6 +410,10 @@ fun NavegacionPantallas(
                         }, navArgument(name = "codUsuario") {
                             type = NavType.StringType
                             defaultValue = "Error"
+                        },
+                        navArgument(name = "nombreUsuario") {
+                            type = NavType.StringType
+                            defaultValue = "error"
                         }
                     ),
                     enterTransition = {
@@ -434,13 +438,16 @@ fun NavegacionPantallas(
                         requireNotNull(backStackEntry.arguments?.getString("nombreEmpresa"))
                     val codUsuario =
                         requireNotNull(backStackEntry.arguments?.getString("codUsuario"))
+                    val nombreUsuario =
+                        requireNotNull(backStackEntry.arguments?.getString("nombreUsuario"))
 
                     IniciarInterfazFacturacion(
                         token = token,
                         systemUiController = systemUiController,
                         navController = navcontroller,
                         nombreEmpresa = nombreEmpresa,
-                        codUsuario = codUsuario
+                        codUsuario = codUsuario,
+                        nombreUsuario = nombreUsuario
                     )
                 }
             }

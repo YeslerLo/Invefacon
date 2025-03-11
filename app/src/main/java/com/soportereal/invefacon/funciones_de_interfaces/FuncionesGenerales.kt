@@ -48,3 +48,7 @@ fun separacionDeMiles(montoDouble:Double= 0.00, montoInt: Int = 0,isDouble: Bool
     val monto = if (isDouble) montoDouble else montoInt
     return "\u20A1 "+String.format(Locale.US, "%,.2f", monto.toString().replace(",", "").toDouble())
 }
+
+fun validarExitoRestpuestaServidor(respuesta : JSONObject): Boolean{
+    return respuesta.getString("status")=="ok" && respuesta.getString("code")=="200"
+}

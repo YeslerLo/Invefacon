@@ -76,6 +76,7 @@ import com.soportereal.invefacon.funciones_de_interfaces.obtenerParametro
 import com.soportereal.invefacon.interfaces.FuncionesParaAdaptarContenidoCompact
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 
@@ -345,7 +346,7 @@ fun IniciarInterfazInicio(
                         verticalArrangement = Arrangement.spacedBy(objetoAdaptardor.ajustarAltura(12))
                     ) {
                         item { Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(8))) }
-                        item { btOpcionesModulos("Facturación", Icons.Default.Description, RutasPatallas.Facturacion.ruta+"/$token"+"/$nombreEmpresa"+"/$codUsuario") }
+                        item { btOpcionesModulos("Facturación", Icons.Default.Description, RutasPatallas.Facturacion.ruta+"/$token"+"/$nombreEmpresa"+"/$codUsuario"+"/$nombreUsuario") }
                         item { btOpcionesModulos("Ventas", Icons.AutoMirrored.Filled.ShowChart, null) }
                         item { btOpcionesModulos("Inventario", Icons.Default.Inventory, null) }
                         item { btOpcionesModulos("CxC", Icons.Default.CreditCard, null) }
