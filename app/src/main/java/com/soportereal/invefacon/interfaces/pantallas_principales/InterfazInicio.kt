@@ -345,8 +345,7 @@ fun IniciarInterfazInicio(
                         verticalArrangement = Arrangement.spacedBy(objetoAdaptardor.ajustarAltura(12))
                     ) {
                         item { Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(8))) }
-//                        item { btOpcionesModulos("Facturación", Icons.Default.Description, RutasPatallas.Facturacion.ruta+"/$token"+"/$nombreEmpresa"+"/$codUsuario") }
-                        item { btOpcionesModulos("Facturación", Icons.Default.Description, null) }
+                        item { btOpcionesModulos("Facturación", Icons.Default.Description, RutasPatallas.Facturacion.ruta+"/$token"+"/$nombreEmpresa"+"/$codUsuario") }
                         item { btOpcionesModulos("Ventas", Icons.AutoMirrored.Filled.ShowChart, null) }
                         item { btOpcionesModulos("Inventario", Icons.Default.Inventory, null) }
                         item { btOpcionesModulos("CxC", Icons.Default.CreditCard, null) }

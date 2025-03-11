@@ -19,7 +19,6 @@ package com.soportereal.invefacon.interfaces.modulos.sac
  import androidx.compose.foundation.layout.PaddingValues
  import androidx.compose.foundation.layout.Row
  import androidx.compose.foundation.layout.Spacer
- import androidx.compose.foundation.layout.fillMaxHeight
  import androidx.compose.foundation.layout.fillMaxSize
  import androidx.compose.foundation.layout.fillMaxWidth
  import androidx.compose.foundation.layout.height
@@ -103,6 +102,7 @@ package com.soportereal.invefacon.interfaces.modulos.sac
  import com.google.accompanist.systemuicontroller.SystemUiController
  import com.soportereal.invefacon.R
  import com.soportereal.invefacon.funciones_de_interfaces.BBasicTextField
+ import com.soportereal.invefacon.funciones_de_interfaces.BButton
  import com.soportereal.invefacon.funciones_de_interfaces.RutasPatallas
  import com.soportereal.invefacon.funciones_de_interfaces.actualizarParametro
  import com.soportereal.invefacon.funciones_de_interfaces.guardarParametroSiNoExiste
@@ -205,7 +205,7 @@ fun InterfazModuloSac(
     var iniciarMenuCrearExpress by remember { mutableStateOf(false) }
     var iniciarMenuAjustes by remember { mutableStateOf(false) }
     val context = LocalContext.current
-//    guardarParametroSiNoExiste(context, "prmImp2$nombreEmpresa$codUsuario", "1")
+    guardarParametroSiNoExiste(context, "prmImp2$nombreEmpresa$codUsuario", "1")
     var valorPrmImp2 by remember { mutableStateOf(obtenerParametro(context, "prmImp2$nombreEmpresa$codUsuario")) }
     var codUsuarioIngresado by remember { mutableStateOf(codUsuario) }
     var passwordIngresada by remember { mutableStateOf("") }
@@ -1265,7 +1265,6 @@ fun InterfazModuloSac(
                 datosIngresadosBarraBusqueda = nuevoValor
                 actualizarListaMesas= true
             },
-            fontFamily = fontAksharPrincipal,
             alto = 45,
             ancho = 170,
             objetoAdaptardor = objetoAdaptardor,
@@ -1289,149 +1288,55 @@ fun InterfazModuloSac(
                 horizontalArrangement = Arrangement.Start
             ) {
 
-                Button(
+                BButton(
                     modifier = Modifier
                         .weight(1f)
-                        .fillMaxHeight()
                         .padding(start = objetoAdaptardor.ajustarAltura(4), end =  objetoAdaptardor.ajustarAltura(4)),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFF244BC0), // Color de fondo del botón
-                        contentColor = Color.White,
-                        disabledContainerColor = Color(0xFF244BC0),
-                        disabledContentColor = Color.White
-                    ),
-                    elevation = ButtonDefaults.buttonElevation(defaultElevation = 5.dp),
                     onClick = {
-                        iniciarMenuCrearMesa= true
-                    }, contentPadding = PaddingValues(2.dp)
-                ) {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center){
-                        Text(
-                            "Crear mesa",
-                            fontFamily = fontAksharPrincipal,
-                            fontWeight = FontWeight.Medium,
-                            fontSize = obtenerEstiloBody(),
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                            textAlign = TextAlign.Center
-                        )
-                    }
-                }
-                Button(
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxHeight()
-                        .padding(start = objetoAdaptardor.ajustarAltura(4), end =  objetoAdaptardor.ajustarAltura(4)),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFF244BC0), // Color de fondo del botón
-                        contentColor = Color.White,
-                        disabledContainerColor = Color(0xFF244BC0),
-                        disabledContentColor = Color.White
-                    ),
-                    elevation = ButtonDefaults.buttonElevation(defaultElevation = 5.dp),
-                    onClick = {
-                        iniciarMenuCrearPersona= true
-                    }, contentPadding = PaddingValues(2.dp)
-                ) {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center){
-                        Text(
-                            "Persona",
-                            fontFamily = fontAksharPrincipal,
-                            fontWeight = FontWeight.Medium,
-                            fontSize = obtenerEstiloBody(),
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                            textAlign = TextAlign.Center
-                        )
-                    }
-                }
+                        iniciarMenuCrearMesa= it
+                    },
+                    text = "Crear mesa"
+                )
 
-                Button(
+                BButton(
                     modifier = Modifier
                         .weight(1f)
-                        .fillMaxHeight()
                         .padding(start = objetoAdaptardor.ajustarAltura(4), end =  objetoAdaptardor.ajustarAltura(4)),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFF244BC0), // Color de fondo del botón
-                        contentColor = Color.White,
-                        disabledContainerColor = Color(0xFF244BC0),
-                        disabledContentColor = Color.White
-                    ),
-                    elevation = ButtonDefaults.buttonElevation(defaultElevation = 5.dp),
                     onClick = {
-                        iniciarMenuCrearExpress= true
-                    }, contentPadding = PaddingValues(2.dp)
-                ) {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center){
-                        Text(
-                            "Express",
-                            fontFamily = fontAksharPrincipal,
-                            fontWeight = FontWeight.Medium,
-                            fontSize = obtenerEstiloBody(),
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                            textAlign = TextAlign.Center
-                        )
-                    }
-                }
+                        iniciarMenuCrearPersona= it
+                    },
+                    text = "Persona"
+                )
 
-                Button(
+                BButton(
                     modifier = Modifier
                         .weight(1f)
-                        .fillMaxHeight()
                         .padding(start = objetoAdaptardor.ajustarAltura(4), end =  objetoAdaptardor.ajustarAltura(4)),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFF244BC0), // Color de fondo del botón
-                        contentColor = Color.White,
-                        disabledContainerColor = Color(0xFF244BC0),
-                        disabledContentColor = Color.White
-                    ),
-                    elevation = ButtonDefaults.buttonElevation(defaultElevation = 5.dp),
                     onClick = {
-                        iniciarMenuAjustes= true
-                    }, contentPadding = PaddingValues(2.dp)
-                ) {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center){
-                        Text(
-                            "Ajustes",
-                            fontFamily = fontAksharPrincipal,
-                            fontWeight = FontWeight.Medium,
-                            fontSize = obtenerEstiloBody(),
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                            textAlign = TextAlign.Center
-                        )
-                    }
-                }
+                        iniciarMenuCrearExpress= it
+                    },
+                    text = "Express"
+                )
 
-                Button(
+                BButton(
                     modifier = Modifier
                         .weight(1f)
-                        .fillMaxHeight()
                         .padding(start = objetoAdaptardor.ajustarAltura(4), end =  objetoAdaptardor.ajustarAltura(4)),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFF244BC0), // Color de fondo del botón
-                        contentColor = Color.White,
-                        disabledContainerColor = Color(0xFF244BC0),
-                        disabledContentColor = Color.White
-                    ),
-                    elevation = ButtonDefaults.buttonElevation(defaultElevation = 5.dp),
                     onClick = {
-                        actualizarListaMesas= true
-                    }, contentPadding = PaddingValues(2.dp)
-                ) {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center){
-                        Text(
-                            "Refrescar",
-                            fontFamily = fontAksharPrincipal,
-                            fontWeight = FontWeight.Medium,
-                            fontSize = obtenerEstiloBody(),
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                            textAlign = TextAlign.Center
-                        )
-                    }
-                }
+                        iniciarMenuAjustes= it
+                    },
+                    text = "Ajustes"
+                )
+
+                BButton(
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(start = objetoAdaptardor.ajustarAltura(4), end =  objetoAdaptardor.ajustarAltura(4)),
+                    onClick = {
+                        actualizarListaMesas= it
+                    },
+                    text = "Refrescar"
+                )
             }
         }
 
@@ -1851,7 +1756,6 @@ fun InterfazModuloSac(
                             onValueChange =  { nuevoValor ->
                                 nombreNuevaMesa = nuevoValor
                             },
-                            fontFamily = fontAksharPrincipal,
                             alto = 70,
                             ancho = 300,
                             placeholder = "Nombre de la Mesa",
@@ -1867,7 +1771,6 @@ fun InterfazModuloSac(
                             onValueChange =  { nuevoValor ->
                                 nombreSalonNuevaMesa = nuevoValor
                             },
-                            fontFamily = fontAksharPrincipal,
                             alto = 70,
                             ancho = 300,
                             placeholder = "Nombre de Salon",
@@ -1959,7 +1862,6 @@ fun InterfazModuloSac(
                             onValueChange =  { nuevoValor ->
                                 nombreNuevaPersona = nuevoValor
                             },
-                            fontFamily = fontAksharPrincipal,
                             alto = 70,
                             ancho = 300,
                             placeholder = "Nombre de la Persona",
@@ -2386,7 +2288,6 @@ fun InterfazModuloSac(
                             onValueChange =  { nuevoValor ->
                                 anotacionComanda = nuevoValor
                             },
-                            fontFamily = fontAksharPrincipal,
                             alto = 70,
                             ancho = 300,
                             placeholder = if (iniciarVentanaAgregarArticulo) "Ingrese la anotacion" else "Ingrese el motivo",
@@ -2750,7 +2651,6 @@ fun InterfazModuloSac(
                                 onValueChange =  { nuevoValor ->
                                     codUsuarioIngresado = nuevoValor
                                 },
-                                fontFamily = fontAksharPrincipal,
                                 alto = 70,
                                 ancho = 300,
                                 placeholder = "Ingrese el codigo de usuario",
@@ -2763,7 +2663,6 @@ fun InterfazModuloSac(
                                 onValueChange =  { nuevoValor ->
                                     passwordIngresada = nuevoValor
                                 },
-                                fontFamily = fontAksharPrincipal,
                                 alto = 70,
                                 ancho = 300,
                                 placeholder = "Ingrese la contraseña",
@@ -3027,7 +2926,6 @@ fun InterfazModuloSac(
                                                     nombreCliente = ""
                                                 },
                                                 placeholder = "Ingrese la cedula",
-                                                fontFamily = fontAksharPrincipal,
                                                 objetoAdaptardor = objetoAdaptardor,
                                                 alto = 60,
                                                 ancho = 230,
@@ -3063,7 +2961,6 @@ fun InterfazModuloSac(
                                                 nombreCliente = it
                                             },
                                             placeholder = "Ingrese el nombre",
-                                            fontFamily = fontAksharPrincipal,
                                             objetoAdaptardor = objetoAdaptardor,
                                             alto = 60,
                                             ancho = 360,
@@ -3085,7 +2982,6 @@ fun InterfazModuloSac(
                                             onValueChange = {
                                                 telefonoCliente = it
                                             },
-                                            fontFamily = fontAksharPrincipal,
                                             placeholder = "Ingrese el telefono",
                                             objetoAdaptardor = objetoAdaptardor,
                                             alto = 60,
@@ -3110,7 +3006,6 @@ fun InterfazModuloSac(
                                             onValueChange = {
                                                 correoCliente = it
                                             },
-                                            fontFamily = fontAksharPrincipal,
                                             placeholder = "Ingrese el correo",
                                             objetoAdaptardor = objetoAdaptardor,
                                             alto = 60,
@@ -3133,7 +3028,6 @@ fun InterfazModuloSac(
                                             onValueChange = {
                                                 direccionCliente = it
                                             },
-                                            fontFamily = fontAksharPrincipal,
                                             placeholder = "Ingrese la direccion",
                                             objetoAdaptardor = objetoAdaptardor,
                                             alto = 60,
@@ -3204,7 +3098,6 @@ fun InterfazModuloSac(
                                         onValueChange = {
                                             datosIngresadosBarraBusquedaCliente = it
                                         },
-                                        fontFamily = fontAksharPrincipal,
                                         objetoAdaptardor = objetoAdaptardor,
                                         alto = 60,
                                         ancho = 292,
@@ -3318,7 +3211,6 @@ fun InterfazModuloSac(
                             onValueChange =  { nuevoValor ->
                                 nombreNuevaSubCuenta = nuevoValor
                             },
-                            fontFamily = fontAksharPrincipal,
                             alto = 70,
                             ancho = 300,
                             placeholder = "Nombre de la Sub-Cuenta",
@@ -3447,7 +3339,6 @@ fun InterfazModuloSac(
                             onValueChange =  { nuevoValor ->
                                 codUsuarioIngresado = nuevoValor
                             },
-                            fontFamily = fontAksharPrincipal,
                             alto = 70,
                             ancho = 300,
                             placeholder = "Ingrese el codigo de usuario",
@@ -3460,7 +3351,6 @@ fun InterfazModuloSac(
                             onValueChange =  { nuevoValor ->
                                 passwordIngresada = nuevoValor
                             },
-                            fontFamily = fontAksharPrincipal,
                             alto = 70,
                             ancho = 300,
                             placeholder = "Ingrese la contraseña",
@@ -3562,7 +3452,6 @@ fun InterfazModuloSac(
                             onValueChange =  { nuevoValor ->
                                 codUsuarioIngresado = nuevoValor
                             },
-                            fontFamily = fontAksharPrincipal,
                             alto = 70,
                             ancho = 300,
                             placeholder = "Ingrese el codigo de usuario",
@@ -3575,7 +3464,6 @@ fun InterfazModuloSac(
                             onValueChange =  { nuevoValor ->
                                 passwordIngresada = nuevoValor
                             },
-                            fontFamily = fontAksharPrincipal,
                             alto = 70,
                             ancho = 300,
                             placeholder = "Ingrese la contraseña",
@@ -3943,5 +3831,5 @@ fun BxContenerdorCliente(
 @Preview(widthDp = 964, heightDp = 523)
 private fun Preview(){
     val nav = rememberNavController()
-    InterfazModuloSac("eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJDb2RpZ28iOiIwMDA1MCIsIk5vbWJyZSI6IllFU0xFUiBBRE1JTiIsIkVtYWlsIjoieWVzbGVybG9yaW9AZ21haWwuY29tIiwiUHVlcnRvIjoiODAxIiwiRW1wcmVzYSI6IlpHVnRiM0psYzNRPSIsIlNlcnZlcklwIjoiTVRreUxqRTJPQzQzTGpNNCIsInRpbWUiOiIyMDI1MDMwMTEwMDMyMCJ9.U3F_80TsKwjSps06XXayvmV8CaYsb4GjQ5KmQqTS7mo", null, nav, "demorest","00050", "YESLER LORIO")
+    InterfazModuloSac("eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJDb2RpZ28iOiIwMDA0MyIsIk5vbWJyZSI6IlJPQkVSVE8gQURNSU4iLCJFbWFpbCI6InJyZXllc0Bzb3BvcnRlcmVhbC5jb20iLCJQdWVydG8iOiI4MDEiLCJFbXByZXNhIjoiWkdWdGIzSmxjM1E9IiwiU2VydmVySXAiOiJNVGt5TGpFMk9DNDNMak13IiwidGltZSI6IjIwMjUwMzEwMDIwMzA0In0.7kfmdiMMKZ30R7mSvuIT0iNod_naX8DBDPguf9KC_H4", null, nav, "demorest","00050", "YESLER LORIO")
 }

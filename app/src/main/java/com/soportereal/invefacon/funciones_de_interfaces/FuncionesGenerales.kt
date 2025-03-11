@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.SharedPreferences
 import com.soportereal.invefacon.interfaces.pantallas_principales.estadoRespuestaApi
 import org.json.JSONObject
+import java.util.Locale
 
 fun mostrarMensajeError(mensaje: String){
     val jsonObject = JSONObject(
@@ -41,4 +42,9 @@ suspend fun obtenerDatosClienteByCedula(
 ):JSONObject?{
     val objetoFuncionesHttpInvefacon= FuncionesHttp(servidorUrl = "https://apis.gometa.org/")
     return objetoFuncionesHttpInvefacon.metodoGet(apiDirectorio = "cedulas/$numeroCedula", validarJson = false, enviarToken = false)
+}
+
+fun separacionDeMiles(montoDouble:Double= 0.00, montoInt: Int = 0,isDouble: Boolean= true): String{
+    val monto = if (isDouble) montoDouble else montoInt
+    return "\u20A1 "+String.format(Locale.US, "%,.2f", monto.toString().replace(",", "").toDouble())
 }
