@@ -36,7 +36,7 @@ import androidx.navigation.NavController
 import com.soportereal.invefacon.R
 import com.soportereal.invefacon.funciones_de_interfaces.actualizarParametro
 import com.soportereal.invefacon.funciones_de_interfaces.obtenerParametro
-import com.soportereal.invefacon.interfaces.FuncionesParaAdaptarContenidoCompact
+import com.soportereal.invefacon.interfaces.FuncionesParaAdaptarContenido
 
 
 @Composable
@@ -47,7 +47,7 @@ fun IniciarInterfazSalir(navControllerPrincipal: NavController){
     val dpAnchoPantalla = configuration.screenWidthDp
     val dpAltoPantalla = configuration.screenHeightDp
     val dpFontPantalla= configuration.fontScale
-    val objetoAdaptardor= FuncionesParaAdaptarContenidoCompact(dpAltoPantalla, dpAnchoPantalla, dpFontPantalla)
+    val objetoAdaptardor= FuncionesParaAdaptarContenido(dpAltoPantalla, dpAnchoPantalla, dpFontPantalla)
     val contexto = LocalContext.current
 
     ConstraintLayout(

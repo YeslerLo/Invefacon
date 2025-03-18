@@ -59,7 +59,8 @@ import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.navigation.NavController
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.soportereal.invefacon.R
-import com.soportereal.invefacon.interfaces.FuncionesParaAdaptarContenidoCompact
+import com.soportereal.invefacon.funciones_de_interfaces.TextFieldMultifuncional
+import com.soportereal.invefacon.interfaces.FuncionesParaAdaptarContenido
 import com.soportereal.invefacon.interfaces.pantallas_principales.estadoRespuestaApi
 import com.soportereal.invefacon.interfaces.pantallas_principales.objetoEstadoPantallaCarga
 import kotlinx.coroutines.delay
@@ -78,7 +79,7 @@ fun IniciarInterfazAgregarCliente(
     val dpAnchoPantalla = configuration.screenWidthDp
     val dpAltoPantalla = configuration.screenHeightDp
     val dpFontPantalla= configuration.fontScale
-    val objetoAdaptardor= FuncionesParaAdaptarContenidoCompact(dpAltoPantalla, dpAnchoPantalla, dpFontPantalla)
+    val objetoAdaptardor= FuncionesParaAdaptarContenido(dpAltoPantalla, dpAnchoPantalla, dpFontPantalla)
     val lazyState= rememberLazyListState()
     val coroutineScope = rememberCoroutineScope()
     var errorResultadoApi by remember { mutableStateOf<Boolean?>(null) }
@@ -417,19 +418,19 @@ fun IniciarInterfazAgregarCliente(
                             fontAksharPrincipal = fontAksharPrincipal,
                             icono = Icons.Filled.AccountCircle
                         ) {
-                            AgregarTextFieldMultifuncional(
+                            TextFieldMultifuncional(
                                 label = "Nombre comercial",
                                 valor = nombreComercial,
                                 nuevoValor = {nombreComercial= it},
                                 textPlaceholder = "Ejemplo: Ferreteria"
                             )
-                            AgregarTextFieldMultifuncional(
+                            TextFieldMultifuncional(
                                 label = "Nombre jurídico",
                                 valor = nombreJuridico,
                                 nuevoValor = {nombreJuridico= it},
                                 textPlaceholder = "Ejemplo: Ferreteria S.A"
                             )
-                            AgregarTextFieldMultifuncional(
+                            TextFieldMultifuncional(
                                 label = "Tipo cédula",
                                 valor = opcionesTipoIndentificacionCliente[tipoCedula]?: "00",
                                 nuevoValor = {
@@ -439,7 +440,7 @@ fun IniciarInterfazAgregarCliente(
                                 contieneOpciones = true,
                                 opciones = opcionesTipoIndentificacionCliente
                             )
-                            AgregarTextFieldMultifuncional(
+                            TextFieldMultifuncional(
                                 label = "Cédula",
                                 valor = cedulaCliente,
                                 nuevoValor = {cedulaCliente= it},
@@ -447,7 +448,7 @@ fun IniciarInterfazAgregarCliente(
                                 cantidadLineas = 1,
                                 textPlaceholder = "Ejemplo: 1111111111"
                             )
-                            AgregarTextFieldMultifuncional(
+                            TextFieldMultifuncional(
                                 label = "Fecha nacimiento",
                                 valor = fechaNacimiento,
                                 nuevoValor = {fechaNacimiento= it},
@@ -465,7 +466,7 @@ fun IniciarInterfazAgregarCliente(
                             titulo = "Información de contacto",
                             icono = Icons.Filled.Phone
                         ){
-                            AgregarTextFieldMultifuncional(
+                            TextFieldMultifuncional(
                                 label = "Teléfonos",
                                 valor = telefono,
                                 nuevoValor = {telefono= it},
@@ -474,34 +475,34 @@ fun IniciarInterfazAgregarCliente(
                                 cantidadLineas = 1,
                                 textPlaceholder = "Ejemplo: 88888888,8888888"
                             )
-                            AgregarTextFieldMultifuncional(
+                            TextFieldMultifuncional(
                                 label = "Email general",
                                 valor = emailGeneral,
                                 nuevoValor = {emailGeneral= it},
                                 cantidadLineas = 1,
                                 textPlaceholder = "Ejemplo: emailgeneral@gmail.com"
                             )
-                            AgregarTextFieldMultifuncional(
+                            TextFieldMultifuncional(
                                 label = "Email factura",
                                 valor = emailFactura,
                                 nuevoValor = {emailFactura= it},
                                 cantidadLineas = 1,
                                 textPlaceholder = "Ejemplo: emailfactura@gmail.com"
                             )
-                            AgregarTextFieldMultifuncional(
+                            TextFieldMultifuncional(
                                 label = "Email cobros",
                                 valor = emailCobros,
                                 nuevoValor = {emailCobros= it},
                                 cantidadLineas = 1,
                                 textPlaceholder = "Ejemplo: emailcobros@gmail.com"
                             )
-                            AgregarTextFieldMultifuncional(
+                            TextFieldMultifuncional(
                                 label = "Contacto",
                                 valor = contacto,
                                 nuevoValor = {contacto= it},
                                 textPlaceholder = "Ejemplo: Carlos Vega"
                             )
-                            AgregarTextFieldMultifuncional(
+                            TextFieldMultifuncional(
                                 label = "Dirección",
                                 valor = direccion,
                                 nuevoValor = {direccion= it},
@@ -518,7 +519,7 @@ fun IniciarInterfazAgregarCliente(
                             titulo = "Información financiera",
                             icono = Icons.Filled.MonetizationOn
                         ){
-                            AgregarTextFieldMultifuncional(
+                            TextFieldMultifuncional(
                                 label = "Monto de crédito",
                                 valor = creditoMonto,
                                 nuevoValor = {creditoMonto= it},
@@ -529,7 +530,7 @@ fun IniciarInterfazAgregarCliente(
                                 textPlaceholder = "Ejemplo: 1000000.10 (100,000.10)"
                             )
 
-                            AgregarTextFieldMultifuncional(
+                            TextFieldMultifuncional(
                                 label = "Plazo de crédito",
                                 valor = creditoPlazo,
                                 nuevoValor = {creditoPlazo= it},
@@ -538,7 +539,7 @@ fun IniciarInterfazAgregarCliente(
                                 textPlaceholder = "Ejemplo: 15"
                             )
 
-                            AgregarTextFieldMultifuncional(
+                            TextFieldMultifuncional(
                                 label = "Día de cobro",
                                 valor = diaCobro,
                                 nuevoValor = {diaCobro= it},
@@ -547,7 +548,7 @@ fun IniciarInterfazAgregarCliente(
                                 textPlaceholder = "Ejemplo: 15"
                             )
 
-                            AgregarTextFieldMultifuncional(
+                            TextFieldMultifuncional(
                                 label = "Tipo de cliente",
                                 valor = opcionesTipoCliente[clienteTipo]?:"Seleccione un Tipo de cliente",
                                 nuevoValor = {
@@ -558,7 +559,7 @@ fun IniciarInterfazAgregarCliente(
                                 opciones = opcionesTipoCliente
                             )
 
-                            AgregarTextFieldMultifuncional(
+                            TextFieldMultifuncional(
                                 label = "Moneda",
                                 valor = opcionesTipoMoneda[monedaCliente]?:"CRC",
                                 nuevoValor = {
@@ -569,7 +570,7 @@ fun IniciarInterfazAgregarCliente(
                                 opciones = opcionesTipoMoneda
                             )
 
-                            AgregarTextFieldMultifuncional(
+                            TextFieldMultifuncional(
                                 label = "Descuento",
                                 valor = descuentoCliente,
                                 nuevoValor = {descuentoCliente= it},
@@ -579,7 +580,7 @@ fun IniciarInterfazAgregarCliente(
                                 textPlaceholder = "Ejemplo: 13.12 o 13"
                             )
 
-                            AgregarTextFieldMultifuncional(
+                            TextFieldMultifuncional(
                                 label = "Monto de contrato",
                                 valor = montoContrato,
                                 nuevoValor = {montoContrato= it},
@@ -590,7 +591,7 @@ fun IniciarInterfazAgregarCliente(
                                 textPlaceholder = "Ejemplo: 1000000.10 (100,000.10)"
                             )
 
-                            AgregarTextFieldMultifuncional(
+                            TextFieldMultifuncional(
                                 label = "Detalle de contrato",
                                 valor = detalleContrato,
                                 nuevoValor = {detalleContrato= it},
@@ -607,7 +608,7 @@ fun IniciarInterfazAgregarCliente(
                             titulo = "Información de ventas",
                             icono = Icons.Default.Assessment
                         ){
-                            AgregarTextFieldMultifuncional(
+                            TextFieldMultifuncional(
                                 label = "Agente de ventas",
                                 valor = opcionesAgentesVentasClienteActivos[agenteVentas]?:"Seleccione un Agente de ventas",
                                 nuevoValor = {
@@ -617,14 +618,14 @@ fun IniciarInterfazAgregarCliente(
                                 contieneOpciones = true,
                                 opciones = opcionesAgentesVentasClienteActivos
                             )
-                            AgregarTextFieldMultifuncional(
+                            TextFieldMultifuncional(
                                 label = "Tipo de precio",
                                 valor = opcionesTipoPrecioCliente[tipoPrecio]?:"Seleccione un Tipo de precio",
                                 nuevoValor = {tipoPrecio= it},
                                 contieneOpciones = true,
                                 opciones = opcionesTipoPrecioCliente
                             )
-                            AgregarTextFieldMultifuncional(
+                            TextFieldMultifuncional(
                                 label = "Tiene crédito",
                                 valor = opcionesLogicasCliente[tieneCredito]?:"0",
                                 nuevoValor = {
@@ -634,7 +635,7 @@ fun IniciarInterfazAgregarCliente(
                                 contieneOpciones = true,
                                 opciones = opcionesLogicasCliente
                             )
-                            AgregarTextFieldMultifuncional(
+                            TextFieldMultifuncional(
                                 label = "Exento",
                                 valor = opcionesLogicasCliente[exento]?:"0",
                                 nuevoValor = {

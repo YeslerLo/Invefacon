@@ -19,6 +19,19 @@ fun mostrarMensajeError(mensaje: String){
     estadoRespuestaApi.cambiarEstadoRespuestaApi(mostrarRespuesta = true, datosRespuesta = jsonObject)
 }
 
+fun mostrarMensajeExito(mensaje: String){
+    val jsonObject = JSONObject(
+        """
+                    {
+                        "code": 200,
+                        "status": "ok",
+                        "data": "$mensaje"
+                    }
+                """
+    )
+    estadoRespuestaApi.cambiarEstadoRespuestaApi(mostrarRespuesta = true, datosRespuesta = jsonObject)
+}
+
 fun guardarParametroSiNoExiste(context: Context, clave: String, valor: String) {
     val sharedPreferences: SharedPreferences = context.getSharedPreferences("MisPreferencias", Context.MODE_PRIVATE)
 
@@ -46,9 +59,13 @@ suspend fun obtenerDatosClienteByCedula(
 
 fun separacionDeMiles(montoDouble:Double= 0.00, montoInt: Int = 0,isDouble: Boolean= true): String{
     val monto = if (isDouble) montoDouble else montoInt
-    return "\u20A1 "+String.format(Locale.US, "%,.2f", monto.toString().replace(",", "").toDouble())
+    return String.format(Locale.US, "%,.2f", monto.toString().replace(",", "").toDouble())
 }
 
 fun validarExitoRestpuestaServidor(respuesta : JSONObject): Boolean{
     return respuesta.getString("status")=="ok" && respuesta.getString("code")=="200"
+}
+
+fun String.isSoloNumeros(): Boolean {
+    return this.matches(Regex("\\d+"))
 }

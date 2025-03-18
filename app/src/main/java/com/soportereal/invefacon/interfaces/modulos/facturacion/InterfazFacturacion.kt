@@ -11,13 +11,14 @@ import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -31,36 +32,33 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBackIosNew
-import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Dangerous
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Inventory
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PersonPin
 import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.Update
-import androidx.compose.material3.Button
+import androidx.compose.material.icons.filled.Straighten
+import androidx.compose.material.icons.filled.Warehouse
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CheckboxDefaults
-import androidx.compose.material3.Divider
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -80,11 +78,10 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
@@ -97,12 +94,20 @@ import com.soportereal.invefacon.R
 import com.soportereal.invefacon.funciones_de_interfaces.BBasicTextField
 import com.soportereal.invefacon.funciones_de_interfaces.BButton
 import com.soportereal.invefacon.funciones_de_interfaces.TText
+import com.soportereal.invefacon.funciones_de_interfaces.TextFieldMultifuncional
+import com.soportereal.invefacon.funciones_de_interfaces.isSoloNumeros
 import com.soportereal.invefacon.funciones_de_interfaces.separacionDeMiles
 import com.soportereal.invefacon.funciones_de_interfaces.validarExitoRestpuestaServidor
-import com.soportereal.invefacon.interfaces.FuncionesParaAdaptarContenidoCompact
-import com.soportereal.invefacon.interfaces.obtenerEstiloBody
-import com.soportereal.invefacon.interfaces.obtenerEstiloHead
-import com.soportereal.invefacon.interfaces.obtenerEstiloTitle
+import com.soportereal.invefacon.interfaces.FuncionesParaAdaptarContenido
+import com.soportereal.invefacon.interfaces.obtenerEstiloBodyBig
+import com.soportereal.invefacon.interfaces.obtenerEstiloBodyMedium
+import com.soportereal.invefacon.interfaces.obtenerEstiloBodySmall
+import com.soportereal.invefacon.interfaces.obtenerEstiloDisplayBig
+import com.soportereal.invefacon.interfaces.obtenerEstiloHeadMedium
+import com.soportereal.invefacon.interfaces.obtenerEstiloLabelBig
+import com.soportereal.invefacon.interfaces.obtenerEstiloTitleBig
+import com.soportereal.invefacon.interfaces.obtenerEstiloTitleMedium
+import com.soportereal.invefacon.interfaces.obtenerEstiloTitleSmall
 import com.soportereal.invefacon.interfaces.pantallas_principales.estadoRespuestaApi
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -126,13 +131,14 @@ fun IniciarInterfazFacturacion(
     val dpAnchoPantalla = configuration.screenWidthDp
     val dpAltoPantalla = configuration.screenHeightDp
     val dpFontPantalla= configuration.fontScale
-    val objetoAdaptardor= FuncionesParaAdaptarContenidoCompact(dpAltoPantalla, dpAnchoPantalla, dpFontPantalla)
+    val objetoAdaptardor= FuncionesParaAdaptarContenido(dpAltoPantalla, dpAnchoPantalla, dpFontPantalla)
     var expandedClientes by remember { mutableStateOf(false) }
 //    var expandedArticulos by remember { mutableStateOf(false) }
     var expandedTotales by remember { mutableStateOf(false) }
-    val listaArticulosSeleccionados = remember { mutableStateListOf<Articulo>() }
-    var listaArticulosProforma by remember {  mutableStateOf<List<Articulo>>(emptyList()) }
+    val listaArticulosSeleccionados = remember { mutableStateListOf<ArticuloFacturado>() }
+    var listaArticulosProforma by remember {  mutableStateOf<List<ArticuloFacturado>>(emptyList()) }
     var nombre by remember { mutableStateOf("") }
+    var tipoPrecio by remember { mutableStateOf("") }
     var tipoCedula by remember { mutableStateOf("") }
     var numeroCedula by remember { mutableStateOf("") }
     var emailGeneral by remember { mutableStateOf("") }
@@ -147,16 +153,23 @@ fun IniciarInterfazFacturacion(
     var totalIvaDevuelto by remember { mutableDoubleStateOf(0.00) }
     var totalMercGrav by remember { mutableDoubleStateOf(0.00) }
     var total by remember { mutableDoubleStateOf(0.00) }
-    var codMoneda by remember { mutableStateOf("") }
+    var codMonedaCliente by remember { mutableStateOf("") }
+    var codMonedaProforma by remember { mutableStateOf("") }
     var numeroProforma by remember { mutableStateOf("") }
     var cuenta by remember { mutableStateOf("") }
     val objectoProcesadorDatosApi = ProcesarDatosModuloFacturacion(token)
-    var isCargandoDatos by remember { mutableStateOf(true) }
-    var mostrarDatosArticulo by remember { mutableStateOf(false) }
+    var isCargandoDatos by remember { mutableStateOf(false) }
+    var articuloFacturadoActual by remember { mutableStateOf(ArticuloFacturado()) }
+    var iniciarMenuDatosArticulo by remember { mutableStateOf(false) }
+    var iniciarMenuSeleccionarArticulo by remember { mutableStateOf(false) }
     var actuzalizarDatosProforma by remember { mutableStateOf(true) }
     var apiConsultaActual by remember { mutableStateOf<Job?>(null) }
     val cortinaConsultaApi= CoroutineScope(Dispatchers.IO)
     val transition = rememberInfiniteTransition(label = "shimmer")
+    var errorCargarProforma by remember { mutableStateOf(false) }
+    val simboloMoneda by remember { mutableStateOf(if(codMonedaProforma == "CRC") "\u20A1 " else "\u0024 ") }
+    var listaArticulosBuscados by remember { mutableStateOf(emptyList<ArticuloFaturacion>()) }
+    var datosIngresadosBarraBusquedaArticulos by remember { mutableStateOf("") }
     val shimmerTranslate by transition.animateFloat(
         initialValue = -800f,
         targetValue = 1100f,
@@ -179,7 +192,9 @@ fun IniciarInterfazFacturacion(
 
     LaunchedEffect(actuzalizarDatosProforma) {
         if (actuzalizarDatosProforma){
+            listaArticulosSeleccionados.clear()
             isCargandoDatos = true
+            errorCargarProforma = false
             apiConsultaActual?.cancel()
             apiConsultaActual= cortinaConsultaApi.launch{
                 objectoProcesadorDatosApi.crearNuevaProforma()
@@ -187,7 +202,7 @@ fun IniciarInterfazFacturacion(
                 val result= objectoProcesadorDatosApi.abrirProforma()
                 if (result!=null){
                     estadoRespuestaApi.cambiarEstadoRespuestaApi(mostrarSoloRespuestaError = true, datosRespuesta = result)
-                    if(validarExitoRestpuestaServidor(result)){
+                    if(validarExitoRestpuestaServidor(result)) {
                         val data = result.getJSONObject("data")
 
                         //DATOS CLIENTE
@@ -200,13 +215,15 @@ fun IniciarInterfazFacturacion(
                         telefonos = datosCliente.getString("Telefonos")
                         tipoCedula = datosCliente.getString("TipoIdentificacion")
                         plazoCredito = datosCliente.getString("plazo")
+                        tipoPrecio = datosCliente.getString("TipoPrecioVenta")
+                        codMonedaCliente = datosCliente.getString("monedacodigo")
 
                         //DATOS PROFORMA
                         val datosProforma = data.getJSONArray("datos").getJSONObject(0)
                         numeroProforma= datosProforma.getString("Numero")
 
                         //Tipo Moneda
-                        codMoneda = data.getString("monedaNacional")
+                        codMonedaProforma = data.getString("monedaDocumento")
 
                         //Totales
                         val totales = data.getJSONArray("totales").getJSONObject(0)
@@ -220,25 +237,77 @@ fun IniciarInterfazFacturacion(
                         total = totales.getDouble("Total")
 
                         // ARTICULOS PROFORMA
-                        val listaArticulos = mutableListOf<Articulo>()
+                        val listaArticuloFacturados = mutableListOf<ArticuloFacturado>()
                         val articulos = data.getJSONArray("proforma")
                         for(i in 0 until articulos.length()){
                             val datosArticulo = articulos.getJSONObject(i)
-                            val articulo = Articulo(
-                                codigo = datosArticulo.getString("ArticuloCodigo"),
+                            val articuloFacturado = ArticuloFacturado(
+                                articuloCodigo = datosArticulo.getString("ArticuloCodigo"),
+                                pv = datosArticulo.getString("PV"),
                                 descripcion = datosArticulo.getString("Descripcion"),
-                                cantidad = datosArticulo.getInt("ArticuloCantidad"),
-                                precioUnitario = datosArticulo.getDouble("PrecioUd"),
-                                descuento = datosArticulo.getDouble("ArticuloDescuentoPorcentage"),
-                                total = datosArticulo.getDouble("ArticuloVentaTotal")
+                                articuloCantidad = datosArticulo.getInt("ArticuloCantidad"),
+                                precioUd = datosArticulo.getDouble("PrecioUd"),
+                                articuloDescuentoPorcentaje = datosArticulo.getDouble("ArticuloDescuentoPorcentage"),
+                                articuloDescuentoMonto = datosArticulo.getDouble("ArticuloDescuentoMonto"),
+                                articuloVentaSubTotal2 = datosArticulo.getDouble("ArticuloVentaSubTotal2"),
+                                articuloVentaGravado = datosArticulo.getDouble("ArticuloVentaGravado"),
+                                articuloIvaExonerado = datosArticulo.getDouble("ArticuloIvaExonerado"),
+                                articuloVentaExento = datosArticulo.getDouble("ArticuloVentaExento"),
+                                articuloIvaPorcentaje = datosArticulo.getDouble("ArticuloIvaPorcentage"),
+                                articuloIvaMonto = datosArticulo.getDouble("ArticuloIvaMonto"),
+                                articuloBodegaCodigo = datosArticulo.getString("ArticuloBodegaCodigo"),
+                                articuloVentaTotal = datosArticulo.getDouble("ArticuloVentaTotal"),
+                                existencia = datosArticulo.getDouble("Existencia"),
+                                articuloLineaId = datosArticulo.getInt("ArticuloLineaId"),
+                                articuloCosto = datosArticulo.getDouble("ArticuloCosto"),
+                                utilidad = datosArticulo.getDouble("Utilidad")
                             )
-                            listaArticulos.add(articulo)
+                            listaArticuloFacturados.add(articuloFacturado)
                         }
-                        listaArticulosProforma = listaArticulos
+                        listaArticulosProforma = listaArticuloFacturados
+                    }
+                    else{
+                        errorCargarProforma = true
                     }
                 }
+                delay(300)
                 actuzalizarDatosProforma= false
                 isCargandoDatos= false
+            }
+        }
+    }
+
+    LaunchedEffect(datosIngresadosBarraBusquedaArticulos) {
+        if (datosIngresadosBarraBusquedaArticulos.isNotEmpty()){
+            var codigo = ""
+            var descripcion = ""
+            apiConsultaActual?.cancel()
+            apiConsultaActual= cortinaConsultaApi.launch{
+                delay(500)
+                if(datosIngresadosBarraBusquedaArticulos.isSoloNumeros()) {
+                    codigo = datosIngresadosBarraBusquedaArticulos
+                    descripcion = ""
+                }else{
+                    codigo = ""
+                    descripcion =datosIngresadosBarraBusquedaArticulos
+                }
+                val result = objectoProcesadorDatosApi.obtenerArticulos(
+                    codigo = codigo,
+                    descripcion = descripcion,
+                    tipoPrecio = tipoPrecio,
+                    moneda = codMonedaCliente
+                )
+                if (result!=null){
+                    if (validarExitoRestpuestaServidor(result)){
+                        val data = result.getJSONArray("data")
+                        for(i in 0 until data.length()){
+                            val datosArticulo = data.getJSONObject(i)
+                            println(datosArticulo)
+                        }
+                    }else{
+                        estadoRespuestaApi.cambiarEstadoRespuestaApi(mostrarSoloRespuestaError = true, datosRespuesta = result)
+                    }
+                }
             }
         }
     }
@@ -257,8 +326,9 @@ fun IniciarInterfazFacturacion(
                 text = textTitle,
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(start = objetoAdaptardor.ajustarAncho(8)),
-                color = Color.DarkGray
+                    .padding(start = objetoAdaptardor.ajustarAncho(4)),
+                color = Color.DarkGray,
+                fontSize = obtenerEstiloBodyBig()
             )
             BBasicTextField(
                 value = variable,
@@ -268,15 +338,13 @@ fun IniciarInterfazFacturacion(
                 modifier = Modifier
                     .fillMaxWidth(1f)
                     .padding(
-                        start = objetoAdaptardor.ajustarAncho(4),
-                        end = objetoAdaptardor.ajustarAncho(4),
-                        top = objetoAdaptardor.ajustarAltura(2),
-                        bottom = objetoAdaptardor.ajustarAltura(2)
+                        horizontal = objetoAdaptardor.ajustarAltura(2)
                     ),
                 objetoAdaptardor = objetoAdaptardor,
                 icono = icon,
                 iconTint = Color.Gray,
-                textColor = Color.Black
+                textColor = Color.Black,
+                fontSize = obtenerEstiloBodyMedium()
             )
         }
     }
@@ -288,7 +356,8 @@ fun IniciarInterfazFacturacion(
             .statusBarsPadding()
             .navigationBarsPadding()
     ) {
-        val (bxSuperior,flechaRegresar, lzColumPrincipal, iconoActualizar) = createRefs()
+        val (bxSuperior,flechaRegresar, lzColumPrincipal, iconoActualizar, bxInferior) = createRefs()
+
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -297,6 +366,7 @@ fun IniciarInterfazFacturacion(
                 .constrainAs(bxSuperior) {
                     top.linkTo(parent.top)
                     start.linkTo(parent.start)
+                    bottom.linkTo(lzColumPrincipal.top)
                 },
             contentAlignment = Alignment.BottomCenter
         ) {
@@ -316,7 +386,7 @@ fun IniciarInterfazFacturacion(
                     "Facturación",
                     fontFamily = fontAksharPrincipal,
                     fontWeight = FontWeight.SemiBold,
-                    fontSize = objetoAdaptardor.ajustarFont(28),
+                    fontSize = obtenerEstiloDisplayBig(),
                     color = Color.White,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
@@ -324,6 +394,7 @@ fun IniciarInterfazFacturacion(
                 )
             }
         }
+
         IconButton(
             onClick = {
                 navController.popBackStack()
@@ -340,6 +411,7 @@ fun IniciarInterfazFacturacion(
                 modifier = Modifier.size(objetoAdaptardor.ajustarAltura(25))
             )
         }
+
         IconButton(
             onClick = {
                 actuzalizarDatosProforma = true
@@ -359,170 +431,152 @@ fun IniciarInterfazFacturacion(
 
         LazyColumn(
             modifier = Modifier
-                .fillMaxSize()
+                .wrapContentSize()
                 .constrainAs(lzColumPrincipal) {
                     start.linkTo(parent.start)
                     top.linkTo(bxSuperior.bottom)
                 }
         ) {
             item {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize(),
-                    contentAlignment = Alignment.TopCenter
+                AnimatedVisibility(
+                    visible = errorCargarProforma,
+                    enter = expandVertically(animationSpec = tween(300)) + fadeIn(),
+                    exit = shrinkVertically(animationSpec = tween(300)) + fadeOut()
                 ){
-                    Box(
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(objetoAdaptardor.ajustarAltura(8)),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Dangerous,
+                            contentDescription = "ICONO DE PELIGRO",
+                            modifier = Modifier.size(objetoAdaptardor.ajustarAltura(50)),
+                            tint = Color(0xFFEB4242)
+                        )
+
+                        TText(
+                            text = "Ha ocurrido un error en la respuesta del servidor.",
+                            modifier = Modifier.width(objetoAdaptardor.ajustarAncho(250)),
+                            fontSize = obtenerEstiloTitleMedium(),
+                            maxLines = 5,
+                            textAlign = TextAlign.Center
+                        )
+                    }
+
+                }
+            }
+
+            item {
+                AnimatedVisibility(
+                    visible = !errorCargarProforma,
+                    enter = expandVertically(animationSpec = tween(300)) + fadeIn(),
+                    exit = shrinkVertically(animationSpec = tween(300)) + fadeOut()
+                ){
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Top,
                         modifier = Modifier
                             .wrapContentSize()
                             .padding(objetoAdaptardor.ajustarAltura(8))
-                    ){
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.Top
+                    ) {
+                        if (isCargandoDatos){
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(objetoAdaptardor.ajustarAltura(35))
+                                    .background(brush, shape = RoundedCornerShape(objetoAdaptardor.ajustarAltura(4)))
+                            )
+                        }
+
+                        AnimatedVisibility(
+                            visible = !isCargandoDatos,
+                            enter = expandVertically(animationSpec = tween(300)) + fadeIn(),
+                            exit = shrinkVertically(animationSpec = tween(300)) + fadeOut()
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(objetoAdaptardor.ajustarAncho(8))
+                            ) {
+                                BButton(
+                                    modifier = Modifier
+                                        .weight(1f),
+                                    text = "Abrir",
+                                    onClick = {},
+                                    textSize = obtenerEstiloBodyBig(),
+                                    objetoAdaptardor = objetoAdaptardor
+                                )
+                                BButton(
+                                    modifier = Modifier
+                                        .weight(1f),
+                                    text = "Guardar",
+                                    onClick = {},
+                                    textSize = obtenerEstiloBodyBig(),
+                                    objetoAdaptardor = objetoAdaptardor
+                                )
+                                BButton(
+                                    modifier = Modifier
+                                        .weight(1f),
+                                    text = "Clonar",
+                                    onClick = {},
+                                    textSize = obtenerEstiloBodyBig(),
+                                    objetoAdaptardor = objetoAdaptardor
+                                )
+                            }
+                        }
+
+                        Card(
+                            modifier = Modifier
+                                .wrapContentHeight()
+                                .fillMaxWidth()
+                                .padding(top = objetoAdaptardor.ajustarAltura(8), bottom = objetoAdaptardor.ajustarAltura(8))
+                                .shadow(
+                                    elevation = objetoAdaptardor.ajustarAltura(7),
+                                    shape = RoundedCornerShape(objetoAdaptardor.ajustarAltura(20))
+                                ),
+                            shape = RoundedCornerShape(objetoAdaptardor.ajustarAltura(20)),
+                            colors = CardDefaults.cardColors(containerColor = Color.White)
                         ) {
                             if (isCargandoDatos){
                                 Box(
                                     modifier = Modifier
-                                        .fillMaxWidth()
-                                        .height(objetoAdaptardor.ajustarAltura(35))
-                                        .background(brush, shape = RoundedCornerShape(objetoAdaptardor.ajustarAltura(4)))
-                                )
-                            }
-                            AnimatedVisibility(
-                                visible = !isCargandoDatos,
-                                enter = expandVertically(animationSpec = tween(300)) + fadeIn(),
-                                exit = shrinkVertically(animationSpec = tween(300)) + fadeOut()
-                            ) {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(objetoAdaptardor.ajustarAncho(8))
-                                ) {
-                                    BButton(
-                                        modifier = Modifier
-                                            .weight(1f)
-                                            .height(objetoAdaptardor.ajustarAltura(35)),
-                                        text = "Abrir",
-                                        onClick = {},
-                                        textSize = obtenerEstiloTitle()
-                                    )
-                                    BButton(
-                                        modifier = Modifier
-                                            .weight(1f)
-                                            .height(objetoAdaptardor.ajustarAltura(35)),
-                                        text = "Guardar",
-                                        onClick = {},
-                                        textSize = obtenerEstiloTitle()
-                                    )
-                                    BButton(
-                                        modifier = Modifier
-                                            .weight(1f)
-                                            .height(objetoAdaptardor.ajustarAltura(35)),
-                                        text = "Clonar",
-                                        onClick = {},
-                                        textSize = obtenerEstiloTitle()
-                                    )
-                                }
-
-                            }
-
-                            Card(
-                                modifier = Modifier
-                                    .wrapContentHeight()
-                                    .fillMaxWidth()
-                                    .padding(objetoAdaptardor.ajustarAltura(8))
-                                    .shadow(
-                                        elevation = objetoAdaptardor.ajustarAltura(7),
-                                        shape = RoundedCornerShape(objetoAdaptardor.ajustarAltura(20))
-                                    ),
-                                shape = RoundedCornerShape(objetoAdaptardor.ajustarAltura(20)),
-                                colors = CardDefaults.cardColors(containerColor = Color.White)
-                            ) {
-                                if (isCargandoDatos){
-                                    Box(
-                                        modifier = Modifier
-                                            .fillMaxSize()
-                                            .padding(objetoAdaptardor.ajustarAltura(8))
-                                    ){
-                                        Column(
-                                            horizontalAlignment = Alignment.Start,
-                                            verticalArrangement = Arrangement.spacedBy(objetoAdaptardor.ajustarAltura(4))
-                                        ) {
-                                            Box(
-                                                modifier = Modifier
-                                                    .width(objetoAdaptardor.ajustarAncho(250))
-                                                    .height(objetoAdaptardor.ajustarAltura(15))
-                                                    .background(brush, shape = RoundedCornerShape(objetoAdaptardor.ajustarAltura(4)))
-                                                    .padding(
-                                                        start = objetoAdaptardor.ajustarAncho(8),
-                                                        end = objetoAdaptardor.ajustarAncho(8),
-                                                        top = objetoAdaptardor.ajustarAncho(8)
-                                                    )
-                                            )
-                                            Box(
-                                                modifier = Modifier
-                                                    .width(objetoAdaptardor.ajustarAncho(200))
-                                                    .height(objetoAdaptardor.ajustarAltura(15))
-                                                    .background(brush, shape = RoundedCornerShape(objetoAdaptardor.ajustarAltura(4)))
-                                                    .padding(
-                                                        start = objetoAdaptardor.ajustarAncho(8),
-                                                        end = objetoAdaptardor.ajustarAncho(8),
-                                                        top = objetoAdaptardor.ajustarAncho(8)
-                                                    )
-                                            )
-
-                                            Row (
-                                                verticalAlignment = Alignment.CenterVertically,
-                                                horizontalArrangement = Arrangement.spacedBy(objetoAdaptardor.ajustarAncho(8))
-                                            ){
-                                                Box(
-                                                    modifier = Modifier
-                                                        .weight(1f)
-                                                        .height(objetoAdaptardor.ajustarAltura(15))
-                                                        .background(brush, shape = RoundedCornerShape(objetoAdaptardor.ajustarAltura(4)))
-                                                        .padding(
-                                                            start = objetoAdaptardor.ajustarAncho(8),
-                                                            end = objetoAdaptardor.ajustarAncho(8),
-                                                            top = objetoAdaptardor.ajustarAncho(8)
-                                                        )
+                                        .fillMaxSize()
+                                        .padding(objetoAdaptardor.ajustarAltura(16))
+                                ){
+                                    Column(
+                                        horizontalAlignment = Alignment.Start,
+                                        verticalArrangement = Arrangement.spacedBy(objetoAdaptardor.ajustarAltura(4))
+                                    ) {
+                                        Box(
+                                            modifier = Modifier
+                                                .width(objetoAdaptardor.ajustarAncho(250))
+                                                .height(objetoAdaptardor.ajustarAltura(20))
+                                                .background(brush, shape = RoundedCornerShape(objetoAdaptardor.ajustarAltura(4)))
+                                                .padding(
+                                                    start = objetoAdaptardor.ajustarAncho(8),
+                                                    end = objetoAdaptardor.ajustarAncho(8),
+                                                    top = objetoAdaptardor.ajustarAncho(8)
                                                 )
-                                                Box(
-                                                    modifier = Modifier
-                                                        .weight(1f)
-                                                        .height(objetoAdaptardor.ajustarAltura(30))
-                                                        .background(brush, shape = RoundedCornerShape(objetoAdaptardor.ajustarAltura(4)))
-                                                        .padding(
-                                                            start = objetoAdaptardor.ajustarAncho(8),
-                                                            end = objetoAdaptardor.ajustarAncho(8),
-                                                            top = objetoAdaptardor.ajustarAncho(8)
-                                                        )
+                                        )
+                                        Box(
+                                            modifier = Modifier
+                                                .width(objetoAdaptardor.ajustarAncho(200))
+                                                .height(objetoAdaptardor.ajustarAltura(20))
+                                                .background(brush, shape = RoundedCornerShape(objetoAdaptardor.ajustarAltura(4)))
+                                                .padding(
+                                                    start = objetoAdaptardor.ajustarAncho(8),
+                                                    end = objetoAdaptardor.ajustarAncho(8),
+                                                    top = objetoAdaptardor.ajustarAncho(8)
                                                 )
-                                                Box(
-                                                    modifier = Modifier
-                                                        .weight(1f)
-                                                        .height(objetoAdaptardor.ajustarAltura(30))
-                                                        .background(brush, shape = RoundedCornerShape(objetoAdaptardor.ajustarAltura(4)))
-                                                        .padding(
-                                                            start = objetoAdaptardor.ajustarAncho(8),
-                                                            end = objetoAdaptardor.ajustarAncho(8),
-                                                            top = objetoAdaptardor.ajustarAncho(8)
-                                                        )
-                                                )
-                                            }
+                                        )
 
+                                        Row (
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(objetoAdaptardor.ajustarAncho(8))
+                                        ){
                                             Box(
                                                 modifier = Modifier
-                                                    .fillMaxWidth()
-                                                    .height(objetoAdaptardor.ajustarAltura(35))
-                                                    .background(brush, shape = RoundedCornerShape(objetoAdaptardor.ajustarAltura(4)))
-                                                    .padding(
-                                                        start = objetoAdaptardor.ajustarAncho(8),
-                                                        end = objetoAdaptardor.ajustarAncho(8),
-                                                        top = objetoAdaptardor.ajustarAncho(8)
-                                                    )
-                                            )
-                                            Box(
-                                                modifier = Modifier
-                                                    .width(objetoAdaptardor.ajustarAncho(100))
+                                                    .weight(1f)
                                                     .height(objetoAdaptardor.ajustarAltura(20))
                                                     .background(brush, shape = RoundedCornerShape(objetoAdaptardor.ajustarAltura(4)))
                                                     .padding(
@@ -531,220 +585,304 @@ fun IniciarInterfazFacturacion(
                                                         top = objetoAdaptardor.ajustarAncho(8)
                                                     )
                                             )
-                                        }
-                                    }
-                                }
-                                AnimatedVisibility(
-                                    visible = !isCargandoDatos,
-                                    enter = expandVertically(animationSpec = tween(300)) + fadeIn(),
-                                    exit = shrinkVertically(animationSpec = tween(300)) + fadeOut()
-                                ){
-                                    Box(
-                                        modifier = Modifier
-                                            .fillMaxSize()
-                                            .padding(objetoAdaptardor.ajustarAltura(8))
-                                    ){
-                                        Column(
-                                            horizontalAlignment = Alignment.CenterHorizontally,
-                                            verticalArrangement = Arrangement.spacedBy(objetoAdaptardor.ajustarAltura(4))
-                                        ) {
-                                            TText(
-                                                text = "Número Proforma: $numeroProforma",
+                                            Box(
                                                 modifier = Modifier
-                                                    .fillMaxWidth()
+                                                    .weight(1f)
+                                                    .height(objetoAdaptardor.ajustarAltura(30))
+                                                    .background(brush, shape = RoundedCornerShape(objetoAdaptardor.ajustarAltura(4)))
                                                     .padding(
                                                         start = objetoAdaptardor.ajustarAncho(8),
                                                         end = objetoAdaptardor.ajustarAncho(8),
                                                         top = objetoAdaptardor.ajustarAncho(8)
-                                                    ),
-                                                fontSize = obtenerEstiloHead()
+                                                    )
                                             )
-                                            Row(
-                                                verticalAlignment = Alignment.CenterVertically,
-                                                horizontalArrangement = Arrangement.Start
-                                            ) {
-                                                Icon(
-                                                    imageVector = Icons.Default.PersonPin,
-                                                    contentDescription = "ICONO DE CLIENTE",
-                                                    modifier = Modifier.padding(start = objetoAdaptardor.ajustarAncho(4))
-                                                )
-                                                TText(
-                                                    text = "Información del cliente",
-                                                    modifier = Modifier
-                                                        .fillMaxWidth()
-                                                        .padding(start = objetoAdaptardor.ajustarAncho(4))
-                                                    , fontSize = obtenerEstiloHead()
-                                                )
-                                            }
+                                            Box(
+                                                modifier = Modifier
+                                                    .weight(1f)
+                                                    .height(objetoAdaptardor.ajustarAltura(30))
+                                                    .background(brush, shape = RoundedCornerShape(objetoAdaptardor.ajustarAltura(4)))
+                                                    .padding(
+                                                        start = objetoAdaptardor.ajustarAncho(8),
+                                                        end = objetoAdaptardor.ajustarAncho(8),
+                                                        top = objetoAdaptardor.ajustarAncho(8)
+                                                    )
+                                            )
+                                        }
 
-                                            Row (
-                                                verticalAlignment = Alignment.CenterVertically,
-                                                horizontalArrangement = Arrangement.spacedBy(objetoAdaptardor.ajustarAncho(8))
-                                            ){
-                                                TText(
-                                                    text = "Cuenta: $cuenta",
-                                                    modifier = Modifier
-                                                        .fillMaxSize()
-                                                        .padding(start = objetoAdaptardor.ajustarAncho(8))
-                                                        .weight(1f)
+                                        Box(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .height(objetoAdaptardor.ajustarAltura(35))
+                                                .background(brush, shape = RoundedCornerShape(objetoAdaptardor.ajustarAltura(4)))
+                                                .padding(
+                                                    start = objetoAdaptardor.ajustarAncho(8),
+                                                    end = objetoAdaptardor.ajustarAncho(8),
+                                                    top = objetoAdaptardor.ajustarAncho(8)
                                                 )
-                                                BButton(
-                                                    text = "Opciones",
-                                                    onClick = {},
-                                                    modifier = Modifier
-                                                        .weight(1f)
-                                                        .height(objetoAdaptardor.ajustarAltura(35)),
-                                                    textSize = obtenerEstiloTitle()
+                                        )
+                                        Box(
+                                            modifier = Modifier
+                                                .width(objetoAdaptardor.ajustarAncho(100))
+                                                .height(objetoAdaptardor.ajustarAltura(35))
+                                                .background(brush, shape = RoundedCornerShape(objetoAdaptardor.ajustarAltura(4)))
+                                                .padding(
+                                                    start = objetoAdaptardor.ajustarAncho(8),
+                                                    end = objetoAdaptardor.ajustarAncho(8),
+                                                    top = objetoAdaptardor.ajustarAncho(8)
                                                 )
-                                                BButton(
-                                                    text = "Buscar",
-                                                    onClick = {},
-                                                    modifier = Modifier
-                                                        .weight(1f)
-                                                        .height(objetoAdaptardor.ajustarAltura(35)),
-                                                    textSize = obtenerEstiloTitle()
-                                                )
-                                            }
+                                        )
+                                    }
+                                }
+                            }
 
+                            AnimatedVisibility(
+                                visible = !isCargandoDatos,
+                                enter = expandVertically(animationSpec = tween(300)) + fadeIn(),
+                                exit = shrinkVertically(animationSpec = tween(300)) + fadeOut()
+                            ){
+                                Column(
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.spacedBy(objetoAdaptardor.ajustarAltura(4)),
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .padding(objetoAdaptardor.ajustarAltura(16))
+                                ) {
+                                    TText(
+                                        text = "Número Proforma: $numeroProforma",
+                                        modifier = Modifier
+                                            .fillMaxWidth(),
+                                        fontSize = obtenerEstiloTitleSmall()
+                                    )
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.Start
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.PersonPin,
+                                            contentDescription = "ICONO DE CLIENTE"
+                                        )
+                                        TText(
+                                            text = "Información del cliente",
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .padding(start = objetoAdaptardor.ajustarAncho(4))
+                                            , fontSize = obtenerEstiloTitleBig()
+                                        )
+                                    }
+
+                                    Row (
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(objetoAdaptardor.ajustarAncho(8))
+                                    ){
+                                        TText(
+                                            text = "Cuenta: $cuenta",
+                                            modifier = Modifier
+                                                .fillMaxSize()
+                                                .weight(1f),
+                                            fontSize = obtenerEstiloBodyBig()
+                                        )
+                                        BButton(
+                                            text = "Opciones",
+                                            onClick = {},
+                                            modifier = Modifier
+                                                .weight(0.8f),
+                                            textSize = obtenerEstiloBodyBig(),
+                                            objetoAdaptardor = objetoAdaptardor
+                                        )
+                                        BButton(
+                                            text = "Buscar",
+                                            onClick = {},
+                                            modifier = Modifier
+                                                .weight(0.8f),
+                                            textSize = obtenerEstiloBodyBig(),
+                                            objetoAdaptardor = objetoAdaptardor
+                                        )
+                                    }
+
+                                    BasicTexfiuldWithText(
+                                        textTitle = "Nombre del Cliente:",
+                                        text = "Nombre del Cliente",
+                                        variable = nombre,
+                                        nuevoValor = {nombre=it},
+                                        icon = Icons.Default.Person
+                                    )
+                                    AnimatedVisibility(
+                                        visible = expandedClientes,
+                                        enter = expandVertically(animationSpec = tween(300)) + fadeIn(),
+                                        exit = shrinkVertically(animationSpec = tween(300)) + fadeOut()
+                                    ) {
+                                        Column(
+                                            horizontalAlignment = Alignment.CenterHorizontally,
+                                            verticalArrangement = Arrangement.spacedBy(objetoAdaptardor.ajustarAltura(8))
+                                        ) {
                                             BasicTexfiuldWithText(
-                                                textTitle = "Nombre del Cliente:",
-                                                text = "Nombre del Cliente",
-                                                variable = nombre,
-                                                nuevoValor = {nombre=it},
+                                                textTitle = "Tipo de Cédula:",
+                                                text = "Tipo de Cédula",
+                                                variable = tipoCedula,
+                                                nuevoValor = {tipoCedula=it},
                                                 icon = Icons.Default.Person
                                             )
-                                            AnimatedVisibility(
-                                                visible = expandedClientes,
-                                                enter = expandVertically(animationSpec = tween(300)) + fadeIn(),
-                                                exit = shrinkVertically(animationSpec = tween(300)) + fadeOut()
-                                            ) {
-                                                Column(
-                                                    horizontalAlignment = Alignment.CenterHorizontally,
-                                                    verticalArrangement = Arrangement.spacedBy(objetoAdaptardor.ajustarAltura(8))
-                                                ) {
-                                                    BasicTexfiuldWithText(
-                                                        textTitle = "Tipo de Cédula:",
-                                                        text = "Tipo de Cédula",
-                                                        variable = tipoCedula,
-                                                        nuevoValor = {tipoCedula=it},
-                                                        icon = Icons.Default.Person
-                                                    )
-                                                    BasicTexfiuldWithText(
-                                                        textTitle = "Cédula:",
-                                                        text = "Cédula",
-                                                        variable = numeroCedula,
-                                                        nuevoValor = {numeroCedula=it},
-                                                        icon = Icons.Default.Person
-                                                    )
-                                                    BasicTexfiuldWithText(
-                                                        textTitle = "Email General:",
-                                                        text = "Email General",
-                                                        variable = emailGeneral,
-                                                        nuevoValor = {emailGeneral=it},
-                                                        icon = Icons.Default.Person
-                                                    )
-                                                    BasicTexfiuldWithText(
-                                                        textTitle = "Nombre Comercial:",
-                                                        text = "Nombre Comercial",
-                                                        variable = nombreComercial,
-                                                        nuevoValor = {nombreComercial=it},
-                                                        icon = Icons.Default.Person
-                                                    )
-                                                    BasicTexfiuldWithText(
-                                                        textTitle = "Teléfonos:",
-                                                        text = "Teléfonos",
-                                                        variable = telefonos,
-                                                        nuevoValor = {telefonos=it},
-                                                        icon = Icons.Default.Person
-                                                    )
-                                                    BasicTexfiuldWithText(
-                                                        textTitle = "Plazo de Crédito en Dias:",
-                                                        text = "Plazo de Crédito en Dias",
-                                                        variable = plazoCredito,
-                                                        nuevoValor = {plazoCredito=it},
-                                                        icon = Icons.Default.Person
-                                                    )
-                                                }
-                                            }
-                                            BButton(
-                                                text =  if (expandedClientes) "Mostrar menos" else "Mostrar más",
-                                                onClick = {expandedClientes = !expandedClientes},
-                                                contenteColor = Color(0xFF244BC0),
-                                                backgroundColor = Color.White,
-                                                modifier = Modifier
-                                                    .height(objetoAdaptardor.ajustarAltura(35)),
-                                                conSombra = false,
-                                                textSize = obtenerEstiloTitle()
+                                            BasicTexfiuldWithText(
+                                                textTitle = "Cédula:",
+                                                text = "Cédula",
+                                                variable = numeroCedula,
+                                                nuevoValor = {numeroCedula=it},
+                                                icon = Icons.Default.Person
+                                            )
+                                            BasicTexfiuldWithText(
+                                                textTitle = "Email General:",
+                                                text = "Email General",
+                                                variable = emailGeneral,
+                                                nuevoValor = {emailGeneral=it},
+                                                icon = Icons.Default.Person
+                                            )
+                                            BasicTexfiuldWithText(
+                                                textTitle = "Nombre Comercial:",
+                                                text = "Nombre Comercial",
+                                                variable = nombreComercial,
+                                                nuevoValor = {nombreComercial=it},
+                                                icon = Icons.Default.Person
+                                            )
+                                            BasicTexfiuldWithText(
+                                                textTitle = "Teléfonos:",
+                                                text = "Teléfonos",
+                                                variable = telefonos,
+                                                nuevoValor = {telefonos=it},
+                                                icon = Icons.Default.Person
+                                            )
+                                            BasicTexfiuldWithText(
+                                                textTitle = "Plazo de Crédito en Dias:",
+                                                text = "Plazo de Crédito en Dias",
+                                                variable = plazoCredito,
+                                                nuevoValor = {plazoCredito=it},
+                                                icon = Icons.Default.Person
                                             )
                                         }
                                     }
+                                    BButton(
+                                        text =  if (expandedClientes) "Mostrar menos" else "Mostrar más",
+                                        onClick = {expandedClientes = !expandedClientes},
+                                        contenteColor = Color(0xFF244BC0),
+                                        backgroundColor = Color.White,
+                                        conSombra = false,
+                                        textSize = obtenerEstiloBodyBig(),
+                                        objetoAdaptardor = objetoAdaptardor
+                                    )
                                 }
                             }
+                        }
 
-                            Card(
-                                modifier = Modifier
-                                    .wrapContentHeight()
-                                    .fillMaxWidth()
-                                    .padding(objetoAdaptardor.ajustarAltura(8))
-                                    .shadow(
-                                        elevation = objetoAdaptardor.ajustarAltura(7),
-                                        shape = RoundedCornerShape(objetoAdaptardor.ajustarAltura(20))
-                                    ),
-                                shape = RoundedCornerShape(objetoAdaptardor.ajustarAltura(20)),
-                                colors = CardDefaults.cardColors(containerColor = Color.White)
-                            ) {
-                                if (isCargandoDatos){
-                                    Box(
-                                        modifier = Modifier
-                                            .fillMaxSize()
-                                            .padding(objetoAdaptardor.ajustarAltura(16))
+                        Card(
+                            modifier = Modifier
+                                .wrapContentHeight()
+                                .fillMaxWidth()
+                                .padding(top = objetoAdaptardor.ajustarAltura(8), bottom = objetoAdaptardor.ajustarAltura(8))
+                                .shadow(
+                                    elevation = objetoAdaptardor.ajustarAltura(7),
+                                    shape = RoundedCornerShape(objetoAdaptardor.ajustarAltura(20))
+                                ),
+                            shape = RoundedCornerShape(objetoAdaptardor.ajustarAltura(20)),
+                            colors = CardDefaults.cardColors(containerColor = Color.White)
+                        ) {
+                            if (isCargandoDatos){
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .padding(objetoAdaptardor.ajustarAltura(16))
+                                ){
+                                    Column(
+                                        horizontalAlignment = Alignment.CenterHorizontally,
+                                        verticalArrangement = Arrangement.spacedBy(objetoAdaptardor.ajustarAltura(8))
                                     ){
-                                        Column(
-                                            horizontalAlignment = Alignment.CenterHorizontally,
-                                            verticalArrangement = Arrangement.spacedBy(objetoAdaptardor.ajustarAltura(8))
-                                        ){
-                                            Row(
-                                                verticalAlignment = Alignment.CenterVertically,
-                                                horizontalArrangement = Arrangement.spacedBy(objetoAdaptardor.ajustarAncho(8))
-                                            ) {
-                                                Box(
-                                                    modifier = Modifier
-                                                        .weight(1f)
-                                                        .height(objetoAdaptardor.ajustarAltura(35))
-                                                        .background(brush, shape = RoundedCornerShape(objetoAdaptardor.ajustarAltura(6)))
-                                                        .padding(
-                                                            start = objetoAdaptardor.ajustarAncho(8),
-                                                            end = objetoAdaptardor.ajustarAncho(8),
-                                                            top = objetoAdaptardor.ajustarAncho(8)
-                                                        )
-                                                )
-                                                Box(
-                                                    modifier = Modifier
-                                                        .weight(1f)
-                                                        .height(objetoAdaptardor.ajustarAltura(35))
-                                                        .background(brush, shape = RoundedCornerShape(objetoAdaptardor.ajustarAltura(6)))
-                                                        .padding(
-                                                            start = objetoAdaptardor.ajustarAncho(8),
-                                                            end = objetoAdaptardor.ajustarAncho(8),
-                                                            top = objetoAdaptardor.ajustarAncho(8)
-                                                        )
-                                                )
-                                                Box(
-                                                    modifier = Modifier
-                                                        .weight(1f)
-                                                        .height(objetoAdaptardor.ajustarAltura(35))
-                                                        .background(brush, shape = RoundedCornerShape(objetoAdaptardor.ajustarAltura(6)))
-                                                        .padding(
-                                                            start = objetoAdaptardor.ajustarAncho(8),
-                                                            end = objetoAdaptardor.ajustarAncho(8),
-                                                            top = objetoAdaptardor.ajustarAncho(8)
-                                                        )
-                                                )
-                                            }
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(objetoAdaptardor.ajustarAncho(8))
+                                        ) {
                                             Box(
                                                 modifier = Modifier
-                                                    .fillMaxWidth()
-                                                    .height(objetoAdaptardor.ajustarAltura(25))
+                                                    .weight(1f)
+                                                    .height(objetoAdaptardor.ajustarAltura(35))
+                                                    .background(brush, shape = RoundedCornerShape(objetoAdaptardor.ajustarAltura(6)))
+                                                    .padding(
+                                                        start = objetoAdaptardor.ajustarAncho(8),
+                                                        end = objetoAdaptardor.ajustarAncho(8),
+                                                        top = objetoAdaptardor.ajustarAncho(8)
+                                                    )
+                                            )
+                                            Box(
+                                                modifier = Modifier
+                                                    .weight(1f)
+                                                    .height(objetoAdaptardor.ajustarAltura(35))
+                                                    .background(brush, shape = RoundedCornerShape(objetoAdaptardor.ajustarAltura(6)))
+                                                    .padding(
+                                                        start = objetoAdaptardor.ajustarAncho(8),
+                                                        end = objetoAdaptardor.ajustarAncho(8),
+                                                        top = objetoAdaptardor.ajustarAncho(8)
+                                                    )
+                                            )
+                                            Box(
+                                                modifier = Modifier
+                                                    .weight(1f)
+                                                    .height(objetoAdaptardor.ajustarAltura(35))
+                                                    .background(brush, shape = RoundedCornerShape(objetoAdaptardor.ajustarAltura(6)))
+                                                    .padding(
+                                                        start = objetoAdaptardor.ajustarAncho(8),
+                                                        end = objetoAdaptardor.ajustarAncho(8),
+                                                        top = objetoAdaptardor.ajustarAncho(8)
+                                                    )
+                                            )
+                                        }
+                                        Box(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .height(objetoAdaptardor.ajustarAltura(30))
+                                                .background(brush, shape = RoundedCornerShape(objetoAdaptardor.ajustarAltura(6)))
+                                                .padding(
+                                                    start = objetoAdaptardor.ajustarAncho(8),
+                                                    end = objetoAdaptardor.ajustarAncho(8),
+                                                    top = objetoAdaptardor.ajustarAncho(8)
+                                                )
+                                        )
+                                        Row(
+                                            horizontalArrangement = Arrangement.spacedBy(objetoAdaptardor.ajustarAncho(4))
+                                        ) {
+                                            Box(
+                                                modifier = Modifier
+                                                    .weight(1f)
+                                                    .height(objetoAdaptardor.ajustarAltura(30))
+                                                    .background(brush, shape = RoundedCornerShape(objetoAdaptardor.ajustarAltura(6)))
+                                                    .padding(
+                                                        start = objetoAdaptardor.ajustarAncho(8),
+                                                        end = objetoAdaptardor.ajustarAncho(8),
+                                                        top = objetoAdaptardor.ajustarAncho(8)
+                                                    )
+                                            )
+                                            Box(
+                                                modifier = Modifier
+                                                    .weight(1f)
+                                                    .height(objetoAdaptardor.ajustarAltura(30))
+                                                    .background(brush, shape = RoundedCornerShape(objetoAdaptardor.ajustarAltura(6)))
+                                                    .padding(
+                                                        start = objetoAdaptardor.ajustarAncho(8),
+                                                        end = objetoAdaptardor.ajustarAncho(8),
+                                                        top = objetoAdaptardor.ajustarAncho(8)
+                                                    )
+                                            )
+                                            Box(
+                                                modifier = Modifier
+                                                    .weight(1f)
+                                                    .height(objetoAdaptardor.ajustarAltura(30))
+                                                    .background(brush, shape = RoundedCornerShape(objetoAdaptardor.ajustarAltura(6)))
+                                                    .padding(
+                                                        start = objetoAdaptardor.ajustarAncho(8),
+                                                        end = objetoAdaptardor.ajustarAncho(8),
+                                                        top = objetoAdaptardor.ajustarAncho(8)
+                                                    )
+                                            )
+                                            Box(
+                                                modifier = Modifier
+                                                    .weight(1f)
+                                                    .height(objetoAdaptardor.ajustarAltura(30))
                                                     .background(brush, shape = RoundedCornerShape(objetoAdaptardor.ajustarAltura(6)))
                                                     .padding(
                                                         start = objetoAdaptardor.ajustarAncho(8),
@@ -755,206 +893,170 @@ fun IniciarInterfazFacturacion(
                                         }
                                     }
                                 }
+                            }
 
-                                AnimatedVisibility(
-                                    visible = !isCargandoDatos,
-                                    enter = expandVertically(animationSpec = tween(300)) + fadeIn(),
-                                    exit = shrinkVertically(animationSpec = tween(300)) + fadeOut()
+                            AnimatedVisibility(
+                                visible = !isCargandoDatos,
+                                enter = expandVertically(animationSpec = tween(300)) + fadeIn(),
+                                exit = shrinkVertically(animationSpec = tween(300)) + fadeOut()
+                            ){
+                                Column(
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.Center,
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .padding(objetoAdaptardor.ajustarAltura(16))
                                 ){
-                                    Box(
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(objetoAdaptardor.ajustarAncho(8)),
+                                        modifier = Modifier.padding(
+                                            bottom = objetoAdaptardor.ajustarAltura(8)
+                                        )
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Inventory,
+                                            contentDescription = "ICONO DE ARTICULOS"
+                                        )
+                                        TText(
+                                            text = "Articulos",
+                                            modifier = Modifier
+                                                .weight(1f),
+                                            fontSize = obtenerEstiloTitleBig()
+                                        )
+                                        BButton(
+                                            text = "Agregar",
+                                            onClick = {
+                                                iniciarMenuSeleccionarArticulo = true
+                                            },
+                                            modifier = Modifier
+                                                .weight(1f),
+                                            textSize = obtenerEstiloBodyBig(),
+                                            objetoAdaptardor = objetoAdaptardor
+                                        )
+                                        BButton(
+                                            text = "Opciones",
+                                            onClick = {},
+                                            modifier = Modifier
+                                                .weight(1f),
+                                            textSize = obtenerEstiloBodyBig(),
+                                            objetoAdaptardor = objetoAdaptardor
+                                        )
+                                    }
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(objetoAdaptardor.ajustarAncho(2)),
                                         modifier = Modifier
-                                            .fillMaxSize()
-                                            .padding(objetoAdaptardor.ajustarAltura(16))
-                                    ){
-                                        Column(
-                                            horizontalAlignment = Alignment.CenterHorizontally,
-                                            verticalArrangement = Arrangement.spacedBy(objetoAdaptardor.ajustarAltura(8))
-                                        ){
-                                            Row(
-                                                verticalAlignment = Alignment.CenterVertically,
-                                                horizontalArrangement = Arrangement.spacedBy(objetoAdaptardor.ajustarAncho(8))
+                                            .fillMaxWidth()
+                                            .background(Color.LightGray)
+                                            .padding(objetoAdaptardor.ajustarAltura(2))
+                                    ) {
+                                        TText("Descripción", Modifier.weight(1.25f), textAlign = TextAlign.Center)
+                                        TText("Cant", Modifier.weight(0.5f), textAlign = TextAlign.Center)
+                                        TText("Precio.Unit", Modifier.weight(1f), textAlign = TextAlign.Center)
+                                        TText("Desc", Modifier.weight(0.5f), textAlign = TextAlign.Center)
+                                        TText("Total", Modifier.weight(1.25f), textAlign = TextAlign.Center)
+                                    }
+
+                                    listaArticulosProforma.forEach { articulo ->
+                                        var isSeleccionado by remember { mutableStateOf(false) }
+
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(objetoAdaptardor.ajustarAncho(2)),
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .clickable {
+                                                    articuloFacturadoActual = articulo
+                                                    iniciarMenuDatosArticulo = true
+                                                }
+                                                .padding(vertical = objetoAdaptardor.ajustarAltura(2))
+                                        ) {
+                                            Checkbox(
+                                                checked = isSeleccionado,
+                                                onCheckedChange = { valor ->
+                                                    isSeleccionado = valor
+                                                    if (isSeleccionado) {
+                                                        listaArticulosSeleccionados.add(articulo)
+                                                    } else {
+                                                        listaArticulosSeleccionados.remove(articulo)
+                                                    }
+                                                },
+                                                modifier = Modifier.weight(0.25f).scale(0.7f),
+                                                colors = CheckboxDefaults.colors(
+                                                    checkedColor = Color(0xFF244BC0),
+                                                    uncheckedColor = Color.Gray,
+                                                    checkmarkColor = Color.White
+                                                )
+                                            )
+
+                                            TText(articulo.descripcion, Modifier.weight(1f), textAlign = TextAlign.Start, maxLines = 3)
+                                            TText(articulo.articuloCantidad.toString(), Modifier.weight(0.5f), textAlign =TextAlign.Center, maxLines = 3)
+                                            TText(simboloMoneda + separacionDeMiles(articulo.precioUd), Modifier.weight(1f), textAlign = TextAlign.Center, maxLines = 3)
+                                            TText("${articulo.articuloDescuentoPorcentaje}%", Modifier.weight(0.5f), textAlign = TextAlign.Center, maxLines = 3)
+                                            TText(simboloMoneda + separacionDeMiles(articulo.articuloVentaTotal), Modifier.weight(1f), textAlign = TextAlign.End, maxLines = 3)
+
+                                            IconButton(
+                                                onClick = { /* Lógica para eliminar */ },
+                                                modifier = Modifier.size(objetoAdaptardor.ajustarAltura(18))
                                             ) {
                                                 Icon(
-                                                    imageVector = Icons.Default.Inventory,
-                                                    contentDescription = "ICONO DE ARTICULOS"
-                                                )
-                                                TText(
-                                                    text = "Articulos",
+                                                    imageVector = Icons.Filled.Delete,
+                                                    contentDescription = "Eliminar",
+                                                    tint = Color(0xFFEB4242),
                                                     modifier = Modifier
-                                                        .weight(1f),
-                                                    fontSize = obtenerEstiloHead()
-                                                )
-                                                BButton(
-                                                    text = "Agregar",
-                                                    onClick = {},
-                                                    modifier = Modifier
-                                                        .weight(1f)
-                                                        .height(objetoAdaptardor.ajustarAltura(35)),
-                                                    textSize = obtenerEstiloTitle()
-                                                )
-                                                BButton(
-                                                    text = "Opciones",
-                                                    onClick = {},
-                                                    modifier = Modifier
-                                                        .weight(1f)
-                                                        .height(objetoAdaptardor.ajustarAltura(35)),
-                                                    textSize = obtenerEstiloTitle()
-                                                )
-                                            }
-                                            Row(
-                                                verticalAlignment = Alignment.CenterVertically,
-                                                modifier = Modifier
-                                                    .background(color = Color.LightGray)
-                                            ){
-                                                TText(
-                                                    text = "Descripción",
-                                                    modifier = Modifier
-                                                        .weight(1f)
-                                                        .padding(objetoAdaptardor.ajustarAltura(2)),
-                                                    fontSize = obtenerEstiloBody(),
-                                                    textAlign = TextAlign.Center
-                                                )
-                                                TText(
-                                                    text = "Precio.Unit",
-                                                    modifier = Modifier
-                                                        .weight(0.9f)
-                                                        .padding(objetoAdaptardor.ajustarAltura(2)),
-                                                    fontSize = obtenerEstiloBody(),
-                                                    textAlign = TextAlign.Center
-                                                )
-                                                TText(
-                                                    text = "Desc",
-                                                    modifier = Modifier
-                                                        .weight(0.5f)
-                                                        .padding(objetoAdaptardor.ajustarAltura(2)),
-                                                    fontSize = obtenerEstiloBody(),
-                                                    textAlign = TextAlign.Center
-                                                )
-                                                TText(
-                                                    text = "Total",
-                                                    modifier = Modifier
-                                                        .weight(1.15f)
-                                                        .padding(objetoAdaptardor.ajustarAltura(2)),
-                                                    fontSize = obtenerEstiloBody(),
-                                                    textAlign = TextAlign.Center
-                                                )
-                                            }
-                                            listaArticulosProforma.forEach { articulo ->
-                                                var isSeleccionado by remember { mutableStateOf(false) }
-                                                Row(
-                                                    verticalAlignment = Alignment.CenterVertically
-                                                ){
-                                                    Checkbox(
-                                                        checked = isSeleccionado,
-                                                        onCheckedChange = { valor->
-                                                            isSeleccionado = valor
-                                                            val productoExistente = listaArticulosSeleccionados.find {it.codigo == articulo.codigo}
-                                                            if (productoExistente==null){
-                                                                listaArticulosSeleccionados.add(articulo)
-                                                            }else{
-                                                                listaArticulosSeleccionados.remove(articulo)
-                                                            }
-                                                        },
-                                                        modifier = Modifier
-                                                            .weight(0.1f)
-                                                            .scale(0.7f)
-                                                            .padding(1.dp),
-                                                        colors = CheckboxDefaults.colors(
-                                                            checkedColor = Color(0xFF244BC0),
-                                                            uncheckedColor = Color.Gray,
-                                                            checkmarkColor = Color.White
-                                                        )
-                                                    )
-                                                    TText(
-                                                        text = "(${articulo.cantidad}) "+articulo.descripcion,
-                                                        modifier = Modifier
-                                                            .weight(1f)
-                                                            .padding(objetoAdaptardor.ajustarAltura(2)),
-                                                        fontSize = obtenerEstiloBody(),
-                                                        textAlign = TextAlign.Center,
-                                                        maxLines = 3,
-                                                        fontWeight = FontWeight.Light
-                                                    )
-                                                    TText(
-                                                        text = separacionDeMiles(articulo.precioUnitario),
-                                                        modifier = Modifier
-                                                            .weight(1f)
-                                                            .padding(objetoAdaptardor.ajustarAltura(2)),
-                                                        fontSize = obtenerEstiloBody(),
-                                                        textAlign = TextAlign.Center,
-                                                        maxLines = 3,
-                                                        fontWeight = FontWeight.Light
-                                                    )
-                                                    TText(
-                                                        text = articulo.descuento.toString()+"%",
-                                                        modifier = Modifier
-                                                            .weight(0.6f)
-                                                            .padding(objetoAdaptardor.ajustarAltura(2)),
-                                                        fontSize = obtenerEstiloBody(),
-                                                        textAlign = TextAlign.Center,
-                                                        maxLines = 3,
-                                                        fontWeight = FontWeight.Light
-                                                    )
-                                                    TText(
-                                                        text = separacionDeMiles(montoDouble = articulo.total),
-                                                        modifier = Modifier
-                                                            .weight(1f)
-                                                            .padding(objetoAdaptardor.ajustarAltura(2)),
-                                                        fontSize = obtenerEstiloBody(),
-                                                        textAlign = TextAlign.Center,
-                                                        maxLines = 3,
-                                                        fontWeight = FontWeight.Light
-                                                    )
-                                                    IconButton(
-                                                        onClick = {
-                                                        },
-                                                        modifier = Modifier.size(objetoAdaptardor.ajustarAltura(18))
-                                                    ) {
-                                                        Icon(
-                                                            imageVector =  Icons.Filled.Delete,
-                                                            contentDescription = "Basurero",
-                                                            tint = Color(0xFFEB4242) ,
-                                                            modifier = Modifier.size(objetoAdaptardor.ajustarAltura(18))
-                                                        )
-                                                    }
-                                                }
-                                                HorizontalDivider(
-                                                    thickness = 1.dp,
-                                                    color = Color.LightGray
+                                                        .size(objetoAdaptardor.ajustarAltura(18))
+                                                        .weight(0.25f)
                                                 )
                                             }
                                         }
+
+                                        HorizontalDivider(thickness = 1.dp, color = Color.LightGray)
                                     }
                                 }
-
                             }
+                        }
 
-                            Card(
-                                modifier = Modifier
-                                    .wrapContentHeight()
-                                    .fillMaxWidth()
-                                    .padding(objetoAdaptardor.ajustarAltura(8))
-                                    .shadow(
-                                        elevation = objetoAdaptardor.ajustarAltura(7),
-                                        shape = RoundedCornerShape(objetoAdaptardor.ajustarAltura(20))
-                                    ),
-                                shape = RoundedCornerShape(objetoAdaptardor.ajustarAltura(20)),
-                                colors = CardDefaults.cardColors(containerColor = Color.White)
-                            ) {
-                                if(isCargandoDatos){
-                                    Box(
-                                        modifier = Modifier
-                                            .fillMaxSize()
-                                            .padding(objetoAdaptardor.ajustarAltura(16))
+                        Card(
+                            modifier = Modifier
+                                .wrapContentHeight()
+                                .fillMaxWidth()
+                                .padding(top = objetoAdaptardor.ajustarAltura(8), bottom = objetoAdaptardor.ajustarAltura(8))
+                                .shadow(
+                                    elevation = objetoAdaptardor.ajustarAltura(7),
+                                    shape = RoundedCornerShape(objetoAdaptardor.ajustarAltura(20))
+                                ),
+                            shape = RoundedCornerShape(objetoAdaptardor.ajustarAltura(20)),
+                            colors = CardDefaults.cardColors(containerColor = Color.White)
+                        ) {
+                            if(isCargandoDatos){
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .padding(objetoAdaptardor.ajustarAltura(16))
+                                ){
+                                    Column(
+                                        horizontalAlignment = Alignment.CenterHorizontally,
+                                        verticalArrangement = Arrangement.spacedBy(objetoAdaptardor.ajustarAltura(8))
                                     ){
-                                        Column(
-                                            horizontalAlignment = Alignment.CenterHorizontally,
-                                            verticalArrangement = Arrangement.spacedBy(objetoAdaptardor.ajustarAltura(8))
-                                        ){
+                                        Box(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .height(objetoAdaptardor.ajustarAltura(35))
+                                                .background(brush, shape = RoundedCornerShape(objetoAdaptardor.ajustarAltura(6)))
+                                                .padding(
+                                                    start = objetoAdaptardor.ajustarAncho(8),
+                                                    end = objetoAdaptardor.ajustarAncho(8),
+                                                    top = objetoAdaptardor.ajustarAncho(8)
+                                                )
+                                        )
+                                        Row(
+                                            horizontalArrangement = Arrangement.spacedBy(objetoAdaptardor.ajustarAncho(16))
+                                        ) {
                                             Box(
                                                 modifier = Modifier
-                                                    .fillMaxWidth()
-                                                    .height(objetoAdaptardor.ajustarAltura(25))
+                                                    .weight(1f)
+                                                    .height(objetoAdaptardor.ajustarAltura(35))
                                                     .background(brush, shape = RoundedCornerShape(objetoAdaptardor.ajustarAltura(6)))
                                                     .padding(
                                                         start = objetoAdaptardor.ajustarAncho(8),
@@ -962,143 +1064,197 @@ fun IniciarInterfazFacturacion(
                                                         top = objetoAdaptardor.ajustarAncho(8)
                                                     )
                                             )
-                                            Row(
-                                                horizontalArrangement = Arrangement.spacedBy(objetoAdaptardor.ajustarAncho(16))
-                                            ) {
-                                                Box(
-                                                    modifier = Modifier
-                                                        .weight(1f)
-                                                        .height(objetoAdaptardor.ajustarAltura(25))
-                                                        .background(brush, shape = RoundedCornerShape(objetoAdaptardor.ajustarAltura(6)))
-                                                        .padding(
-                                                            start = objetoAdaptardor.ajustarAncho(8),
-                                                            end = objetoAdaptardor.ajustarAncho(8),
-                                                            top = objetoAdaptardor.ajustarAncho(8)
-                                                        )
-                                                )
-                                                Box(
-                                                    modifier = Modifier
-                                                        .weight(1f)
-                                                        .height(objetoAdaptardor.ajustarAltura(25))
-                                                        .background(brush, shape = RoundedCornerShape(objetoAdaptardor.ajustarAltura(6)))
-                                                        .padding(
-                                                            start = objetoAdaptardor.ajustarAncho(8),
-                                                            end = objetoAdaptardor.ajustarAncho(8),
-                                                            top = objetoAdaptardor.ajustarAncho(8)
-                                                        )
-                                                )
-                                            }
-                                            Row(
-                                                horizontalArrangement = Arrangement.spacedBy(objetoAdaptardor.ajustarAncho(16))
-                                            ) {
-                                                Box(
-                                                    modifier = Modifier
-                                                        .weight(1f)
-                                                        .height(objetoAdaptardor.ajustarAltura(25))
-                                                        .background(brush, shape = RoundedCornerShape(objetoAdaptardor.ajustarAltura(6)))
-                                                        .padding(
-                                                            start = objetoAdaptardor.ajustarAncho(8),
-                                                            end = objetoAdaptardor.ajustarAncho(8),
-                                                            top = objetoAdaptardor.ajustarAncho(8)
-                                                        )
-                                                )
-                                                Box(
-                                                    modifier = Modifier
-                                                        .weight(1f)
-                                                        .height(objetoAdaptardor.ajustarAltura(25))
-                                                        .background(brush, shape = RoundedCornerShape(objetoAdaptardor.ajustarAltura(6)))
-                                                        .padding(
-                                                            start = objetoAdaptardor.ajustarAncho(8),
-                                                            end = objetoAdaptardor.ajustarAncho(8),
-                                                            top = objetoAdaptardor.ajustarAncho(8)
-                                                        )
-                                                )
-                                            }
-                                            Row(
-                                                horizontalArrangement = Arrangement.spacedBy(objetoAdaptardor.ajustarAncho(16))
-                                            ) {
-                                                Box(
-                                                    modifier = Modifier
-                                                        .weight(1f)
-                                                        .height(objetoAdaptardor.ajustarAltura(25))
-                                                        .background(brush, shape = RoundedCornerShape(objetoAdaptardor.ajustarAltura(6)))
-                                                        .padding(
-                                                            start = objetoAdaptardor.ajustarAncho(8),
-                                                            end = objetoAdaptardor.ajustarAncho(8),
-                                                            top = objetoAdaptardor.ajustarAncho(8)
-                                                        )
-                                                )
-                                                Box(
-                                                    modifier = Modifier
-                                                        .weight(1f)
-                                                        .height(objetoAdaptardor.ajustarAltura(25))
-                                                        .background(brush, shape = RoundedCornerShape(objetoAdaptardor.ajustarAltura(6)))
-                                                        .padding(
-                                                            start = objetoAdaptardor.ajustarAncho(8),
-                                                            end = objetoAdaptardor.ajustarAncho(8),
-                                                            top = objetoAdaptardor.ajustarAncho(8)
-                                                        )
-                                                )
-                                            }
-                                            Row(
-                                                horizontalArrangement = Arrangement.spacedBy(objetoAdaptardor.ajustarAncho(16))
-                                            ) {
-                                                Box(
-                                                    modifier = Modifier
-                                                        .weight(1f)
-                                                        .height(objetoAdaptardor.ajustarAltura(25))
-                                                        .background(brush, shape = RoundedCornerShape(objetoAdaptardor.ajustarAltura(6)))
-                                                        .padding(
-                                                            start = objetoAdaptardor.ajustarAncho(8),
-                                                            end = objetoAdaptardor.ajustarAncho(8),
-                                                            top = objetoAdaptardor.ajustarAncho(8)
-                                                        )
-                                                )
-                                                Box(
-                                                    modifier = Modifier
-                                                        .weight(1f)
-                                                        .height(objetoAdaptardor.ajustarAltura(25))
-                                                        .background(brush, shape = RoundedCornerShape(objetoAdaptardor.ajustarAltura(6)))
-                                                        .padding(
-                                                            start = objetoAdaptardor.ajustarAncho(8),
-                                                            end = objetoAdaptardor.ajustarAncho(8),
-                                                            top = objetoAdaptardor.ajustarAncho(8)
-                                                        )
-                                                )
-                                            }
+                                            Box(
+                                                modifier = Modifier
+                                                    .weight(1f)
+                                                    .height(objetoAdaptardor.ajustarAltura(35))
+                                                    .background(brush, shape = RoundedCornerShape(objetoAdaptardor.ajustarAltura(6)))
+                                                    .padding(
+                                                        start = objetoAdaptardor.ajustarAncho(8),
+                                                        end = objetoAdaptardor.ajustarAncho(8),
+                                                        top = objetoAdaptardor.ajustarAncho(8)
+                                                    )
+                                            )
+                                        }
+                                        Row(
+                                            horizontalArrangement = Arrangement.spacedBy(objetoAdaptardor.ajustarAncho(16))
+                                        ) {
+                                            Box(
+                                                modifier = Modifier
+                                                    .weight(1f)
+                                                    .height(objetoAdaptardor.ajustarAltura(35))
+                                                    .background(brush, shape = RoundedCornerShape(objetoAdaptardor.ajustarAltura(6)))
+                                                    .padding(
+                                                        start = objetoAdaptardor.ajustarAncho(8),
+                                                        end = objetoAdaptardor.ajustarAncho(8),
+                                                        top = objetoAdaptardor.ajustarAncho(8)
+                                                    )
+                                            )
+                                            Box(
+                                                modifier = Modifier
+                                                    .weight(1f)
+                                                    .height(objetoAdaptardor.ajustarAltura(35))
+                                                    .background(brush, shape = RoundedCornerShape(objetoAdaptardor.ajustarAltura(6)))
+                                                    .padding(
+                                                        start = objetoAdaptardor.ajustarAncho(8),
+                                                        end = objetoAdaptardor.ajustarAncho(8),
+                                                        top = objetoAdaptardor.ajustarAncho(8)
+                                                    )
+                                            )
+                                        }
+                                        Row(
+                                            horizontalArrangement = Arrangement.spacedBy(objetoAdaptardor.ajustarAncho(16))
+                                        ) {
+                                            Box(
+                                                modifier = Modifier
+                                                    .weight(1f)
+                                                    .height(objetoAdaptardor.ajustarAltura(35))
+                                                    .background(brush, shape = RoundedCornerShape(objetoAdaptardor.ajustarAltura(6)))
+                                                    .padding(
+                                                        start = objetoAdaptardor.ajustarAncho(8),
+                                                        end = objetoAdaptardor.ajustarAncho(8),
+                                                        top = objetoAdaptardor.ajustarAncho(8)
+                                                    )
+                                            )
+                                            Box(
+                                                modifier = Modifier
+                                                    .weight(1f)
+                                                    .height(objetoAdaptardor.ajustarAltura(35))
+                                                    .background(brush, shape = RoundedCornerShape(objetoAdaptardor.ajustarAltura(6)))
+                                                    .padding(
+                                                        start = objetoAdaptardor.ajustarAncho(8),
+                                                        end = objetoAdaptardor.ajustarAncho(8),
+                                                        top = objetoAdaptardor.ajustarAncho(8)
+                                                    )
+                                            )
+                                        }
+                                        Row(
+                                            horizontalArrangement = Arrangement.spacedBy(objetoAdaptardor.ajustarAncho(16))
+                                        ) {
+                                            Box(
+                                                modifier = Modifier
+                                                    .weight(1f)
+                                                    .height(objetoAdaptardor.ajustarAltura(35))
+                                                    .background(brush, shape = RoundedCornerShape(objetoAdaptardor.ajustarAltura(6)))
+                                                    .padding(
+                                                        start = objetoAdaptardor.ajustarAncho(8),
+                                                        end = objetoAdaptardor.ajustarAncho(8),
+                                                        top = objetoAdaptardor.ajustarAncho(8)
+                                                    )
+                                            )
+                                            Box(
+                                                modifier = Modifier
+                                                    .weight(1f)
+                                                    .height(objetoAdaptardor.ajustarAltura(35))
+                                                    .background(brush, shape = RoundedCornerShape(objetoAdaptardor.ajustarAltura(6)))
+                                                    .padding(
+                                                        start = objetoAdaptardor.ajustarAncho(8),
+                                                        end = objetoAdaptardor.ajustarAncho(8),
+                                                        top = objetoAdaptardor.ajustarAncho(8)
+                                                    )
+                                            )
                                         }
                                     }
                                 }
-                                AnimatedVisibility(
-                                    visible = !isCargandoDatos,
-                                    enter = expandVertically(animationSpec = tween(300)) + fadeIn(),
-                                    exit = shrinkVertically(animationSpec = tween(300)) + fadeOut()
+                            }
+
+                            AnimatedVisibility(
+                                visible = !isCargandoDatos,
+                                enter = expandVertically(animationSpec = tween(300)) + fadeIn(),
+                                exit = shrinkVertically(animationSpec = tween(300)) + fadeOut()
+                            ){
+
+                                Column(
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.spacedBy(objetoAdaptardor.ajustarAltura(8)),
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .padding(objetoAdaptardor.ajustarAltura(16))
                                 ){
-                                    Box(
-                                        modifier = Modifier
-                                            .fillMaxSize()
-                                            .padding(objetoAdaptardor.ajustarAltura(16))
-                                    ){
+                                    TText(
+                                        text = "Totales",
+                                        textAlign = TextAlign.Center,
+                                        modifier = Modifier.fillMaxWidth(),
+                                        fontSize = obtenerEstiloTitleBig()
+                                    )
+                                    Row {
+                                        TText(
+                                            text = "Total Gravado:",
+                                            textAlign = TextAlign.Start,
+                                            modifier = Modifier.weight(1f),
+                                            fontSize = obtenerEstiloBodyBig()
+                                        )
+                                        TText(
+                                            text = simboloMoneda + separacionDeMiles(totalGravado),
+                                            textAlign = TextAlign.End,
+                                            modifier = Modifier.weight(1f),
+                                            fontSize = obtenerEstiloBodyBig()
+                                        )
+                                    }
+                                    HorizontalDivider(
+                                        thickness = 1.dp,
+                                        color = Color.LightGray
+                                    )
+                                    Row {
+                                        TText(
+                                            text = "Total IVA:",
+                                            textAlign = TextAlign.Start,
+                                            modifier = Modifier.weight(1f),
+                                            fontSize = obtenerEstiloBodyBig()
+                                        )
+                                        TText(
+                                            text = simboloMoneda + separacionDeMiles(totalIva),
+                                            textAlign = TextAlign.End,
+                                            modifier = Modifier.weight(1f),
+                                            fontSize = obtenerEstiloBodyBig()
+                                        )
+                                    }
+                                    HorizontalDivider(
+                                        thickness = 1.dp,
+                                        color = Color.LightGray
+                                    )
+                                    Row {
+                                        TText(
+                                            text = "Total Descuento:",
+                                            textAlign = TextAlign.Start,
+                                            modifier = Modifier.weight(1f),
+                                            fontSize = obtenerEstiloBodyBig()
+                                        )
+                                        TText(
+                                            text = simboloMoneda + separacionDeMiles(totalDescuento),
+                                            textAlign = TextAlign.End,
+                                            modifier = Modifier.weight(1f),
+                                            fontSize = obtenerEstiloBodyBig()
+                                        )
+                                    }
+
+                                    AnimatedVisibility(
+                                        visible = expandedTotales,
+                                        enter = expandVertically(animationSpec = tween(300)) + fadeIn(),
+                                        exit = shrinkVertically(animationSpec = tween(300)) + fadeOut()
+                                    ) {
                                         Column(
                                             horizontalAlignment = Alignment.CenterHorizontally,
-                                            verticalArrangement = Arrangement.spacedBy(objetoAdaptardor.ajustarAltura(8))
-                                        ){
-                                            TText(
-                                                text = "Totales",
-                                                textAlign = TextAlign.Center,
-                                                modifier = Modifier.fillMaxWidth(),
-                                                fontSize = obtenerEstiloHead()
+                                            verticalArrangement = Arrangement.spacedBy(
+                                                objetoAdaptardor.ajustarAltura(8)
+                                            )
+                                        ) {
+                                            HorizontalDivider(
+                                                thickness = 1.dp,
+                                                color = Color.LightGray
                                             )
                                             Row {
                                                 TText(
-                                                    text = "Total Gravado:",
+                                                    text = "Pago:",
                                                     textAlign = TextAlign.Start,
-                                                    modifier = Modifier.weight(1f)
+                                                    modifier = Modifier.weight(1f),
+                                                    fontSize = obtenerEstiloBodyBig()
                                                 )
                                                 TText(
-                                                    text = separacionDeMiles(totalGravado),
+                                                    text = simboloMoneda + separacionDeMiles(totalPago),
                                                     textAlign = TextAlign.End,
-                                                    modifier = Modifier.weight(1f)
+                                                    modifier = Modifier.weight(1f),
+                                                    fontSize = obtenerEstiloBodyBig()
                                                 )
                                             }
                                             HorizontalDivider(
@@ -1107,14 +1263,16 @@ fun IniciarInterfazFacturacion(
                                             )
                                             Row {
                                                 TText(
-                                                    text = "Total IVA:",
+                                                    text = "Total Exonerado:",
                                                     textAlign = TextAlign.Start,
-                                                    modifier = Modifier.weight(1f)
+                                                    modifier = Modifier.weight(1f),
+                                                    fontSize = obtenerEstiloBodyBig()
                                                 )
                                                 TText(
-                                                    text =separacionDeMiles(totalIva),
+                                                    text = simboloMoneda + separacionDeMiles(totalExonerado),
                                                     textAlign = TextAlign.End,
-                                                    modifier = Modifier.weight(1f)
+                                                    modifier = Modifier.weight(1f),
+                                                    fontSize = obtenerEstiloBodyBig()
                                                 )
                                             }
                                             HorizontalDivider(
@@ -1123,155 +1281,246 @@ fun IniciarInterfazFacturacion(
                                             )
                                             Row {
                                                 TText(
-                                                    text = "Total Descuento:",
+                                                    text = "Total IVA Devuelto:",
                                                     textAlign = TextAlign.Start,
-                                                    modifier = Modifier.weight(1f)
+                                                    modifier = Modifier.weight(1f),
+                                                    fontSize = obtenerEstiloBodyBig()
                                                 )
                                                 TText(
-                                                    text =separacionDeMiles(totalDescuento),
+                                                    text = simboloMoneda + separacionDeMiles(totalIvaDevuelto),
                                                     textAlign = TextAlign.End,
-                                                    modifier = Modifier.weight(1f)
+                                                    modifier = Modifier.weight(1f),
+                                                    fontSize = obtenerEstiloBodyBig()
                                                 )
                                             }
                                             HorizontalDivider(
                                                 thickness = 1.dp,
                                                 color = Color.LightGray
                                             )
-                                            AnimatedVisibility(
-                                                visible = expandedTotales,
-                                                enter = expandVertically(animationSpec = tween(300)) + fadeIn(),
-                                                exit = shrinkVertically(animationSpec = tween(300)) + fadeOut()
-                                            ) {
-                                                Column(
-                                                    horizontalAlignment = Alignment.CenterHorizontally,
-                                                    verticalArrangement = Arrangement.spacedBy(
-                                                        objetoAdaptardor.ajustarAltura(8)
-                                                    )
-                                                ) {
-                                                    Row {
-                                                        TText(
-                                                            text = "Pago:",
-                                                            textAlign = TextAlign.Start,
-                                                            modifier = Modifier.weight(1f)
-                                                        )
-                                                        TText(
-                                                            text = separacionDeMiles(totalPago),
-                                                            textAlign = TextAlign.End,
-                                                            modifier = Modifier.weight(1f)
-                                                        )
-                                                    }
-                                                    HorizontalDivider(
-                                                        thickness = 1.dp,
-                                                        color = Color.LightGray
-                                                    )
-                                                    Row {
-                                                        TText(
-                                                            text = "Total Exonerado:",
-                                                            textAlign = TextAlign.Start,
-                                                            modifier = Modifier.weight(1f)
-                                                        )
-                                                        TText(
-                                                            text = separacionDeMiles(totalExonerado),
-                                                            textAlign = TextAlign.End,
-                                                            modifier = Modifier.weight(1f)
-                                                        )
-                                                    }
-                                                    HorizontalDivider(
-                                                        thickness = 1.dp,
-                                                        color = Color.LightGray
-                                                    )
-                                                    Row {
-                                                        TText(
-                                                            text = "Total IVA Devuelto:",
-                                                            textAlign = TextAlign.Start,
-                                                            modifier = Modifier.weight(1f)
-                                                        )
-                                                        TText(
-                                                            text = separacionDeMiles(totalIvaDevuelto),
-                                                            textAlign = TextAlign.End,
-                                                            modifier = Modifier.weight(1f)
-                                                        )
-                                                    }
-                                                    HorizontalDivider(
-                                                        thickness = 1.dp,
-                                                        color = Color.LightGray
-                                                    )
-                                                    Row {
-                                                        TText(
-                                                            text = "Total Merc Gravado:",
-                                                            textAlign = TextAlign.Start,
-                                                            modifier = Modifier.weight(1f)
-                                                        )
-                                                        TText(
-                                                            text =separacionDeMiles(totalMercGrav),
-                                                            textAlign = TextAlign.End,
-                                                            modifier = Modifier.weight(1f)
-                                                        )
-                                                    }
-                                                    HorizontalDivider(
-                                                        thickness = 1.dp,
-                                                        color = Color.LightGray
-                                                    )
-                                                }
-                                            }
                                             Row {
                                                 TText(
-                                                    text = "Total:",
+                                                    text = "Total Merc Gravado:",
                                                     textAlign = TextAlign.Start,
-                                                    modifier = Modifier.weight(1f)
+                                                    modifier = Modifier.weight(1f),
+                                                    fontSize = obtenerEstiloBodyBig()
                                                 )
                                                 TText(
-                                                    text = codMoneda,
-                                                    textAlign = TextAlign.Center,
-                                                    modifier = Modifier.weight(1f)
-                                                )
-                                                TText(
-                                                    text =separacionDeMiles(total),
+                                                    text = simboloMoneda + separacionDeMiles(totalMercGrav),
                                                     textAlign = TextAlign.End,
-                                                    modifier = Modifier.weight(1f)
+                                                    modifier = Modifier.weight(1f),
+                                                    fontSize = obtenerEstiloBodyBig()
                                                 )
                                             }
-                                            HorizontalDivider(
-                                                thickness = 1.dp,
-                                                color = Color.LightGray
-                                            )
-                                            BButton(
-                                                text =  if (expandedTotales) "Mostrar menos" else "Mostrar más",
-                                                onClick = {expandedTotales = !expandedTotales},
-                                                contenteColor = Color(0xFF244BC0),
-                                                backgroundColor = Color.White,
-                                                modifier = Modifier
-                                                    .height(objetoAdaptardor.ajustarAltura(35)),
-                                                conSombra = false,
-                                                textSize = obtenerEstiloTitle()
-                                            )
                                         }
                                     }
+                                    HorizontalDivider(
+                                        thickness = 1.dp,
+                                        color = Color.LightGray
+                                    )
+                                    Row {
+                                        TText(
+                                            text = "Total:",
+                                            textAlign = TextAlign.Start,
+                                            modifier = Modifier.weight(1f),
+                                            fontSize = obtenerEstiloBodyBig()
+                                        )
+                                        TText(
+                                            text = codMonedaProforma,
+                                            textAlign = TextAlign.Center,
+                                            modifier = Modifier.weight(1f),
+                                            fontSize = obtenerEstiloBodyBig()
+                                        )
+                                        TText(
+                                            text = simboloMoneda + separacionDeMiles(total),
+                                            textAlign = TextAlign.End,
+                                            modifier = Modifier.weight(1f),
+                                            fontSize = obtenerEstiloBodyBig()
+                                        )
+                                    }
+                                    HorizontalDivider(
+                                        thickness = 1.dp,
+                                        color = Color.LightGray
+                                    )
+                                    BButton(
+                                        text =  if (expandedTotales) "Mostrar menos" else "Mostrar más",
+                                        onClick = {expandedTotales = !expandedTotales},
+                                        contenteColor = Color(0xFF244BC0),
+                                        backgroundColor = Color.White,
+                                        conSombra = false,
+                                        textSize = obtenerEstiloBodyBig(),
+                                        objetoAdaptardor = objetoAdaptardor
+                                    )
                                 }
                             }
                         }
                     }
                 }
             }
+
             item {
-                Box(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(70)))
+                Box(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(95)))
+            }
+        }
+
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(Color(0xFF000000))
+                .height(objetoAdaptardor.ajustarAltura(25))
+                .constrainAs(bxInferior) {
+                    start.linkTo(parent.start)
+                    bottom.linkTo(parent.bottom)
+                }, contentAlignment = Alignment.Center
+        ) {
+            val versionApp = stringResource(R.string.app_version)
+
+            Row(
+                verticalAlignment = Alignment.Top,
+                horizontalArrangement = Arrangement.Center
+
+            ){
+                Text(
+                    text = "#$codUsuario _ $nombreUsuario _ $nombreEmpresa",
+                    color = Color.White,
+                    fontFamily = fontAksharPrincipal,
+                    fontWeight = FontWeight.Light,
+                    fontSize = obtenerEstiloLabelBig(),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.width(objetoAdaptardor.ajustarAncho(154)).padding(start = 4.dp)
+                )
+
+                Text(
+                    text = "Invefacon ©2025",
+                    color = Color.White,
+                    fontFamily = fontAksharPrincipal,
+                    fontWeight = FontWeight.Light,
+                    fontSize = obtenerEstiloLabelBig(),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.width(objetoAdaptardor.ajustarAncho(100))
+                )
+
+                Text(
+                    text = "Version: $versionApp",
+                    color = Color.White,
+                    fontFamily = fontAksharPrincipal,
+                    fontWeight = FontWeight.Light,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    fontSize = obtenerEstiloLabelBig(),
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.width(objetoAdaptardor.ajustarAncho(130)).padding(end = 6.dp)
+                )
             }
         }
     }
 
     ProductoDialog(
-        mostrarVentanaArticulo = mostrarDatosArticulo,
-        onDismiss = { /* Acción al cerrar */ },
-        nombreProducto = "Laptop Gamer",
-        codigoProducto = "LPT-1234",
-        descripcionesBodegas = listOf("Bodega Central", "Sucursal Norte"),
-        monedaCodigo = "USD",
+        mostrarVentanaArticulo = iniciarMenuDatosArticulo,
+        onDismiss = {iniciarMenuDatosArticulo = false},
+        nombreProducto = articuloFacturadoActual.descripcion,
+        codigoProducto = articuloFacturadoActual.articuloCodigo,
+        opcionesBodegas = listOf("Bodega Central", "Sucursal Norte"),
+        monedaCodigo = codMonedaProforma,
         opcionesPresentacion = listOf("Caja", "Unidad"),
-        impuestoProducto = "15%",
+        impuestoProducto = articuloFacturadoActual.articuloIvaPorcentaje,
         textoBotonVentanaArticulos = "Agregar",
         onAgregarLinea = { id -> println("Agregando línea con ID: $id") },
-        articuloLineaId = 1
+        articuloLineaId = articuloFacturadoActual.articuloLineaId,
+        objetoAdaptardor = objetoAdaptardor
     )
+
+    if(iniciarMenuSeleccionarArticulo){
+        var isMenuVisible by remember { mutableStateOf(true) }
+
+        LaunchedEffect(Unit) {
+            delay(100)
+            isMenuVisible = true
+        }
+
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black.copy(alpha = 0.5f))
+                .clickable(enabled = false) {},
+            contentAlignment = Alignment.Center
+        ) {
+            AnimatedVisibility(
+                visible = isMenuVisible,
+                enter = fadeIn(animationSpec = tween(500)) + slideInVertically(initialOffsetY = { it }),
+                exit = fadeOut(animationSpec = tween(500)) + slideOutVertically(targetOffsetY = { it })
+            ) {
+                Surface(
+                    modifier = Modifier
+                        .wrapContentWidth(Alignment.CenterHorizontally)
+                        .wrapContentHeight()
+                        .padding(objetoAdaptardor.ajustarAltura(24))
+                        .align(Alignment.TopCenter),
+                    shape = RoundedCornerShape(objetoAdaptardor.ajustarAltura(16)),
+                    color = Color.White
+                ) {
+                    Box(
+                        contentAlignment = Alignment.TopCenter,
+                        modifier = Modifier.padding(objetoAdaptardor.ajustarAltura(16))
+                    ) {
+                        Column(
+                            verticalArrangement = Arrangement.spacedBy(objetoAdaptardor.ajustarAltura(8)),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Row (
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(objetoAdaptardor.ajustarAncho(16))
+                            ){
+                                BBasicTextField(
+                                    value = datosIngresadosBarraBusquedaArticulos,
+                                    onValueChange = {
+                                        datosIngresadosBarraBusquedaArticulos = it
+                                    },
+                                    modifier = Modifier.weight(1f),
+                                    objetoAdaptardor = objetoAdaptardor,
+                                    utilizarMedidas = false,
+                                    fontSize = obtenerEstiloBodyMedium()
+                                )
+                                IconButton(
+                                    onClick = {
+                                        iniciarMenuSeleccionarArticulo = false
+                                    },
+                                    modifier = Modifier.weight(0.2f)
+                                ) {
+                                    Box(
+                                        contentAlignment = Alignment.Center,
+                                        modifier = Modifier
+                                            .size(objetoAdaptardor.ajustarAltura(30))
+                                            .background(Color.Gray, shape = CircleShape)
+                                            .clickable { }
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Filled.Close,
+                                            contentDescription = "Cerrar",
+                                            tint = Color.White,
+                                            modifier = Modifier.size(objetoAdaptardor.ajustarAltura(25))
+                                        )
+                                    }
+                                }
+                            }
+                            Column(
+                                modifier = Modifier
+                                    .verticalScroll(rememberScrollState())
+                                    .heightIn(max = objetoAdaptardor.ajustarAltura(500)),
+                                verticalArrangement = Arrangement.Top,
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
 
 
@@ -1281,29 +1530,33 @@ fun ProductoDialog(
     onDismiss: () -> Unit,
     nombreProducto: String,
     codigoProducto: String,
-    descripcionesBodegas: List<String>,
+    opcionesBodegas: List<String>,
     monedaCodigo: String,
     opcionesPresentacion: List<String>,
-    impuestoProducto: String,
+    impuestoProducto: Double,
     textoBotonVentanaArticulos: String,
     onAgregarLinea: (Int) -> Unit,
-    articuloLineaId: Int
+    articuloLineaId: Int,
+    objetoAdaptardor: FuncionesParaAdaptarContenido
 ) {
     if (mostrarVentanaArticulo) {
-        var selectedBodegaDescripcion by remember { mutableStateOf("") }
+        var bodegaSeleccionda by remember { mutableStateOf("") }
         var cantidadProducto by remember { mutableStateOf("") }
         var precioProducto by remember { mutableStateOf("") }
         var seleccionPresentacion by remember { mutableStateOf("") }
         var descuentoProducto by remember { mutableStateOf("") }
         var montoDescuento by remember { mutableStateOf("") }
-        var codigoBodega by remember { mutableStateOf("") }
-        var existenciaBodega by remember { mutableStateOf("") }
+        val codigoBodega by remember { mutableStateOf("") }
+        val existenciaBodega by remember { mutableStateOf("") }
         var isVerDatosBodega by remember { mutableStateOf(false) }
         var subtotal by remember { mutableDoubleStateOf(0.0) }
         var montoIVA by remember { mutableDoubleStateOf(0.0) }
         var totalProducto by remember { mutableDoubleStateOf(0.0) }
         var esCambioPorPorcentaje by remember { mutableStateOf(true) }
         var esCambioPorMontoDescuento by remember { mutableStateOf(false) }
+        var expandedBodegas by remember { mutableStateOf(false) }
+        var expandedMedida by remember { mutableStateOf(false) }
+        var isMenuVisible by remember { mutableStateOf(false) }
 
         // Función para validar entradas de artículos
         fun validarEntradasArticulos(oldValor: String, newValor: String): String {
@@ -1334,16 +1587,9 @@ fun ProductoDialog(
             }
 
             val subtotalConDescuento = subtotal - descuento
-            val iva = subtotalConDescuento * (impuestoProducto.toDoubleOrNull() ?: 0.0) / 100
+            val iva = subtotalConDescuento * (impuestoProducto) / 100
             montoIVA = iva
             totalProducto = subtotalConDescuento + iva
-        }
-
-        // Función para buscar bodega por descripción
-        fun buscarBodegaPorDescripcion() {
-            // Implementar lógica para obtener código y existencia de bodega
-            codigoBodega = "XYZ123" // Ejemplo
-            existenciaBodega = "150" // Ejemplo
         }
 
         LaunchedEffect(Unit) {
@@ -1351,260 +1597,229 @@ fun ProductoDialog(
             calcularTotales()
         }
 
+        LaunchedEffect(Unit) {
+            delay(100)
+            isMenuVisible = true
+        }
+
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .background(Color.Black.copy(alpha = 0.3f))
-                .clickable { onDismiss() },
+                .clickable(enabled = false) {},
             contentAlignment = Alignment.Center
         ) {
-            Card(
-                modifier = Modifier
-                    .shadow(10.dp)
-                    .width(400.dp)
-                    .heightIn(max = 650.dp)
-                    .clickable(enabled = false) { /* Prevent click through */ },
-                shape = RoundedCornerShape(12.dp)
+            AnimatedVisibility(
+                visible = isMenuVisible,
+                enter = fadeIn(animationSpec = tween(500)) + slideInVertically(initialOffsetY = { it }),
+                exit = fadeOut(animationSpec = tween(500)) + slideOutVertically(targetOffsetY = { it })
             ) {
-                Column(
-                    modifier = Modifier.padding(vertical = 10.dp),
-                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                Card(
+                    modifier = Modifier
+                        .width(objetoAdaptardor.ajustarAncho(400))
+                        .wrapContentHeight()
+                        .clickable(enabled = false) { }
+                        .padding(objetoAdaptardor.ajustarAltura(16)),
+                    shape = RoundedCornerShape(objetoAdaptardor.ajustarAltura(16)),
+                    colors = CardDefaults.cardColors(containerColor = Color.White)
                 ) {
-                    // Título del artículo
-                    Text(
-                        text = nombreProducto,
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier
-                            .padding(vertical = 8.dp)
-                            .fillMaxWidth(),
-                        textAlign = TextAlign.Center,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis
-                    )
-
                     Column(
-                        modifier = Modifier
-                            .weight(1f)
-                            .verticalScroll(rememberScrollState())
+                        modifier = Modifier.padding(objetoAdaptardor.ajustarAltura(16)),
+                        horizontalAlignment = Alignment.Start
                     ) {
-                        // Código del producto
-                        Text(
+
+                        TText(
+                            text = nombreProducto,
+                            modifier = Modifier.fillMaxWidth(),
+                            fontSize = obtenerEstiloHeadMedium(),
+                            textAlign = TextAlign.Center,
+                            maxLines = 2
+                        )
+                        TText(
                             text = "Código: $codigoProducto",
-                            style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = FontWeight.Bold,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 16.dp),
-                            textAlign = TextAlign.Start
+                            fontSize = obtenerEstiloBodyBig(),
+                            fontWeight = FontWeight.Light
                         )
 
                         Spacer(modifier = Modifier.height(8.dp))
 
-                        // Sección de Bodega
-                        Column(
-                            modifier = Modifier.padding(horizontal = 16.dp)
-                        ) {
-                            Text(
-                                text = "Bodega",
-                                style = MaterialTheme.typography.bodyMedium
-                            )
+                        TText(
+                            text = "Bodega:",
+                            fontSize = obtenerEstiloBodyBig(),
+                            modifier = Modifier.fillMaxWidth(),
+                            fontWeight = FontWeight.Light,
+                            color = Color.DarkGray,
+                            textAlign = TextAlign.Start
+                        )
+                        TextFieldMultifuncional(
+                            label = "Bodega",
+                            textPlaceholder = "Selccione una bodega.",
+                            nuevoValor = {bodegaSeleccionda = it},
+                            valor = bodegaSeleccionda,
+                            contieneOpciones = true,
+                            usarOpciones3 = true,
+                            opciones3 = opcionesBodegas,
+                            usarModifierForSize = true,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .border(2.dp,
+                                    color = Color.Gray,
+                                    RoundedCornerShape(objetoAdaptardor.ajustarAltura(12))
+                                ),
+                            mostrarLeadingIcon = true,
+                            leadingIcon = Icons.Default.Warehouse,
+                            isUltimo = true,
+                            medidaAncho = 350,
+                            tomarAnchoMaximo = false,
+                            fontSize = obtenerEstiloBodyBig(),
+                            mostrarLabel = false
+                        )
 
-                            ExposedDropdownMenuBox(
-                                expanded = false,
-                                onExpandedChange = { /* Implementar lógica */ }
+                        if (isVerDatosBodega) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
                             ) {
-                                OutlinedTextField(
-                                    value = selectedBodegaDescripcion,
-                                    onValueChange = {
-                                        selectedBodegaDescripcion = it
-                                        buscarBodegaPorDescripcion()
-                                    },
-                                    readOnly = true,
-                                    trailingIcon = {
-                                        Icon(
-                                            imageVector = Icons.Filled.ArrowDropDown,
-                                            contentDescription = "Dropdown"
-                                        )
-                                    },
+                                TText(
+                                    text = "Codigo: $codigoBodega",
                                     modifier = Modifier
-                                        .fillMaxWidth(),
-                                    placeholder = { Text("Bodegas") }
+                                        .weight(1f),
+                                    textAlign = TextAlign.Start
                                 )
-
-                                ExposedDropdownMenu(
-                                    expanded = false,
-                                    onDismissRequest = { /* Implementar lógica */ }
-                                ) {
-                                    descripcionesBodegas.forEach { opcion ->
-                                        DropdownMenuItem(
-                                            text = { Text(text = opcion) },
-                                            onClick = {
-                                                selectedBodegaDescripcion = opcion
-                                                buscarBodegaPorDescripcion()
-                                            }
-                                        )
-                                    }
-                                }
-                            }
-
-                            if (isVerDatosBodega) {
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceBetween
-                                ) {
-                                    Text(
-                                        text = "Codigo: $codigoBodega",
-                                        style = MaterialTheme.typography.bodyMedium
-                                    )
-                                    Text(
-                                        text = "Existencia: $existenciaBodega",
-                                        style = MaterialTheme.typography.bodyMedium
-                                    )
-                                }
-                            }
-
-                            TextButton(
-                                onClick = { isVerDatosBodega = !isVerDatosBodega },
-                                colors = ButtonDefaults.textButtonColors(
-                                    contentColor = Color(0xFF244BC0)
-                                )
-                            ) {
-                                Text(
-                                    text = if (isVerDatosBodega) "Ocultar" else "Mostrar detalles",
-                                    style = MaterialTheme.typography.bodyMedium
+                                TText(
+                                    text = "Existencia: $existenciaBodega",
+                                    modifier = Modifier
+                                        .weight(1f),
+                                    textAlign = TextAlign.End
                                 )
                             }
                         }
+
+                        TextButton(
+                            onClick = { isVerDatosBodega = !isVerDatosBodega },
+                            colors = ButtonDefaults.textButtonColors(
+                                contentColor = Color(0xFF244BC0)
+                            )
+                        ) {
+                            TText(
+                                text = if (isVerDatosBodega) "Ocultar" else "Mostrar detalles",
+                                textAlign = TextAlign.Center,
+                                color = Color(0xFF244BC0)
+                            )
+                        }
+
+
 
                         Spacer(modifier = Modifier.height(8.dp))
 
                         // Cantidad y Precio en la misma línea
                         Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 16.dp),
                             horizontalArrangement = Arrangement.spacedBy(15.dp)
                         ) {
                             Column(
                                 modifier = Modifier.weight(1f)
                             ) {
-                                Text(
-                                    text = "Cantidad",
-                                    style = MaterialTheme.typography.bodyMedium
+                                TText(
+                                    text = "Cantidad:",
+                                    fontSize = obtenerEstiloBodyMedium(),
+                                    fontWeight = FontWeight.Light,
+                                    color = Color.DarkGray
                                 )
-                                OutlinedTextField(
-                                    value = cantidadProducto,
-                                    onValueChange = { newValue ->
-                                        cantidadProducto = validarEntradasArticulos(cantidadProducto, newValue)
-                                        esCambioPorPorcentaje = true
-                                        calcularTotales()
-                                    },
-                                    modifier = Modifier.fillMaxWidth(),
-                                    keyboardOptions = KeyboardOptions(
-                                        keyboardType = KeyboardType.Decimal,
-                                        imeAction = ImeAction.Done
-                                    ),
-                                    singleLine = true
+                                TextFieldMultifuncional(
+                                    nuevoValor = {cantidadProducto = it},
+                                    valor = cantidadProducto,
+                                    usarModifierForSize = true,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .border(2.dp, color = Color.Gray, RoundedCornerShape(objetoAdaptardor.ajustarAltura(12))),
+                                    isUltimo = true,
+                                    fontSize = obtenerEstiloBodySmall(),
+                                    cantidadLineas = 1,
+                                    mostrarPlaceholder = false,
+                                    mostrarLabel = false,
+                                    soloPermitirValoresNumericos = true
                                 )
                             }
 
                             Column(
                                 modifier = Modifier.weight(1f)
                             ) {
-                                Text(
-                                    text = "Precio",
-                                    style = MaterialTheme.typography.bodyMedium
+                                TText(
+                                    text = "Precio:",
+                                    fontSize = obtenerEstiloBodyMedium(),
+                                    fontWeight = FontWeight.Light,
+                                    color = Color.DarkGray
                                 )
-                                OutlinedTextField(
-                                    value = precioProducto,
-                                    onValueChange = { newValue ->
-                                        precioProducto = validarEntradasArticulos(precioProducto, newValue)
-                                        esCambioPorPorcentaje = true
-                                        calcularTotales()
-                                    },
-                                    modifier = Modifier.fillMaxWidth(),
-                                    keyboardOptions = KeyboardOptions(
-                                        keyboardType = KeyboardType.Decimal,
-                                        imeAction = ImeAction.Done
-                                    ),
-                                    singleLine = true
+                                TextFieldMultifuncional(
+                                    nuevoValor = {precioProducto = it},
+                                    valor = precioProducto,
+                                    usarModifierForSize = true,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .border(2.dp, color = Color.Gray, RoundedCornerShape(objetoAdaptardor.ajustarAltura(12))),
+                                    isUltimo = true,
+                                    fontSize = obtenerEstiloBodySmall(),
+                                    cantidadLineas = 1,
+                                    mostrarPlaceholder = false,
+                                    mostrarLabel = false,
+                                    soloPermitirValoresNumericos = true,
+                                    darFormatoMiles = true
                                 )
                             }
                         }
 
                         Spacer(modifier = Modifier.height(8.dp))
 
-                        // Tipo de medida
-                        Column(
+
+                        TText(
+                            text = "Tipo de Medida:",
+                            fontSize = obtenerEstiloBodyMedium(),
+                            fontWeight = FontWeight.Light,
+                            color = Color.DarkGray
+                        )
+                        TextFieldMultifuncional(
+                            label = "Medida",
+                            textPlaceholder = "Medida",
+                            nuevoValor = { seleccionPresentacion = it },
+                            valor = seleccionPresentacion,
+                            contieneOpciones = true,
+                            usarOpciones3 = true,
+                            opciones3 = opcionesPresentacion,
+                            usarModifierForSize = true,
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(horizontal = 16.dp)
-                        ) {
-                            Text(
-                                text = "Tipo de medida",
-                                style = MaterialTheme.typography.bodyMedium
-                            )
-
-                            ExposedDropdownMenuBox(
-                                expanded = false,
-                                onExpandedChange = { /* Implementar lógica */ }
-                            ) {
-                                OutlinedTextField(
-                                    value = seleccionPresentacion,
-                                    onValueChange = {
-                                        seleccionPresentacion = it
-                                        esCambioPorPorcentaje = true
-                                        calcularTotales()
-                                    },
-                                    readOnly = true,
-                                    trailingIcon = {
-                                        Icon(
-                                            imageVector = Icons.Filled.ArrowDropDown,
-                                            contentDescription = "Dropdown"
-                                        )
-                                    },
-                                    modifier = Modifier
-                                        .fillMaxWidth(),
-                                    placeholder = { Text("Medida") }
-                                )
-
-                                ExposedDropdownMenu(
-                                    expanded = false,
-                                    onDismissRequest = { /* Implementar lógica */ }
-                                ) {
-                                    opcionesPresentacion.forEach { opcion ->
-                                        DropdownMenuItem(
-                                            text = { Text(text = opcion) },
-                                            onClick = {
-                                                seleccionPresentacion = opcion
-                                                esCambioPorPorcentaje = true
-                                                calcularTotales()
-                                            }
-                                        )
-                                    }
-                                }
-                            }
-                        }
+                                .border(
+                                    2.dp,
+                                    color = Color.Gray,
+                                    RoundedCornerShape(objetoAdaptardor.ajustarAltura(12))
+                                ),
+                            mostrarLeadingIcon = true,
+                            leadingIcon = Icons.Default.Straighten,
+                            isUltimo = true,
+                            medidaAncho = 350,
+                            tomarAnchoMaximo = false,
+                            fontSize = obtenerEstiloBodyBig(),
+                            mostrarLabel = false,
+                            cantidadLineas = 1
+                        )
 
                         Spacer(modifier = Modifier.height(8.dp))
 
                         // Subtotal
                         Row(
                             modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 16.dp),
+                                .fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
-                            Text(
+                            TText(
                                 text = "Subtotal:",
-                                style = MaterialTheme.typography.titleSmall,
-                                fontWeight = FontWeight.Bold
+                                textAlign = TextAlign.Start,
+                                fontSize = obtenerEstiloBodyMedium()
                             )
-                            Text(
+                            TText(
                                 text = separacionDeMiles(subtotal),
-                                style = MaterialTheme.typography.titleSmall,
-                                fontWeight = FontWeight.Bold
+                                textAlign = TextAlign.End,
+                                fontSize = obtenerEstiloBodyBig()
                             )
                         }
 
@@ -1612,54 +1827,75 @@ fun ProductoDialog(
 
                         // Descuento y Monto Descuento en la misma línea
                         Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 16.dp),
                             horizontalArrangement = Arrangement.spacedBy(15.dp)
                         ) {
                             Column(
                                 modifier = Modifier.weight(1f)
                             ) {
-                                Text(
+                                TText(
                                     text = "Descuento (%)",
-                                    style = MaterialTheme.typography.bodyMedium
+                                    fontSize = obtenerEstiloBodyMedium(),
+                                    fontWeight = FontWeight.Light,
+                                    color = Color.DarkGray
                                 )
-                                OutlinedTextField(
-                                    value = descuentoProducto,
-                                    onValueChange = { newValue ->
-                                        descuentoProducto = validarEntradasArticulos(descuentoProducto, newValue)
-                                        esCambioPorPorcentaje = true
-                                        calcularTotales()
-                                    },
-                                    modifier = Modifier.fillMaxWidth(),
-                                    keyboardOptions = KeyboardOptions(
-                                        keyboardType = KeyboardType.Decimal,
-                                        imeAction = ImeAction.Done
-                                    ),
-                                    singleLine = true
+                                TextFieldMultifuncional(
+                                    label = "Descuento",
+                                    textPlaceholder = "Descuento",
+                                    nuevoValor = { descuentoProducto = it },
+                                    valor = descuentoProducto,
+                                    usarModifierForSize = true,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .border(
+                                            2.dp,
+                                            color = Color.Gray,
+                                            RoundedCornerShape(objetoAdaptardor.ajustarAltura(12))
+                                        ),
+                                    isUltimo = true,
+                                    medidaAncho = 350,
+                                    tomarAnchoMaximo = false,
+                                    fontSize = obtenerEstiloBodyBig(),
+                                    mostrarLabel = false,
+                                    soloPermitirValoresNumericos = true,
+                                    permitirComas = true,
+                                    cantidadLineas = 1
                                 )
                             }
 
                             Column(
                                 modifier = Modifier.weight(1f)
                             ) {
-                                Text(
-                                    text = "Monto Descuento",
-                                    style = MaterialTheme.typography.bodyMedium
+                                TText(
+                                    text =  "Monto Descuento:",
+                                    fontSize = obtenerEstiloBodyMedium(),
+                                    fontWeight = FontWeight.Light,
+                                    color = Color.DarkGray
                                 )
-                                OutlinedTextField(
-                                    value = montoDescuento,
-                                    onValueChange = { newValue ->
+                                TextFieldMultifuncional(
+                                    label = "Monto",
+                                    textPlaceholder = "Monto",
+                                    nuevoValor = { newValue ->
                                         montoDescuento = validarEntradasArticulos(montoDescuento, newValue)
                                         esCambioPorMontoDescuento = true
                                         calcularTotales()
                                     },
-                                    modifier = Modifier.fillMaxWidth(),
-                                    keyboardOptions = KeyboardOptions(
-                                        keyboardType = KeyboardType.Decimal,
-                                        imeAction = ImeAction.Done
-                                    ),
-                                    singleLine = true
+                                    valor = montoDescuento,
+                                    usarModifierForSize = true,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .border(
+                                            2.dp,
+                                            color = Color.Gray,
+                                            RoundedCornerShape(objetoAdaptardor.ajustarAltura(12))
+                                        ),
+                                    isUltimo = true,
+                                    medidaAncho = 350,
+                                    tomarAnchoMaximo = false,
+                                    fontSize = obtenerEstiloBodyBig(),
+                                    mostrarLabel = false,
+                                    soloPermitirValoresNumericos = true,
+                                    permitirComas = true,
+                                    cantidadLineas = 1
                                 )
                             }
                         }
@@ -1670,139 +1906,85 @@ fun ProductoDialog(
                         Column(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(horizontal = 16.dp)
                         ) {
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.SpaceBetween
                             ) {
-                                Text(
-                                    text = "Impuesto (IVA %)",
-                                    style = MaterialTheme.typography.titleSmall,
-                                    fontWeight = FontWeight.Bold
-                                )
-                                Text(
-                                    text = impuestoProducto,
-                                    style = MaterialTheme.typography.titleSmall,
-                                    fontWeight = FontWeight.Bold
+                                TText(
+                                    text = "Impuesto (IVA %): $impuestoProducto" ,
+                                    textAlign = TextAlign.End,
+                                    fontSize = obtenerEstiloBodyBig()
                                 )
                                 Spacer(modifier = Modifier.weight(1f))
-                                Text(
-                                    text = "Monto IVA: ${String.format("%.2f", montoIVA)}",
-                                    style = MaterialTheme.typography.titleSmall,
-                                    fontWeight = FontWeight.Bold
+                                TText(
+                                    text = "Monto IVA: ${separacionDeMiles( montoIVA)}",
+                                    textAlign = TextAlign.End,
+                                    fontSize = obtenerEstiloBodyBig()
                                 )
                             }
 
-                            Divider(modifier = Modifier.padding(vertical = 8.dp))
+                            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.SpaceBetween
                             ) {
-                                Text(
-                                    text = "Total",
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.Bold
+                                TText(
+                                    text = "Total: ",
+                                    textAlign = TextAlign.End,
+                                    fontSize = obtenerEstiloTitleSmall()
                                 )
                                 Spacer(modifier = Modifier.weight(1f))
-                                Text(
+                                TText(
                                     text = "$monedaCodigo ${separacionDeMiles(totalProducto)}",
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.Bold
+                                    textAlign = TextAlign.End,
+                                    fontSize = obtenerEstiloTitleSmall()
                                 )
                             }
                         }
-                    }
 
-                    // Botones de acción
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp)
-                            .padding(vertical = 8.dp),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Button(
-                            onClick = { onDismiss() },
-                            modifier = Modifier.weight(1f),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = Color.Red
-                            ),
-                            shape = RoundedCornerShape(8.dp)
+
+                        // Botones de acción
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            Text(
+                            BButton(
                                 text = "Cancelar",
-                                fontWeight = FontWeight.Bold,
-                                modifier = Modifier.padding(vertical = 10.dp)
+                                objetoAdaptardor = objetoAdaptardor,
+                                onClick = {
+                                    onDismiss()
+                                },
+                                modifier = Modifier.weight(1f),
+                                backgroundColor = Color.Red,
+                                textSize = obtenerEstiloTitleBig()
                             )
-                        }
 
-                        Button(
-                            onClick = {
-                                onDismiss()
-                                onAgregarLinea(articuloLineaId)
-                            },
-                            modifier = Modifier.weight(1f),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = Color(0xFF244BC0)
-                            ),
-                            shape = RoundedCornerShape(8.dp)
-                        ) {
-                            Text(
-                                text = textoBotonVentanaArticulos,
-                                fontWeight = FontWeight.Bold,
-                                modifier = Modifier.padding(vertical = 10.dp)
+                            BButton(
+                                text = "Agregar",
+                                objetoAdaptardor = objetoAdaptardor,
+                                onClick = {
+                                },
+                                modifier = Modifier.weight(1f),
+                                backgroundColor = Color(0xFF244BC0),
+                                textSize = obtenerEstiloTitleBig()
                             )
+
                         }
                     }
                 }
             }
+
         }
     }
 }
 
-// Componentes adicionales que necesitamos implementar
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun ExposedDropdownMenuBox(
-    expanded: Boolean,
-    onExpandedChange: (Boolean) -> Unit,
-    content: @Composable BoxScope.() -> Unit
-) {
-    Box(
-        modifier = Modifier.fillMaxWidth(),
-        contentAlignment = Alignment.Center,
-        content = content
-    )
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun ExposedDropdownMenu(
-    expanded: Boolean,
-    onDismissRequest: () -> Unit,
-    content: @Composable ColumnScope.() -> Unit
-) {
-    if (expanded) {
-        DropdownMenu(
-            expanded = expanded,
-            onDismissRequest = onDismissRequest,
-            content = content
-        )
-    }
-}
-
-// Iconos para los dropdowns
-object Icons {
-    object Filled {
-        val ArrowDropDown = androidx.compose.material.icons.Icons.Default.ArrowDropDown
-    }
-}
 
 @Composable
 @Preview
 private fun Preview(){
     val nav = rememberNavController()
-    IniciarInterfazFacturacion("eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJDb2RpZ28iOiIwMDA0MyIsIk5vbWJyZSI6IlJPQkVSVE8gQURNSU4iLCJFbWFpbCI6InJyZXllc0Bzb3BvcnRlcmVhbC5jb20iLCJQdWVydG8iOiI4MDEiLCJFbXByZXNhIjoiWkdWdGIzSmxjM1E9IiwiU2VydmVySXAiOiJNVGt5TGpFMk9DNDNMak13IiwidGltZSI6IjIwMjUwMzEwMDIwMzA0In0.7kfmdiMMKZ30R7mSvuIT0iNod_naX8DBDPguf9KC_H4", null, nav, "","","")
+    IniciarInterfazFacturacion("eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJDb2RpZ28iOiIwMDM2MiIsIk5vbWJyZSI6IllFU0xFUiBMT1JJTyIsIkVtYWlsIjoieWVzbGVybG9yaW9AZ21haWwuY29tIiwiUHVlcnRvIjoiODAxIiwiRW1wcmVzYSI6IlpHVnRiMlpsY25KbCIsIlNlcnZlcklwIjoiTVRreUxqRTJPQzQzTGpNdyIsInRpbWUiOiIyMDI1MDMxMjA1MDMwOSJ9.JrUHQoYYnWJibwMi1B2-iGBTGk-_-2jPqdLAiJ57AJM", null, nav, "demoferre","00050","YESLER LORIO")
 }

@@ -48,9 +48,9 @@ import com.soportereal.invefacon.funciones_de_interfaces.NavHostPantallasMenuPri
 import com.soportereal.invefacon.funciones_de_interfaces.RutasPantallasMenuPrincipal.PantallaAjustes
 import com.soportereal.invefacon.funciones_de_interfaces.RutasPantallasMenuPrincipal.PantallaInicio
 import com.soportereal.invefacon.funciones_de_interfaces.RutasPantallasMenuPrincipal.PantallaSalir
-import com.soportereal.invefacon.interfaces.FuncionesParaAdaptarContenidoCompact
-import com.soportereal.invefacon.interfaces.obtenerEstiloBody
-import com.soportereal.invefacon.interfaces.obtenerEstiloLabel
+import com.soportereal.invefacon.interfaces.FuncionesParaAdaptarContenido
+import com.soportereal.invefacon.interfaces.obtenerEstiloLabelBig
+import com.soportereal.invefacon.interfaces.obtenerEstiloLabelSmall
 
 
 @SuppressLint("SourceLockedOrientationActivity")
@@ -68,7 +68,7 @@ fun IniciarInterfazMenuPrincipalCompact(
     val dpAnchoPantalla = configuration.screenWidthDp
     val dpAltoPantalla = configuration.screenHeightDp
     val dpFontPantalla= configuration.fontScale
-    val objetoAdaptardor= FuncionesParaAdaptarContenidoCompact(dpAltoPantalla, dpAnchoPantalla, dpFontPantalla)
+    val objetoAdaptardor= FuncionesParaAdaptarContenido(dpAltoPantalla, dpAnchoPantalla, dpFontPantalla)
     val navControllerPantallasMenuPrincipal = rememberNavController()
     val isCargandoPantallaMenuPrincipal by objetoEstadoPantallaCarga.isCargandoPantalla.collectAsState()
     val mostrarRespuestaApi by estadoRespuestaApi.mostrarDatosRespuestaApi.collectAsState()
@@ -117,7 +117,7 @@ fun IniciarInterfazMenuPrincipalCompact(
                     color = Color.White,
                     fontFamily = fontAksharPrincipal,
                     fontWeight = FontWeight.Light,
-                    fontSize = obtenerEstiloLabel(),
+                    fontSize = obtenerEstiloLabelSmall(),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     textAlign = TextAlign.Center,
@@ -129,7 +129,7 @@ fun IniciarInterfazMenuPrincipalCompact(
                     color = Color.White,
                     fontFamily = fontAksharPrincipal,
                     fontWeight = FontWeight.Light,
-                    fontSize = obtenerEstiloLabel(),
+                    fontSize = obtenerEstiloLabelSmall(),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     textAlign = TextAlign.Center,
@@ -143,7 +143,7 @@ fun IniciarInterfazMenuPrincipalCompact(
                     fontWeight = FontWeight.Light,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
-                    fontSize = obtenerEstiloLabel(),
+                    fontSize = obtenerEstiloLabelSmall(),
                     textAlign = TextAlign.Center,
                     modifier = Modifier.width(objetoAdaptardor.ajustarAncho(142)).padding(end = 6.dp)
                 )
@@ -169,7 +169,7 @@ fun NavegacionInferior(navController: NavController) {
     val dpAnchoPantalla = configuration.screenWidthDp
     val dpAltoPantalla = configuration.screenHeightDp
     val dpFontPantalla= configuration.fontScale
-    val objetoAdaptardor= FuncionesParaAdaptarContenidoCompact(dpAltoPantalla, dpAnchoPantalla, dpFontPantalla)
+    val objetoAdaptardor= FuncionesParaAdaptarContenido(dpAltoPantalla, dpAnchoPantalla, dpFontPantalla)
 
     Column {
         // Card en la parte superior que simula la sombra
@@ -209,7 +209,7 @@ fun NavegacionInferior(navController: NavController) {
                         PantallaInicio.titulo,
                         fontFamily = aksharFont,
                         fontWeight = FontWeight.Light,
-                        fontSize = obtenerEstiloBody()
+                        fontSize = obtenerEstiloLabelBig()
                     )
                 },
                 alwaysShowLabel = true,
@@ -242,7 +242,7 @@ fun NavegacionInferior(navController: NavController) {
                         PantallaAjustes.titulo,
                         fontFamily = aksharFont,
                         fontWeight = FontWeight.Light,
-                        fontSize = obtenerEstiloBody()
+                        fontSize = obtenerEstiloLabelBig()
                     )
                 },
                 alwaysShowLabel = true,
@@ -277,7 +277,7 @@ fun NavegacionInferior(navController: NavController) {
                         PantallaSalir.titulo,
                         fontFamily = aksharFont,
                         fontWeight = FontWeight.Light,
-                        fontSize = obtenerEstiloBody(),
+                        fontSize = obtenerEstiloLabelBig(),
                         modifier = Modifier.padding(top = 0.dp)
                     )
                 },

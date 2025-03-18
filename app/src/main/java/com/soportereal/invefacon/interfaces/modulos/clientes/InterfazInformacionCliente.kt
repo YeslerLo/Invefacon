@@ -1,10 +1,7 @@
 package com.soportereal.invefacon.interfaces.modulos.clientes
 
 
-import android.annotation.SuppressLint
-import android.app.DatePickerDialog
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -13,7 +10,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -21,17 +17,13 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.ArrowBackIosNew
 import androidx.compose.material.icons.filled.Assessment
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Error
-import androidx.compose.material.icons.filled.KeyboardArrowDown
-import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.MonetizationOn
 import androidx.compose.material.icons.filled.PermIdentity
 import androidx.compose.material.icons.filled.Phone
@@ -40,8 +32,6 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Snackbar
@@ -54,7 +44,6 @@ import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -67,18 +56,13 @@ import androidx.compose.runtime.snapshots.SnapshotStateMap
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
@@ -87,15 +71,13 @@ import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.navigation.NavController
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.soportereal.invefacon.R
-import com.soportereal.invefacon.interfaces.FuncionesParaAdaptarContenidoCompact
-import com.soportereal.invefacon.interfaces.obtenerEstiloBody
-import com.soportereal.invefacon.interfaces.pantallas_principales.objetoEstadoPantallaCarga
+import com.soportereal.invefacon.funciones_de_interfaces.TextFieldMultifuncional
+import com.soportereal.invefacon.interfaces.FuncionesParaAdaptarContenido
 import com.soportereal.invefacon.interfaces.pantallas_principales.estadoRespuestaApi
+import com.soportereal.invefacon.interfaces.pantallas_principales.objetoEstadoPantallaCarga
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.json.JSONObject
-import java.util.Calendar
-import java.util.Locale
 import java.util.regex.Pattern
 
 
@@ -113,7 +95,7 @@ fun IniciarInterfazInformacionCliente(
     val dpAnchoPantalla = configuration.screenWidthDp
     val dpAltoPantalla = configuration.screenHeightDp
     val dpFontPantalla= configuration.fontScale
-    val objetoAdaptardor= FuncionesParaAdaptarContenidoCompact(dpAltoPantalla, dpAnchoPantalla, dpFontPantalla)
+    val objetoAdaptardor= FuncionesParaAdaptarContenido(dpAltoPantalla, dpAnchoPantalla, dpFontPantalla)
     val lazyState= rememberLazyListState()
     var datosCliente by remember { mutableStateOf(JSONObject("{\"codigo\":\"502\",\"cedula\":\"00119690923\",\"cedulatipo\":\"00\",\"nombrejuridico\":\"sintaxis\n" +
             "web work\",\"nombrecomercial\":\"Kendall\",\"direccion\":\"Leon\n" +
@@ -522,19 +504,19 @@ fun IniciarInterfazInformacionCliente(
                                 valor = modoEdicionActivado,
                                 nuevoValor = { nuevoEstado-> modoEdicionActivado= nuevoEstado},
                             ) {
-                                AgregarTextFieldMultifuncional(
+                                TextFieldMultifuncional(
                                     label = "Nombre comercial",
                                     valor = nombreComercial,
                                     nuevoValor = {nombreComercial= it},
                                     modoEdicionActivado = modoEdicionActivado
                                 )
-                                AgregarTextFieldMultifuncional(
+                                TextFieldMultifuncional(
                                     label = "Nombre jurídico",
                                     valor = nombreJuridico,
                                     nuevoValor = {nombreJuridico= it},
                                     modoEdicionActivado = modoEdicionActivado
                                 )
-                                AgregarTextFieldMultifuncional(
+                                TextFieldMultifuncional(
                                     label = "Tipo cédula",
                                     valor = opcionesTipoIndentificacionCliente[tipoCedula]?: "Sin definir",
                                     nuevoValor = {
@@ -543,13 +525,13 @@ fun IniciarInterfazInformacionCliente(
                                     },
                                     modoEdicionActivado = false
                                 )
-                                AgregarTextFieldMultifuncional(
+                                TextFieldMultifuncional(
                                     label = "Cédula",
                                     valor = cedulaCliente,
                                     nuevoValor = {cedulaCliente= it},
                                     modoEdicionActivado = false
                                 )
-                                AgregarTextFieldMultifuncional(
+                                TextFieldMultifuncional(
                                     label = "Fecha nacimiento",
                                     valor = fechaNacimiento,
                                     nuevoValor = {fechaNacimiento= it},
@@ -568,7 +550,7 @@ fun IniciarInterfazInformacionCliente(
                                 titulo = "Información de contacto",
                                 icono = Icons.Filled.Phone
                             ){
-                                AgregarTextFieldMultifuncional(
+                                TextFieldMultifuncional(
                                     label = "Teléfonos",
                                     valor = telefono,
                                     nuevoValor = {telefono= it},
@@ -577,34 +559,34 @@ fun IniciarInterfazInformacionCliente(
                                     permitirComas = true,
                                     cantidadLineas = 1
                                 )
-                                AgregarTextFieldMultifuncional(
+                                TextFieldMultifuncional(
                                     label = "Email general",
                                     valor = emailGeneral,
                                     nuevoValor = {emailGeneral= it},
                                     modoEdicionActivado = modoEdicionActivado,
                                     cantidadLineas = 1
                                 )
-                                AgregarTextFieldMultifuncional(
+                                TextFieldMultifuncional(
                                     label = "Email factura",
                                     valor = emailFactura,
                                     nuevoValor = {emailFactura= it},
                                     modoEdicionActivado = modoEdicionActivado,
                                     cantidadLineas = 1
                                 )
-                                AgregarTextFieldMultifuncional(
+                                TextFieldMultifuncional(
                                     label = "Email cobros",
                                     valor = emailCobros,
                                     nuevoValor = {emailCobros= it},
                                     modoEdicionActivado = modoEdicionActivado,
                                     cantidadLineas = 1
                                 )
-                                AgregarTextFieldMultifuncional(
+                                TextFieldMultifuncional(
                                     label = "Contacto",
                                     valor = contacto,
                                     nuevoValor = {contacto= it},
                                     modoEdicionActivado = modoEdicionActivado
                                 )
-                                AgregarTextFieldMultifuncional(
+                                TextFieldMultifuncional(
                                     label = "Dirección",
                                     valor = direccion,
                                     nuevoValor = {direccion= it},
@@ -621,7 +603,7 @@ fun IniciarInterfazInformacionCliente(
                                 titulo = "Información financiera",
                                 icono = Icons.Filled.MonetizationOn
                             ){
-                                AgregarTextFieldMultifuncional(
+                                TextFieldMultifuncional(
                                     label = "Monto de crédito",
                                     valor = creditoMonto,
                                     nuevoValor = {creditoMonto= it},
@@ -631,7 +613,7 @@ fun IniciarInterfazInformacionCliente(
                                     permitirPuntosDedimales = true,
                                     cantidadLineas = 1
                                 )
-                                AgregarTextFieldMultifuncional(
+                                TextFieldMultifuncional(
                                     label = "Plazo de crédito",
                                     valor = creditoPlazo,
                                     nuevoValor = {telefono= it},
@@ -639,7 +621,7 @@ fun IniciarInterfazInformacionCliente(
                                     soloPermitirValoresNumericos = true,
                                     cantidadLineas = 1
                                 )
-                                AgregarTextFieldMultifuncional(
+                                TextFieldMultifuncional(
                                     label = "Día de cobro",
                                     valor = diaCobro,
                                     nuevoValor = {diaCobro= it},
@@ -647,7 +629,7 @@ fun IniciarInterfazInformacionCliente(
                                     soloPermitirValoresNumericos = true,
                                     cantidadLineas = 1
                                 )
-                                AgregarTextFieldMultifuncional(
+                                TextFieldMultifuncional(
                                     label = "Tipo de cliente",
                                     valor = opcionesTipoCliente[clienteTipo]?:"Sin definir",
                                     nuevoValor = {
@@ -658,13 +640,13 @@ fun IniciarInterfazInformacionCliente(
                                     contieneOpciones = true,
                                     opciones = opcionesTipoCliente
                                 )
-                                AgregarTextFieldMultifuncional(
+                                TextFieldMultifuncional(
                                     label = "Moneda",
                                     valor = monedaCliente,
                                     nuevoValor = {monedaCliente= it},
                                     modoEdicionActivado = modoEdicionActivado
                                 )
-                                AgregarTextFieldMultifuncional(
+                                TextFieldMultifuncional(
                                     label = "Descuento",
                                     valor = descuentoCliente,
                                     nuevoValor = {descuentoCliente= it},
@@ -673,7 +655,7 @@ fun IniciarInterfazInformacionCliente(
                                     permitirPuntosDedimales = true,
                                     cantidadLineas = 1
                                 )
-                                AgregarTextFieldMultifuncional(
+                                TextFieldMultifuncional(
                                     label = "Monto de contrato",
                                     valor = montoContrato,
                                     nuevoValor = {montoContrato= it},
@@ -683,7 +665,7 @@ fun IniciarInterfazInformacionCliente(
                                     permitirPuntosDedimales = true,
                                     cantidadLineas = 1
                                 )
-                                AgregarTextFieldMultifuncional(
+                                TextFieldMultifuncional(
                                     label = "Detalle de contrato",
                                     valor = detalleContrato,
                                     nuevoValor = {detalleContrato= it},
@@ -700,13 +682,13 @@ fun IniciarInterfazInformacionCliente(
                                 titulo = "Información de ventas",
                                 icono = Icons.Default.Assessment
                             ){
-                                AgregarTextFieldMultifuncional(
+                                TextFieldMultifuncional(
                                     label = "Ultima venta",
                                     valor = ultimaVenta,
                                     nuevoValor = {ultimaVenta= it},
                                     modoEdicionActivado = false
                                 )
-                                AgregarTextFieldMultifuncional(
+                                TextFieldMultifuncional(
                                     label = "Agente de ventas",
                                     valor = opcionesAgentesVentasClienteActivos[agenteVentas]?:"Sin definir",
                                     nuevoValor = {
@@ -717,7 +699,7 @@ fun IniciarInterfazInformacionCliente(
                                     contieneOpciones = true,
                                     opciones = opcionesAgentesVentasClienteActivos
                                 )
-                                AgregarTextFieldMultifuncional(
+                                TextFieldMultifuncional(
                                     label = "Tipo de precio",
                                     valor = opcionesTipoPrecioCliente[tipoPrecio]?:"Sin definir",
                                     nuevoValor = {tipoPrecio= it},
@@ -725,13 +707,13 @@ fun IniciarInterfazInformacionCliente(
                                     contieneOpciones = true,
                                     opciones = opcionesTipoPrecioCliente
                                 )
-                                AgregarTextFieldMultifuncional(
+                                TextFieldMultifuncional(
                                     label = "Estado",
                                     valor = opcionesEstadoCliente[estadoCliente]?: "Sin definir",
                                     nuevoValor = {estadoCliente= it},
                                     modoEdicionActivado = false
                                 )
-                                AgregarTextFieldMultifuncional(
+                                TextFieldMultifuncional(
                                     label = "Tiene crédito",
                                     valor = opcionesLogicasCliente[tieneCredito]?:"Sin definir",
                                     nuevoValor = {
@@ -742,13 +724,13 @@ fun IniciarInterfazInformacionCliente(
                                     contieneOpciones = true,
                                     opciones = opcionesLogicasCliente
                                 )
-                                AgregarTextFieldMultifuncional(
+                                TextFieldMultifuncional(
                                     label = "Forzar crédito",
                                     valor = opcionesLogicasCliente[noForzarCredito]?:"Sin definir",
                                     nuevoValor = {noForzarCredito= it},
                                     modoEdicionActivado = false
                                 )
-                                AgregarTextFieldMultifuncional(
+                                TextFieldMultifuncional(
                                     label = "Exento",
                                     valor = opcionesLogicasCliente[exento]?:"Sin definir",
                                     nuevoValor = {
@@ -759,7 +741,7 @@ fun IniciarInterfazInformacionCliente(
                                     contieneOpciones = true,
                                     opciones = opcionesLogicasCliente
                                 )
-                                AgregarTextFieldMultifuncional(
+                                TextFieldMultifuncional(
                                     label = "Exonerado",
                                     valor = opcionesLogicasCliente[exonerado]?:"Sin definir",
                                     nuevoValor = {exonerado= it},
@@ -890,271 +872,10 @@ fun IniciarInterfazInformacionCliente(
     }
 }
 
-@Composable
-internal fun AgregarTextFieldMultifuncional(
-    label: String,
-    valor: String,
-    nuevoValor: (String)-> Unit,
-    isUltimo: Boolean? = false,
-    modoEdicionActivado: Boolean= true,
-    contieneOpciones: Boolean = false,
-    opciones: SnapshotStateMap<String, String> = mutableStateMapOf("1" to "1"),
-    usarOpciones2: Boolean = false,
-    @SuppressLint("MutableCollectionMutableState") opciones2: MutableState<LinkedHashMap<String, String>> = mutableStateOf(LinkedHashMap()),
-    isSeleccionarFecha: Boolean = false,
-    darFormatoMiles: Boolean = false,
-    soloPermitirValoresNumericos: Boolean = false,
-    cantidadLineas: Int = 20,
-    textPlaceholder: String= "Sin definir",
-    permitirPuntosDedimales: Boolean = false,
-    permitirComas: Boolean= false,
-    tomarAnchoMaximo: Boolean = true,
-    medidaAncho: Int = 0,
-    mostrarClave: Boolean = false
-){
-    val fontAksharPrincipal = FontFamily(Font(R.font.akshar_medium))
-    val configuration = LocalConfiguration.current
-    val dpAnchoPantalla = configuration.screenWidthDp
-    val dpAltoPantalla = configuration.screenHeightDp
-    val dpFontPantalla= configuration.fontScale
-    val objetoAdaptardor= FuncionesParaAdaptarContenidoCompact(dpAltoPantalla, dpAnchoPantalla, dpFontPantalla)
-    var expanded by remember { mutableStateOf(false) }
-    val iconoDdmOpcionesFlechasLaterales = if (expanded) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown
-    val scrollState= rememberScrollState(0)
-    val solicitadorFoco = remember { FocusRequester() }
-    var tieneFoco by remember { mutableStateOf(false) }
-    // Estados para manejar la fecha seleccionada
-
-    // Fecha actual para inicializar el DatePicker
-    val contexto = LocalContext.current
-    val calendario = Calendar.getInstance()
-    val anioActual = calendario.get(Calendar.YEAR)
-    val mesActual = calendario.get(Calendar.MONTH)
-    val diaActual = calendario.get(Calendar.DAY_OF_MONTH)
-
-    val onFechaSeleccionada: (Int, Int, Int) -> Unit = { anio, mes, dia ->
-        // Obtenemos la fecha actual
-        val calendarioActual = Calendar.getInstance()
-        val fechaActual = calendarioActual.timeInMillis
-
-        // Creamos una instancia de Calendar para la fecha seleccionada
-        val calendarioSeleccionado = Calendar.getInstance().apply {
-            set(anio, mes, dia, 0, 0, 0)  // Establecemos el año, mes y día seleccionados
-            set(Calendar.MILLISECOND, 0)
-        }
-        val fechaSeleccionada = calendarioSeleccionado.timeInMillis
-
-        // Validamos que la fecha seleccionada no sea mayor a la fecha actual
-        if (fechaSeleccionada > fechaActual) {
-            estadoRespuestaApi.cambiarEstadoRespuestaApi(
-                mostrarRespuesta = true,
-                datosRespuesta = JSONObject("""{"code":400,"status":"error","data":"La fecha seleccionada no puede ser mayor a la de hoy"}""")
-            )
-            expanded = false
-        } else {
-            val fechaFormateada = String.format(
-                Locale.ROOT,
-                "%04d-%02d-%02d 00:00:00.000",
-                anio, mes + 1, dia
-            )
-            nuevoValor(fechaFormateada)
-            expanded = false
-        }
-    }
-
-    Column(
-        modifier = Modifier.background(Color.White),
-    ) {
-        TextField(
-            enabled = if (contieneOpciones) false else modoEdicionActivado,
-            value = if (darFormatoMiles) {
-                if (tieneFoco) {
-                    valor // Mostrar el valor sin formato mientras el campo tiene el foco
-                } else {
-                    try {
-                        if (valor.isNotEmpty()) {
-                            String.format(Locale.US, "%,.2f", valor.replace(",", "").toDouble())
-                        } else ""
-                    } catch (e: NumberFormatException) {
-                        valor // En caso de error, mostrar el valor tal como está
-                    }
-                }
-            }else valor,
-            onValueChange =  {
-                if (soloPermitirValoresNumericos && permitirPuntosDedimales){
-                    // Permitir solo caracteres numéricos y punto decimal
-                    nuevoValor(it.replace(",", "")) // Actualizar sin comas
-                }
-                else if (soloPermitirValoresNumericos && permitirComas){
-                    nuevoValor(it.replace(".", "")) // Actualizar sin comas
-                }
-                else if (soloPermitirValoresNumericos){
-                    nuevoValor(it.replace(".", "").replace(",", ""))
-                }
-                else{
-                    nuevoValor(it)
-                }
-            },
-            textStyle = TextStyle(
-                fontFamily = fontAksharPrincipal,
-                fontWeight =    FontWeight.Light,
-                fontSize =  obtenerEstiloBody(),
-                color = Color.Black,
-                textAlign = TextAlign.Start
-            ),
-            label = {
-                Text(
-                    label,
-                    fontFamily = fontAksharPrincipal,
-                    fontWeight =    FontWeight.Light,
-                    fontSize =  obtenerEstiloBody(),
-                    color = Color.DarkGray,
-                    overflow = TextOverflow.Ellipsis,
-                    textAlign = TextAlign.Center,
-                )
-            },
-            colors = TextFieldDefaults.colors(
-                focusedContainerColor = Color.White,
-                unfocusedContainerColor = Color.White,
-                unfocusedIndicatorColor = if (isUltimo == true)Color.White else Color.Black,
-                focusedIndicatorColor = if (isUltimo == true)Color.White else Color.Black,
-                cursorColor = Color(0xFF244BC0),
-                disabledContainerColor = Color.White,
-                disabledIndicatorColor = if(isUltimo == true)Color.White else Color.Black
-
-            ),
-            modifier = Modifier
-                .let {
-                    if (contieneOpciones && modoEdicionActivado) {
-                        it.clickable { expanded = !expanded }
-                    } else {
-                        it
-                    }
-                }
-                .let {
-                    if (tomarAnchoMaximo) {
-                        it.fillMaxWidth()
-                    } else {
-                        it.width(objetoAdaptardor.ajustarAncho(medidaAncho))
-                    }
-                }
-                .focusRequester(solicitadorFoco)
-                .onFocusChanged { estadoFoco ->
-                    tieneFoco = estadoFoco.isFocused // Detectar el estado de foco
-                },
-            placeholder = {
-                Text(
-                    textPlaceholder,
-                    fontFamily = fontAksharPrincipal,
-                    fontWeight =    FontWeight.Light,
-                    fontSize =  obtenerEstiloBody(),
-                    color = Color.DarkGray,
-                    overflow = TextOverflow.Ellipsis,
-                    textAlign = TextAlign.Center,
-                )
-            },
-            trailingIcon = {
-                if (contieneOpciones && modoEdicionActivado && !isSeleccionarFecha){
-                    IconButton(onClick = {expanded = !expanded}) {
-                        Icon(
-                            imageVector = iconoDdmOpcionesFlechasLaterales,
-                            contentDescription = "Icono flechas",
-                            tint = Color.Black
-                        )
-                    }
-                }
-            },
-            keyboardOptions = if (soloPermitirValoresNumericos) {
-                KeyboardOptions(keyboardType = KeyboardType.Number) // Solo permite números
-            } else {
-                KeyboardOptions.Default // Permite cualquier tipo de entrada
-            },
-            maxLines = cantidadLineas
-        )
-
-
-        if (expanded && !isSeleccionarFecha){
-            DropdownMenu(
-                expanded = expanded,
-                onDismissRequest = { expanded = false },
-                modifier = Modifier
-                    .background(Color.White)
-                    .let {
-                        if (tomarAnchoMaximo) {
-                            it.fillMaxWidth()
-                        } else {
-                            it.width(objetoAdaptardor.ajustarAncho(medidaAncho))
-                        }
-                    }
-                    .heightIn(max = objetoAdaptardor.ajustarAltura(700)),
-                scrollState = scrollState
-            ) {
-                if (usarOpciones2){
-                    opciones2.value.entries.forEach { (clave, contenido) ->
-                        DropdownMenuItem(
-                            onClick = {
-                                nuevoValor (clave)
-                                expanded = false // Cierra el menú después de seleccionar
-                            },
-                            text = {
-                                Text(
-                                    if (mostrarClave) clave else contenido,
-                                    fontFamily = fontAksharPrincipal,
-                                    fontWeight = FontWeight.Medium,
-                                    fontSize = obtenerEstiloBody(),
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis,
-                                    textAlign = TextAlign.Center,
-                                    color = Color.Black
-                                )
-                            },
-                            modifier = Modifier.background(Color.White)
-                        )
-                    }
-                }else{
-                    opciones.forEach { (clave, contenido) ->
-                        DropdownMenuItem(
-                            onClick = {
-                                nuevoValor (clave)
-                                expanded = false // Cierra el menú después de seleccionar
-                            },
-                            text = {
-                                Text(
-                                    if (mostrarClave) clave else contenido,
-                                    fontFamily = fontAksharPrincipal,
-                                    fontWeight = FontWeight.Medium,
-                                    fontSize = obtenerEstiloBody(),
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis,
-                                    textAlign = TextAlign.Center,
-                                    color = Color.Black
-                                )
-                            },
-                            modifier = Modifier.background(Color.White)
-                        )
-                    }
-                }
-
-            }
-        }
-
-        if (expanded && isSeleccionarFecha){
-            DatePickerDialog(
-                contexto,
-                { _, anio, mes, dia ->
-                    onFechaSeleccionada(anio, mes, dia)
-                },
-                anioActual,
-                mesActual,
-                diaActual
-            ).show()
-        }
-    }
-}
 
 @Composable
 internal fun AgregarContenedorDatosClientes(
-    objetoAdaptardor: FuncionesParaAdaptarContenidoCompact,
+    objetoAdaptardor: FuncionesParaAdaptarContenido,
     titulo: String,
     fontAksharPrincipal: FontFamily,
     icono: ImageVector,

@@ -16,7 +16,6 @@ package com.soportereal.invefacon.interfaces.modulos.sac
  import androidx.compose.foundation.layout.Arrangement
  import androidx.compose.foundation.layout.Box
  import androidx.compose.foundation.layout.Column
- import androidx.compose.foundation.layout.PaddingValues
  import androidx.compose.foundation.layout.Row
  import androidx.compose.foundation.layout.Spacer
  import androidx.compose.foundation.layout.fillMaxSize
@@ -57,8 +56,6 @@ package com.soportereal.invefacon.interfaces.modulos.sac
  import androidx.compose.material.icons.filled.RestaurantMenu
  import androidx.compose.material.icons.filled.TableBar
  import androidx.compose.material3.AlertDialog
- import androidx.compose.material3.Button
- import androidx.compose.material3.ButtonDefaults
  import androidx.compose.material3.Card
  import androidx.compose.material3.CardDefaults
  import androidx.compose.material3.CircularProgressIndicator
@@ -104,21 +101,24 @@ package com.soportereal.invefacon.interfaces.modulos.sac
  import com.soportereal.invefacon.funciones_de_interfaces.BBasicTextField
  import com.soportereal.invefacon.funciones_de_interfaces.BButton
  import com.soportereal.invefacon.funciones_de_interfaces.RutasPatallas
+ import com.soportereal.invefacon.funciones_de_interfaces.TextFieldMultifuncional
  import com.soportereal.invefacon.funciones_de_interfaces.actualizarParametro
- import com.soportereal.invefacon.funciones_de_interfaces.guardarParametroSiNoExiste
  import com.soportereal.invefacon.funciones_de_interfaces.mostrarMensajeError
+ import com.soportereal.invefacon.funciones_de_interfaces.mostrarMensajeExito
  import com.soportereal.invefacon.funciones_de_interfaces.obtenerDatosClienteByCedula
  import com.soportereal.invefacon.funciones_de_interfaces.obtenerParametro
- import com.soportereal.invefacon.interfaces.FuncionesParaAdaptarContenidoCompact
- import com.soportereal.invefacon.interfaces.modulos.clientes.AgregarTextFieldMultifuncional
+ import com.soportereal.invefacon.funciones_de_interfaces.validarExitoRestpuestaServidor
+ import com.soportereal.invefacon.interfaces.FuncionesParaAdaptarContenido
  import com.soportereal.invefacon.interfaces.modulos.clientes.Cliente
  import com.soportereal.invefacon.interfaces.modulos.clientes.ProcesarDatosModuloClientes
  import com.soportereal.invefacon.interfaces.modulos.clientes.quitarTildesYMinusculas
- import com.soportereal.invefacon.interfaces.obtenerEstiloBody
- import com.soportereal.invefacon.interfaces.obtenerEstiloDisplay
- import com.soportereal.invefacon.interfaces.obtenerEstiloHead
- import com.soportereal.invefacon.interfaces.obtenerEstiloLabel
- import com.soportereal.invefacon.interfaces.obtenerEstiloTitle
+ import com.soportereal.invefacon.interfaces.obtenerEstiloBodyBig
+ import com.soportereal.invefacon.interfaces.obtenerEstiloBodyMedium
+ import com.soportereal.invefacon.interfaces.obtenerEstiloBodySmall
+ import com.soportereal.invefacon.interfaces.obtenerEstiloLabelBig
+ import com.soportereal.invefacon.interfaces.obtenerEstiloLabelSmall
+ import com.soportereal.invefacon.interfaces.obtenerEstiloTitleBig
+ import com.soportereal.invefacon.interfaces.obtenerEstiloTitleSmall
  import com.soportereal.invefacon.interfaces.pantallas_principales.estadoRespuestaApi
  import com.soportereal.invefacon.interfaces.pantallas_principales.objetoEstadoPantallaCarga
  import kotlinx.coroutines.CoroutineScope
@@ -148,7 +148,7 @@ fun InterfazModuloSac(
     val dpAnchoPantalla = configuration.screenWidthDp
     val dpAltoPantalla = configuration.screenHeightDp
     val dpFontPantalla= configuration.fontScale
-    val objetoAdaptardor= FuncionesParaAdaptarContenidoCompact(dpAltoPantalla, dpAnchoPantalla, dpFontPantalla, true)
+    val objetoAdaptardor= FuncionesParaAdaptarContenido(dpAltoPantalla, dpAnchoPantalla, dpFontPantalla, true)
     var datosIngresadosBarraBusqueda by remember  { mutableStateOf("") }
     var datosIngresadosBarraBusquedaCliente by remember  { mutableStateOf("") }
     val lazyStateMesas= rememberLazyListState()
@@ -205,7 +205,7 @@ fun InterfazModuloSac(
     var iniciarMenuCrearExpress by remember { mutableStateOf(false) }
     var iniciarMenuAjustes by remember { mutableStateOf(false) }
     val context = LocalContext.current
-    guardarParametroSiNoExiste(context, "prmImp2$nombreEmpresa$codUsuario", "1")
+//    guardarParametroSiNoExiste(context, "prmImp2$nombreEmpresa$codUsuario", "1")
     var valorPrmImp2 by remember { mutableStateOf(obtenerParametro(context, "prmImp2$nombreEmpresa$codUsuario")) }
     var codUsuarioIngresado by remember { mutableStateOf(codUsuario) }
     var passwordIngresada by remember { mutableStateOf("") }
@@ -404,7 +404,8 @@ fun InterfazModuloSac(
             objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(true)
             val result = objectoProcesadorDatosApi.obtenerDatosMesaComandada(mesaActual.nombre)
             if (result != null) {
-                if (result.getString("code")== "200"){
+                if (validarExitoRestpuestaServidor(result)
+                    ){
                     val data = result.getJSONObject("data")
                     val subCuentas = data.getJSONArray("Subcuentas")
                     val datosLineas = data.getJSONArray("datosLineas")
@@ -421,8 +422,11 @@ fun InterfazModuloSac(
                         opcionesSubCuentas.value[nombre] = nombre
                     }
 
-                    subCuentaSeleccionada= subCuentas.getJSONObject(0).getString("nombre")
-                    articulosComandados.clear()
+                    if(subCuentas.length()>0){
+                        subCuentaSeleccionada= subCuentas.getJSONObject(0).getString("nombre")
+                        articulosComandados.clear()
+                    }
+
 
                     for (i in 0 until datosLineas.length()) {
                         val datoLinea = datosLineas.getJSONObject(i)
@@ -729,6 +733,7 @@ fun InterfazModuloSac(
             }
             iniciarCreacionNuevaMesa = false
         }
+        iniciarCreacionNuevaPersona = false
     }
 
     LaunchedEffect(agregarImpuestoServicio) {
@@ -889,41 +894,21 @@ fun InterfazModuloSac(
         color: Long,
         alto: Int = 35,
         onClick: (Boolean)->Unit,
-        quitarPadInterno: Boolean = false,
-        isActivo: Boolean = true
+        quitarPadInterno: Boolean = false
     ){
-        Button(
+        BButton(
+            text = text,
+            backgroundColor = Color(color),
+            onClick = {
+                onClick(true)
+            },
+            objetoAdaptardor = objetoAdaptardor,
             modifier = if (quitarPadInterno) {
                 Modifier.height(objetoAdaptardor.ajustarAltura(alto))
             } else {
                 Modifier.width(objetoAdaptardor.ajustarAncho(120))
-            },
-            onClick = {
-                onClick(true)
-            },
-            colors = ButtonDefaults.buttonColors(
-                containerColor =Color(color),
-                contentColor = Color.White,
-                disabledContainerColor = Color.White,
-                disabledContentColor = Color.White
-            ),contentPadding = if (quitarPadInterno) PaddingValues(0.dp) else PaddingValues(8.dp),
-            enabled = isActivo
-        ) {
-            Box(
-                contentAlignment = Alignment.Center
-            ){
-                Text(
-                    text,
-                    fontFamily = fontAksharPrincipal,
-                    fontWeight = FontWeight.Medium,
-                    fontSize = obtenerEstiloLabel(),
-                    overflow = TextOverflow.Ellipsis,
-                    textAlign = TextAlign.Center,
-                    color = Color.White
-                )
             }
-
-        }
+        )
     }
 
 
@@ -936,7 +921,7 @@ fun InterfazModuloSac(
         Box(
             modifier = Modifier
                 .background(Color.White)
-                .widthIn(max =objetoAdaptardor.ajustarAncho(365))
+                .widthIn(max =objetoAdaptardor.ajustarAncho(380))
                 .then(
                     if(articuloComandado.articulos.isNotEmpty()){
                         Modifier.clickable {
@@ -946,14 +931,15 @@ fun InterfazModuloSac(
                         Modifier
                     }
                 ),
-            contentAlignment = Alignment.CenterEnd
+            contentAlignment = Alignment.Center
         ){
             Column(
                 verticalArrangement = Arrangement.Center,
                 horizontalAlignment = Alignment.End
             ) {
                 Row(
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
                 ) {
                     Box(
                         modifier = Modifier
@@ -991,8 +977,8 @@ fun InterfazModuloSac(
                     Text(
                         articuloComandado.nombre,
                         fontFamily = fontAksharPrincipal,
-                        fontWeight = FontWeight.Medium,
-                        fontSize = obtenerEstiloBody(),
+                        fontWeight = FontWeight.Light,
+                        fontSize = obtenerEstiloLabelBig(),
                         overflow = TextOverflow.Ellipsis,
                         textAlign = TextAlign.Start,
                         modifier = Modifier.width(objetoAdaptardor.ajustarAncho(165)).padding(2.dp)
@@ -1003,7 +989,7 @@ fun InterfazModuloSac(
                             "Cantidad: "+articuloComandado.Cantidad.toString(),
                             fontFamily = fontAksharPrincipal,
                             fontWeight = FontWeight.Medium,
-                            fontSize = obtenerEstiloBody(),
+                            fontSize = obtenerEstiloLabelSmall(),
                             overflow = TextOverflow.Ellipsis,
                             textAlign = TextAlign.Center,
                             modifier = Modifier
@@ -1020,18 +1006,19 @@ fun InterfazModuloSac(
                                 onClick = {
                                     expanded = !expanded
                                 },
-                                modifier = Modifier.size(objetoAdaptardor.ajustarAltura(30))
+                                modifier = Modifier.size(objetoAdaptardor.ajustarAncho(23))
                             ) {
                                 Icon(
                                     imageVector = if (expanded) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown,
                                     contentDescription = "Flechas",
                                     tint = Color.Black,
-                                    modifier = Modifier.size(objetoAdaptardor.ajustarAltura(30))
+                                    modifier = Modifier.size(objetoAdaptardor.ajustarAncho(23))
                                 )
                             }
                         }
 
-                    }else{
+                    }
+                    else{
                         IconButton(
                             onClick = {
                                 if(articuloComandado.Cantidad>0 && !isSubCuentaPedida){
@@ -1039,7 +1026,7 @@ fun InterfazModuloSac(
                                     iniciarVentanaEliminarArticulo = true
                                 }
                             },
-                            modifier = Modifier.size(objetoAdaptardor.ajustarAltura(22)),
+                            modifier = Modifier.size(objetoAdaptardor.ajustarAncho(23)),
                             enabled = !isSubCuentaPedida
                         ) {
                             Icon(
@@ -1050,14 +1037,14 @@ fun InterfazModuloSac(
                                     articuloComandado.Cantidad == 1 -> Color.Red
                                     else -> Color.Black
                                 },
-                                modifier = Modifier.size(objetoAdaptardor.ajustarAltura(22))
+                                modifier = Modifier.size(objetoAdaptardor.ajustarAncho(23))
                             )
                         }
                         Text(
                             articuloComandado.Cantidad.toString(),
                             fontFamily = fontAksharPrincipal,
                             fontWeight = FontWeight.Medium,
-                            fontSize = obtenerEstiloBody(),
+                            fontSize = obtenerEstiloLabelSmall(),
                             overflow = TextOverflow.Ellipsis,
                             textAlign = TextAlign.Center,
                             modifier = Modifier.width(objetoAdaptardor.ajustarAncho(35)).padding(2.dp)
@@ -1068,13 +1055,13 @@ fun InterfazModuloSac(
                                     articuloActualSeleccionado= articuloComandado
                                     iniciarVentanaAgregarArticulo = true
                                 },
-                                modifier = Modifier.size(objetoAdaptardor.ajustarAltura(22))
+                                modifier = Modifier.size(objetoAdaptardor.ajustarAncho(23))
                             ) {
                                 Icon(
                                     imageVector = Icons.Filled.AddCircle,
                                     contentDescription = "Agregar Articulo",
                                     tint =   Color.Black,
-                                    modifier = Modifier.size(objetoAdaptardor.ajustarAltura(22))
+                                    modifier = Modifier.size(objetoAdaptardor.ajustarAncho(23))
                                 )
                             }
                         }else{
@@ -1082,34 +1069,38 @@ fun InterfazModuloSac(
                                 onClick = {
                                     expanded = !expanded
                                 },
-                                modifier = Modifier.size(objetoAdaptardor.ajustarAltura(30))
+                                modifier = Modifier.size(objetoAdaptardor.ajustarAncho(23))
                             ) {
                                 Icon(
                                     imageVector = if (expanded) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown,
                                     contentDescription = "Flechas",
                                     tint = Color.Black,
-                                    modifier = Modifier.size(objetoAdaptardor.ajustarAltura(30))
+                                    modifier = Modifier.size(objetoAdaptardor.ajustarAncho(23))
                                 )
                             }
                         }
 
                         Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(6)))
-                        AgregarBt(
+                        BButton(
                             text = "Mover",
-                            color = 0xFF244BC0,
                             onClick = {
                                 articuloActualSeleccionado= articuloComandado
                                 iniciarMenuMoverArticulo = true
                                 mesaDestino= mesaActual.nombre
                                 actualizarSubCuentasYMesas = true
                             },
-                            quitarPadInterno = true,
-                            isActivo = !isSubCuentaPedida
+                            objetoAdaptardor = objetoAdaptardor,
+                            modifier = Modifier.height(objetoAdaptardor.ajustarAltura(37))
+
                         )
                         Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(6)))
                     }
                 }
-                HorizontalDivider()
+                HorizontalDivider(
+                    modifier = Modifier
+                    .width(objetoAdaptardor.ajustarAncho(380))
+                    .padding(1.dp)
+                )
                 AnimatedVisibility(
                     visible = expanded,
                     enter = expandVertically(animationSpec = tween(300)) + fadeIn(),
@@ -1130,7 +1121,7 @@ fun InterfazModuloSac(
                                     text = articuloCombo.cantidad.toString(),
                                     fontFamily = fontAksharPrincipal,
                                     fontWeight = FontWeight.Light,
-                                    fontSize = obtenerEstiloLabel(),
+                                    fontSize = obtenerEstiloLabelSmall(),
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis,
                                     textAlign = TextAlign.Center,
@@ -1144,7 +1135,7 @@ fun InterfazModuloSac(
                                     text = articuloCombo.nombre,
                                     fontFamily = fontAksharPrincipal,
                                     fontWeight = FontWeight.Light,
-                                    fontSize = obtenerEstiloLabel(),
+                                    fontSize = obtenerEstiloLabelSmall(),
                                     overflow = TextOverflow.Ellipsis,
                                     textAlign = TextAlign.Start,
                                     modifier = Modifier
@@ -1157,7 +1148,7 @@ fun InterfazModuloSac(
                                     text = "+ \u20A1 ${String.format(Locale.US, "%,.2f", articuloCombo.precio * articuloCombo.cantidad)}",
                                     fontFamily = fontAksharPrincipal,
                                     fontWeight = FontWeight.Light,
-                                    fontSize = obtenerEstiloLabel(),
+                                    fontSize = obtenerEstiloLabelSmall(),
                                     overflow = TextOverflow.Ellipsis,
                                     textAlign = TextAlign.End,
                                     modifier = Modifier
@@ -1176,7 +1167,7 @@ fun InterfazModuloSac(
                         "Total artículo: \u20A1 "+String.format(Locale.US, "%,.2f", articuloComandado.montoTotal.toString().replace(",", "").toDouble()),
                         fontFamily = fontAksharPrincipal,
                         fontWeight = FontWeight.Light,
-                        fontSize = obtenerEstiloBody(),
+                        fontSize = obtenerEstiloLabelBig(),
                         overflow = TextOverflow.Ellipsis,
                         textAlign = TextAlign.End,
                         modifier = Modifier.width(objetoAdaptardor.ajustarAncho(422)).padding(2.dp)
@@ -1186,7 +1177,7 @@ fun InterfazModuloSac(
                     thickness = 2.dp,
                     color = Color.Black,
                     modifier = Modifier
-                        .width(objetoAdaptardor.ajustarAncho(365))
+                        .width(objetoAdaptardor.ajustarAncho(380))
                         .padding(2.dp)
                 )
             }
@@ -1217,7 +1208,7 @@ fun InterfazModuloSac(
             Row (
                 horizontalArrangement = Arrangement.Center,
                 verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.padding(bottom = objetoAdaptardor.ajustarAltura(6))
+                modifier = Modifier.padding(bottom = objetoAdaptardor.ajustarAltura(4))
             ){
 
                 Icon(
@@ -1231,7 +1222,7 @@ fun InterfazModuloSac(
                     "SAC",
                     fontFamily = fontAksharPrincipal,
                     fontWeight =    FontWeight.SemiBold,
-                    fontSize = obtenerEstiloDisplay(),
+                    fontSize = obtenerEstiloTitleBig(),
                     color = Color.White,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
@@ -1247,14 +1238,13 @@ fun InterfazModuloSac(
                     start.linkTo(parent.start, margin = objetoAdaptardor.ajustarAncho(20))
                     top.linkTo(parent.top, margin = objetoAdaptardor.ajustarAltura(12))
                 }
-                .size(objetoAdaptardor.ajustarAltura(30))
-
+                .size(objetoAdaptardor.ajustarAncho(23))
         ) {
             Icon(
                 imageVector = Icons.Filled.ArrowBackIosNew,
                 contentDescription = "Flecha atras",
                 tint = Color.White,
-                modifier = Modifier.size(objetoAdaptardor.ajustarAltura(30))
+                modifier = Modifier.size(objetoAdaptardor.ajustarAncho(23))
             )
         }
 
@@ -1290,12 +1280,13 @@ fun InterfazModuloSac(
 
                 BButton(
                     modifier = Modifier
-                        .weight(1f)
+                        .weight(1.1f)
                         .padding(start = objetoAdaptardor.ajustarAltura(4), end =  objetoAdaptardor.ajustarAltura(4)),
                     onClick = {
                         iniciarMenuCrearMesa= it
                     },
-                    text = "Crear mesa"
+                    text = "Crear mesa",
+                    objetoAdaptardor = objetoAdaptardor
                 )
 
                 BButton(
@@ -1305,7 +1296,8 @@ fun InterfazModuloSac(
                     onClick = {
                         iniciarMenuCrearPersona= it
                     },
-                    text = "Persona"
+                    text = "Persona",
+                    objetoAdaptardor = objetoAdaptardor
                 )
 
                 BButton(
@@ -1315,7 +1307,8 @@ fun InterfazModuloSac(
                     onClick = {
                         iniciarMenuCrearExpress= it
                     },
-                    text = "Express"
+                    text = "Express",
+                    objetoAdaptardor = objetoAdaptardor
                 )
 
                 BButton(
@@ -1325,7 +1318,8 @@ fun InterfazModuloSac(
                     onClick = {
                         iniciarMenuAjustes= it
                     },
-                    text = "Ajustes"
+                    text = "Ajustes",
+                    objetoAdaptardor = objetoAdaptardor
                 )
 
                 BButton(
@@ -1335,7 +1329,8 @@ fun InterfazModuloSac(
                     onClick = {
                         actualizarListaMesas= it
                     },
-                    text = "Refrescar"
+                    text = "Refrescar",
+                    objetoAdaptardor = objetoAdaptardor
                 )
             }
         }
@@ -1368,35 +1363,18 @@ fun InterfazModuloSac(
                             enter = fadeIn(animationSpec = tween(500)) + slideInHorizontally(initialOffsetX = { it }),
                             exit = fadeOut()
                         ) {
-                            Button(
-                                modifier = Modifier.height(objetoAdaptardor.ajustarAltura(35)),
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = if (salonActual == salon) Color(0xFFBFBFBF) else Color(0xFFEAEAEA),
-                                    contentColor = Color.White,
-                                    disabledContainerColor = if (salonActual == salon) Color(0xFFBFBFBF) else Color(0xFFEAEAEA),
-                                    disabledContentColor = Color.White
-                                ),
-                                elevation = ButtonDefaults.buttonElevation(defaultElevation = 7.dp),
+                            BButton(
+                                text = salon,
+                                backgroundColor =  if (salonActual == salon) Color(0xFFBFBFBF) else Color(0xFFEAEAEA),
+                                contenteColor = Color.Black,
                                 onClick = {
                                     datosIngresadosBarraBusqueda = ""
                                     salonActual = salon
                                     actualizarListaMesas = true
                                 },
-                                contentPadding = PaddingValues(start = 12.dp, end = 12.dp, top = 0.dp, bottom = 0.dp)
-                            ) {
-                                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                                    Text(
-                                        salon,
-                                        fontFamily = fontAksharPrincipal,
-                                        fontWeight = FontWeight.Medium,
-                                        fontSize = obtenerEstiloBody(),
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis,
-                                        textAlign = TextAlign.Center,
-                                        color = Color.Black
-                                    )
-                                }
-                            }
+                                objetoAdaptardor = objetoAdaptardor,
+                                modifier = Modifier.height(objetoAdaptardor.ajustarAltura(35))
+                            )
                         }
                         Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(8)))
                     }
@@ -1502,7 +1480,7 @@ fun InterfazModuloSac(
                         text = "Cuentas activas",
                         fontFamily = fontAksharPrincipal,
                         fontWeight =    FontWeight.SemiBold,
-                        fontSize = obtenerEstiloTitle(),
+                        fontSize = obtenerEstiloBodyBig(),
                         color = Color.White,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
@@ -1527,7 +1505,7 @@ fun InterfazModuloSac(
                             fontFamily = fontAksharPrincipal,
                             color = Color(0xFF1D3FA4),
                             fontWeight = FontWeight.Medium,
-                            fontSize = obtenerEstiloTitle(),
+                            fontSize = obtenerEstiloBodyMedium(),
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
                             textAlign = TextAlign.Center,
@@ -1541,7 +1519,7 @@ fun InterfazModuloSac(
                             fontFamily = fontAksharPrincipal,
                             color = Color(0xFF1D3FA4),
                             fontWeight = FontWeight.Medium,
-                            fontSize = obtenerEstiloTitle(),
+                            fontSize = obtenerEstiloBodyMedium(),
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
                             textAlign = TextAlign.Center,
@@ -1555,7 +1533,7 @@ fun InterfazModuloSac(
                             fontFamily = fontAksharPrincipal,
                             color = Color(0xFF1D3FA4),
                             fontWeight = FontWeight.Medium,
-                            fontSize = obtenerEstiloTitle(),
+                            fontSize = obtenerEstiloBodyMedium(),
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
                             textAlign = TextAlign.Center,
@@ -1564,7 +1542,6 @@ fun InterfazModuloSac(
                                 .padding(objetoAdaptardor.ajustarAncho(2))
                         )
                     }
-
                 }
                 Box(
                     modifier = Modifier
@@ -1605,8 +1582,8 @@ fun InterfazModuloSac(
                                                         mesa.nombre,
                                                         fontFamily = fontAksharPrincipal,
                                                         color = Color.Black,
-                                                        fontWeight = FontWeight.Medium,
-                                                        fontSize = obtenerEstiloBody(),
+                                                        fontWeight = FontWeight.Light,
+                                                        fontSize = obtenerEstiloBodySmall(),
                                                         overflow = TextOverflow.Ellipsis,
                                                         maxLines = 1,
                                                         textAlign = TextAlign.Center,
@@ -1629,8 +1606,8 @@ fun InterfazModuloSac(
                                                         tiempo,
                                                         fontFamily = fontAksharPrincipal,
                                                         color = Color.Black,
-                                                        fontWeight = FontWeight.Medium,
-                                                        fontSize = obtenerEstiloBody(),
+                                                        fontWeight = FontWeight.Light,
+                                                        fontSize = obtenerEstiloBodySmall(),
                                                         overflow = TextOverflow.Ellipsis,
                                                         textAlign = TextAlign.Center,
                                                         maxLines = 1,
@@ -1650,8 +1627,8 @@ fun InterfazModuloSac(
                                                         totalMiles,
                                                         fontFamily = fontAksharPrincipal,
                                                         color = Color.Black,
-                                                        fontWeight = FontWeight.Medium,
-                                                        fontSize = obtenerEstiloBody(),
+                                                        fontWeight = FontWeight.Light,
+                                                        fontSize = obtenerEstiloBodySmall(),
                                                         maxLines = 1,
                                                         textAlign = TextAlign.End,
                                                         modifier = Modifier
@@ -1671,7 +1648,6 @@ fun InterfazModuloSac(
 
                 }
             }
-
         }
 
         Box(
@@ -1696,7 +1672,7 @@ fun InterfazModuloSac(
                     color = Color.White,
                     fontFamily = fontAksharPrincipal,
                     fontWeight = FontWeight.Light,
-                    fontSize = obtenerEstiloLabel(),
+                    fontSize = obtenerEstiloLabelSmall(),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     textAlign = TextAlign.Start,
@@ -1708,7 +1684,7 @@ fun InterfazModuloSac(
                     color = Color.White,
                     fontFamily = fontAksharPrincipal,
                     fontWeight = FontWeight.Light,
-                    fontSize = obtenerEstiloLabel(),
+                    fontSize = obtenerEstiloLabelSmall(),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     textAlign = TextAlign.Center,
@@ -1722,7 +1698,7 @@ fun InterfazModuloSac(
                     fontWeight = FontWeight.Light,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
-                    fontSize = obtenerEstiloLabel(),
+                    fontSize = obtenerEstiloLabelSmall(),
                     textAlign = TextAlign.End,
                     modifier = Modifier.width(objetoAdaptardor.ajustarAncho(382)).padding(end = 6.dp)
                 )
@@ -1784,55 +1760,27 @@ fun InterfazModuloSac(
                 }
             },
             confirmButton = {
-                Button(
+                BButton(
+                    text = "Crear",
                     onClick = {
                         iniciarCreacionNuevaMesa=true
                     },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFF244BC0), // Color de fondo del botón
-                        contentColor = Color.White,
-                        disabledContainerColor = Color(0xFF244BC0),
-                        disabledContentColor = Color.White
-                    )
-                ) {
-                    Text(
-                        "Crear",
-                        fontFamily = fontAksharPrincipal,
-                        fontWeight = FontWeight.Medium,
-                        fontSize = objetoAdaptardor.ajustarFont(15),
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        textAlign = TextAlign.Center,
-                        color = Color.White
-                    )
-                }
+                    objetoAdaptardor = objetoAdaptardor,
+                    modifier = Modifier.width(objetoAdaptardor.ajustarAncho(120))
+                )
             },
             dismissButton = {
-                Button(
+                BButton(
+                    text = "Cancelar",
                     onClick = {
                         iniciarMenuCrearMesa = false
                         nombreNuevaMesa=""
                         nombreSalonNuevaMesa=""
-
                     },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color.Red, // Color de fondo del botón
-                        contentColor = Color.White,
-                        disabledContainerColor = Color.Red,
-                        disabledContentColor = Color.White
-                    )
-                ) {
-                    Text(
-                        "Cancelar",
-                        fontFamily = fontAksharPrincipal,
-                        fontWeight = FontWeight.Medium,
-                        fontSize = objetoAdaptardor.ajustarFont(15),
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        textAlign = TextAlign.Center,
-                        color = Color.White
-                    )
-                }
+                    objetoAdaptardor = objetoAdaptardor,
+                    modifier = Modifier.width(objetoAdaptardor.ajustarAncho(120)),
+                    backgroundColor = Color.Red
+                )
             }
         )
     }
@@ -1874,60 +1822,33 @@ fun InterfazModuloSac(
                 }
             },
             confirmButton = {
-                Button(
+                BButton(
+                    text = "Continuar",
                     onClick = {
                         iniciarCreacionNuevaPersona=true
                     },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFF244BC0), // Color de fondo del botón
-                        contentColor = Color.White,
-                        disabledContainerColor = Color(0xFF244BC0),
-                        disabledContentColor = Color.White
-                    )
-                ) {
-                    Text(
-                        "Continuar",
-                        fontFamily = fontAksharPrincipal,
-                        fontWeight = FontWeight.Medium,
-                        fontSize = objetoAdaptardor.ajustarFont(15),
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        textAlign = TextAlign.Center,
-                        color = Color.White
-                    )
-                }
+                    objetoAdaptardor = objetoAdaptardor,
+                    modifier = Modifier.width(objetoAdaptardor.ajustarAncho(120))
+                )
             },
             dismissButton = {
-                Button(
+                BButton(
+                    text = "Cancelar",
                     onClick = {
                         iniciarMenuCrearPersona= false
                         nombreNuevaPersona=""
-
                     },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color.Red, // Color de fondo del botón
-                        contentColor = Color.White,
-                        disabledContainerColor = Color.Red,
-                        disabledContentColor = Color.White
-                    )
-                ) {
-                    Text(
-                        "Cancelar",
-                        fontFamily = fontAksharPrincipal,
-                        fontWeight = FontWeight.Medium,
-                        fontSize = objetoAdaptardor.ajustarFont(15),
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        textAlign = TextAlign.Center,
-                        color = Color.White
-                    )
-                }
+                    objetoAdaptardor = objetoAdaptardor,
+                    modifier = Modifier.width(objetoAdaptardor.ajustarAncho(120)),
+                    backgroundColor = Color.Red
+                )
             }
         )
     }
 
     if (iniciarMenuMesaComandada) {
         var isMenuVisible by remember { mutableStateOf(false) }
+        var isArticuloVisible by remember { mutableStateOf(false) }
 
         LaunchedEffect(Unit) {
             isMenuVisible = true
@@ -1965,7 +1886,7 @@ fun InterfazModuloSac(
                                 "Articulos Comandados ${mesaActual.nombre}-${mesaActual.salon}",
                                 fontFamily = fontAksharPrincipal,
                                 fontWeight = FontWeight.Medium,
-                                fontSize = obtenerEstiloDisplay(),
+                                fontSize = obtenerEstiloTitleSmall(),
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,
                                 textAlign = TextAlign.Center,
@@ -1983,7 +1904,7 @@ fun InterfazModuloSac(
                                         horizontalAlignment = Alignment.CenterHorizontally,
                                         verticalArrangement = Arrangement.Center
                                     ){
-                                        AgregarTextFieldMultifuncional(
+                                        TextFieldMultifuncional(
                                             label = "Sub-Cuentas",
                                             opciones2 = opcionesSubCuentas,
                                             usarOpciones2 = true,
@@ -1991,6 +1912,7 @@ fun InterfazModuloSac(
                                             nuevoValor = { nuevoValor ->
                                                 subCuentaSeleccionada = nuevoValor
                                                 iniciarCalculoMontos = true
+                                                isArticuloVisible = false
                                             },
                                             valor = subCuentaSeleccionada,
                                             isUltimo = true,
@@ -2042,8 +1964,7 @@ fun InterfazModuloSac(
                                         contentAlignment = Alignment.Center
                                     ){
                                         if(articulosComandados.isNotEmpty()){
-                                            var isArticuloVisible by remember { mutableStateOf(false) }
-                                            LaunchedEffect(Unit) {
+                                            LaunchedEffect(isArticuloVisible) {
                                                 delay(100)
                                                 isArticuloVisible = true
                                             }
@@ -2076,7 +1997,7 @@ fun InterfazModuloSac(
                                                 "Articulos: $cantidadArticulosComandados",
                                                 fontFamily = fontAksharPrincipal,
                                                 fontWeight = FontWeight.Medium,
-                                                fontSize = obtenerEstiloLabel(),
+                                                fontSize = obtenerEstiloLabelSmall(),
                                                 maxLines = 1,
                                                 overflow = TextOverflow.Ellipsis,
                                                 textAlign = TextAlign.Start,
@@ -2093,7 +2014,7 @@ fun InterfazModuloSac(
                                                 "Total $montoTotalComandado",
                                                 fontFamily = fontAksharPrincipal,
                                                 fontWeight = FontWeight.Medium,
-                                                fontSize = obtenerEstiloTitle(),
+                                                fontSize = obtenerEstiloBodySmall(),
                                                 maxLines = 1,
                                                 overflow = TextOverflow.Ellipsis,
                                                 textAlign = TextAlign.End,
@@ -2168,7 +2089,7 @@ fun InterfazModuloSac(
                     if (iniciarVentanaEliminarArticulo) "Eliminar Articulo de ${mesaActual.nombre}-${mesaActual.salon}" else "Agregar Articulo a ${mesaActual.nombre}-${mesaActual.salon}",
                     fontFamily = fontAksharPrincipal,
                     fontWeight = FontWeight.Medium,
-                    fontSize = obtenerEstiloHead(),
+                    fontSize = obtenerEstiloBodyMedium(),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     textAlign = TextAlign.Center,
@@ -2220,7 +2141,7 @@ fun InterfazModuloSac(
                             articuloActualSeleccionado.nombre,
                             fontFamily = fontAksharPrincipal,
                             fontWeight = FontWeight.Medium,
-                            fontSize = obtenerEstiloTitle(),
+                            fontSize = obtenerEstiloBodySmall(),
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
                             textAlign = TextAlign.Center,
@@ -2232,7 +2153,7 @@ fun InterfazModuloSac(
                                     if (iniciarVentanaAgregarArticulo) "Cantidad a agregar: " else "Cantidad a eliminar:  ",
                                     fontFamily = fontAksharPrincipal,
                                     fontWeight = FontWeight.Medium,
-                                    fontSize = obtenerEstiloBody(),
+                                    fontSize = obtenerEstiloLabelBig(),
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis,
                                     textAlign = TextAlign.Center,
@@ -2244,13 +2165,13 @@ fun InterfazModuloSac(
                                         onClick = {
                                             cantidadArticulos-= if(cantidadArticulos==1) 0 else 1
                                         },
-                                        modifier = Modifier.size(objetoAdaptardor.ajustarAltura(30))
+                                        modifier = Modifier.size(objetoAdaptardor.ajustarAncho(23))
                                     ) {
                                         Icon(
                                             imageVector = Icons.Filled.RemoveCircle,
                                             contentDescription = "Basurero",
                                             tint = Color.Black,
-                                            modifier = Modifier.size(objetoAdaptardor.ajustarAltura(30))
+                                            modifier = Modifier.size(objetoAdaptardor.ajustarAncho(23))
                                         )
                                     }
                                 }
@@ -2259,7 +2180,7 @@ fun InterfazModuloSac(
                                     cantidadArticulos.toString(),
                                     fontFamily = fontAksharPrincipal,
                                     fontWeight = FontWeight.Medium,
-                                    fontSize = obtenerEstiloBody(),
+                                    fontSize = obtenerEstiloLabelBig(),
                                     overflow = TextOverflow.Ellipsis,
                                     textAlign = TextAlign.Center,
                                     modifier = Modifier.width(objetoAdaptardor.ajustarAncho(35)).padding(2.dp)
@@ -2270,13 +2191,13 @@ fun InterfazModuloSac(
                                         onClick = {
                                             cantidadArticulos+=1
                                         },
-                                        modifier = Modifier.size(objetoAdaptardor.ajustarAltura(30))
+                                        modifier = Modifier.size(objetoAdaptardor.ajustarAncho(23))
                                     ) {
                                         Icon(
                                             imageVector = Icons.Filled.AddCircle,
                                             contentDescription = "Agregar Articulo",
                                             tint = Color.Black,
-                                            modifier = Modifier.size(objetoAdaptardor.ajustarAltura(30))
+                                            modifier = Modifier.size(objetoAdaptardor.ajustarAncho(23))
                                         )
                                     }
                                 }
@@ -2301,55 +2222,28 @@ fun InterfazModuloSac(
                 }
             },
             confirmButton = {
-                Button(
+                BButton(
+                    text = if (iniciarVentanaAgregarArticulo)  "Agregar" else "Eliminar",
                     onClick = {
                         if (iniciarVentanaAgregarArticulo) agregarArticulo= true else eliminarArticulo= true
                     },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color.Red, // Color de fondo del botón
-                        contentColor = Color.White,
-                        disabledContainerColor = Color.Red,
-                        disabledContentColor = Color.White
-                    )
-                ) {
-                    Text(
-                        if (iniciarVentanaAgregarArticulo)  "Agregar" else "Eliminar",
-                        fontFamily = fontAksharPrincipal,
-                        fontWeight = FontWeight.Medium,
-                        fontSize = objetoAdaptardor.ajustarFont(15),
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        textAlign = TextAlign.Center,
-                        color = Color.White
-                    )
-                }
+                    objetoAdaptardor = objetoAdaptardor,
+                    modifier = Modifier.width(objetoAdaptardor.ajustarAncho(120)),
+                    backgroundColor = Color.Red
+                )
             },
             dismissButton = {
-                Button(
+                BButton(
+                    text = "Cancelar",
                     onClick = {
                         iniciarVentanaEliminarArticulo=false
                         iniciarVentanaAgregarArticulo= false
                         cantidadArticulos= 1
                         anotacionComanda= ""
                     },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFF244BC0),
-                        contentColor = Color.White,
-                        disabledContainerColor = Color(0xFF244BC0),
-                        disabledContentColor = Color.White
-                    )
-                ) {
-                    Text(
-                        "Cancelar",
-                        fontFamily = fontAksharPrincipal,
-                        fontWeight = FontWeight.Medium,
-                        fontSize = objetoAdaptardor.ajustarFont(15),
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        textAlign = TextAlign.Center,
-                        color = Color.White
-                    )
-                }
+                    objetoAdaptardor = objetoAdaptardor,
+                    modifier = Modifier.width(objetoAdaptardor.ajustarAncho(120))
+                )
             }
         )
     }
@@ -2378,7 +2272,7 @@ fun InterfazModuloSac(
                         .wrapContentWidth(Alignment.CenterHorizontally)
                         .wrapContentHeight()
                         .align(Alignment.Center),
-                    shape = RoundedCornerShape(16.dp),
+                    shape = RoundedCornerShape(objetoAdaptardor.ajustarAltura(16)),
                     color = Color.White
                 ) {
                     Box(
@@ -2393,7 +2287,7 @@ fun InterfazModuloSac(
                                 "Mover Articulo ${mesaActual.nombre}-${mesaActual.salon}",
                                 fontFamily = fontAksharPrincipal,
                                 fontWeight = FontWeight.Medium,
-                                fontSize = obtenerEstiloHead(),
+                                fontSize = obtenerEstiloBodyMedium(),
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,
                                 textAlign = TextAlign.Center,
@@ -2434,7 +2328,7 @@ fun InterfazModuloSac(
                                 articuloActualSeleccionado.nombre,
                                 fontFamily = fontAksharPrincipal,
                                 fontWeight = FontWeight.Medium,
-                                fontSize = obtenerEstiloTitle(),
+                                fontSize = obtenerEstiloBodySmall(),
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,
                                 textAlign = TextAlign.Center,
@@ -2443,10 +2337,10 @@ fun InterfazModuloSac(
                             Box{
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     Text(
-                                        "Cantidad articulos a mover",
+                                        "Cantidad articulos a mover:",
                                         fontFamily = fontAksharPrincipal,
                                         fontWeight = FontWeight.Medium,
-                                        fontSize = obtenerEstiloTitle(),
+                                        fontSize = obtenerEstiloBodySmall(),
                                         maxLines = 1,
                                         overflow = TextOverflow.Ellipsis,
                                         textAlign = TextAlign.Center,
@@ -2458,13 +2352,13 @@ fun InterfazModuloSac(
                                             onClick = {
                                                 cantidadArticulos-= if(cantidadArticulos==1) 0 else 1
                                             },
-                                            modifier = Modifier.size(objetoAdaptardor.ajustarAltura(30))
+                                            modifier = Modifier.size(objetoAdaptardor.ajustarAncho(23))
                                         ) {
                                             Icon(
                                                 imageVector = Icons.Filled.RemoveCircle,
                                                 contentDescription = "Basurero",
                                                 tint = Color.Black,
-                                                modifier = Modifier.size(objetoAdaptardor.ajustarAltura(30))
+                                                modifier = Modifier.size(objetoAdaptardor.ajustarAncho(23))
                                             )
                                         }
                                     }
@@ -2473,7 +2367,7 @@ fun InterfazModuloSac(
                                         cantidadArticulos.toString(),
                                         fontFamily = fontAksharPrincipal,
                                         fontWeight = FontWeight.Medium,
-                                        fontSize = obtenerEstiloBody(),
+                                        fontSize = obtenerEstiloLabelBig(),
                                         overflow = TextOverflow.Ellipsis,
                                         textAlign = TextAlign.Center,
                                         modifier = Modifier.width(objetoAdaptardor.ajustarAncho(35)).padding(2.dp)
@@ -2484,13 +2378,13 @@ fun InterfazModuloSac(
                                             onClick = {
                                                 cantidadArticulos+=1
                                             },
-                                            modifier = Modifier.size(objetoAdaptardor.ajustarAltura(30))
+                                            modifier = Modifier.size(objetoAdaptardor.ajustarAncho(23))
                                         ) {
                                             Icon(
                                                 imageVector = Icons.Filled.AddCircle,
                                                 contentDescription = "Agregar Articulo",
                                                 tint = Color.Black,
-                                                modifier = Modifier.size(objetoAdaptardor.ajustarAltura(30))
+                                                modifier = Modifier.size(objetoAdaptardor.ajustarAncho(23))
                                             )
                                         }
                                     }
@@ -2498,7 +2392,7 @@ fun InterfazModuloSac(
                             }
 
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                AgregarTextFieldMultifuncional(
+                                TextFieldMultifuncional(
                                     label = "Mesa Destino",
                                     opciones2 = opcionesMesas,
                                     usarOpciones2 = true,
@@ -2512,7 +2406,7 @@ fun InterfazModuloSac(
                                     tomarAnchoMaximo = false,
                                     medidaAncho = 100
                                 )
-                                AgregarTextFieldMultifuncional(
+                                TextFieldMultifuncional(
                                     label = "Sub-Cuenta Destino",
                                     opciones2 = opcionesSubCuentasDestino,
                                     usarOpciones2 = true,
@@ -2541,61 +2435,32 @@ fun InterfazModuloSac(
                             }
 
                             Row {
-                                Button(
+                                BButton(
+                                    text = "Cancelar",
                                     onClick = {
                                         iniciarMenuMoverArticulo= false
                                         cantidadArticulos= 1
                                     },
-                                    colors = ButtonDefaults.buttonColors(
-                                        containerColor = Color(0xFF244BC0), // Color de fondo del botón
-                                        contentColor = Color.White,
-                                        disabledContainerColor = Color(0xFF244BC0),
-                                        disabledContentColor = Color.White
-                                    )
-                                ) {
-                                    Text(
-                                        "Cancelar",
-                                        fontFamily = fontAksharPrincipal,
-                                        fontWeight = FontWeight.Medium,
-                                        fontSize = objetoAdaptardor.ajustarFont(15),
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis,
-                                        textAlign = TextAlign.Center,
-                                        color = Color.White
-                                    )
-                                }
+                                    objetoAdaptardor = objetoAdaptardor,
+                                    modifier = Modifier.width(objetoAdaptardor.ajustarAncho(120))
+                                )
 
                                 Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(8)))
-
-                                Button(
+                                BButton(
+                                    text = "Mover",
                                     onClick = {
                                         moverArticulo= true
                                     },
-                                    colors = ButtonDefaults.buttonColors(
-                                        containerColor = Color.Red, // Color de fondo del botón
-                                        contentColor = Color.White,
-                                        disabledContainerColor = Color.Red,
-                                        disabledContentColor = Color.White
-                                    )
-                                ) {
-                                    Text(
-                                        "Mover",
-                                        fontFamily = fontAksharPrincipal,
-                                        fontWeight = FontWeight.Medium,
-                                        fontSize = objetoAdaptardor.ajustarFont(15),
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis,
-                                        textAlign = TextAlign.Center,
-                                        color = Color.White
-                                    )
-                                }
+                                    objetoAdaptardor = objetoAdaptardor,
+                                    backgroundColor = Color.Red,
+                                    modifier = Modifier.width(objetoAdaptardor.ajustarAncho(120))
+                                )
                             }
                         }
                     }
                 }
             }
         }
-
     }
 
     if (iniciarMenuMoverMesa){
@@ -2638,7 +2503,7 @@ fun InterfazModuloSac(
                                 "Mover Mesa ${mesaActual.nombre}-${mesaActual.salon}",
                                 fontFamily = fontAksharPrincipal,
                                 fontWeight = FontWeight.Medium,
-                                fontSize = objetoAdaptardor.ajustarFont(27),
+                                fontSize = obtenerEstiloBodyBig(),
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,
                                 textAlign = TextAlign.Center,
@@ -2675,7 +2540,7 @@ fun InterfazModuloSac(
                             Box(
                                 contentAlignment = Alignment.Center
                             ){
-                                AgregarTextFieldMultifuncional(
+                                TextFieldMultifuncional(
                                     label = "Mesa Destino",
                                     opciones2 = opcionesMesas,
                                     usarOpciones2 = true,
@@ -2691,55 +2556,27 @@ fun InterfazModuloSac(
                             }
                             Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(8)))
                             Row {
-                                Button(
+                                BButton(
+                                    text = "Cancelar",
                                     onClick = {
                                         codUsuarioIngresado=codUsuario
                                         passwordIngresada=""
                                         iniciarMenuMoverMesa= false
                                     },
-                                    colors = ButtonDefaults.buttonColors(
-                                        containerColor = Color(0xFF244BC0), // Color de fondo del botón
-                                        contentColor = Color.White,
-                                        disabledContainerColor = Color(0xFF244BC0),
-                                        disabledContentColor = Color.White
-                                    )
-                                ) {
-                                    Text(
-                                        "Cancelar",
-                                        fontFamily = fontAksharPrincipal,
-                                        fontWeight = FontWeight.Medium,
-                                        fontSize = objetoAdaptardor.ajustarFont(15),
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis,
-                                        textAlign = TextAlign.Center,
-                                        color = Color.White
-                                    )
-                                }
+                                    objetoAdaptardor = objetoAdaptardor,
+                                    modifier = Modifier.width(objetoAdaptardor.ajustarAncho(120)),
+                                )
                                 Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(8)))
-                                Button(
+                                BButton(
+                                    text = "Mover",
                                     onClick = {
                                         moverMesa= true
                                         iniciarMenuMoverMesa= false
                                     },
-                                    colors = ButtonDefaults.buttonColors(
-                                        containerColor = Color.Red, // Color de fondo del botón
-                                        contentColor = Color.White,
-                                        disabledContainerColor = Color.Red,
-                                        disabledContentColor = Color.White
-
-                                    )
-                                ) {
-                                    Text(
-                                        "Mover",
-                                        fontFamily = fontAksharPrincipal,
-                                        fontWeight = FontWeight.Medium,
-                                        fontSize = objetoAdaptardor.ajustarFont(15),
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis,
-                                        textAlign = TextAlign.Center,
-                                        color = Color.White
-                                    )
-                                }
+                                    objetoAdaptardor = objetoAdaptardor,
+                                    modifier = Modifier.width(objetoAdaptardor.ajustarAncho(120)),
+                                    backgroundColor = Color.Red
+                                )
                             }
                         }
                     }
@@ -2807,7 +2644,7 @@ fun InterfazModuloSac(
                                     "Cobrar impuesto de Servicio",
                                     fontFamily = fontAksharPrincipal,
                                     fontWeight = FontWeight.Medium,
-                                    fontSize = obtenerEstiloTitle(),
+                                    fontSize = obtenerEstiloBodySmall(),
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis,
                                     textAlign = TextAlign.Center,
@@ -2823,36 +2660,20 @@ fun InterfazModuloSac(
                                 )
                             }
                             Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(8)))
-                            Button(
+                            BButton(
+                                text = "Salir",
                                 onClick = {
                                     iniciarMenuAjustes= false
                                 },
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = Color.Red, // Color de fondo del botón
-                                    contentColor = Color.White,
-                                    disabledContainerColor = Color.Red,
-                                    disabledContentColor = Color.White
-                                )
-                            ) {
-                                Text(
-                                    "Salir",
-                                    fontFamily = fontAksharPrincipal,
-                                    fontWeight = FontWeight.Medium,
-                                    fontSize = obtenerEstiloBody(),
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis,
-                                    textAlign = TextAlign.Center,
-                                    color = Color.White
-                                )
-                            }
-
+                                objetoAdaptardor = objetoAdaptardor,
+                                modifier = Modifier.width(objetoAdaptardor.ajustarAncho(120)),
+                                backgroundColor = Color.Red
+                            )
                         }
                     }
                 }
             }
         }
-
-
     }
 
     if (iniciarMenuCrearExpress){
@@ -2912,13 +2733,15 @@ fun InterfazModuloSac(
                                             "Cedula:",
                                             fontFamily = fontAksharPrincipal,
                                             fontWeight = FontWeight.Medium,
-                                            fontSize = obtenerEstiloTitle(),
+                                            fontSize = obtenerEstiloBodySmall(),
                                             maxLines = 1,
                                             overflow = TextOverflow.Ellipsis,
                                             textAlign = TextAlign.Center,
                                             color = Color.Black
                                         )
-                                        Row {
+                                        Row (
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ){
                                             BBasicTextField(
                                                 value = cedulaCliente,
                                                 onValueChange = {
@@ -2938,9 +2761,7 @@ fun InterfazModuloSac(
                                                     color = 0xFF244BC0,
                                                     onClick = {
                                                         iniciarBusquedaClienteByCedula = true
-                                                    },
-                                                    quitarPadInterno = true,
-                                                    alto = 60
+                                                    }
                                                 )
                                             }
                                         }
@@ -2949,7 +2770,7 @@ fun InterfazModuloSac(
                                             "Nombre:",
                                             fontFamily = fontAksharPrincipal,
                                             fontWeight = FontWeight.Medium,
-                                            fontSize = obtenerEstiloTitle(),
+                                            fontSize = obtenerEstiloBodySmall(),
                                             maxLines = 1,
                                             overflow = TextOverflow.Ellipsis,
                                             textAlign = TextAlign.Center,
@@ -2971,7 +2792,7 @@ fun InterfazModuloSac(
                                             "Telefono:",
                                             fontFamily = fontAksharPrincipal,
                                             fontWeight = FontWeight.Medium,
-                                            fontSize = obtenerEstiloTitle(),
+                                            fontSize = obtenerEstiloBodySmall(),
                                             maxLines = 1,
                                             overflow = TextOverflow.Ellipsis,
                                             textAlign = TextAlign.Center,
@@ -2995,7 +2816,7 @@ fun InterfazModuloSac(
                                             "Correo:",
                                             fontFamily = fontAksharPrincipal,
                                             fontWeight = FontWeight.Medium,
-                                            fontSize = obtenerEstiloTitle(),
+                                            fontSize = obtenerEstiloBodySmall(),
                                             maxLines = 1,
                                             overflow = TextOverflow.Ellipsis,
                                             textAlign = TextAlign.Center,
@@ -3017,7 +2838,7 @@ fun InterfazModuloSac(
                                             "Direccion:",
                                             fontFamily = fontAksharPrincipal,
                                             fontWeight = FontWeight.Medium,
-                                            fontSize = obtenerEstiloTitle(),
+                                            fontSize = obtenerEstiloBodySmall(),
                                             maxLines = 1,
                                             overflow = TextOverflow.Ellipsis,
                                             textAlign = TextAlign.Center,
@@ -3092,7 +2913,9 @@ fun InterfazModuloSac(
                                     color = Color.Black
                                 )
                                 Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(6)))
-                                Row {
+                                Row (
+                                    verticalAlignment = Alignment.CenterVertically
+                                ){
                                     BBasicTextField(
                                         value = datosIngresadosBarraBusquedaCliente,
                                         onValueChange = {
@@ -3119,9 +2942,7 @@ fun InterfazModuloSac(
                                         color = 0xFFEB3324,
                                         onClick = {
                                             iniciarMenuCrearExpress = false
-                                        },
-                                        quitarPadInterno = true,
-                                        alto = 60
+                                        }
                                     )
                                 }
 
@@ -3196,7 +3017,7 @@ fun InterfazModuloSac(
                     "Agregar Nueva Sub-Cuenta",
                     fontFamily = fontAksharPrincipal,
                     fontWeight = FontWeight.Medium,
-                    fontSize = obtenerEstiloHead(),
+                    fontSize = obtenerEstiloBodyMedium(),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     textAlign = TextAlign.Center,
@@ -3224,78 +3045,35 @@ fun InterfazModuloSac(
                 }
             },
             confirmButton = {
-                Button(
+                BButton(
+                    text = "Crear",
                     onClick = {
                         if (nombreNuevaSubCuenta.isEmpty()){
-                            val jsonObject = JSONObject("""
-                                {
-                                    "code": 400,
-                                    "status": "error",
-                                    "data": "Ingrese el nombre de la Sub-Cuenta"
-                                }
-                                """
-                            )
-                            estadoRespuestaApi.cambiarEstadoRespuestaApi(mostrarRespuesta = true, datosRespuesta = jsonObject)
-                        }else{
+                            mostrarMensajeError("Ingrese el nombre de la Sub-Cuenta")
+                        }
+                        else{
                             opcionesSubCuentasDestino.value[nombreNuevaSubCuenta.uppercase()]=nombreNuevaSubCuenta.uppercase()
                             subCuentaDestinoArticulo= nombreNuevaSubCuenta.uppercase()
-                            val jsonObject = JSONObject("""
-                                {
-                                    "code": 200,
-                                    "status": "ok",
-                                    "data": "Sub-Cuenta creada"
-                                }
-                            """
-                            )
                             iniciarMenuAgregarSubCuenta=false
                             nombreNuevaSubCuenta=""
-                            estadoRespuestaApi.cambiarEstadoRespuestaApi(mostrarRespuesta = true, datosRespuesta = jsonObject)
+                            mostrarMensajeExito("Sub-Cuenta creada")
                         }
-
                     },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFF244BC0), // Color de fondo del botón
-                        contentColor = Color.White,
-                        disabledContainerColor = Color(0xFF244BC0),
-                        disabledContentColor = Color.White
-                    )
-                ) {
-                    Text(
-                        "Crear",
-                        fontFamily = fontAksharPrincipal,
-                        fontWeight = FontWeight.Medium,
-                        fontSize = objetoAdaptardor.ajustarFont(15),
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        textAlign = TextAlign.Center,
-                        color = Color.White
-                    )
-                }
+                    objetoAdaptardor = objetoAdaptardor,
+                    modifier = Modifier.width(objetoAdaptardor.ajustarAncho(120)),
+                )
             },
             dismissButton = {
-                Button(
+                BButton(
+                    text = "Cancelar",
                     onClick = {
                         iniciarMenuAgregarSubCuenta=false
                         nombreNuevaSubCuenta=""
                     },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color.Red, // Color de fondo del botón
-                        contentColor = Color.White,
-                        disabledContainerColor = Color.Red,
-                        disabledContentColor = Color.White
-                    )
-                ) {
-                    Text(
-                        "Cancelar",
-                        fontFamily = fontAksharPrincipal,
-                        fontWeight = FontWeight.Medium,
-                        fontSize = objetoAdaptardor.ajustarFont(15),
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        textAlign = TextAlign.Center,
-                        color = Color.White
-                    )
-                }
+                    objetoAdaptardor = objetoAdaptardor,
+                    backgroundColor = Color.Red,
+                    modifier = Modifier.width(objetoAdaptardor.ajustarAncho(120))
+                )
             }
         )
     }
@@ -3328,7 +3106,7 @@ fun InterfazModuloSac(
                             "¿Desea eliminar todos los articulos de la mesa?",
                             fontFamily = fontAksharPrincipal,
                             fontWeight = FontWeight.Medium,
-                            fontSize = obtenerEstiloBody(),
+                            fontSize = obtenerEstiloLabelBig(),
                             overflow = TextOverflow.Ellipsis,
                             textAlign = TextAlign.Justify,
                             color = Color.Black
@@ -3361,54 +3139,29 @@ fun InterfazModuloSac(
                 }
             },
             confirmButton = {
-                Button(
+                BButton(
+                    text = "Quitar",
                     onClick = {
                         quitarMesa=true
                     },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color.Red, // Color de fondo del botón
-                        contentColor = Color.White,
-                        disabledContainerColor = Color.Red,
-                        disabledContentColor = Color.White
-                    )
-                ) {
-                    Text(
-                        "Quitar",
-                        fontFamily = fontAksharPrincipal,
-                        fontWeight = FontWeight.Medium,
-                        fontSize = objetoAdaptardor.ajustarFont(15),
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        textAlign = TextAlign.Center,
-                        color = Color.White
-                    )
-                }
+                    objetoAdaptardor = objetoAdaptardor,
+                    backgroundColor = Color.Red,
+                    modifier = Modifier.width(objetoAdaptardor.ajustarAncho(120))
+
+                )
             },
             dismissButton = {
-                Button(
+                BButton(
+                    text = "Cancelar",
                     onClick = {
                         codUsuarioIngresado=codUsuario
                         passwordIngresada=""
                         iniciarMenuQuitarMesa= false
                     },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFF244BC0), // Color de fondo del botón
-                        contentColor = Color.White,
-                        disabledContainerColor = Color(0xFF244BC0),
-                        disabledContentColor = Color.White
-                    )
-                ) {
-                    Text(
-                        "Cancelar",
-                        fontFamily = fontAksharPrincipal,
-                        fontWeight = FontWeight.Medium,
-                        fontSize = objetoAdaptardor.ajustarFont(15),
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        textAlign = TextAlign.Center,
-                        color = Color.White
-                    )
-                }
+                    objetoAdaptardor = objetoAdaptardor,
+                    modifier = Modifier.width(objetoAdaptardor.ajustarAncho(120))
+
+                )
             }
         )
     }
@@ -3441,7 +3194,7 @@ fun InterfazModuloSac(
                             "¿Desea confirmar los cambios?",
                             fontFamily = fontAksharPrincipal,
                             fontWeight = FontWeight.Medium,
-                            fontSize = obtenerEstiloBody(),
+                            fontSize = obtenerEstiloLabelBig(),
                             overflow = TextOverflow.Ellipsis,
                             textAlign = TextAlign.Justify,
                             color = Color.Black
@@ -3474,54 +3227,27 @@ fun InterfazModuloSac(
                 }
             },
             confirmButton = {
-                Button(
+                BButton(
+                    text = "Continuar",
                     onClick = {
                         cambiarPrmImp2=true
                     },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color.Red, // Color de fondo del botón
-                        contentColor = Color.White,
-                        disabledContainerColor = Color.Red,
-                        disabledContentColor = Color.White
-                    )
-                ) {
-                    Text(
-                        "Continuar",
-                        fontFamily = fontAksharPrincipal,
-                        fontWeight = FontWeight.Medium,
-                        fontSize = objetoAdaptardor.ajustarFont(15),
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        textAlign = TextAlign.Center,
-                        color = Color.White
-                    )
-                }
+                    objetoAdaptardor = objetoAdaptardor,
+                    backgroundColor = Color.Red,
+                    modifier = Modifier.width(objetoAdaptardor.ajustarAncho(120))
+                )
             },
             dismissButton = {
-                Button(
+                BButton(
+                    text = "Cancelar",
                     onClick = {
                         codUsuarioIngresado=codUsuario
                         passwordIngresada=""
                         iniciarMenuConfCambPrm= false
                     },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFF244BC0), // Color de fondo del botón
-                        contentColor = Color.White,
-                        disabledContainerColor = Color(0xFF244BC0),
-                        disabledContentColor = Color.White
-                    )
-                ) {
-                    Text(
-                        "Cancelar",
-                        fontFamily = fontAksharPrincipal,
-                        fontWeight = FontWeight.Medium,
-                        fontSize = objetoAdaptardor.ajustarFont(15),
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        textAlign = TextAlign.Center,
-                        color = Color.White
-                    )
-                }
+                    objetoAdaptardor = objetoAdaptardor,
+                    modifier = Modifier.width(objetoAdaptardor.ajustarAncho(120))
+                )
             }
         )
     }
@@ -3543,7 +3269,7 @@ internal fun BxContendorDatosMesa(
     val dpAnchoPantalla = configuration.screenWidthDp
     val dpAltoPantalla = configuration.screenHeightDp
     val dpFontPantalla= configuration.fontScale
-    val objetoAdaptardor= FuncionesParaAdaptarContenidoCompact(dpAltoPantalla, dpAnchoPantalla, dpFontPantalla)
+    val objetoAdaptardor= FuncionesParaAdaptarContenido(dpAltoPantalla, dpAnchoPantalla, dpFontPantalla)
     val fontAksharPrincipal = FontFamily(Font(R.font.akshar_medium))
     var iniciarPantallaSacComanda by remember { mutableStateOf(false) }
 
@@ -3608,8 +3334,8 @@ internal fun BxContendorDatosMesa(
 
                 Text(text = datosMesa.nombre,
                     fontFamily = fontAksharPrincipal,
-                    fontWeight =    FontWeight.SemiBold,
-                    fontSize = obtenerEstiloTitle(),
+                    fontWeight = FontWeight.SemiBold,
+                    fontSize = obtenerEstiloBodySmall(),
                     color = Color.White,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
@@ -3628,8 +3354,8 @@ internal fun BxContendorDatosMesa(
                     Text(
                         text =  if (datosMesa.estado == "0")  "Disponible" else "Sub Cuentas: ${datosMesa.cantidadSubcuentas}",
                         fontFamily = fontAksharPrincipal,
-                        fontWeight =    FontWeight.Light,
-                        fontSize = obtenerEstiloBody(),
+                        fontWeight =    FontWeight.Medium,
+                        fontSize = obtenerEstiloLabelBig(),
                         color = Color.Black,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
@@ -3652,8 +3378,8 @@ internal fun BxContendorDatosMesa(
 
                     Text(text =  if (datosMesa.estado == "0")  "" else "Tiempo: $tiempo",
                         fontFamily = fontAksharPrincipal,
-                        fontWeight =    FontWeight.Light,
-                        fontSize = obtenerEstiloBody(),
+                        fontWeight =    FontWeight.Medium,
+                        fontSize = obtenerEstiloLabelBig(),
                         color = Color.Black,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
@@ -3672,8 +3398,8 @@ internal fun BxContendorDatosMesa(
                     }
                     Text(text =  if (datosMesa.estado == "0")  "" else "Total: $totalMiles",
                         fontFamily = fontAksharPrincipal,
-                        fontWeight =    FontWeight.Light,
-                        fontSize = obtenerEstiloBody(),
+                        fontWeight = FontWeight.Medium,
+                        fontSize = obtenerEstiloLabelBig(),
                         color = Color.Black,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
@@ -3700,7 +3426,7 @@ fun BxContenerdorCliente(
     val dpAnchoPantalla = configuration.screenWidthDp
     val dpAltoPantalla = configuration.screenHeightDp
     val dpFontPantalla= configuration.fontScale
-    val objetoAdaptardor= FuncionesParaAdaptarContenidoCompact(dpAltoPantalla, dpAnchoPantalla, dpFontPantalla, isPantallaHorizontal = true)
+    val objetoAdaptardor= FuncionesParaAdaptarContenido(dpAltoPantalla, dpAnchoPantalla, dpFontPantalla, isPantallaHorizontal = true)
     val fontAksharPrincipal = FontFamily(Font(R.font.akshar_medium))
     Card(
         modifier = Modifier
@@ -3742,7 +3468,7 @@ fun BxContenerdorCliente(
                         Text(text = "#"+datosCliente.codigo,
                             fontFamily = fontAksharPrincipal,
                             fontWeight =    FontWeight.SemiBold,
-                            fontSize =  obtenerEstiloBody(),
+                            fontSize =  obtenerEstiloLabelBig(),
                             color = Color.Black,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
@@ -3754,7 +3480,7 @@ fun BxContenerdorCliente(
                         Text(datosCliente.nombreJuridico
                             ,fontFamily = fontAksharPrincipal,
                             fontWeight =    FontWeight.SemiBold,
-                            fontSize =  obtenerEstiloBody(),
+                            fontSize =  obtenerEstiloLabelBig(),
                             color = Color(0xFF626262),
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
@@ -3767,7 +3493,7 @@ fun BxContenerdorCliente(
                         Text(datosCliente.Telefonos
                             ,fontFamily = fontAksharPrincipal,
                             fontWeight =    FontWeight.SemiBold,
-                            fontSize =  obtenerEstiloBody(),
+                            fontSize =  obtenerEstiloLabelBig(),
                             color = Color(0xFF626262),
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
@@ -3780,7 +3506,7 @@ fun BxContenerdorCliente(
                         Text(datosCliente.correo
                             ,fontFamily = fontAksharPrincipal,
                             fontWeight =    FontWeight.SemiBold,
-                            fontSize =  obtenerEstiloBody(),
+                            fontSize =  obtenerEstiloLabelBig(),
                             color = Color(0xFF626262),
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
@@ -3792,7 +3518,7 @@ fun BxContenerdorCliente(
                         Text(datosCliente.Direccion
                             ,fontFamily = fontAksharPrincipal,
                             fontWeight =    FontWeight.SemiBold,
-                            fontSize =  obtenerEstiloBody(),
+                            fontSize =  obtenerEstiloLabelBig(),
                             color = Color(0xFF626262),
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
@@ -3817,7 +3543,7 @@ fun BxContenerdorCliente(
                                 imageVector = Icons.Filled.MoreHoriz,
                                 contentDescription = "Icono mostrar opciones clientes",
                                 tint = Color.DarkGray,
-                                modifier = Modifier.size(objetoAdaptardor.ajustarAltura(50))
+                                modifier = Modifier.size(objetoAdaptardor.ajustarAncho(23))
                             )
                         }
                     }

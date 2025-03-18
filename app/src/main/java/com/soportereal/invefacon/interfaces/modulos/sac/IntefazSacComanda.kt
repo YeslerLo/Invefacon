@@ -17,7 +17,6 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -36,9 +35,9 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountTree
 import androidx.compose.material.icons.filled.AddCircle
@@ -49,10 +48,7 @@ import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.RemoveCircle
 import androidx.compose.material.icons.filled.RestaurantMenu
-import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -84,11 +80,9 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
@@ -98,15 +92,21 @@ import androidx.navigation.NavController
 import coil.compose.SubcomposeAsyncImage
 import com.google.accompanist.systemuicontroller.SystemUiController
 import com.soportereal.invefacon.R
+import com.soportereal.invefacon.funciones_de_interfaces.BBasicTextField
+import com.soportereal.invefacon.funciones_de_interfaces.BButton
 import com.soportereal.invefacon.funciones_de_interfaces.RutasPatallas
+import com.soportereal.invefacon.funciones_de_interfaces.TextFieldMultifuncional
+import com.soportereal.invefacon.funciones_de_interfaces.mostrarMensajeError
+import com.soportereal.invefacon.funciones_de_interfaces.mostrarMensajeExito
 import com.soportereal.invefacon.funciones_de_interfaces.obtenerParametro
-import com.soportereal.invefacon.interfaces.FuncionesParaAdaptarContenidoCompact
-import com.soportereal.invefacon.interfaces.modulos.clientes.AgregarTextFieldMultifuncional
-import com.soportereal.invefacon.interfaces.obtenerEstiloBody
-import com.soportereal.invefacon.interfaces.obtenerEstiloDisplay
-import com.soportereal.invefacon.interfaces.obtenerEstiloHead
-import com.soportereal.invefacon.interfaces.obtenerEstiloLabel
-import com.soportereal.invefacon.interfaces.obtenerEstiloTitle
+import com.soportereal.invefacon.interfaces.FuncionesParaAdaptarContenido
+import com.soportereal.invefacon.interfaces.obtenerEstiloBodyBig
+import com.soportereal.invefacon.interfaces.obtenerEstiloBodyMedium
+import com.soportereal.invefacon.interfaces.obtenerEstiloBodySmall
+import com.soportereal.invefacon.interfaces.obtenerEstiloLabelBig
+import com.soportereal.invefacon.interfaces.obtenerEstiloLabelSmall
+import com.soportereal.invefacon.interfaces.obtenerEstiloTitleBig
+import com.soportereal.invefacon.interfaces.obtenerEstiloTitleSmall
 import com.soportereal.invefacon.interfaces.pantallas_principales.estadoRespuestaApi
 import com.soportereal.invefacon.interfaces.pantallas_principales.objetoEstadoPantallaCarga
 import kotlinx.coroutines.delay
@@ -142,7 +142,7 @@ fun InterfazSacComanda(
     val dpAltoPantalla = configuration.screenHeightDp
     val dpFontPantalla= configuration.fontScale
     val objectoProcesadorDatosApi= ProcesarDatosModuloSac(token)
-    val objetoAdaptardor= FuncionesParaAdaptarContenidoCompact(dpAltoPantalla, dpAnchoPantalla, dpFontPantalla, true)
+    val objetoAdaptardor= FuncionesParaAdaptarContenido(dpAltoPantalla, dpAnchoPantalla, dpFontPantalla, true)
     var datosIngresadosBarraBusqueda by rememberSaveable  { mutableStateOf("") }
     var montoTotal by rememberSaveable  {mutableDoubleStateOf(0.00) }
     var listaArticulosActuales by remember { mutableStateOf<List<ArticuloSac>>(emptyList()) }
@@ -169,7 +169,6 @@ fun InterfazSacComanda(
     val regresarPantallaAnterior by estadoRespuestaApi.estadoBtOk.collectAsState()
     var regresarPantalla by remember { mutableStateOf(false) }
     var iniciarVentanaAgregarCombo by remember { mutableStateOf(false) }
-    val lazyStateArticulosCombo= rememberLazyListState()
     var precioTotalArticulo by remember { mutableDoubleStateOf(0.00) }
     var iniciarEdicionArticulo by remember { mutableStateOf(false) }
     var articuloActualSeleccionadoEdicion by remember { mutableStateOf(ArticulosSeleccionadosSac()) }
@@ -261,7 +260,6 @@ fun InterfazSacComanda(
                     val datosArticulosSac = result.getJSONArray("data")
                     for(i in 0 until datosArticulosSac.length()){
                         val datosArticulo= datosArticulosSac.getJSONObject(i)
-                        println(datosArticulo)
                         val imp1 = datosArticulo.getDouble("imp1")
 
                         val precioUnitario = BigDecimal(datosArticulo.getDouble("precioArticulo"))
@@ -553,7 +551,7 @@ fun InterfazSacComanda(
                         articulo.nombre,
                         fontFamily = fontAksharPrincipal,
                         fontWeight = FontWeight.Medium,
-                        fontSize = obtenerEstiloBody(),
+                        fontSize = obtenerEstiloLabelBig(),
                         overflow = TextOverflow.Ellipsis,
                         textAlign = TextAlign.Start,
                         modifier = Modifier
@@ -579,13 +577,13 @@ fun InterfazSacComanda(
                                     )
                                     agregarOActualizarProducto(articuloSeleccionado)
                                 },
-                                modifier = Modifier.size(objetoAdaptardor.ajustarAltura(25))
+                                modifier = Modifier.size(objetoAdaptardor.ajustarAncho(23))
                             ) {
                                 Icon(
                                     imageVector = if(articulo.cantidad==1) Icons.Filled.Delete else Icons.Filled.RemoveCircle,
                                     contentDescription = "Basurero",
                                     tint = if(articulo.cantidad==1)Color.Red else Color.Black,
-                                    modifier = Modifier.size(objetoAdaptardor.ajustarAltura(25))
+                                    modifier = Modifier.size(objetoAdaptardor.ajustarAncho(23))
                                 )
                             }
 
@@ -593,7 +591,7 @@ fun InterfazSacComanda(
                                 articulo.cantidad.toString(),
                                 fontFamily = fontAksharPrincipal,
                                 fontWeight = FontWeight.Medium,
-                                fontSize = obtenerEstiloLabel(),
+                                fontSize = obtenerEstiloLabelSmall(),
                                 overflow = TextOverflow.Ellipsis,
                                 textAlign = TextAlign.Center,
                                 modifier = Modifier
@@ -614,13 +612,13 @@ fun InterfazSacComanda(
                                         )
                                         agregarOActualizarProducto(articuloSeleccionado)
                                     },
-                                    modifier = Modifier.size(objetoAdaptardor.ajustarAltura(30))
+                                    modifier = Modifier.size(objetoAdaptardor.ajustarAncho(23))
                                 ) {
                                     Icon(
                                         imageVector = Icons.Filled.AddCircle,
                                         contentDescription = "Basurero",
                                         tint = Color.Black,
-                                        modifier = Modifier.size(objetoAdaptardor.ajustarAltura(30))
+                                        modifier = Modifier.size(objetoAdaptardor.ajustarAncho(23))
                                     )
                                 }
                             }else{
@@ -628,13 +626,13 @@ fun InterfazSacComanda(
                                     onClick = {
                                         expanded = !expanded
                                     },
-                                    modifier = Modifier.size(objetoAdaptardor.ajustarAltura(30))
+                                    modifier = Modifier.size(objetoAdaptardor.ajustarAncho(23))
                                 ) {
                                     Icon(
                                         imageVector = if (expanded) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown,
                                         contentDescription = "Flechas",
                                         tint = Color.Black,
-                                        modifier = Modifier.size(objetoAdaptardor.ajustarAltura(30))
+                                        modifier = Modifier.size(objetoAdaptardor.ajustarAncho(23))
                                     )
                                 }
                             }
@@ -663,7 +661,7 @@ fun InterfazSacComanda(
                                     text = articuloCombo.cantidad.toString(),
                                     fontFamily = fontAksharPrincipal,
                                     fontWeight = FontWeight.Light,
-                                    fontSize = obtenerEstiloLabel(),
+                                    fontSize = obtenerEstiloLabelSmall(),
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis,
                                     textAlign = TextAlign.Center,
@@ -677,7 +675,7 @@ fun InterfazSacComanda(
                                     text = "${articuloCombo.nombreGrupo}: ${articuloCombo.nombre}",
                                     fontFamily = fontAksharPrincipal,
                                     fontWeight = FontWeight.Light,
-                                    fontSize = obtenerEstiloLabel(),
+                                    fontSize = obtenerEstiloLabelSmall(),
                                     overflow = TextOverflow.Ellipsis,
                                     textAlign = TextAlign.Start,
                                     modifier = Modifier
@@ -690,7 +688,7 @@ fun InterfazSacComanda(
                                     text = "+ \u20A1 ${String.format(Locale.US, "%,.2f", articuloCombo.precio * articuloCombo.cantidad)}",
                                     fontFamily = fontAksharPrincipal,
                                     fontWeight = FontWeight.Light,
-                                    fontSize = obtenerEstiloLabel(),
+                                    fontSize = obtenerEstiloLabelSmall(),
                                     overflow = TextOverflow.Ellipsis,
                                     textAlign = TextAlign.End,
                                     modifier = Modifier
@@ -710,7 +708,7 @@ fun InterfazSacComanda(
                         articulo.anotacion,
                         fontFamily = fontAksharPrincipal,
                         fontWeight = FontWeight.Light,
-                        fontSize = obtenerEstiloLabel(),
+                        fontSize = obtenerEstiloLabelSmall(),
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                         textAlign = TextAlign.Start,
@@ -723,7 +721,7 @@ fun InterfazSacComanda(
                         "\u20A1 "+String.format(Locale.US, "%,.2f", articulo.montoTotal.toString().replace(",", "").toDouble()),
                         fontFamily = fontAksharPrincipal,
                         fontWeight = FontWeight.Light,
-                        fontSize = obtenerEstiloBody(),
+                        fontSize = obtenerEstiloLabelBig(),
                         overflow = TextOverflow.Ellipsis,
                         textAlign = TextAlign.End,
                         modifier = Modifier
@@ -821,7 +819,7 @@ fun InterfazSacComanda(
                         Box(
                             modifier = Modifier
                                 .width(objetoAdaptardor.ajustarAncho(133))
-                                .background(Color.Black.copy(alpha = 0.5f)),
+                                .background(Color.Black.copy(alpha = 0.6f)),
                             contentAlignment = Alignment.Center
                         ) {
                             Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(6)))
@@ -829,10 +827,11 @@ fun InterfazSacComanda(
                                 articulo.nombre,
                                 fontFamily = fontAksharPrincipal,
                                 fontWeight = FontWeight.Light,
-                                fontSize = obtenerEstiloLabel(),
+                                fontSize = obtenerEstiloLabelBig(),
                                 overflow = TextOverflow.Ellipsis,
                                 textAlign = TextAlign.Center,
                                 color = Color.White,
+                                maxLines = 2,
                                 modifier = Modifier.width(objetoAdaptardor.ajustarAncho(100))
                             )
                         }
@@ -843,14 +842,14 @@ fun InterfazSacComanda(
                         Box(
                             modifier = Modifier
                                 .width(objetoAdaptardor.ajustarAncho(133))
-                                .background(Color.Black.copy(alpha = 0.5f)),
+                                .background(Color.Black.copy(alpha = 0.6f)),
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
                                 "\u20A1 "+String.format(Locale.US, "%,.2f", articulo.precio.toString().replace(",", "").toDouble()),
                                 fontFamily = fontAksharPrincipal,
                                 fontWeight = FontWeight.Light,
-                                fontSize = obtenerEstiloBody(),
+                                fontSize = obtenerEstiloLabelBig(),
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,
                                 textAlign = TextAlign.Center,
@@ -909,35 +908,38 @@ fun InterfazSacComanda(
                 verticalArrangement = Arrangement.Top,
                 horizontalAlignment = Alignment.Start
             ) {
-                Row {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.background(Color(0xFF244BC0))
+                ){
                     Text(
                         if(grupo.cantidadItems>0)"${grupo.nombre} (${grupo.cantidadItems})" else "${grupo.nombre} (Opcional)",
                         fontFamily = fontAksharPrincipal,
                         fontWeight = FontWeight.Light,
-                        fontSize = obtenerEstiloHead(),
+                        fontSize = obtenerEstiloTitleSmall(),
                         overflow = TextOverflow.Ellipsis,
                         textAlign = TextAlign.Start,
-                        color = Color.Black,
+                        color = Color.White,
                         modifier = Modifier
                             .width(objetoAdaptardor.ajustarAncho(300))
                             .padding(objetoAdaptardor.ajustarAltura(8))
                     )
                     Text(
-                        if (grupo.cantidadItems> 0)"Faltan: $itemsRestantes" else "",
+                        if (grupo.cantidadItems> 0)"Faltan: $itemsRestantes      " else "",
                         fontFamily = fontAksharPrincipal,
                         fontWeight = FontWeight.Light,
-                        fontSize = obtenerEstiloBody(),
+                        fontSize = obtenerEstiloLabelBig(),
                         overflow = TextOverflow.Ellipsis,
                         textAlign = TextAlign.End,
-                        color = Color.Black,
+                        color = Color.White,
                         modifier = Modifier
-                            .width(objetoAdaptardor.ajustarAncho(110))
+                            .width(objetoAdaptardor.ajustarAncho(150))
                             .padding(objetoAdaptardor.ajustarAltura(8))
                     )
                 }
                 HorizontalDivider(
                     thickness = 2.dp,
-                    color = Color.Black
+                    color = Color.White
                 )
                 for(i in 0 until articulosComboSeleccionados.size){
                     val articulo = articulosComboSeleccionados[i]
@@ -965,7 +967,7 @@ fun InterfazSacComanda(
                                 articulo.nombre,
                                 fontFamily = fontAksharPrincipal,
                                 fontWeight = FontWeight.Light,
-                                fontSize = obtenerEstiloLabel(),
+                                fontSize = obtenerEstiloBodySmall(),
                                 overflow = TextOverflow.Ellipsis,
                                 textAlign = TextAlign.Start,
                                 color = Color.Black,
@@ -981,7 +983,7 @@ fun InterfazSacComanda(
                                     "\u20A1 "+String.format(Locale.US, "%,.2f", "${articulo.precio*articulo.cantidad}".replace(",", "").toDouble()),
                                     fontFamily = fontAksharPrincipal,
                                     fontWeight = FontWeight.Light,
-                                    fontSize = obtenerEstiloLabel(),
+                                    fontSize = obtenerEstiloLabelBig(),
                                     overflow = TextOverflow.Ellipsis,
                                     textAlign = TextAlign.Start,
                                     color = Color.Black,
@@ -999,21 +1001,21 @@ fun InterfazSacComanda(
                                             itemsRestantes += 1
                                         }
                                     },
-                                    modifier = Modifier.size(objetoAdaptardor.ajustarAltura(25)),
+                                    modifier = Modifier.size(objetoAdaptardor.ajustarAncho(23)),
                                     enabled = articulo.cantidad>0
                                 ) {
                                     Icon(
                                         imageVector = Icons.Filled.RemoveCircle,
                                         contentDescription = "Basurero",
                                         tint =  if (articulo.cantidad>0) Color.Black else Color.White,
-                                        modifier = Modifier.size(objetoAdaptardor.ajustarAltura(25))
+                                        modifier = Modifier.size(objetoAdaptardor.ajustarAncho(23))
                                     )
                                 }
                                 Text(
                                     articulo.cantidad.toString(),
                                     fontFamily = fontAksharPrincipal,
                                     fontWeight = FontWeight.Medium,
-                                    fontSize = obtenerEstiloLabel(),
+                                    fontSize = obtenerEstiloLabelBig(),
                                     overflow = TextOverflow.Ellipsis,
                                     textAlign = TextAlign.Center,
                                     modifier = Modifier
@@ -1031,14 +1033,14 @@ fun InterfazSacComanda(
                                             itemsRestantes -= 1
                                         }
                                     },
-                                    modifier = Modifier.size(objetoAdaptardor.ajustarAltura(25)),
+                                    modifier = Modifier.size(objetoAdaptardor.ajustarAncho(23)),
                                     enabled = (itemsRestantes<=0 && articulo.cantidad<1 && grupo.cantidadItems==0) || (itemsRestantes>0 && grupo.cantidadItems>0)
                                 ) {
                                     Icon(
                                         imageVector = Icons.Filled.AddCircle,
                                         contentDescription = "Agregar",
                                         tint =  if ((itemsRestantes<=0 && articulo.cantidad<1 && grupo.cantidadItems==0) || (itemsRestantes>0 && grupo.cantidadItems>0)) Color.Black else Color.White,
-                                        modifier = Modifier.size(objetoAdaptardor.ajustarAltura(25))
+                                        modifier = Modifier.size(objetoAdaptardor.ajustarAncho(23))
                                     )
                                 }
                                 Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(16)))
@@ -1089,7 +1091,7 @@ fun InterfazSacComanda(
                     "SAC $nombreMesa-$salon",
                     fontFamily = fontAksharPrincipal,
                     fontWeight = FontWeight.SemiBold,
-                    fontSize = obtenerEstiloDisplay(),
+                    fontSize = obtenerEstiloTitleSmall(),
                     color = Color.White,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
@@ -1116,60 +1118,18 @@ fun InterfazSacComanda(
             )
         }
 
-        BasicTextField(
+        BBasicTextField(
             value = datosIngresadosBarraBusqueda,
-            onValueChange = { nuevoValor ->
-                datosIngresadosBarraBusqueda = nuevoValor
-            },
-            singleLine = true,
-            textStyle = TextStyle(
-                fontFamily = fontAksharPrincipal,
-                fontWeight = FontWeight.Light,
-                color = Color.DarkGray,
-                textAlign = TextAlign.Justify
-            ),
-            decorationBox = { innerTextField ->
-                Box(
-                    modifier = Modifier
-                        .width(objetoAdaptardor.ajustarAncho(250))
-                        .height(objetoAdaptardor.ajustarAltura(45))
-                        .background(
-                            Color.LightGray,
-                            RoundedCornerShape(objetoAdaptardor.ajustarAltura(18))
-                        )
-                        .padding(horizontal = 16.dp, vertical = 4.dp),
-                    contentAlignment = Alignment.CenterStart
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(imageVector = Icons.Filled.Search,
-                            contentDescription = "Icono Buscar",
-                            tint= Color.DarkGray,
-                            modifier = Modifier.size(objetoAdaptardor.ajustarAltura(30))
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Box(modifier = Modifier.weight(1f)) {
-                            if (datosIngresadosBarraBusqueda.isEmpty()) {
-                                Text(
-                                    text = "Buscar...",
-                                    fontFamily = fontAksharPrincipal,
-                                    fontWeight = FontWeight.Light,
-                                    color = Color.Gray,
-                                    maxLines = 1
-                                )
-                            }
-                            innerTextField()
-                        }
-                    }
-                }
-            }, modifier = Modifier
+            onValueChange = {datosIngresadosBarraBusqueda = it},
+            objetoAdaptardor = objetoAdaptardor,
+            modifier = Modifier
                 .width(objetoAdaptardor.ajustarAncho(200))
                 .height(objetoAdaptardor.ajustarAltura(45))
                 .constrainAs(txfBarraBusqueda) {
                     top.linkTo(bxSuperior.bottom, margin = objetoAdaptardor.ajustarAltura(8))
                     start.linkTo(parent.start, margin = objetoAdaptardor.ajustarAncho(8))
-                }
+                },
+            utilizarMedidas = false
         )
 
         Box(
@@ -1203,32 +1163,17 @@ fun InterfazSacComanda(
                                 initialOffsetX = { it * (index + 1) }
                             )
                         ) {
-                            Button(
-                                modifier = Modifier.height(objetoAdaptardor.ajustarAltura(35)),
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = if (familiaActualSeleccionada.nombre == familia.nombre) Color(0xFFBFBFBF) else Color(0xFFEAEAEA),
-                                    contentColor = Color.White
-                                ),
-                                elevation = ButtonDefaults.buttonElevation(defaultElevation = 7.dp),
+                            BButton(
+                                text = familia.nombre,
                                 onClick = {
                                     datosIngresadosBarraBusqueda = ""
                                     familiaActualSeleccionada = familia
                                 },
-                                contentPadding = PaddingValues(start = 12.dp, end = 12.dp, top = 0.dp, bottom = 0.dp)
-                            ) {
-                                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                                    Text(
-                                        familia.nombre,
-                                        fontFamily = fontAksharPrincipal,
-                                        fontWeight = FontWeight.Medium,
-                                        fontSize = obtenerEstiloBody(),
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis,
-                                        textAlign = TextAlign.Center,
-                                        color = Color.Black
-                                    )
-                                }
-                            }
+                                backgroundColor = if (familiaActualSeleccionada.nombre == familia.nombre) Color(0xFFBFBFBF) else Color(0xFFEAEAEA),
+                                contenteColor = Color.Black,
+                                modifier = Modifier.height(objetoAdaptardor.ajustarAltura(35)),
+                                objetoAdaptardor = objetoAdaptardor
+                            )
                         }
                         Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(8)))
                     }
@@ -1266,39 +1211,22 @@ fun InterfazSacComanda(
                                 initialOffsetX = { it * (index + 1) } // Efecto progresivo
                             )
                         ) {
-                            Button(
-                                modifier = Modifier.height(objetoAdaptardor.ajustarAltura(35)),
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = if (subFamiliaActualSeleccionada.nombre == subFamilia.nombre) Color(0xFFBFBFBF) else Color(0xFFEAEAEA),
-                                    contentColor = Color.White
-                                ),
-                                elevation = ButtonDefaults.buttonElevation(defaultElevation = 7.dp),
+                            BButton(
+                                text = subFamilia.nombre,
                                 onClick = {
                                     datosIngresadosBarraBusqueda = ""
                                     subFamiliaActualSeleccionada = subFamilia
                                 },
-                                contentPadding = PaddingValues(start = 12.dp, end = 12.dp, top = 0.dp, bottom = 0.dp)
-                            ) {
-                                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                                    Text(
-                                        subFamilia.nombre,
-                                        fontFamily = fontAksharPrincipal,
-                                        fontWeight = FontWeight.Medium,
-                                        fontSize = obtenerEstiloBody(),
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis,
-                                        textAlign = TextAlign.Center,
-                                        color = Color.DarkGray
-                                    )
-                                }
-                            }
+                                backgroundColor = if (subFamiliaActualSeleccionada.nombre == subFamilia.nombre) Color(0xFFBFBFBF) else Color(0xFFEAEAEA),
+                                contenteColor = Color.Black,
+                                modifier = Modifier.height(objetoAdaptardor.ajustarAltura(35)),
+                                objetoAdaptardor = objetoAdaptardor
+                            )
                         }
                         Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(8)))
                     }
                 }
             }
-
-
         }
 
         Box(
@@ -1401,7 +1329,7 @@ fun InterfazSacComanda(
                                 horizontalArrangement = Arrangement.Center,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                AgregarTextFieldMultifuncional(
+                                TextFieldMultifuncional(
                                     label = "Sub-Cuentas",
                                     opciones2 = opcionesSubCuentas,
                                     usarOpciones2 = true,
@@ -1463,32 +1391,18 @@ fun InterfazSacComanda(
                             nombreCampo = "Total",
                             monto = montoTotal
                         )
-                        Button(
-                            modifier = Modifier
-                                .height(objetoAdaptardor.ajustarAltura(45))
-                                .width(objetoAdaptardor.ajustarAncho(255)),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = Color(0xFF244BC0), // Color de fondo del botón
-                                contentColor = Color.White,
-                                disabledContainerColor = Color(0xFF244BC0),
-                                disabledContentColor = Color.White
-                            ),
-                            elevation = ButtonDefaults.buttonElevation(defaultElevation = 5.dp),
+                        BButton(
+                            text = "Comandar",
                             onClick = {
                                 iniciarComandaSubCuenta=true
                             },
-                            contentPadding = PaddingValues(0.dp)
-                        ) {
-                            Text(
-                                "Comandar",
-                                fontFamily = fontAksharPrincipal,
-                                fontWeight = FontWeight.Medium,
-                                fontSize = obtenerEstiloBody(),
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                                textAlign = TextAlign.Center
-                            )
-                        }
+                            backgroundColor = Color(0xFF244BC0),
+                            contenteColor = Color.White,
+                            modifier = Modifier
+                                .height(objetoAdaptardor.ajustarAltura(45))
+                                .width(objetoAdaptardor.ajustarAncho(255)),
+                            objetoAdaptardor = objetoAdaptardor
+                        )
                     }
                 }
             }
@@ -1516,7 +1430,7 @@ fun InterfazSacComanda(
                     color = Color.White,
                     fontFamily = fontAksharPrincipal,
                     fontWeight = FontWeight.Light,
-                    fontSize = obtenerEstiloLabel(),
+                    fontSize = obtenerEstiloLabelSmall(),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     textAlign = TextAlign.Start,
@@ -1530,7 +1444,7 @@ fun InterfazSacComanda(
                     color = Color.White,
                     fontFamily = fontAksharPrincipal,
                     fontWeight = FontWeight.Light,
-                    fontSize = obtenerEstiloLabel(),
+                    fontSize = obtenerEstiloLabelSmall(),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     textAlign = TextAlign.Center,
@@ -1544,7 +1458,7 @@ fun InterfazSacComanda(
                     fontWeight = FontWeight.Light,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
-                    fontSize = obtenerEstiloLabel(),
+                    fontSize = obtenerEstiloLabelSmall(),
                     textAlign = TextAlign.End,
                     modifier = Modifier
                         .width(objetoAdaptardor.ajustarAncho(382))
@@ -1564,7 +1478,7 @@ fun InterfazSacComanda(
                     "Agregar Nueva Sub-Cuenta",
                     fontFamily = fontAksharPrincipal,
                     fontWeight = FontWeight.Medium,
-                    fontSize = obtenerEstiloHead(),
+                    fontSize = obtenerEstiloBodyMedium(),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     textAlign = TextAlign.Center,
@@ -1574,174 +1488,83 @@ fun InterfazSacComanda(
             text = {
                 Box{
                     Column {
-                        BasicTextField(
+                        BBasicTextField(
                             value = nombreNuevaSubCuenta,
-                            onValueChange = { nuevoValor ->
-                                nombreNuevaSubCuenta = nuevoValor
-                            },
-                            singleLine = true,
-                            textStyle = TextStyle(
-                                fontFamily = fontAksharPrincipal,
-                                fontWeight = FontWeight.Light,
-                                color = Color.Black,
-                                textAlign = TextAlign.Justify
-                            ),
-                            keyboardOptions = KeyboardOptions.Default.copy(
-                                imeAction = ImeAction.Done
-                            ),
-                            decorationBox = { innerTextField ->
-                                Box(
-                                    modifier = Modifier
-                                        .width(objetoAdaptardor.ajustarAncho(300))
-                                        .height(objetoAdaptardor.ajustarAltura(70))
-                                        .background(
-                                            Color.LightGray,
-                                            RoundedCornerShape(objetoAdaptardor.ajustarAltura(18))
-                                        )
-                                        .padding(horizontal = 16.dp, vertical = 4.dp),
-                                    contentAlignment = Alignment.CenterStart
-                                ) {
-                                    Row(
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Filled.AccountTree,
-                                            contentDescription = "Icono Buscar",
-                                            tint = Color.DarkGray,
-                                            modifier = Modifier.size(objetoAdaptardor.ajustarAltura(30))
-                                        )
-                                        Spacer(modifier = Modifier.width(8.dp))
-                                        Box(modifier = Modifier.weight(1f)) {
-                                            if (nombreNuevaSubCuenta.isEmpty()) {
-                                                Text(
-                                                    "Nombre de la Sub-Cuenta",
-                                                    fontFamily = fontAksharPrincipal,
-                                                    fontWeight = FontWeight.Light,
-                                                    fontSize = objetoAdaptardor.ajustarFont(16),
-                                                    maxLines = 1,
-                                                    overflow = TextOverflow.Ellipsis
-                                                )
-                                            }
-                                            innerTextField()
-                                        }
-                                    }
-                                }
-                            }, modifier = Modifier
+                            onValueChange = {nombreNuevaSubCuenta = it},
+                            objetoAdaptardor = objetoAdaptardor,
+                            modifier = Modifier
                                 .width(objetoAdaptardor.ajustarAncho(300))
-                                .height(objetoAdaptardor.ajustarAltura(70))
-                        )
-                        // Spacer separador de componente
+                                .height(objetoAdaptardor.ajustarAltura(70)),
+                            utilizarMedidas = false,
+                            placeholder = "Nombre de Sub-Cuenta",
+                            icono = Icons.Filled.AccountTree
+                        ) // Spacer separador de componente
                         Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(8)))
                     }
                 }
             },
             confirmButton = {
-                Button(
+                BButton(
+                    text = "Crear",
                     onClick = {
                         if (nombreNuevaSubCuenta.isEmpty()){
-                            val jsonObject = JSONObject("""
-                                {
-                                    "code": 400,
-                                    "status": "error",
-                                   "data": "Ingrese el nombre de la Sub-Cuenta"
-                                }
-                                """
-                            )
                             permitirRegresarPantalla = false
-                            estadoRespuestaApi.cambiarEstadoRespuestaApi(mostrarRespuesta = true, datosRespuesta = jsonObject, regresarPantallaAnterior = false)
+                            mostrarMensajeError("Ingrese el nombre de la Sub-Cuenta")
                         }else{
                             val nuevoMapa = LinkedHashMap<String, String>()
                             nuevoMapa[nombreNuevaSubCuenta.uppercase()] = nombreNuevaSubCuenta.uppercase()
                             nuevoMapa.putAll(opcionesSubCuentas.value)
                             opcionesSubCuentas.value = nuevoMapa
-                            val jsonObject = JSONObject("""
-                                {
-                                    "code": 200,
-                                    "status": "ok",
-                                    "data": "Sub-Cuenta creada"
-                                }
-                                """
-                            )
                             subCuentaSeleccionada= opcionesSubCuentas.value.keys.first()
                             nombreNuevaSubCuenta=""
                             iniciarMenuAgregarSubCuenta = false
                             permitirRegresarPantalla = false
-                            estadoRespuestaApi.cambiarEstadoRespuestaApi(mostrarRespuesta = true, datosRespuesta = jsonObject,regresarPantallaAnterior = false)
+                            mostrarMensajeExito("Sub-Cuenta creada")
                         }
-                    },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFF244BC0), // Color de fondo del botón
-                        contentColor = Color.White,
-                        disabledContainerColor = Color(0xFF244BC0),
-                        disabledContentColor = Color.White
-                    )
-                ) {
-                    Text(
-                        "Crear",
-                        fontFamily = fontAksharPrincipal,
-                        fontWeight = FontWeight.Medium,
-                        fontSize = objetoAdaptardor.ajustarFont(15),
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        textAlign = TextAlign.Center,
-                        color = Color.White
-                    )
-                }
+                    }, objetoAdaptardor = objetoAdaptardor,
+                    modifier = Modifier.width(objetoAdaptardor.ajustarAncho(120))
+                )
             },
             dismissButton = {
-                Button(
+                BButton(
+                    text = "Cancelar",
                     onClick = {
                         iniciarMenuAgregarSubCuenta=false
                         nombreNuevaSubCuenta=""
                     },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color.Red, // Color de fondo del botón
-                        contentColor = Color.White,
-                        disabledContainerColor = Color.Red,
-                        disabledContentColor = Color.White
-                    )
-                ) {
-                    Text(
-                        "Cancelar",
-                        fontFamily = fontAksharPrincipal,
-                        fontWeight = FontWeight.Medium,
-                        fontSize = objetoAdaptardor.ajustarFont(15),
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        textAlign = TextAlign.Center,
-                        color = Color.White
-                    )
-                }
+                    backgroundColor = Color.Red,
+                    objetoAdaptardor = objetoAdaptardor,
+                    modifier = Modifier.width(objetoAdaptardor.ajustarAncho(120))
+                )
             }
         )
     }
 
     if (iniciarVentanaAgregarArticulo || iniciarEdicionArticulo){
+
         var isMenuVisible by remember { mutableStateOf(false) }
 
         LaunchedEffect(Unit) {
             isMenuVisible = true
         }
-
-        AnimatedVisibility(
-            visible = isMenuVisible,
-            enter = fadeIn(animationSpec = tween(500)) + slideInVertically(initialOffsetY = { it }),
-            exit = fadeOut(animationSpec = tween(500)) + slideOutVertically(targetOffsetY = { it })
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black.copy(alpha = 0.5f))
+                .clickable(enabled = false) {},
+            contentAlignment = Alignment.Center
         ) {
-            var cantidadArticulos by remember { mutableIntStateOf(if(iniciarVentanaAgregarArticulo) 1 else articuloActualSeleccionadoEdicion.cantidad) }
-            var anotacion by remember { mutableStateOf(if(iniciarVentanaAgregarArticulo) "" else articuloActualSeleccionadoEdicion.anotacion) }
-
-            LaunchedEffect(cantidadArticulos) {
-                precioTotalArticulo=if(iniciarVentanaAgregarArticulo) articuloActualSeleccionado.precio*cantidadArticulos.toDouble() else articuloActualSeleccionadoEdicion.precioUnitario*cantidadArticulos.toDouble()
-            }
-
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(Color.Black.copy(alpha = 0.5f))
-                    .clickable(enabled = false) {},
-                contentAlignment = Alignment.Center
+            AnimatedVisibility(
+                visible = isMenuVisible,
+                enter = fadeIn(animationSpec = tween(500)) + slideInVertically(initialOffsetY = { it }),
+                exit = fadeOut(animationSpec = tween(500)) + slideOutVertically(targetOffsetY = { it })
             ) {
+                var cantidadArticulos by remember { mutableIntStateOf(if(iniciarVentanaAgregarArticulo) 1 else articuloActualSeleccionadoEdicion.cantidad) }
+                var anotacion by remember { mutableStateOf(if(iniciarVentanaAgregarArticulo) "" else articuloActualSeleccionadoEdicion.anotacion) }
+
+                LaunchedEffect(cantidadArticulos) {
+                    precioTotalArticulo=if(iniciarVentanaAgregarArticulo) articuloActualSeleccionado.precio*cantidadArticulos.toDouble() else articuloActualSeleccionadoEdicion.precioUnitario*cantidadArticulos.toDouble()
+                }
                 Surface(
                     modifier = Modifier
                         .wrapContentWidth(Alignment.CenterHorizontally)
@@ -1762,7 +1585,7 @@ fun InterfazSacComanda(
                                 if(iniciarVentanaAgregarArticulo) "Agregar Articulo" else "Editar Articulo",
                                 fontFamily = fontAksharPrincipal,
                                 fontWeight = FontWeight.Medium,
-                                fontSize = obtenerEstiloHead(),
+                                fontSize = obtenerEstiloTitleSmall(),
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,
                                 textAlign = TextAlign.Center,
@@ -1807,7 +1630,7 @@ fun InterfazSacComanda(
                                 if(iniciarVentanaAgregarArticulo) articuloActualSeleccionado.nombre else articuloActualSeleccionadoEdicion.nombre ,
                                 fontFamily = fontAksharPrincipal,
                                 fontWeight = FontWeight.Medium,
-                                fontSize = obtenerEstiloTitle(),
+                                fontSize = obtenerEstiloBodyBig(),
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,
                                 textAlign = TextAlign.Center,
@@ -1822,7 +1645,7 @@ fun InterfazSacComanda(
                                     "\u20A1 "+String.format(Locale.US, "%,.2f", precioTotalArticulo.toString().replace(",", "").toDouble()),
                                     fontFamily = fontAksharPrincipal,
                                     fontWeight = FontWeight.Medium,
-                                    fontSize = obtenerEstiloBody(),
+                                    fontSize = obtenerEstiloBodySmall(),
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis,
                                     textAlign = TextAlign.Center,
@@ -1836,13 +1659,13 @@ fun InterfazSacComanda(
                                         onClick = {
                                             cantidadArticulos-= if(cantidadArticulos==1) 0 else 1
                                         },
-                                        modifier = Modifier.size(objetoAdaptardor.ajustarAltura(30))
+                                        modifier = Modifier.size(objetoAdaptardor.ajustarAncho(23))
                                     ) {
                                         Icon(
                                             imageVector = Icons.Filled.RemoveCircle,
                                             contentDescription = "Basurero",
                                             tint = if(cantidadArticulos==1)Color.Red else Color.Black,
-                                            modifier = Modifier.size(objetoAdaptardor.ajustarAltura(30))
+                                            modifier = Modifier.size(objetoAdaptardor.ajustarAncho(23))
                                         )
                                     }
                                 }
@@ -1852,7 +1675,7 @@ fun InterfazSacComanda(
                                     cantidadArticulos.toString(),
                                     fontFamily = fontAksharPrincipal,
                                     fontWeight = FontWeight.Medium,
-                                    fontSize = obtenerEstiloLabel(),
+                                    fontSize = obtenerEstiloLabelSmall(),
                                     overflow = TextOverflow.Ellipsis,
                                     textAlign = TextAlign.Center,
                                     modifier = Modifier
@@ -1863,13 +1686,13 @@ fun InterfazSacComanda(
                                     onClick = {
                                         cantidadArticulos+=1
                                     },
-                                    modifier = Modifier.size(objetoAdaptardor.ajustarAltura(30))
+                                    modifier = Modifier.size(objetoAdaptardor.ajustarAncho(23))
                                 ) {
                                     Icon(
                                         imageVector = Icons.Filled.AddCircle,
                                         contentDescription = "Basurero",
                                         tint = Color.Black,
-                                        modifier = Modifier.size(objetoAdaptardor.ajustarAltura(30))
+                                        modifier = Modifier.size(objetoAdaptardor.ajustarAncho(23))
                                     )
                                 }
                             }
@@ -1877,7 +1700,7 @@ fun InterfazSacComanda(
                             Row(
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                AgregarTextFieldMultifuncional(
+                                TextFieldMultifuncional(
                                     label = "Sub-Cuenta",
                                     opciones2 = opcionesSubCuentas,
                                     usarOpciones2 = true,
@@ -1901,93 +1724,35 @@ fun InterfazSacComanda(
                                     )
                                 }
                                 Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(8)))
-                                BasicTextField(
+                                BBasicTextField(
                                     value = anotacion,
-                                    onValueChange = { nuevoValor ->
-                                        anotacion = nuevoValor
-                                    },
-                                    singleLine = true,
-                                    textStyle = TextStyle(
-                                        fontFamily = fontAksharPrincipal,
-                                        fontWeight = FontWeight.Light,
-                                        color = Color.Black,
-                                        textAlign = TextAlign.Justify
-                                    ),
-                                    keyboardOptions = KeyboardOptions.Default.copy(
-                                        imeAction = ImeAction.Done
-                                    ),
-                                    decorationBox = { innerTextField ->
-                                        Box(
-                                            modifier = Modifier
-                                                .width(objetoAdaptardor.ajustarAncho(300))
-                                                .height(objetoAdaptardor.ajustarAltura(70))
-                                                .background(
-                                                    Color.LightGray,
-                                                    RoundedCornerShape(objetoAdaptardor.ajustarAltura(18))
-                                                )
-                                                .padding(horizontal = 16.dp, vertical = 4.dp),
-                                            contentAlignment = Alignment.CenterStart
-                                        ) {
-                                            Row(
-                                                verticalAlignment = Alignment.CenterVertically
-                                            ) {
-                                                Icon(
-                                                    imageVector = Icons.Filled.EditNote,
-                                                    contentDescription = "Icono Buscar",
-                                                    tint = Color.DarkGray,
-                                                    modifier = Modifier.size(objetoAdaptardor.ajustarAltura(30))
-                                                )
-                                                Spacer(modifier = Modifier.width(8.dp))
-                                                Box(modifier = Modifier.weight(1f)) {
-                                                    if (anotacion.isEmpty()) {
-                                                        Text(
-                                                            "Anotación",
-                                                            fontFamily = fontAksharPrincipal,
-                                                            fontWeight = FontWeight.Light,
-                                                            fontSize = objetoAdaptardor.ajustarFont(16),
-                                                            maxLines = 1,
-                                                            overflow = TextOverflow.Ellipsis
-                                                        )
-                                                    }
-                                                    innerTextField()
-                                                }
-                                            }
-                                        }
-                                    }, modifier = Modifier
+                                    onValueChange = {anotacion = it},
+                                    objetoAdaptardor = objetoAdaptardor,
+                                    modifier = Modifier
                                         .width(objetoAdaptardor.ajustarAncho(200))
-                                        .height(objetoAdaptardor.ajustarAltura(50))
+                                        .height(objetoAdaptardor.ajustarAltura(50)),
+                                    utilizarMedidas = false,
+                                    placeholder = "Anotación",
+                                    icono = Icons.Filled.EditNote
                                 )
                             }
 
                             Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(8)))
                             Row {
-
-                                Button(
+                                BButton(
+                                    text = "Cancelar",
                                     onClick = {
                                         iniciarVentanaAgregarArticulo=false
                                         iniciarEdicionArticulo= false
                                     },
-                                    colors = ButtonDefaults.buttonColors(
-                                        containerColor = Color.Red, // Color de fondo del botón
-                                        contentColor = Color.White,
-                                        disabledContainerColor = Color.Red,
-                                        disabledContentColor = Color.White
-                                    )
-                                ) {
-                                    Text(
-                                        "Cancelar",
-                                        fontFamily = fontAksharPrincipal,
-                                        fontWeight = FontWeight.Medium,
-                                        fontSize = objetoAdaptardor.ajustarFont(15),
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis,
-                                        textAlign = TextAlign.Center,
-                                        color = Color.White
-                                    )
-                                }
+                                    objetoAdaptardor = objetoAdaptardor,
+                                    backgroundColor = Color.Red,
+                                    modifier = Modifier.width(objetoAdaptardor.ajustarAncho(120))
+                                )
 
                                 Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(8)))
-                                Button(
+                                BButton(
+                                    text =   if(iniciarVentanaAgregarArticulo) "Agregar" else "Editar",
                                     onClick = {
                                         val formatter = SimpleDateFormat("HHmmssSSS", Locale.getDefault())
                                         val hora = formatter.format(Date())
@@ -2005,31 +1770,15 @@ fun InterfazSacComanda(
                                         iniciarVentanaAgregarArticulo=false
                                         iniciarEdicionArticulo= false
                                     },
-                                    colors = ButtonDefaults.buttonColors(
-                                        containerColor = Color(0xFF244BC0), // Color de fondo del botón
-                                        contentColor = Color.White,
-                                        disabledContainerColor = Color(0xFF244BC0),
-                                        disabledContentColor = Color.White
-                                    )
-                                ) {
-                                    Text(
-                                        if(iniciarVentanaAgregarArticulo) "Agregar" else "Editar",
-                                        fontFamily = fontAksharPrincipal,
-                                        fontWeight = FontWeight.Medium,
-                                        fontSize = objetoAdaptardor.ajustarFont(15),
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis,
-                                        textAlign = TextAlign.Center,
-                                        color = Color.White
-                                    )
-                                }
+                                    objetoAdaptardor = objetoAdaptardor,
+                                    modifier = Modifier.width(objetoAdaptardor.ajustarAncho(120))
+                                )
                             }
                         }
                     }
                 }
             }
         }
-
     }
 
     if (iniciarVentanaAgregarCombo){
@@ -2065,7 +1814,7 @@ fun InterfazSacComanda(
                             if(iniciarVentanaAgregarCombo) "Agregar Combo" else "Editar Combo",
                             fontFamily = fontAksharPrincipal,
                             fontWeight = FontWeight.Medium,
-                            fontSize = obtenerEstiloHead(),
+                            fontSize = obtenerEstiloTitleBig(),
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
                             textAlign = TextAlign.Center,
@@ -2118,7 +1867,7 @@ fun InterfazSacComanda(
                                     articuloActualSeleccionado.nombre,
                                     fontFamily = fontAksharPrincipal,
                                     fontWeight = FontWeight.Medium,
-                                    fontSize = obtenerEstiloTitle(),
+                                    fontSize = obtenerEstiloBodyBig(),
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis,
                                     textAlign = TextAlign.Center,
@@ -2130,7 +1879,7 @@ fun InterfazSacComanda(
                                     "\u20A1 "+String.format(Locale.US, "%,.2f", precioTotalArticulo.toString().replace(",", "").toDouble()),
                                     fontFamily = fontAksharPrincipal,
                                     fontWeight = FontWeight.Medium,
-                                    fontSize = obtenerEstiloBody(),
+                                    fontSize = obtenerEstiloBodyMedium(),
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis,
                                     textAlign = TextAlign.Center,
@@ -2138,7 +1887,7 @@ fun InterfazSacComanda(
                                 )
                                 Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(4)))
 
-                                AgregarTextFieldMultifuncional(
+                                TextFieldMultifuncional(
                                     label = "Sub-Cuenta",
                                     opciones2 = opcionesSubCuentas,
                                     usarOpciones2 = true,
@@ -2150,95 +1899,31 @@ fun InterfazSacComanda(
                                     medidaAncho = 70
                                 )
                                 Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(8)))
-                                BasicTextField(
+                                BBasicTextField(
                                     value = anotacion,
-                                    onValueChange = { nuevoValor ->
-                                        anotacion = nuevoValor
-                                    },
-                                    singleLine = true,
-                                    textStyle = TextStyle(
-                                        fontFamily = fontAksharPrincipal,
-                                        fontWeight = FontWeight.Light,
-                                        color = Color.Black,
-                                        textAlign = TextAlign.Justify
-                                    ),
-                                    keyboardOptions = KeyboardOptions.Default.copy(
-                                        imeAction = ImeAction.Done
-                                    ),
-                                    decorationBox = { innerTextField ->
-                                        Box(
-                                            modifier = Modifier
-                                                .width(objetoAdaptardor.ajustarAncho(300))
-                                                .height(objetoAdaptardor.ajustarAltura(70))
-                                                .background(
-                                                    Color.LightGray,
-                                                    RoundedCornerShape(
-                                                        objetoAdaptardor.ajustarAltura(18)
-                                                    )
-                                                )
-                                                .padding(horizontal = 16.dp, vertical = 4.dp),
-                                            contentAlignment = Alignment.CenterStart
-                                        ) {
-                                            Row(
-                                                verticalAlignment = Alignment.CenterVertically
-                                            ) {
-                                                Icon(
-                                                    imageVector = Icons.Filled.EditNote,
-                                                    contentDescription = "Icono Buscar",
-                                                    tint = Color.DarkGray,
-                                                    modifier = Modifier.size(objetoAdaptardor.ajustarAltura(30))
-                                                )
-                                                Spacer(modifier = Modifier.width(8.dp))
-                                                Box(modifier = Modifier.weight(1f)) {
-                                                    if (anotacion.isEmpty()) {
-                                                        Text(
-                                                            "Anotación",
-                                                            fontFamily = fontAksharPrincipal,
-                                                            fontWeight = FontWeight.Light,
-                                                            fontSize = objetoAdaptardor.ajustarFont(
-                                                                16
-                                                            ),
-                                                            maxLines = 1,
-                                                            overflow = TextOverflow.Ellipsis
-                                                        )
-                                                    }
-                                                    innerTextField()
-                                                }
-                                            }
-                                        }
-                                    }, modifier = Modifier
+                                    onValueChange = {anotacion = it},
+                                    objetoAdaptardor = objetoAdaptardor,
+                                    placeholder = "Anotación",
+                                    icono = Icons.Default.EditNote,
+                                    modifier =  Modifier
                                         .width(objetoAdaptardor.ajustarAncho(200))
                                         .height(objetoAdaptardor.ajustarAltura(50))
                                 )
-
                                 Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(8)))
                                 Row {
-                                    Button(
+                                    BButton(
+                                        text = "Cancelar",
                                         onClick = {
                                             iniciarVentanaAgregarCombo = false
                                         },
-                                        colors = ButtonDefaults.buttonColors(
-                                            containerColor = Color.Red, // Color de fondo del botón
-                                            contentColor = Color.White,
-                                            disabledContainerColor = Color.Red,
-                                            disabledContentColor = Color.White
-                                        )
-                                    ) {
-                                        Text(
-                                            "Cancelar",
-                                            fontFamily = fontAksharPrincipal,
-                                            fontWeight = FontWeight.Medium,
-                                            fontSize = objetoAdaptardor.ajustarFont(15),
-                                            maxLines = 1,
-                                            overflow = TextOverflow.Ellipsis,
-                                            textAlign = TextAlign.Center,
-                                            color = Color.White
-                                        )
-                                    }
-
+                                        objetoAdaptardor = objetoAdaptardor,
+                                        backgroundColor = Color.Red,
+                                        modifier = Modifier.width(objetoAdaptardor.ajustarAncho(120))
+                                    )
                                     Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(8)))
 
-                                    Button(
+                                    BButton(
+                                        text = if(iniciarVentanaAgregarCombo) "Agregar" else "Editar",
                                         onClick = {
                                             val formatter = SimpleDateFormat("HHmmssSSS", Locale.getDefault())
                                             val hora = formatter.format(Date())
@@ -2269,65 +1954,44 @@ fun InterfazSacComanda(
                                                 agregarOActualizarProducto(articuloSeleccionado, true)
                                                 iniciarVentanaAgregarCombo = false
                                             }else{
-                                                listaArticulosCombo.clear()
-                                                val jsonObject = JSONObject("""
-                                                    {
-                                                        "code": 400,
-                                                        "status": "error",
-                                                       "data": "Seleccione todos los articulos obligatorios del combo"
-                                                    }
-                                                """
-                                                )
-                                                estadoRespuestaApi.cambiarEstadoRespuestaApi(mostrarRespuesta = true, datosRespuesta = jsonObject)
+                                               listaArticulosCombo.clear()
+                                               mostrarMensajeError("Seleccione todos los articulos obligatorios del combo")
                                             }
-
                                         },
-                                        colors = ButtonDefaults.buttonColors(
-                                            containerColor = Color(0xFF244BC0), // Color de fondo del botón
-                                            contentColor = Color.White,
-                                            disabledContainerColor = Color(0xFF244BC0),
-                                            disabledContentColor = Color.White
-                                        )
-                                    ) {
-                                        Text(
-                                            if(iniciarVentanaAgregarCombo) "Agregar" else "Editar",
-                                            fontFamily = fontAksharPrincipal,
-                                            fontWeight = FontWeight.Medium,
-                                            fontSize = objetoAdaptardor.ajustarFont(15),
-                                            maxLines = 1,
-                                            overflow = TextOverflow.Ellipsis,
-                                            textAlign = TextAlign.Center,
-                                            color = Color.White
-                                        )
-                                    }
+                                        objetoAdaptardor = objetoAdaptardor,
+                                        modifier = Modifier.width(objetoAdaptardor.ajustarAncho(120))
+                                    )
                                 }
                             }
                             Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(8)))
-                            Box(
-                                modifier = Modifier
-                                    .heightIn(max = objetoAdaptardor.ajustarAltura(500)),
-                                contentAlignment = Alignment.BottomCenter
+
+                            val isVisible = remember { mutableStateOf(false) }
+                            LaunchedEffect(Unit) {
+                                delay(10)
+                                isVisible.value = true
+                            }
+                            AnimatedVisibility(
+                                visible = isVisible.value,
+                                enter = fadeIn(animationSpec = tween(500)) + slideInVertically(initialOffsetY = { it }),
+                                exit = fadeOut(animationSpec = tween(500)) + slideOutVertically(targetOffsetY = { it })
                             ) {
-                                val isVisible = remember { mutableStateOf(false) }
-                                LaunchedEffect(Unit) {
-                                    delay(10)
-                                    isVisible.value = true
-                                }
-                                LazyColumn(state = lazyStateArticulosCombo) {
-                                    items(articuloActualSeleccionado.listaGrupos) { grupo ->
-                                        Column {
-                                            AnimatedVisibility(
-                                                visible = isVisible.value,
-                                                enter = fadeIn(animationSpec = tween(500)) + slideInVertically(initialOffsetY = { it }),
-                                                exit = fadeOut(animationSpec = tween(500)) + slideOutVertically(targetOffsetY = { it })
-                                            ) {
-                                                Box{
-                                                    AgregarBxContenedorArticulosCombo(grupo)
-                                                }
-                                            }
+                                Box(
+                                    modifier = Modifier
+                                        .heightIn(max = objetoAdaptardor.ajustarAltura(500)),
+                                    contentAlignment = Alignment.BottomCenter
+                                ) {
+                                    Column(
+                                        modifier = Modifier
+                                            .verticalScroll(rememberScrollState()),
+                                        verticalArrangement = Arrangement.Center,
+                                        horizontalAlignment = Alignment.CenterHorizontally
+                                    ) {
+                                        articuloActualSeleccionado.listaGrupos.forEach {grupo ->
+                                            AgregarBxContenedorArticulosCombo(grupo)
                                         }
                                     }
                                 }
+
                             }
                         }
                     }
@@ -2348,7 +2012,7 @@ internal fun AgregarBxContenerdorMontosCuenta(
     val dpAnchoPantalla = configuration.screenWidthDp
     val dpAltoPantalla = configuration.screenHeightDp
     val dpFontPantalla= configuration.fontScale
-    val objetoAdaptardor= FuncionesParaAdaptarContenidoCompact(dpAltoPantalla, dpAnchoPantalla, dpFontPantalla, true)
+    val objetoAdaptardor= FuncionesParaAdaptarContenido(dpAltoPantalla, dpAnchoPantalla, dpFontPantalla, true)
 
     Box(modifier = Modifier
         .background(Color(0xFFFAFAFA))
@@ -2364,7 +2028,7 @@ internal fun AgregarBxContenerdorMontosCuenta(
                 nombreCampo,
                 fontFamily = fontAksharPrincipal,
                 fontWeight = FontWeight.Medium,
-                fontSize = obtenerEstiloBody(),
+                fontSize = obtenerEstiloLabelBig(),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
                 textAlign = TextAlign.Start,
@@ -2375,7 +2039,7 @@ internal fun AgregarBxContenerdorMontosCuenta(
                 "\u20A1 "+String.format(Locale.US, "%,.2f", monto.toString().replace(",", "").toDouble()),
                 fontFamily = fontAksharPrincipal,
                 fontWeight = FontWeight.Medium,
-                fontSize = obtenerEstiloTitle(),
+                fontSize = obtenerEstiloBodySmall(),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
                 textAlign = TextAlign.End,
@@ -2391,5 +2055,5 @@ internal fun AgregarBxContenerdorMontosCuenta(
 @Composable
 @Preview(widthDp = 964, heightDp = 523, showBackground = true)
 private fun Preview(){
-    InterfazSacComanda(null, "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJDb2RpZ28iOiIwMDA1MCIsIk5vbWJyZSI6IllFU0xFUiBBRE1JTiIsIkVtYWlsIjoieWVzbGVybG9yaW9AZ21haWwuY29tIiwiUHVlcnRvIjoiODAxIiwiRW1wcmVzYSI6IlpHVnRiM0psYzNRPSIsIlNlcnZlcklwIjoiTVRreUxqRTJPQzQzTGpNNCIsInRpbWUiOiIyMDI1MDMwMTEwMDMyMCJ9.U3F_80TsKwjSps06XXayvmV8CaYsb4GjQ5KmQqTS7mo", null, "", "", "", "","", "","","")
+    InterfazSacComanda(null, "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJDb2RpZ28iOiIwMDA0MyIsIk5vbWJyZSI6IlJPQkVSVE8gQURNSU4iLCJFbWFpbCI6InJyZXllc0Bzb3BvcnRlcmVhbC5jb20iLCJQdWVydG8iOiI4MDEiLCJFbXByZXNhIjoiWkdWdGIzSmxjM1E9IiwiU2VydmVySXAiOiJNVGt5TGpFMk9DNDNMak13IiwidGltZSI6IjIwMjUwMzEwMDIwMzA0In0.7kfmdiMMKZ30R7mSvuIT0iNod_naX8DBDPguf9KC_H4", null, "", "", "", "","", "","","")
 }

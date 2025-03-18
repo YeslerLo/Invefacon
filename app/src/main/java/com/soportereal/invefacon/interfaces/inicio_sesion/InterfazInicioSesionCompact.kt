@@ -98,8 +98,8 @@ import com.soportereal.invefacon.R
 import com.soportereal.invefacon.funciones_de_interfaces.RutasPatallas
 import com.soportereal.invefacon.funciones_de_interfaces.actualizarParametro
 import com.soportereal.invefacon.funciones_de_interfaces.obtenerParametro
-import com.soportereal.invefacon.interfaces.FuncionesParaAdaptarContenidoCompact
-import com.soportereal.invefacon.interfaces.obtenerEstiloLabel
+import com.soportereal.invefacon.interfaces.FuncionesParaAdaptarContenido
+import com.soportereal.invefacon.interfaces.obtenerEstiloLabelSmall
 import com.soportereal.invefacon.interfaces.pantallas_principales.objetoEstadoPantallaCarga
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -150,7 +150,7 @@ fun IniciarInterfazInicioSesionCompact(
     val dpAnchoPantalla = configuration.screenWidthDp
     val dpAltoPantalla = configuration.screenHeightDp
     val dpFontPantalla= configuration.fontScale
-    val objetoAdaptardor= FuncionesParaAdaptarContenidoCompact(dpAltoPantalla, dpAnchoPantalla, dpFontPantalla)
+    val objetoAdaptardor= FuncionesParaAdaptarContenido(dpAltoPantalla, dpAnchoPantalla, dpFontPantalla)
     var apiConsultaActual by remember { mutableStateOf<Job?>(null) }
     val cortinaConsultaApi= CoroutineScope(Dispatchers.IO)
     var isCorreoIngresadoValido by remember { mutableStateOf(false) }
@@ -871,7 +871,7 @@ fun IniciarInterfazInicioSesionCompact(
                     color = Color.White,
                     fontFamily = fontAksharPrincipal,
                     fontWeight = FontWeight.Light,
-                    fontSize = obtenerEstiloLabel(),
+                    fontSize = obtenerEstiloLabelSmall(),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     textAlign = TextAlign.Center,
@@ -883,7 +883,7 @@ fun IniciarInterfazInicioSesionCompact(
                     color = Color.White,
                     fontFamily = fontAksharPrincipal,
                     fontWeight = FontWeight.Light,
-                    fontSize = obtenerEstiloLabel(),
+                    fontSize = obtenerEstiloLabelSmall(),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     textAlign = TextAlign.Center,
@@ -897,7 +897,7 @@ fun IniciarInterfazInicioSesionCompact(
                     fontWeight = FontWeight.Light,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
-                    fontSize = obtenerEstiloLabel(),
+                    fontSize = obtenerEstiloLabelSmall(),
                     textAlign = TextAlign.Center,
                     modifier = Modifier.width(objetoAdaptardor.ajustarAncho(142)).padding(end = 6.dp)
                 )

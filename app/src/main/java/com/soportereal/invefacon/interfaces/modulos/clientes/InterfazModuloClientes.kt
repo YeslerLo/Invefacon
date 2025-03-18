@@ -81,7 +81,7 @@ import com.google.accompanist.systemuicontroller.SystemUiController
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.soportereal.invefacon.R
 import com.soportereal.invefacon.funciones_de_interfaces.RutasPatallas
-import com.soportereal.invefacon.interfaces.FuncionesParaAdaptarContenidoCompact
+import com.soportereal.invefacon.interfaces.FuncionesParaAdaptarContenido
 import com.soportereal.invefacon.interfaces.inicio_sesion.ocultarTeclado
 import com.soportereal.invefacon.interfaces.pantallas_principales.EstadoPantallaCarga
 import com.soportereal.invefacon.interfaces.pantallas_principales.objetoEstadoPantallaCarga
@@ -107,7 +107,7 @@ internal fun IniciarInterfazModuloClientes(
     val dpAnchoPantalla = configuration.screenWidthDp
     val dpAltoPantalla = configuration.screenHeightDp
     val dpFontPantalla= configuration.fontScale
-    val objetoAdaptardor= FuncionesParaAdaptarContenidoCompact(dpAltoPantalla, dpAnchoPantalla, dpFontPantalla)
+    val objetoAdaptardor= FuncionesParaAdaptarContenido(dpAltoPantalla, dpAnchoPantalla, dpFontPantalla)
     var datosIngresadosBarraBusqueda by rememberSaveable  { mutableStateOf("") }
     val objectoProcesadorDatosApi= ProcesarDatosModuloClientes(token)
     var apiConsultaActual by remember { mutableStateOf<Job?>(null) }
@@ -619,7 +619,7 @@ fun AgregarBxConenedorInformacionCliente(
     val dpAnchoPantalla = configuration.screenWidthDp
     val dpAltoPantalla = configuration.screenHeightDp
     val dpFontPantalla= configuration.fontScale
-    val objetoAdaptardor= FuncionesParaAdaptarContenidoCompact(dpAltoPantalla, dpAnchoPantalla, dpFontPantalla)
+    val objetoAdaptardor= FuncionesParaAdaptarContenido(dpAltoPantalla, dpAnchoPantalla, dpFontPantalla)
     val fontAksharPrincipal = FontFamily(Font(R.font.akshar_medium))
     var iniciarPantallaInformacionCliente by remember { mutableStateOf(false) }
 
@@ -787,7 +787,7 @@ fun FiltroDropdownMenu(
     val dpAnchoPantalla = configuration.screenWidthDp
     val dpAltoPantalla = configuration.screenHeightDp
     val dpFontPantalla= configuration.fontScale
-    val objetoAdaptardor= FuncionesParaAdaptarContenidoCompact(dpAltoPantalla, dpAnchoPantalla, dpFontPantalla)
+    val objetoAdaptardor= FuncionesParaAdaptarContenido(dpAltoPantalla, dpAnchoPantalla, dpFontPantalla)
     var expanded by remember { mutableStateOf(false) } // Controla si el menú está abierto
 
     Column(modifier = Modifier.background(Color.White)) {
