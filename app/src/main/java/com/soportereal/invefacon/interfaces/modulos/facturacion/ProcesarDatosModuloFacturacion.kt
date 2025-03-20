@@ -1,6 +1,7 @@
 package com.soportereal.invefacon.interfaces.modulos.facturacion
 
 import com.soportereal.invefacon.funciones_de_interfaces.FuncionesHttp
+import com.soportereal.invefacon.funciones_de_interfaces.ParClaveValor
 import okhttp3.MultipartBody
 import org.json.JSONObject
 
@@ -33,24 +34,55 @@ class ProcesarDatosModuloFacturacion(
         return objetoFuncionesHttpInvefacon.metodoPost(formBody = formBody, apiDirectorio = "facturacion/agregaactualizalineaproforma.php ")
     }
 
-    suspend fun obtenerArticulos(codigo: String, descripcion: String, tipoPrecio: String, moneda: String, codigoBarra : String = ""):JSONObject?{
+    suspend fun obtenerArticulos(
+        busquedaMixta: String,
+        tipoPrecio: String,
+        moneda: String,
+        codigoBarra : String = "",
+        cantidadMostrar : Int
+    ):JSONObject?{
         val formBody = MultipartBody.Builder().setType(MultipartBody.FORM)
             .addFormDataPart("tipoPrecio",tipoPrecio)
-            .addFormDataPart("descripcion",descripcion)
             .addFormDataPart("moneda",moneda)
-            .addFormDataPart("codigo",codigo)
+            .addFormDataPart("busquedaMixta",busquedaMixta)
             .addFormDataPart("codigobarra",codigoBarra)
+            .addFormDataPart("cantidadMostrar",cantidadMostrar.toString())
             .build()
         return objetoFuncionesHttpInvefacon.metodoPost(formBody = formBody, apiDirectorio = "facturacion/articulosfacturar.php")
     }
 }
 
-data class ArticuloFacturado(
-    var articuloCodigo: String = "00",
-    var pv: String = "1",
-    var descripcion: String = "COCA COLA 3L",
-    var articuloCantidad: Int = 1,
-    var precioUd: Double = 1300.0,
+
+data class ArticuloFacturacion(
+    var codigo: String = "12221",
+    var codBarra: String = "",
+    var descripcion: String = "Coca Cola Negra 12Ml",
+    var stock: Double = 0.0,
+    var costo: Double = 0.0,
+    var descuentoFijo: Double = 0.0,
+    var codTarifaImpuesto: String = "",
+    var impuesto: Double = 0.0,
+    var codEstado: String = "",
+    var codTipoMoneda: String = "",
+    var codNaturalezaArticulo: String = "",
+    var codCabys: String = "",
+    var actividadEconomica: String = "",
+    var marca: String = "",
+    var articuloCantidad : Int = 0,
+    var unidadXMedida: Double = 0.0,
+    var unidadMedida: String = "",
+    var fraccionamiento: Int = 0,
+    var precioVentaManual: Int = 0,
+    var minimo: Double = 0.0,
+    var maximo: Double = 0.0,
+    var descuentoAdmitido: Double = 0.0,
+    var precio: Double = 0.0,
+    var precioNeto: Double = 0.0,
+    var lote: Int = 0,
+    var codPrecioVenta : String = "",
+    var listaBodegas: List<ParClaveValor> = emptyList(),
+    var lotes: String? = null,
+    var listaPrecios : List<ParClaveValor> = emptyList(),
     var articuloDescuentoPorcentaje: Double = 0.0,
     var articuloDescuentoMonto: Double = 0.0,
     var articuloVentaSubTotal2: Double = 0.0,
@@ -65,45 +97,36 @@ data class ArticuloFacturado(
     var articuloLineaId: Int = 0,
     var articuloCosto: Double = 0.0,
     var utilidad: Double = 0.0
-
 )
 
-data class ArticuloFaturacion(
-    var codigo: String = "",
-    var codBarra: String = "",
-    var descripcion: String = "",
-    var stock: Double = 0.0,
-    var costo: Double = 0.0,
-    var descuentoFijo: Double = 0.0,
-    var precio1: Double = 0.0,
-    var precio2: Double = 0.0,
-    var precio3: Double = 0.0,
-    var precio4: Double = 0.0,
-    var precio5: Double = 0.0,
-    var precio6: Double = 0.0,
-    var precio7: Double = 0.0,
-    var precio8: Double = 0.0,
-    var precio9: Double = 0.0,
-    var precio10: Double = 0.0,
-    var codTarifaImpuesto: String = "",
-    var impuesto: Double = 0.0,
-    var codEstado: String = "",
-    var codTipoMoneda: String = "",
-    var codNaturalezaArticulo: String = "",
-    var codCabys: String = "",
-    var actividadEconomica: String = "",
-    var marca: String = "",
-    var unidadXMedida: Double = 0.0,
-    var unidadMedida: String = "",
-    var fraccionamiento: Int = 0,
-    var precioVentaManual: Int = 0,
-    var minimo: Double = 0.0,
-    var maximo: Double = 0.0,
-    var descuentoAdmitido: Double = 0.0,
-    var precio: Double = 0.0,
-    var precioNeto: Double = 0.0,
-    var lote: Int = 0,
-    var bodegas: String = "[]",
-    var lotes: String? = null
+data class ArticuloLineaProforma(
+    val numero: String,
+    val articuloLine: String,
+    val tipoDocumento : String,
+    val articuloCodigo : String,
+    val articuloTipoPrecio : String,
+    val articuloActividadEconomica : String,
+    val articuloCantidad : Int,
+    val articuloUnidadMedida : String,
+    val articuloBodegaCodigo: String,
+    val articuloCosto: Double,
+    val articuloVenta : Double,
+    val articuloVentaSubTotal1 : Double,
+    val articuloDescuentoPorcentage : Double,
+    val articuloVentaSubTotal2 : Double,
+    val articuloOtrosCargos : Double,
+    val articuloVentaSubTotal3 : Double,
+    val articuloIvaPorcentage : Double,
+    val articuloIvaTarifa : Double,
+    val articuloIvaExonerado : Double,
+    val articuloIvaMonto : Double,
+    val articuloIvaDevuelto : Double,
+    val articuloVentaGravado : Double,
+    val articuloVentaExonerado : Double,
+    val articuloVentaExento : Double,
+    val articuloVentaTotal : Double,
+    val idCliente : String,
+    val listaBodegas: List<ParClaveValor>
 )
+
 

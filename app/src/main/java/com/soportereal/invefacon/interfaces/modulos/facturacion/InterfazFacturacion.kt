@@ -13,6 +13,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -24,7 +25,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -34,10 +34,7 @@ import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBackIosNew
 import androidx.compose.material.icons.filled.Close
@@ -48,6 +45,7 @@ import androidx.compose.material.icons.filled.Inventory
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PersonPin
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Straighten
 import androidx.compose.material.icons.filled.Warehouse
 import androidx.compose.material3.ButtonDefaults
@@ -55,6 +53,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CheckboxDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -65,6 +64,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableDoubleStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -73,11 +73,16 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
@@ -89,13 +94,16 @@ import androidx.compose.ui.unit.dp
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
+import coil.compose.SubcomposeAsyncImage
 import com.google.accompanist.systemuicontroller.SystemUiController
 import com.soportereal.invefacon.R
 import com.soportereal.invefacon.funciones_de_interfaces.BBasicTextField
 import com.soportereal.invefacon.funciones_de_interfaces.BButton
 import com.soportereal.invefacon.funciones_de_interfaces.TText
 import com.soportereal.invefacon.funciones_de_interfaces.TextFieldMultifuncional
-import com.soportereal.invefacon.funciones_de_interfaces.isSoloNumeros
+import com.soportereal.invefacon.funciones_de_interfaces.mostrarTeclado
+import com.soportereal.invefacon.funciones_de_interfaces.ParClaveValor
+import com.soportereal.invefacon.funciones_de_interfaces.mostrarMensajeError
 import com.soportereal.invefacon.funciones_de_interfaces.separacionDeMiles
 import com.soportereal.invefacon.funciones_de_interfaces.validarExitoRestpuestaServidor
 import com.soportereal.invefacon.interfaces.FuncionesParaAdaptarContenido
@@ -104,6 +112,7 @@ import com.soportereal.invefacon.interfaces.obtenerEstiloBodyMedium
 import com.soportereal.invefacon.interfaces.obtenerEstiloBodySmall
 import com.soportereal.invefacon.interfaces.obtenerEstiloDisplayBig
 import com.soportereal.invefacon.interfaces.obtenerEstiloHeadMedium
+import com.soportereal.invefacon.interfaces.obtenerEstiloHeadSmall
 import com.soportereal.invefacon.interfaces.obtenerEstiloLabelBig
 import com.soportereal.invefacon.interfaces.obtenerEstiloTitleBig
 import com.soportereal.invefacon.interfaces.obtenerEstiloTitleMedium
@@ -114,6 +123,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import org.json.JSONArray
 
 @Composable
 fun IniciarInterfazFacturacion(
@@ -127,6 +137,7 @@ fun IniciarInterfazFacturacion(
     systemUiController?.setStatusBarColor(Color(0xFF244BC0))
     systemUiController?.setNavigationBarColor(Color.Black)
     val fontAksharPrincipal = FontFamily(Font(R.font.akshar_medium))
+    val context = LocalContext.current
     val configuration = LocalConfiguration.current
     val dpAnchoPantalla = configuration.screenWidthDp
     val dpAltoPantalla = configuration.screenHeightDp
@@ -135,8 +146,8 @@ fun IniciarInterfazFacturacion(
     var expandedClientes by remember { mutableStateOf(false) }
 //    var expandedArticulos by remember { mutableStateOf(false) }
     var expandedTotales by remember { mutableStateOf(false) }
-    val listaArticulosSeleccionados = remember { mutableStateListOf<ArticuloFacturado>() }
-    var listaArticulosProforma by remember {  mutableStateOf<List<ArticuloFacturado>>(emptyList()) }
+    val listaArticulosSeleccionados = remember { mutableStateListOf<ArticuloFacturacion>() }
+    var listaArticulosProforma by remember {  mutableStateOf<List<ArticuloFacturacion>>(emptyList()) }
     var nombre by remember { mutableStateOf("") }
     var tipoPrecio by remember { mutableStateOf("") }
     var tipoCedula by remember { mutableStateOf("") }
@@ -159,17 +170,25 @@ fun IniciarInterfazFacturacion(
     var cuenta by remember { mutableStateOf("") }
     val objectoProcesadorDatosApi = ProcesarDatosModuloFacturacion(token)
     var isCargandoDatos by remember { mutableStateOf(false) }
-    var articuloFacturadoActual by remember { mutableStateOf(ArticuloFacturado()) }
+    var iniciarDescargaArticulos by remember { mutableStateOf(false) }
     var iniciarMenuDatosArticulo by remember { mutableStateOf(false) }
     var iniciarMenuSeleccionarArticulo by remember { mutableStateOf(false) }
     var actuzalizarDatosProforma by remember { mutableStateOf(true) }
-    var apiConsultaActual by remember { mutableStateOf<Job?>(null) }
-    val cortinaConsultaApi= CoroutineScope(Dispatchers.IO)
-    val transition = rememberInfiniteTransition(label = "shimmer")
+    var apiConsultaProforma by remember { mutableStateOf<Job?>(null) }
+    val cortinaConsultaApiProforma= CoroutineScope(Dispatchers.IO)
+    var apiConsultaArticulos by remember { mutableStateOf<Job?>(null) }
+    val cortinaConsultaApiArticulos= CoroutineScope(Dispatchers.IO)
+    var apiConsultaBusquedaArticulos by remember { mutableStateOf<Job?>(null) }
+    val cortinaConsultaApiBusquedaArticulos= CoroutineScope(Dispatchers.IO)
     var errorCargarProforma by remember { mutableStateOf(false) }
-    val simboloMoneda by remember { mutableStateOf(if(codMonedaProforma == "CRC") "\u20A1 " else "\u0024 ") }
-    var listaArticulosBuscados by remember { mutableStateOf(emptyList<ArticuloFaturacion>()) }
+    var simboloMoneda by remember { mutableStateOf("") }
+    var listaArticulosFacturacion by remember { mutableStateOf(emptyList<ArticuloFacturacion>()) }
+    var listaArticulosEncontrados by remember { mutableStateOf(emptyList<ArticuloFacturacion>()) }
     var datosIngresadosBarraBusquedaArticulos by remember { mutableStateOf("") }
+    var isCargandoArticulos by remember { mutableStateOf(false) }
+    var articuloActual by remember { mutableStateOf(ArticuloFacturacion()) }
+    var validacionCargaFinalizada by remember { mutableStateOf(0) } // si es dos las dos peticiones al api ya finalizaron
+    val transition = rememberInfiniteTransition(label = "shimmer")
     val shimmerTranslate by transition.animateFloat(
         initialValue = -800f,
         targetValue = 1100f,
@@ -179,7 +198,6 @@ fun IniciarInterfazFacturacion(
         ),
         label = "shimmer_translate"
     )
-
     val brush = Brush.linearGradient(
         colors = listOf(
             Color.Black.copy(alpha = 0.1f),
@@ -190,128 +208,302 @@ fun IniciarInterfazFacturacion(
         end = Offset(shimmerTranslate + 800f, 0f)
     )
 
+
     LaunchedEffect(actuzalizarDatosProforma) {
         if (actuzalizarDatosProforma){
             listaArticulosSeleccionados.clear()
             isCargandoDatos = true
             errorCargarProforma = false
-            apiConsultaActual?.cancel()
-            apiConsultaActual= cortinaConsultaApi.launch{
+            iniciarDescargaArticulos = false
+            apiConsultaArticulos?.cancel()
+            apiConsultaProforma?.cancel()
+            apiConsultaProforma= cortinaConsultaApiProforma.launch{
                 objectoProcesadorDatosApi.crearNuevaProforma()
-
                 val result= objectoProcesadorDatosApi.abrirProforma()
                 if (result!=null){
-                    estadoRespuestaApi.cambiarEstadoRespuestaApi(mostrarSoloRespuestaError = true, datosRespuesta = result)
-                    if(validarExitoRestpuestaServidor(result)) {
-                        val data = result.getJSONObject("data")
+                    try {
+                        estadoRespuestaApi.cambiarEstadoRespuestaApi(mostrarSoloRespuestaError = true, datosRespuesta = result)
+                        if(validarExitoRestpuestaServidor(result)) {
+                            val data = result.getJSONObject("data")
 
-                        //DATOS CLIENTE
-                        val datosCliente = data.getJSONArray("cliente").getJSONObject(0)
-                        cuenta= datosCliente.getString("ClienteID")
-                        nombre= datosCliente.getString("ClienteNombre")
-                        nombreComercial = datosCliente.getString("clientenombrecomercial")
-                        numeroCedula = datosCliente.getString("Cedula")
-                        emailGeneral = datosCliente.getString("Email")
-                        telefonos = datosCliente.getString("Telefonos")
-                        tipoCedula = datosCliente.getString("TipoIdentificacion")
-                        plazoCredito = datosCliente.getString("plazo")
-                        tipoPrecio = datosCliente.getString("TipoPrecioVenta")
-                        codMonedaCliente = datosCliente.getString("monedacodigo")
+                            //DATOS CLIENTE
+                            val datosCliente = data.getJSONArray("cliente").getJSONObject(0)
+                            cuenta= datosCliente.getString("ClienteID")
+                            nombre= datosCliente.getString("ClienteNombre")
+                            nombreComercial = datosCliente.getString("clientenombrecomercial")
+                            numeroCedula = datosCliente.getString("Cedula")
+                            emailGeneral = datosCliente.getString("Email")
+                            telefonos = datosCliente.getString("Telefonos")
+                            tipoCedula = datosCliente.getString("TipoIdentificacion")
+                            plazoCredito = datosCliente.getString("plazo")
+                            tipoPrecio = datosCliente.getString("TipoPrecioVenta")
+                            codMonedaCliente = datosCliente.getString("monedacodigo")
 
-                        //DATOS PROFORMA
-                        val datosProforma = data.getJSONArray("datos").getJSONObject(0)
-                        numeroProforma= datosProforma.getString("Numero")
+                            //DATOS PROFORMA
+                            val datosProforma = data.getJSONArray("datos").getJSONObject(0)
+                            numeroProforma= datosProforma.getString("Numero")
 
-                        //Tipo Moneda
-                        codMonedaProforma = data.getString("monedaDocumento")
+                            //Tipo Moneda
+                            codMonedaProforma = data.getString("monedaDocumento")
+                            simboloMoneda =  if(codMonedaProforma == "CRC") "\u20A1 " else "\u0024 "
+                            iniciarDescargaArticulos = true
 
-                        //Totales
-                        val totales = data.getJSONArray("totales").getJSONObject(0)
-                        totalGravado = totales.getDouble("TotalGravado")
-                        totalIva = totales.getDouble("TotalIva")
-                        totalDescuento = totales.getDouble("TotalDescuento")
-                        totalPago = totales.getDouble("Pago")
-                        totalExonerado = totales.getDouble("TotalExonerado")
-                        totalIvaDevuelto = totales.getDouble("TotalIvaDevuelto")
-                        totalMercGrav = totales.getDouble("TotalMercGravado")
-                        total = totales.getDouble("Total")
+                            //Totales
+                            val totales = data.getJSONArray("totales").getJSONObject(0)
+                            totalGravado = totales.getDouble("TotalGravado")
+                            totalIva = totales.getDouble("TotalIva")
+                            totalDescuento = totales.getDouble("TotalDescuento")
+                            totalPago = totales.getDouble("Pago")
+                            totalExonerado = totales.getDouble("TotalExonerado")
+                            totalIvaDevuelto = totales.getDouble("TotalIvaDevuelto")
+                            totalMercGrav = totales.getDouble("TotalMercGravado")
+                            total = totales.getDouble("Total")
 
-                        // ARTICULOS PROFORMA
-                        val listaArticuloFacturados = mutableListOf<ArticuloFacturado>()
-                        val articulos = data.getJSONArray("proforma")
-                        for(i in 0 until articulos.length()){
-                            val datosArticulo = articulos.getJSONObject(i)
-                            val articuloFacturado = ArticuloFacturado(
-                                articuloCodigo = datosArticulo.getString("ArticuloCodigo"),
-                                pv = datosArticulo.getString("PV"),
-                                descripcion = datosArticulo.getString("Descripcion"),
-                                articuloCantidad = datosArticulo.getInt("ArticuloCantidad"),
-                                precioUd = datosArticulo.getDouble("PrecioUd"),
-                                articuloDescuentoPorcentaje = datosArticulo.getDouble("ArticuloDescuentoPorcentage"),
-                                articuloDescuentoMonto = datosArticulo.getDouble("ArticuloDescuentoMonto"),
-                                articuloVentaSubTotal2 = datosArticulo.getDouble("ArticuloVentaSubTotal2"),
-                                articuloVentaGravado = datosArticulo.getDouble("ArticuloVentaGravado"),
-                                articuloIvaExonerado = datosArticulo.getDouble("ArticuloIvaExonerado"),
-                                articuloVentaExento = datosArticulo.getDouble("ArticuloVentaExento"),
-                                articuloIvaPorcentaje = datosArticulo.getDouble("ArticuloIvaPorcentage"),
-                                articuloIvaMonto = datosArticulo.getDouble("ArticuloIvaMonto"),
-                                articuloBodegaCodigo = datosArticulo.getString("ArticuloBodegaCodigo"),
-                                articuloVentaTotal = datosArticulo.getDouble("ArticuloVentaTotal"),
-                                existencia = datosArticulo.getDouble("Existencia"),
-                                articuloLineaId = datosArticulo.getInt("ArticuloLineaId"),
-                                articuloCosto = datosArticulo.getDouble("ArticuloCosto"),
-                                utilidad = datosArticulo.getDouble("Utilidad")
-                            )
-                            listaArticuloFacturados.add(articuloFacturado)
+                            // ARTICULOS PROFORMA
+                            val listaArticuloFacturados = mutableListOf<ArticuloFacturacion>()
+                            val articulos = data.getJSONArray("proforma")
+                            for(i in 0 until articulos.length()){
+                                val datosArticulo = articulos.getJSONObject(i)
+                                val articuloFacturado = ArticuloFacturacion(
+                                    codigo = datosArticulo.getString("ArticuloCodigo"),
+                                    codPrecioVenta = datosArticulo.getString("PV"),
+                                    descripcion = datosArticulo.getString("Descripcion"),
+                                    articuloCantidad = datosArticulo.getInt("ArticuloCantidad"),
+                                    precio = datosArticulo.getDouble("PrecioUd"),
+                                    articuloDescuentoPorcentaje = datosArticulo.getDouble("ArticuloDescuentoPorcentage"),
+                                    articuloDescuentoMonto = datosArticulo.getDouble("ArticuloDescuentoMonto"),
+                                    articuloVentaSubTotal2 = datosArticulo.getDouble("ArticuloVentaSubTotal2"),
+                                    articuloVentaGravado = datosArticulo.getDouble("ArticuloVentaGravado"),
+                                    articuloIvaExonerado = datosArticulo.getDouble("ArticuloIvaExonerado"),
+                                    articuloVentaExento = datosArticulo.getDouble("ArticuloVentaExento"),
+                                    articuloIvaPorcentaje = datosArticulo.getDouble("ArticuloIvaPorcentage"),
+                                    articuloIvaMonto = datosArticulo.getDouble("ArticuloIvaMonto"),
+                                    articuloBodegaCodigo = datosArticulo.getString("ArticuloBodegaCodigo"),
+                                    articuloVentaTotal = datosArticulo.getDouble("ArticuloVentaTotal"),
+                                    existencia = datosArticulo.getDouble("Existencia"),
+                                    articuloLineaId = datosArticulo.getInt("ArticuloLineaId"),
+                                    articuloCosto = datosArticulo.getDouble("ArticuloCosto"),
+                                    utilidad = datosArticulo.getDouble("Utilidad")
+                                )
+                                listaArticuloFacturados.add(articuloFacturado)
+                            }
+                            listaArticulosProforma = listaArticuloFacturados
                         }
-                        listaArticulosProforma = listaArticuloFacturados
-                    }
-                    else{
+                        else{
+                            errorCargarProforma = true
+                        }
+                    } catch (e: Exception) {
+                        mostrarMensajeError(e.message.toString())
                         errorCargarProforma = true
                     }
+
                 }
-                delay(300)
-                actuzalizarDatosProforma= false
-                isCargandoDatos= false
+                validacionCargaFinalizada++
             }
+        }
+    }
+
+    LaunchedEffect(iniciarDescargaArticulos) {
+        if (iniciarDescargaArticulos){
+            listaArticulosFacturacion = emptyList()
+            isCargandoDatos = true
+            errorCargarProforma = false
+            apiConsultaArticulos?.cancel()
+            apiConsultaArticulos= cortinaConsultaApiArticulos.launch{
+                val result = objectoProcesadorDatosApi.obtenerArticulos(
+                    tipoPrecio = tipoPrecio,
+                    moneda = codMonedaCliente,
+                    cantidadMostrar = 100,
+                    busquedaMixta = ""
+                )
+                if (result!=null){
+                    try {
+                        if (validarExitoRestpuestaServidor(result)){
+                            val data = result.getJSONArray("data")
+                            val listaArticulos = mutableListOf<ArticuloFacturacion>()
+                            for(i in 0 until data.length()){
+
+                                val listaPrecios = mutableListOf<ParClaveValor>()
+                                val listaBodegas = mutableListOf<ParClaveValor>()
+                                val datosArticulo = data.getJSONObject(i)
+
+                                for (a in 1 until 11){
+                                    listaPrecios.add(
+                                        ParClaveValor(
+                                            clave = "$a",
+                                            valor = datosArticulo.getString("Precio$a")
+                                        )
+                                    )
+                                }
+
+                                val bodegasString = datosArticulo.getString("bodegas")
+                                val datosBodegas = JSONArray(bodegasString)
+
+                                for (e in 0 until datosBodegas.length()) {
+                                    val datoBodega = datosBodegas.getJSONObject(e)
+                                    val bodega = ParClaveValor(
+                                        clave = datoBodega.getString("Cod_Bodega"),
+                                        valor = datoBodega.getString("Descripcion"),
+                                        existencia = datoBodega.getDouble("Existencia")
+                                    )
+                                    listaBodegas.add(bodega)
+                                }
+
+
+                                val articulo = ArticuloFacturacion(
+                                    codigo = datosArticulo.getString("Codigo"),
+                                    codBarra = datosArticulo.getString("Cod_Barra"),
+                                    descripcion = datosArticulo.getString("Descripcion"),
+                                    stock = datosArticulo.optDouble("Stock", 0.00),
+                                    costo = datosArticulo.getDouble("Costo"),
+                                    descuentoFijo = datosArticulo.getDouble("Descuento_Fijo"),
+                                    codTarifaImpuesto = datosArticulo.getString("Cod_Tarifa_Impuesto"),
+                                    impuesto = datosArticulo.getDouble("Impuesto"),
+                                    codEstado = datosArticulo.getString("Cod_Estado"),
+                                    codTipoMoneda = datosArticulo.getString("Cod_Tipo_Moneda"),
+                                    codNaturalezaArticulo = datosArticulo.getString("Cod_Naturaleza_Articulo"),
+                                    codCabys = datosArticulo.getString("Cod_Cabys"),
+                                    actividadEconomica = datosArticulo.getString("Actividad_Economica"),
+                                    unidadXMedida = datosArticulo.getDouble("Unidad_x_Medida"),
+                                    unidadMedida = datosArticulo.getString("Unidad_Medida"),
+                                    descuentoAdmitido = datosArticulo.getDouble("Descuento_Admitido"),
+                                    precio = datosArticulo.getDouble("Precio"),
+                                    listaPrecios = listaPrecios,
+                                    listaBodegas = listaBodegas
+                                )
+                                listaArticulos.add(articulo)
+                            }
+                            listaArticulosFacturacion = listaArticulos
+                        }else{
+                            errorCargarProforma = true
+                            estadoRespuestaApi.cambiarEstadoRespuestaApi(mostrarSoloRespuestaError = true, datosRespuesta = result)
+                        }
+                    }catch (e: Exception) {
+                        mostrarMensajeError(e.message.toString())
+                        errorCargarProforma = true
+                    }
+
+                }
+                validacionCargaFinalizada++
+            }
+            iniciarDescargaArticulos = false
         }
     }
 
     LaunchedEffect(datosIngresadosBarraBusquedaArticulos) {
-        if (datosIngresadosBarraBusquedaArticulos.isNotEmpty()){
-            var codigo = ""
-            var descripcion = ""
-            apiConsultaActual?.cancel()
-            apiConsultaActual= cortinaConsultaApi.launch{
-                delay(500)
-                if(datosIngresadosBarraBusquedaArticulos.isSoloNumeros()) {
-                    codigo = datosIngresadosBarraBusquedaArticulos
-                    descripcion = ""
-                }else{
-                    codigo = ""
-                    descripcion =datosIngresadosBarraBusquedaArticulos
-                }
-                val result = objectoProcesadorDatosApi.obtenerArticulos(
-                    codigo = codigo,
-                    descripcion = descripcion,
-                    tipoPrecio = tipoPrecio,
-                    moneda = codMonedaCliente
-                )
-                if (result!=null){
-                    if (validarExitoRestpuestaServidor(result)){
-                        val data = result.getJSONArray("data")
-                        for(i in 0 until data.length()){
-                            val datosArticulo = data.getJSONObject(i)
-                            println(datosArticulo)
-                        }
-                    }else{
-                        estadoRespuestaApi.cambiarEstadoRespuestaApi(mostrarSoloRespuestaError = true, datosRespuesta = result)
-                    }
-                }
+        if(datosIngresadosBarraBusquedaArticulos.isNotEmpty()){
+            isCargandoArticulos = true
+            listaArticulosEncontrados = emptyList()
+            apiConsultaBusquedaArticulos?.cancel()
+            apiConsultaBusquedaArticulos= cortinaConsultaApiBusquedaArticulos.launch{
+                delay(300)
+                listaArticulosEncontrados = listaArticulosFacturacion.filter {
+                    it.descripcion.contains(datosIngresadosBarraBusquedaArticulos, ignoreCase = true) ||
+                            it.codigo.contains(datosIngresadosBarraBusquedaArticulos, ignoreCase = true)
+                }.take(50)
+                isCargandoArticulos = false
             }
+        }
+
+    }
+
+    LaunchedEffect(validacionCargaFinalizada) {
+        if (validacionCargaFinalizada == 2){
+            actuzalizarDatosProforma= false
+            isCargandoDatos= false
+            validacionCargaFinalizada = 0
         }
     }
 
+    @Composable
+    fun BxContenedorArticulosFacturacion(
+        articulo : ArticuloFacturacion
+    ) {
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .wrapContentHeight()
+                .shadow(
+                    elevation = objetoAdaptardor.ajustarAltura(7),
+                    shape = RoundedCornerShape(objetoAdaptardor.ajustarAltura(16))
+                )
+                .clickable {
+                    articuloActual = articulo
+                    listaArticulosFacturacion = emptyList()
+                    datosIngresadosBarraBusquedaArticulos = ""
+                    iniciarMenuSeleccionarArticulo = false
+                    iniciarMenuDatosArticulo = true
+                },
+            shape = RoundedCornerShape(objetoAdaptardor.ajustarAltura(16)),
+            colors = CardDefaults.cardColors(containerColor =Color(0xFF31BF59))
+        ){
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .padding(start = objetoAdaptardor.ajustarAncho(16))
+                    .fillMaxSize()
+                    .background(Color.White)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .height(objetoAdaptardor.ajustarAltura(50))
+                        .width(objetoAdaptardor.ajustarAncho(50))
+                        .padding(start = objetoAdaptardor.ajustarAncho(8), top = objetoAdaptardor.ajustarAltura(8)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    SubcomposeAsyncImage(
+                        model = "https://invefacon.com/img/$nombreEmpresa/articulos/${articulo.codigo}.png",
+                        contentDescription = "Imagen Articulo",
+                        modifier = Modifier
+                            .fillMaxSize(),
+                        contentScale = ContentScale.FillBounds,
+                        loading = {
+                            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center){
+                                CircularProgressIndicator(
+                                    color = Color(0xFF244BC0),
+                                    modifier = Modifier.size(objetoAdaptardor.ajustarAltura(20))
+                                )
+                            }
+                        },
+                        error = {
+                            Image(
+                                modifier = Modifier
+                                    .fillMaxSize(),
+                                painter = painterResource(id = R.drawable.sin_imagen),
+                                contentDescription = "Descripción de la imagen",
+                                contentScale = ContentScale.FillBounds
+                            )
+                        }
+                    )
+                }
+                Column(
+                    horizontalAlignment = Alignment.Start
+                ) {
+                    TText(
+                        text = "#" + articulo.codigo,
+                        modifier = Modifier
+                            .padding(start = objetoAdaptardor.ajustarAncho(8), top = objetoAdaptardor.ajustarAltura(8)),
+                        fontSize = obtenerEstiloBodySmall(),
+                        color = Color(0xFF787877)
+                    )
+                    TText(
+                        text = articulo.descripcion,
+                        fontSize = obtenerEstiloBodyBig(),
+                        maxLines = 2,
+                        modifier = Modifier.padding(start = objetoAdaptardor.ajustarAncho(8), end = objetoAdaptardor.ajustarAncho(16))
+                    )
+                    TText(
+                        text = simboloMoneda + separacionDeMiles(articulo.precio) + " $codMonedaProforma",
+                        modifier = Modifier
+                            .padding(start = objetoAdaptardor.ajustarAncho(8), bottom = objetoAdaptardor.ajustarAltura(8)),
+                        fontSize = obtenerEstiloBodyMedium(),
+                        color = Color(0xFF5E5E5E)
+                    )
+                }
+            }
+
+        }
+    }
 
     @Composable
     fun BasicTexfiuldWithText(
@@ -463,7 +655,6 @@ fun IniciarInterfazFacturacion(
                             textAlign = TextAlign.Center
                         )
                     }
-
                 }
             }
 
@@ -967,7 +1158,7 @@ fun IniciarInterfazFacturacion(
                                             modifier = Modifier
                                                 .fillMaxWidth()
                                                 .clickable {
-                                                    articuloFacturadoActual = articulo
+                                                    articuloActual = articulo
                                                     iniciarMenuDatosArticulo = true
                                                 }
                                                 .padding(vertical = objetoAdaptardor.ajustarAltura(2))
@@ -992,7 +1183,7 @@ fun IniciarInterfazFacturacion(
 
                                             TText(articulo.descripcion, Modifier.weight(1f), textAlign = TextAlign.Start, maxLines = 3)
                                             TText(articulo.articuloCantidad.toString(), Modifier.weight(0.5f), textAlign =TextAlign.Center, maxLines = 3)
-                                            TText(simboloMoneda + separacionDeMiles(articulo.precioUd), Modifier.weight(1f), textAlign = TextAlign.Center, maxLines = 3)
+                                            TText(simboloMoneda + separacionDeMiles(articulo.precio), Modifier.weight(1f), textAlign = TextAlign.Center, maxLines = 3)
                                             TText("${articulo.articuloDescuentoPorcentaje}%", Modifier.weight(0.5f), textAlign = TextAlign.Center, maxLines = 3)
                                             TText(simboloMoneda + separacionDeMiles(articulo.articuloVentaTotal), Modifier.weight(1f), textAlign = TextAlign.End, maxLines = 3)
 
@@ -1185,7 +1376,7 @@ fun IniciarInterfazFacturacion(
                                             fontSize = obtenerEstiloBodyBig()
                                         )
                                         TText(
-                                            text = simboloMoneda + separacionDeMiles(totalGravado),
+                                            text = simboloMoneda + separacionDeMiles(totalGravado) +" $codMonedaProforma",
                                             textAlign = TextAlign.End,
                                             modifier = Modifier.weight(1f),
                                             fontSize = obtenerEstiloBodyBig()
@@ -1203,7 +1394,7 @@ fun IniciarInterfazFacturacion(
                                             fontSize = obtenerEstiloBodyBig()
                                         )
                                         TText(
-                                            text = simboloMoneda + separacionDeMiles(totalIva),
+                                            text = simboloMoneda + separacionDeMiles(totalIva) +" $codMonedaProforma",
                                             textAlign = TextAlign.End,
                                             modifier = Modifier.weight(1f),
                                             fontSize = obtenerEstiloBodyBig()
@@ -1221,7 +1412,7 @@ fun IniciarInterfazFacturacion(
                                             fontSize = obtenerEstiloBodyBig()
                                         )
                                         TText(
-                                            text = simboloMoneda + separacionDeMiles(totalDescuento),
+                                            text = simboloMoneda + separacionDeMiles(totalDescuento) +" $codMonedaProforma",
                                             textAlign = TextAlign.End,
                                             modifier = Modifier.weight(1f),
                                             fontSize = obtenerEstiloBodyBig()
@@ -1251,7 +1442,7 @@ fun IniciarInterfazFacturacion(
                                                     fontSize = obtenerEstiloBodyBig()
                                                 )
                                                 TText(
-                                                    text = simboloMoneda + separacionDeMiles(totalPago),
+                                                    text = simboloMoneda + separacionDeMiles(totalPago) +" $codMonedaProforma",
                                                     textAlign = TextAlign.End,
                                                     modifier = Modifier.weight(1f),
                                                     fontSize = obtenerEstiloBodyBig()
@@ -1269,7 +1460,7 @@ fun IniciarInterfazFacturacion(
                                                     fontSize = obtenerEstiloBodyBig()
                                                 )
                                                 TText(
-                                                    text = simboloMoneda + separacionDeMiles(totalExonerado),
+                                                    text = simboloMoneda + separacionDeMiles(totalExonerado) +" $codMonedaProforma",
                                                     textAlign = TextAlign.End,
                                                     modifier = Modifier.weight(1f),
                                                     fontSize = obtenerEstiloBodyBig()
@@ -1287,7 +1478,7 @@ fun IniciarInterfazFacturacion(
                                                     fontSize = obtenerEstiloBodyBig()
                                                 )
                                                 TText(
-                                                    text = simboloMoneda + separacionDeMiles(totalIvaDevuelto),
+                                                    text = simboloMoneda + separacionDeMiles(totalIvaDevuelto) +" $codMonedaProforma",
                                                     textAlign = TextAlign.End,
                                                     modifier = Modifier.weight(1f),
                                                     fontSize = obtenerEstiloBodyBig()
@@ -1305,7 +1496,7 @@ fun IniciarInterfazFacturacion(
                                                     fontSize = obtenerEstiloBodyBig()
                                                 )
                                                 TText(
-                                                    text = simboloMoneda + separacionDeMiles(totalMercGrav),
+                                                    text = simboloMoneda + separacionDeMiles(totalMercGrav) +" $codMonedaProforma",
                                                     textAlign = TextAlign.End,
                                                     modifier = Modifier.weight(1f),
                                                     fontSize = obtenerEstiloBodyBig()
@@ -1325,13 +1516,7 @@ fun IniciarInterfazFacturacion(
                                             fontSize = obtenerEstiloBodyBig()
                                         )
                                         TText(
-                                            text = codMonedaProforma,
-                                            textAlign = TextAlign.Center,
-                                            modifier = Modifier.weight(1f),
-                                            fontSize = obtenerEstiloBodyBig()
-                                        )
-                                        TText(
-                                            text = simboloMoneda + separacionDeMiles(total),
+                                            text = simboloMoneda + separacionDeMiles(total) +" $codMonedaProforma",
                                             textAlign = TextAlign.End,
                                             modifier = Modifier.weight(1f),
                                             fontSize = obtenerEstiloBodyBig()
@@ -1421,20 +1606,15 @@ fun IniciarInterfazFacturacion(
     ProductoDialog(
         mostrarVentanaArticulo = iniciarMenuDatosArticulo,
         onDismiss = {iniciarMenuDatosArticulo = false},
-        nombreProducto = articuloFacturadoActual.descripcion,
-        codigoProducto = articuloFacturadoActual.articuloCodigo,
-        opcionesBodegas = listOf("Bodega Central", "Sucursal Norte"),
-        monedaCodigo = codMonedaProforma,
         opcionesPresentacion = listOf("Caja", "Unidad"),
-        impuestoProducto = articuloFacturadoActual.articuloIvaPorcentaje,
-        textoBotonVentanaArticulos = "Agregar",
-        onAgregarLinea = { id -> println("Agregando línea con ID: $id") },
-        articuloLineaId = articuloFacturadoActual.articuloLineaId,
-        objetoAdaptardor = objetoAdaptardor
+        objetoAdaptardor = objetoAdaptardor,
+        artculo = articuloActual,
+        codigoMoneda = codMonedaProforma
     )
 
     if(iniciarMenuSeleccionarArticulo){
-        var isMenuVisible by remember { mutableStateOf(true) }
+        var isMenuVisible by remember { mutableStateOf(false) }
+        val focusRequester = remember { FocusRequester() }
 
         LaunchedEffect(Unit) {
             delay(100)
@@ -1453,6 +1633,13 @@ fun IniciarInterfazFacturacion(
                 enter = fadeIn(animationSpec = tween(500)) + slideInVertically(initialOffsetY = { it }),
                 exit = fadeOut(animationSpec = tween(500)) + slideOutVertically(targetOffsetY = { it })
             ) {
+                
+                LaunchedEffect(Unit) {
+                    delay(100)
+                    focusRequester.requestFocus()
+                    mostrarTeclado(context)
+                }
+
                 Surface(
                     modifier = Modifier
                         .wrapContentWidth(Alignment.CenterHorizontally)
@@ -1470,6 +1657,12 @@ fun IniciarInterfazFacturacion(
                             verticalArrangement = Arrangement.spacedBy(objetoAdaptardor.ajustarAltura(8)),
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
+                            TText(
+                                text = "Agregar Artículo",
+                                fontSize = obtenerEstiloHeadSmall(),
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier.fillMaxWidth()
+                            )
                             Row (
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.spacedBy(objetoAdaptardor.ajustarAncho(16))
@@ -1478,43 +1671,94 @@ fun IniciarInterfazFacturacion(
                                     value = datosIngresadosBarraBusquedaArticulos,
                                     onValueChange = {
                                         datosIngresadosBarraBusquedaArticulos = it
+                                        if (it.isEmpty()){
+                                            apiConsultaBusquedaArticulos?.cancel()
+                                            isCargandoArticulos = false
+                                            listaArticulosEncontrados = emptyList()
+                                        }
                                     },
-                                    modifier = Modifier.weight(1f),
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .focusRequester(focusRequester),
                                     objetoAdaptardor = objetoAdaptardor,
                                     utilizarMedidas = false,
-                                    fontSize = obtenerEstiloBodyMedium()
+                                    fontSize = obtenerEstiloTitleMedium()
                                 )
                                 IconButton(
                                     onClick = {
                                         iniciarMenuSeleccionarArticulo = false
+                                        isMenuVisible = false
+                                        listaArticulosFacturacion = emptyList()
+                                        datosIngresadosBarraBusquedaArticulos = ""
                                     },
-                                    modifier = Modifier.weight(0.2f)
+                                    modifier = Modifier.weight(0.1f)
                                 ) {
-                                    Box(
-                                        contentAlignment = Alignment.Center,
-                                        modifier = Modifier
-                                            .size(objetoAdaptardor.ajustarAltura(30))
-                                            .background(Color.Gray, shape = CircleShape)
-                                            .clickable { }
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Filled.Close,
-                                            contentDescription = "Cerrar",
-                                            tint = Color.White,
-                                            modifier = Modifier.size(objetoAdaptardor.ajustarAltura(25))
-                                        )
-                                    }
+                                    Icon(
+                                        imageVector = Icons.Filled.Close,
+                                        contentDescription = "Cerrar",
+                                        tint = Color.Gray,
+                                        modifier = Modifier.size(objetoAdaptardor.ajustarAltura(25))
+                                    )
                                 }
                             }
-                            Column(
+
+                            LazyColumn(
                                 modifier = Modifier
-                                    .verticalScroll(rememberScrollState())
-                                    .heightIn(max = objetoAdaptardor.ajustarAltura(500)),
+                                    .height(objetoAdaptardor.ajustarAltura(400)),
                                 verticalArrangement = Arrangement.Top,
                                 horizontalAlignment = Alignment.CenterHorizontally
                             ) {
+                                item {
+                                    if (isCargandoArticulos){
+                                        Box(modifier = Modifier
+                                            .fillMaxSize(),
+                                            contentAlignment = Alignment.Center
+                                        ){
+                                            CircularProgressIndicator(
+                                                color = Color(0xFF244BC0),
+                                                modifier = Modifier
+                                                    .size(objetoAdaptardor.ajustarAltura(50))
+                                                    .padding(2.dp)
+                                            )
+                                        }
+                                    }else{
+                                        if (datosIngresadosBarraBusquedaArticulos.isEmpty() || listaArticulosEncontrados.isEmpty()){
+                                            Column(
+                                                verticalArrangement = Arrangement.spacedBy(objetoAdaptardor.ajustarAltura(8)),
+                                                horizontalAlignment = Alignment.CenterHorizontally,
+                                                modifier = Modifier.fillMaxWidth()
+                                            ) {
+                                                Icon(
+                                                    imageVector = if (datosIngresadosBarraBusquedaArticulos.isEmpty()) Icons.Default.Search else Icons.Default.Dangerous,
+                                                    contentDescription = "ICONO DE PELIGRO",
+                                                    modifier = Modifier.size(objetoAdaptardor.ajustarAltura(50)),
+                                                    tint = if (datosIngresadosBarraBusquedaArticulos.isEmpty()) Color(0xFF244BC0) else Color(0xFFEB4242)
+                                                )
 
+                                                TText(
+                                                    text = if (datosIngresadosBarraBusquedaArticulos.isEmpty()) "Ingrese datos para iniciar la búsqueda." else "No se encontró ningún artículo relacionado con la palabra '$datosIngresadosBarraBusquedaArticulos'",
+                                                    modifier = Modifier.width(objetoAdaptardor.ajustarAncho(200)),
+                                                    fontSize = obtenerEstiloTitleMedium(),
+                                                    maxLines = 5,
+                                                    textAlign = TextAlign.Center
+                                                )
+                                            }
+                                        }else{
+                                            listaArticulosEncontrados.forEach{ articulo ->
+                                                BxContenedorArticulosFacturacion(articulo)
+                                                Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(16)))
+                                            }
+                                        }
+                                    }
+                                }
                             }
+                            TText(
+                                text = "Artículos encontrados: " + listaArticulosEncontrados.size.toString(),
+                                fontSize = obtenerEstiloBodyBig(),
+                                modifier = Modifier.fillMaxWidth(),
+                                textAlign = TextAlign.Center,
+                                color = Color(0xFF244BC0)
+                            )
                         }
                     }
                 }
@@ -1524,70 +1768,57 @@ fun IniciarInterfazFacturacion(
 }
 
 
+
 @Composable
 fun ProductoDialog(
     mostrarVentanaArticulo: Boolean,
     onDismiss: () -> Unit,
-    nombreProducto: String,
-    codigoProducto: String,
-    opcionesBodegas: List<String>,
-    monedaCodigo: String,
     opcionesPresentacion: List<String>,
-    impuestoProducto: Double,
-    textoBotonVentanaArticulos: String,
-    onAgregarLinea: (Int) -> Unit,
-    articuloLineaId: Int,
-    objetoAdaptardor: FuncionesParaAdaptarContenido
+    artculo : ArticuloFacturacion,
+    objetoAdaptardor: FuncionesParaAdaptarContenido,
+    codigoMoneda : String
 ) {
     if (mostrarVentanaArticulo) {
-        var bodegaSeleccionda by remember { mutableStateOf("") }
-        var cantidadProducto by remember { mutableStateOf("") }
-        var precioProducto by remember { mutableStateOf("") }
-        var seleccionPresentacion by remember { mutableStateOf("") }
-        var descuentoProducto by remember { mutableStateOf("") }
-        var montoDescuento by remember { mutableStateOf("") }
-        val codigoBodega by remember { mutableStateOf("") }
-        val existenciaBodega by remember { mutableStateOf("") }
+        var bodegaSeleccionda by remember { mutableStateOf(artculo.listaBodegas.first()) }
+        var cantidadProducto by remember { mutableIntStateOf(1) }
+        var precioProducto by remember {mutableDoubleStateOf(artculo.precio) }
+        var seleccionPresentacion by remember { mutableStateOf("Unidad") }
+        var descuentoProducto by remember { mutableDoubleStateOf(artculo.descuentoFijo) }
+        var montoDescuento by remember { mutableDoubleStateOf(0.0) }
         var isVerDatosBodega by remember { mutableStateOf(false) }
         var subtotal by remember { mutableDoubleStateOf(0.0) }
         var montoIVA by remember { mutableDoubleStateOf(0.0) }
         var totalProducto by remember { mutableDoubleStateOf(0.0) }
         var esCambioPorPorcentaje by remember { mutableStateOf(true) }
         var esCambioPorMontoDescuento by remember { mutableStateOf(false) }
-        var expandedBodegas by remember { mutableStateOf(false) }
-        var expandedMedida by remember { mutableStateOf(false) }
         var isMenuVisible by remember { mutableStateOf(false) }
+        val simboloMoneda by remember { mutableStateOf(if(codigoMoneda == "CRC") "\u20A1 " else "\u0024 ") }
 
-        // Función para validar entradas de artículos
-        fun validarEntradasArticulos(oldValor: String, newValor: String): String {
-            // Implementar lógica de validación según necesidades
-            return newValor
-        }
 
         // Función para calcular totales
         fun calcularTotales() {
-            val cantidad = cantidadProducto.toDoubleOrNull() ?: 0.0
-            val precio = precioProducto.toDoubleOrNull() ?: 0.0
+            val cantidad = cantidadProducto
+            val precio = precioProducto
 
             subtotal = cantidad * precio
 
             val descuento = if (esCambioPorPorcentaje) {
-                val porcentaje = descuentoProducto.toDoubleOrNull() ?: 0.0
+                val porcentaje = descuentoProducto
                 subtotal * porcentaje / 100
             } else {
-                montoDescuento.toDoubleOrNull() ?: 0.0
+                montoDescuento
             }
 
             if (esCambioPorPorcentaje) {
-                montoDescuento = separacionDeMiles(descuento)
+                montoDescuento = descuento
             } else if (esCambioPorMontoDescuento) {
                 val porcentajeCalculado = if (subtotal > 0) (descuento / subtotal) * 100 else 0.0
-                descuentoProducto = separacionDeMiles(porcentajeCalculado)
+                descuentoProducto = porcentajeCalculado
                 esCambioPorMontoDescuento = false
             }
 
             val subtotalConDescuento = subtotal - descuento
-            val iva = subtotalConDescuento * (impuestoProducto) / 100
+            val iva = subtotalConDescuento * (artculo.impuesto) / 100
             montoIVA = iva
             totalProducto = subtotalConDescuento + iva
         }
@@ -1629,14 +1860,14 @@ fun ProductoDialog(
                     ) {
 
                         TText(
-                            text = nombreProducto,
+                            text = artculo.descripcion,
                             modifier = Modifier.fillMaxWidth(),
                             fontSize = obtenerEstiloHeadMedium(),
                             textAlign = TextAlign.Center,
                             maxLines = 2
                         )
                         TText(
-                            text = "Código: $codigoProducto",
+                            text = "Código: ${artculo.codigo}",
                             fontSize = obtenerEstiloBodyBig(),
                             fontWeight = FontWeight.Light
                         )
@@ -1654,11 +1885,11 @@ fun ProductoDialog(
                         TextFieldMultifuncional(
                             label = "Bodega",
                             textPlaceholder = "Selccione una bodega.",
-                            nuevoValor = {bodegaSeleccionda = it},
-                            valor = bodegaSeleccionda,
+                            nuevoValor2 = {bodegaSeleccionda = it},
+                            valor = bodegaSeleccionda.valor,
                             contieneOpciones = true,
-                            usarOpciones3 = true,
-                            opciones3 = opcionesBodegas,
+                            usarOpciones4 = true,
+                            opciones4 = artculo.listaBodegas,
                             usarModifierForSize = true,
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -1681,13 +1912,13 @@ fun ProductoDialog(
                                 horizontalArrangement = Arrangement.SpaceBetween
                             ) {
                                 TText(
-                                    text = "Codigo: $codigoBodega",
+                                    text = "Codigo: ${bodegaSeleccionda.clave}",
                                     modifier = Modifier
                                         .weight(1f),
                                     textAlign = TextAlign.Start
                                 )
                                 TText(
-                                    text = "Existencia: $existenciaBodega",
+                                    text = "Existencia: ${bodegaSeleccionda.existencia}",
                                     modifier = Modifier
                                         .weight(1f),
                                     textAlign = TextAlign.End
@@ -1726,8 +1957,8 @@ fun ProductoDialog(
                                     color = Color.DarkGray
                                 )
                                 TextFieldMultifuncional(
-                                    nuevoValor = {cantidadProducto = it},
-                                    valor = cantidadProducto,
+                                    nuevoValor = {cantidadProducto = it.toInt()},
+                                    valor = cantidadProducto.toString(),
                                     usarModifierForSize = true,
                                     modifier = Modifier
                                         .fillMaxWidth()
@@ -1751,8 +1982,8 @@ fun ProductoDialog(
                                     color = Color.DarkGray
                                 )
                                 TextFieldMultifuncional(
-                                    nuevoValor = {precioProducto = it},
-                                    valor = precioProducto,
+                                    nuevoValor = {precioProducto = it.toDouble()},
+                                    valor = precioProducto.toString(),
                                     usarModifierForSize = true,
                                     modifier = Modifier
                                         .fillMaxWidth()
@@ -1805,26 +2036,6 @@ fun ProductoDialog(
 
                         Spacer(modifier = Modifier.height(8.dp))
 
-                        // Subtotal
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            TText(
-                                text = "Subtotal:",
-                                textAlign = TextAlign.Start,
-                                fontSize = obtenerEstiloBodyMedium()
-                            )
-                            TText(
-                                text = separacionDeMiles(subtotal),
-                                textAlign = TextAlign.End,
-                                fontSize = obtenerEstiloBodyBig()
-                            )
-                        }
-
-                        Spacer(modifier = Modifier.height(8.dp))
-
                         // Descuento y Monto Descuento en la misma línea
                         Row(
                             horizontalArrangement = Arrangement.spacedBy(15.dp)
@@ -1841,8 +2052,8 @@ fun ProductoDialog(
                                 TextFieldMultifuncional(
                                     label = "Descuento",
                                     textPlaceholder = "Descuento",
-                                    nuevoValor = { descuentoProducto = it },
-                                    valor = descuentoProducto,
+                                    nuevoValor = { descuentoProducto = it.toDouble() },
+                                    valor = descuentoProducto.toString(),
                                     usarModifierForSize = true,
                                     modifier = Modifier
                                         .fillMaxWidth()
@@ -1875,11 +2086,11 @@ fun ProductoDialog(
                                     label = "Monto",
                                     textPlaceholder = "Monto",
                                     nuevoValor = { newValue ->
-                                        montoDescuento = validarEntradasArticulos(montoDescuento, newValue)
+                                        montoDescuento = newValue.toDouble()
                                         esCambioPorMontoDescuento = true
                                         calcularTotales()
                                     },
-                                    valor = montoDescuento,
+                                    valor = montoDescuento.toString(),
                                     usarModifierForSize = true,
                                     modifier = Modifier
                                         .fillMaxWidth()
@@ -1907,25 +2118,61 @@ fun ProductoDialog(
                             modifier = Modifier
                                 .fillMaxWidth()
                         ) {
+                            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                TText(
+                                    text = "Monto Descuento:",
+                                    textAlign = TextAlign.Start,
+                                    fontSize = obtenerEstiloBodyBig()
+                                )
+                                Spacer(modifier = Modifier.weight(1f))
+                                TText(
+                                    text = simboloMoneda + separacionDeMiles(montoDescuento) +" ${artculo.codTipoMoneda}",
+                                    textAlign = TextAlign.End,
+                                    fontSize = obtenerEstiloBodyBig()
+                                )
+                            }
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                TText(
+                                    text = "Subtotal:",
+                                    textAlign = TextAlign.Start,
+                                    fontSize = obtenerEstiloBodyBig()
+                                )
+                                Spacer(modifier = Modifier.weight(1f))
+                                TText(
+                                    text = simboloMoneda + separacionDeMiles(subtotal) +" ${artculo.codTipoMoneda}",
+                                    textAlign = TextAlign.End,
+                                    fontSize = obtenerEstiloBodyBig()
+                                )
+                            }
+                            Spacer(modifier = Modifier.height(8.dp))
+
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.SpaceBetween
                             ) {
                                 TText(
-                                    text = "Impuesto (IVA %): $impuestoProducto" ,
+                                    text = "Impuesto (IVA %): ${artculo.impuesto}%" ,
                                     textAlign = TextAlign.End,
                                     fontSize = obtenerEstiloBodyBig()
                                 )
                                 Spacer(modifier = Modifier.weight(1f))
                                 TText(
-                                    text = "Monto IVA: ${separacionDeMiles( montoIVA)}",
+                                    text = "Monto IVA: $simboloMoneda${separacionDeMiles(montoIVA)} ${artculo.codTipoMoneda}",
                                     textAlign = TextAlign.End,
                                     fontSize = obtenerEstiloBodyBig()
                                 )
                             }
-
-                            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
-
+                            Spacer(modifier = Modifier.height(8.dp))
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.SpaceBetween
@@ -1937,7 +2184,7 @@ fun ProductoDialog(
                                 )
                                 Spacer(modifier = Modifier.weight(1f))
                                 TText(
-                                    text = "$monedaCodigo ${separacionDeMiles(totalProducto)}",
+                                    text = "$simboloMoneda${separacionDeMiles(totalProducto)} ${artculo.codTipoMoneda}",
                                     textAlign = TextAlign.End,
                                     fontSize = obtenerEstiloTitleSmall()
                                 )
@@ -1980,7 +2227,6 @@ fun ProductoDialog(
         }
     }
 }
-
 
 @Composable
 @Preview

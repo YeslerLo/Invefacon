@@ -1,7 +1,10 @@
 package com.soportereal.invefacon.funciones_de_interfaces
 
+import android.app.Activity
 import android.content.Context
 import android.content.SharedPreferences
+import android.view.View
+import android.view.inputmethod.InputMethodManager
 import com.soportereal.invefacon.interfaces.pantallas_principales.estadoRespuestaApi
 import org.json.JSONObject
 import java.util.Locale
@@ -69,3 +72,9 @@ fun validarExitoRestpuestaServidor(respuesta : JSONObject): Boolean{
 fun String.isSoloNumeros(): Boolean {
     return this.matches(Regex("\\d+"))
 }
+
+fun mostrarTeclado(context: Context) {
+    val inputMethodManager = context.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+    inputMethodManager.toggleSoftInput(InputMethodManager.SHOW_FORCED, 0)
+}
+

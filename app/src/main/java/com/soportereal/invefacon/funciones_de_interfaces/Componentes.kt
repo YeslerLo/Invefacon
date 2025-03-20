@@ -245,12 +245,15 @@ internal fun TText(
 internal fun TextFieldMultifuncional(
     label: String = "",
     valor: String,
-    nuevoValor: (String)-> Unit,
+    nuevoValor: (String)-> Unit = {},
+    nuevoValor2: (ParClaveValor)-> Unit = {},
     isUltimo: Boolean? = false,
     modoEdicionActivado: Boolean= true,
     contieneOpciones: Boolean = false,
     opciones: SnapshotStateMap<String, String> = mutableStateMapOf("1" to "1"),
     usarOpciones2: Boolean = false,
+    usarOpciones4: Boolean = false,
+    opciones4: List<ParClaveValor> = emptyList(),
     @SuppressLint("MutableCollectionMutableState") opciones2: MutableState<LinkedHashMap<String, String>> = mutableStateOf(LinkedHashMap()),
     isSeleccionarFecha: Boolean = false,
     darFormatoMiles: Boolean = false,
@@ -272,7 +275,6 @@ internal fun TextFieldMultifuncional(
     fontSize: TextUnit = obtenerEstiloLabelBig(),
     mostrarPlaceholder: Boolean = true,
     mostrarLabel: Boolean = true
-
     ){
     val fontAksharPrincipal = FontFamily(Font(R.font.akshar_medium))
     val configuration = LocalConfiguration.current
@@ -519,6 +521,29 @@ internal fun TextFieldMultifuncional(
                         )
                     }
                 }
+                else if(usarOpciones4){
+                    opciones4.forEach { contenido->
+                        DropdownMenuItem(
+                            onClick = {
+                                nuevoValor2 (contenido)
+                                expanded = false // Cierra el menú después de seleccionar
+                            },
+                            text = {
+                                Text(
+                                    contenido.valor,
+                                    fontFamily = fontAksharPrincipal,
+                                    fontWeight = FontWeight.Medium,
+                                    fontSize = fontSize,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    textAlign = TextAlign.Center,
+                                    color = Color.Black
+                                )
+                            },
+                            modifier = Modifier.background(Color.White)
+                        )
+                    }
+                }
                 else{
                     opciones.forEach { (clave, contenido) ->
                         DropdownMenuItem(
@@ -559,3 +584,9 @@ internal fun TextFieldMultifuncional(
         }
     }
 }
+
+data class ParClaveValor(
+    val clave : String = "",
+    val valor: String = "",
+    val existencia : Double = 0.00 // Para Bodegas modulo Facturacion
+)
