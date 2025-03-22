@@ -60,9 +60,21 @@ suspend fun obtenerDatosClienteByCedula(
     return objetoFuncionesHttpInvefacon.metodoGet(apiDirectorio = "cedulas/$numeroCedula", validarJson = false, enviarToken = false)
 }
 
-fun separacionDeMiles(montoDouble:Double= 0.00, montoInt: Int = 0,isDouble: Boolean= true): String{
-    val monto = if (isDouble) montoDouble else montoInt
-    return String.format(Locale.US, "%,.2f", monto.toString().replace(",", "").toDouble())
+fun separacionDeMiles(
+    montoDouble:Double= 0.00,
+    montoInt: Int = 0,
+    montoString: String = "",
+    isDouble: Boolean= true,
+    isString: Boolean = false
+): String{
+    if (isString){
+        val monto = if (montoString.isEmpty()) 0.00 else montoString.toDouble()
+        return String.format(Locale.US, "%,.2f", monto.toString().replace(",", "").toDouble())
+    }else{
+
+        val monto = if (isDouble) montoDouble else montoInt
+        return String.format(Locale.US, "%,.2f", monto.toString().replace(",", "").toDouble())
+    }
 }
 
 fun validarExitoRestpuestaServidor(respuesta : JSONObject): Boolean{

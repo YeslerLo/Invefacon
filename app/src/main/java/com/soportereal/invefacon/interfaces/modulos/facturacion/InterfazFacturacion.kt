@@ -44,11 +44,11 @@ import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Inventory
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PersonPin
+import androidx.compose.material.icons.filled.PriceChange
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Straighten
 import androidx.compose.material.icons.filled.Warehouse
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
@@ -59,7 +59,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -99,11 +98,11 @@ import com.google.accompanist.systemuicontroller.SystemUiController
 import com.soportereal.invefacon.R
 import com.soportereal.invefacon.funciones_de_interfaces.BBasicTextField
 import com.soportereal.invefacon.funciones_de_interfaces.BButton
+import com.soportereal.invefacon.funciones_de_interfaces.ParClaveValor
 import com.soportereal.invefacon.funciones_de_interfaces.TText
 import com.soportereal.invefacon.funciones_de_interfaces.TextFieldMultifuncional
-import com.soportereal.invefacon.funciones_de_interfaces.mostrarTeclado
-import com.soportereal.invefacon.funciones_de_interfaces.ParClaveValor
 import com.soportereal.invefacon.funciones_de_interfaces.mostrarMensajeError
+import com.soportereal.invefacon.funciones_de_interfaces.mostrarTeclado
 import com.soportereal.invefacon.funciones_de_interfaces.separacionDeMiles
 import com.soportereal.invefacon.funciones_de_interfaces.validarExitoRestpuestaServidor
 import com.soportereal.invefacon.interfaces.FuncionesParaAdaptarContenido
@@ -149,6 +148,7 @@ fun IniciarInterfazFacturacion(
     val listaArticulosSeleccionados = remember { mutableStateListOf<ArticuloFacturacion>() }
     var listaArticulosProforma by remember {  mutableStateOf<List<ArticuloFacturacion>>(emptyList()) }
     var nombre by remember { mutableStateOf("") }
+    var descuento by remember { mutableStateOf("0.00") }
     var tipoPrecio by remember { mutableStateOf("") }
     var tipoCedula by remember { mutableStateOf("") }
     var numeroCedula by remember { mutableStateOf("") }
@@ -186,8 +186,9 @@ fun IniciarInterfazFacturacion(
     var listaArticulosEncontrados by remember { mutableStateOf(emptyList<ArticuloFacturacion>()) }
     var datosIngresadosBarraBusquedaArticulos by remember { mutableStateOf("") }
     var isCargandoArticulos by remember { mutableStateOf(false) }
+    var isAgregar by remember { mutableStateOf(false) }
     var articuloActual by remember { mutableStateOf(ArticuloFacturacion()) }
-    var validacionCargaFinalizada by remember { mutableStateOf(0) } // si es dos las dos peticiones al api ya finalizaron
+    var validacionCargaFinalizada by remember { mutableIntStateOf(0) } // si es '2' las dos peticiones al api ya finalizaron
     val transition = rememberInfiniteTransition(label = "shimmer")
     val shimmerTranslate by transition.animateFloat(
         initialValue = -800f,
@@ -221,82 +222,77 @@ fun IniciarInterfazFacturacion(
                 objectoProcesadorDatosApi.crearNuevaProforma()
                 val result= objectoProcesadorDatosApi.abrirProforma()
                 if (result!=null){
-                    try {
-                        estadoRespuestaApi.cambiarEstadoRespuestaApi(mostrarSoloRespuestaError = true, datosRespuesta = result)
-                        if(validarExitoRestpuestaServidor(result)) {
-                            val data = result.getJSONObject("data")
+                    estadoRespuestaApi.cambiarEstadoRespuestaApi(mostrarSoloRespuestaError = true, datosRespuesta = result)
+                    if(validarExitoRestpuestaServidor(result)) {
+                        val data = result.getJSONObject("data")
 
-                            //DATOS CLIENTE
-                            val datosCliente = data.getJSONArray("cliente").getJSONObject(0)
-                            cuenta= datosCliente.getString("ClienteID")
-                            nombre= datosCliente.getString("ClienteNombre")
-                            nombreComercial = datosCliente.getString("clientenombrecomercial")
-                            numeroCedula = datosCliente.getString("Cedula")
-                            emailGeneral = datosCliente.getString("Email")
-                            telefonos = datosCliente.getString("Telefonos")
-                            tipoCedula = datosCliente.getString("TipoIdentificacion")
-                            plazoCredito = datosCliente.getString("plazo")
-                            tipoPrecio = datosCliente.getString("TipoPrecioVenta")
-                            codMonedaCliente = datosCliente.getString("monedacodigo")
+                        //DATOS CLIENTE
+                        val datosCliente = data.getJSONArray("cliente").getJSONObject(0)
+                        cuenta= datosCliente.getString("ClienteID")
+                        nombre= datosCliente.getString("ClienteNombre")
+                        nombreComercial = datosCliente.getString("clientenombrecomercial")
+                        numeroCedula = datosCliente.getString("Cedula")
+                        emailGeneral = datosCliente.getString("Email")
+                        telefonos = datosCliente.getString("Telefonos")
+                        tipoCedula = datosCliente.getString("TipoIdentificacion")
+                        plazoCredito = datosCliente.getString("plazo")
+                        tipoPrecio = datosCliente.getString("TipoPrecioVenta")
+                        codMonedaCliente = datosCliente.getString("monedacodigo")
+                        descuento = datosCliente.getString("Descuento")
 
-                            //DATOS PROFORMA
-                            val datosProforma = data.getJSONArray("datos").getJSONObject(0)
-                            numeroProforma= datosProforma.getString("Numero")
+                        //DATOS PROFORMA
+                        val datosProforma = data.getJSONArray("datos").getJSONObject(0)
+                        numeroProforma= datosProforma.getString("Numero")
 
-                            //Tipo Moneda
-                            codMonedaProforma = data.getString("monedaDocumento")
-                            simboloMoneda =  if(codMonedaProforma == "CRC") "\u20A1 " else "\u0024 "
-                            iniciarDescargaArticulos = true
+                        //Tipo Moneda
+                        codMonedaProforma = data.getString("monedaDocumento")
+                        simboloMoneda =  if(codMonedaProforma == "CRC") "\u20A1 " else "\u0024 "
+                        iniciarDescargaArticulos = true
 
-                            //Totales
-                            val totales = data.getJSONArray("totales").getJSONObject(0)
-                            totalGravado = totales.getDouble("TotalGravado")
-                            totalIva = totales.getDouble("TotalIva")
-                            totalDescuento = totales.getDouble("TotalDescuento")
-                            totalPago = totales.getDouble("Pago")
-                            totalExonerado = totales.getDouble("TotalExonerado")
-                            totalIvaDevuelto = totales.getDouble("TotalIvaDevuelto")
-                            totalMercGrav = totales.getDouble("TotalMercGravado")
-                            total = totales.getDouble("Total")
+                        //Totales
+                        val totales = data.getJSONArray("totales").getJSONObject(0)
+                        totalGravado = totales.getDouble("TotalGravado")
+                        totalIva = totales.getDouble("TotalIva")
+                        totalDescuento = totales.getDouble("TotalDescuento")
+                        totalPago = totales.getDouble("Pago")
+                        totalExonerado = totales.getDouble("TotalExonerado")
+                        totalIvaDevuelto = totales.getDouble("TotalIvaDevuelto")
+                        totalMercGrav = totales.getDouble("TotalMercGravado")
+                        total = totales.getDouble("Total")
 
-                            // ARTICULOS PROFORMA
-                            val listaArticuloFacturados = mutableListOf<ArticuloFacturacion>()
-                            val articulos = data.getJSONArray("proforma")
-                            for(i in 0 until articulos.length()){
-                                val datosArticulo = articulos.getJSONObject(i)
-                                val articuloFacturado = ArticuloFacturacion(
-                                    codigo = datosArticulo.getString("ArticuloCodigo"),
-                                    codPrecioVenta = datosArticulo.getString("PV"),
-                                    descripcion = datosArticulo.getString("Descripcion"),
-                                    articuloCantidad = datosArticulo.getInt("ArticuloCantidad"),
-                                    precio = datosArticulo.getDouble("PrecioUd"),
-                                    articuloDescuentoPorcentaje = datosArticulo.getDouble("ArticuloDescuentoPorcentage"),
-                                    articuloDescuentoMonto = datosArticulo.getDouble("ArticuloDescuentoMonto"),
-                                    articuloVentaSubTotal2 = datosArticulo.getDouble("ArticuloVentaSubTotal2"),
-                                    articuloVentaGravado = datosArticulo.getDouble("ArticuloVentaGravado"),
-                                    articuloIvaExonerado = datosArticulo.getDouble("ArticuloIvaExonerado"),
-                                    articuloVentaExento = datosArticulo.getDouble("ArticuloVentaExento"),
-                                    articuloIvaPorcentaje = datosArticulo.getDouble("ArticuloIvaPorcentage"),
-                                    articuloIvaMonto = datosArticulo.getDouble("ArticuloIvaMonto"),
-                                    articuloBodegaCodigo = datosArticulo.getString("ArticuloBodegaCodigo"),
-                                    articuloVentaTotal = datosArticulo.getDouble("ArticuloVentaTotal"),
-                                    existencia = datosArticulo.getDouble("Existencia"),
-                                    articuloLineaId = datosArticulo.getInt("ArticuloLineaId"),
-                                    articuloCosto = datosArticulo.getDouble("ArticuloCosto"),
-                                    utilidad = datosArticulo.getDouble("Utilidad")
-                                )
-                                listaArticuloFacturados.add(articuloFacturado)
-                            }
-                            listaArticulosProforma = listaArticuloFacturados
+                        // ARTICULOS PROFORMA
+                        val listaArticuloFacturados = mutableListOf<ArticuloFacturacion>()
+                        val articulos = data.getJSONArray("proforma")
+                        for(i in 0 until articulos.length()){
+                            val datosArticulo = articulos.getJSONObject(i)
+                            val articuloFacturado = ArticuloFacturacion(
+                                codigo = datosArticulo.getString("ArticuloCodigo"),
+                                codPrecioVenta = datosArticulo.getString("PV"),
+                                descripcion = datosArticulo.getString("Descripcion"),
+                                articuloCantidad = datosArticulo.getInt("ArticuloCantidad"),
+                                precio = datosArticulo.getDouble("PrecioUd"),
+                                articuloDescuentoPorcentaje = datosArticulo.getDouble("ArticuloDescuentoPorcentage"),
+                                articuloDescuentoMonto = datosArticulo.getDouble("ArticuloDescuentoMonto"),
+                                articuloVentaSubTotal2 = datosArticulo.getDouble("ArticuloVentaSubTotal2"),
+                                articuloVentaGravado = datosArticulo.getDouble("ArticuloVentaGravado"),
+                                articuloIvaExonerado = datosArticulo.getDouble("ArticuloIvaExonerado"),
+                                articuloVentaExento = datosArticulo.getDouble("ArticuloVentaExento"),
+                                impuesto = datosArticulo.getDouble("ArticuloIvaPorcentage"),
+                                articuloIvaMonto = datosArticulo.getDouble("ArticuloIvaMonto"),
+                                articuloBodegaCodigo = datosArticulo.getString("ArticuloBodegaCodigo"),
+                                articuloVentaTotal = datosArticulo.getDouble("ArticuloVentaTotal"),
+                                existencia = datosArticulo.getDouble("Existencia"),
+                                articuloLineaId = datosArticulo.getString("ArticuloLineaId"),
+                                articuloCosto = datosArticulo.getDouble("ArticuloCosto"),
+                                utilidad = datosArticulo.getDouble("Utilidad")
+                            )
+                            listaArticuloFacturados.add(articuloFacturado)
                         }
-                        else{
-                            errorCargarProforma = true
-                        }
-                    } catch (e: Exception) {
-                        mostrarMensajeError(e.message.toString())
+                        listaArticulosProforma = listaArticuloFacturados
+                    }
+                    else{
                         errorCargarProforma = true
                     }
-
                 }
                 validacionCargaFinalizada++
             }
@@ -312,77 +308,69 @@ fun IniciarInterfazFacturacion(
             apiConsultaArticulos= cortinaConsultaApiArticulos.launch{
                 val result = objectoProcesadorDatosApi.obtenerArticulos(
                     tipoPrecio = tipoPrecio,
-                    moneda = codMonedaCliente,
-                    cantidadMostrar = 100,
-                    busquedaMixta = ""
+                    moneda = codMonedaCliente
                 )
                 if (result!=null){
-                    try {
-                        if (validarExitoRestpuestaServidor(result)){
-                            val data = result.getJSONArray("data")
-                            val listaArticulos = mutableListOf<ArticuloFacturacion>()
-                            for(i in 0 until data.length()){
+                    if (validarExitoRestpuestaServidor(result)){
+                        val data = result.getJSONArray("data")
+                        val listaArticulos = mutableListOf<ArticuloFacturacion>()
+                        for(i in 0 until data.length()){
 
-                                val listaPrecios = mutableListOf<ParClaveValor>()
-                                val listaBodegas = mutableListOf<ParClaveValor>()
-                                val datosArticulo = data.getJSONObject(i)
+                            val listaPrecios = mutableListOf<ParClaveValor>()
+                            val listaBodegas = mutableListOf<ParClaveValor>()
+                            val datosArticulo = data.getJSONObject(i)
 
-                                for (a in 1 until 11){
-                                    listaPrecios.add(
-                                        ParClaveValor(
-                                            clave = "$a",
-                                            valor = datosArticulo.getString("Precio$a")
-                                        )
+                            for (a in 1 until 11){
+                                listaPrecios.add(
+                                    ParClaveValor(
+                                        clave = "$a",
+                                        valor = datosArticulo.getString("Precio$a")
                                     )
-                                }
-
-                                val bodegasString = datosArticulo.getString("bodegas")
-                                val datosBodegas = JSONArray(bodegasString)
-
-                                for (e in 0 until datosBodegas.length()) {
-                                    val datoBodega = datosBodegas.getJSONObject(e)
-                                    val bodega = ParClaveValor(
-                                        clave = datoBodega.getString("Cod_Bodega"),
-                                        valor = datoBodega.getString("Descripcion"),
-                                        existencia = datoBodega.getDouble("Existencia")
-                                    )
-                                    listaBodegas.add(bodega)
-                                }
-
-
-                                val articulo = ArticuloFacturacion(
-                                    codigo = datosArticulo.getString("Codigo"),
-                                    codBarra = datosArticulo.getString("Cod_Barra"),
-                                    descripcion = datosArticulo.getString("Descripcion"),
-                                    stock = datosArticulo.optDouble("Stock", 0.00),
-                                    costo = datosArticulo.getDouble("Costo"),
-                                    descuentoFijo = datosArticulo.getDouble("Descuento_Fijo"),
-                                    codTarifaImpuesto = datosArticulo.getString("Cod_Tarifa_Impuesto"),
-                                    impuesto = datosArticulo.getDouble("Impuesto"),
-                                    codEstado = datosArticulo.getString("Cod_Estado"),
-                                    codTipoMoneda = datosArticulo.getString("Cod_Tipo_Moneda"),
-                                    codNaturalezaArticulo = datosArticulo.getString("Cod_Naturaleza_Articulo"),
-                                    codCabys = datosArticulo.getString("Cod_Cabys"),
-                                    actividadEconomica = datosArticulo.getString("Actividad_Economica"),
-                                    unidadXMedida = datosArticulo.getDouble("Unidad_x_Medida"),
-                                    unidadMedida = datosArticulo.getString("Unidad_Medida"),
-                                    descuentoAdmitido = datosArticulo.getDouble("Descuento_Admitido"),
-                                    precio = datosArticulo.getDouble("Precio"),
-                                    listaPrecios = listaPrecios,
-                                    listaBodegas = listaBodegas
                                 )
-                                listaArticulos.add(articulo)
                             }
-                            listaArticulosFacturacion = listaArticulos
-                        }else{
-                            errorCargarProforma = true
-                            estadoRespuestaApi.cambiarEstadoRespuestaApi(mostrarSoloRespuestaError = true, datosRespuesta = result)
-                        }
-                    }catch (e: Exception) {
-                        mostrarMensajeError(e.message.toString())
-                        errorCargarProforma = true
-                    }
 
+                            val bodegasString = datosArticulo.getString("bodegas")
+                            val datosBodegas = JSONArray(bodegasString)
+
+                            for (e in 0 until datosBodegas.length()) {
+                                val datoBodega = datosBodegas.getJSONObject(e)
+                                val bodega = ParClaveValor(
+                                    clave = datoBodega.getString("Cod_Bodega"),
+                                    valor = datoBodega.getString("Descripcion"),
+                                    existencia = datoBodega.getDouble("Existencia")
+                                )
+                                listaBodegas.add(bodega)
+                            }
+
+
+                            val articulo = ArticuloFacturacion(
+                                codigo = datosArticulo.getString("Codigo"),
+                                codBarra = datosArticulo.getString("Cod_Barra"),
+                                descripcion = datosArticulo.getString("Descripcion"),
+                                stock = datosArticulo.optDouble("Stock", 0.00),
+                                costo = datosArticulo.getDouble("Costo"),
+                                descuentoFijo = datosArticulo.getDouble("Descuento_Fijo"),
+                                codTarifaImpuesto = datosArticulo.getString("Cod_Tarifa_Impuesto"),
+                                impuesto = datosArticulo.getDouble("Impuesto"),
+                                codEstado = datosArticulo.getString("Cod_Estado"),
+                                codTipoMoneda = datosArticulo.getString("Cod_Tipo_Moneda"),
+                                codNaturalezaArticulo = datosArticulo.getString("Cod_Naturaleza_Articulo"),
+                                codCabys = datosArticulo.getString("Cod_Cabys"),
+                                actividadEconomica = datosArticulo.getString("Actividad_Economica"),
+                                unidadXMedida = datosArticulo.getDouble("Unidad_x_Medida"),
+                                unidadMedida = datosArticulo.getString("Unidad_Medida"),
+                                descuentoAdmitido = datosArticulo.getDouble("Descuento_Admitido"),
+                                precio = datosArticulo.getDouble("Precio"),
+                                listaPrecios = listaPrecios,
+                                listaBodegas = listaBodegas
+                            )
+                            listaArticulos.add(articulo)
+                        }
+                        listaArticulosFacturacion = listaArticulos
+                    }else{
+                        errorCargarProforma = true
+                        estadoRespuestaApi.cambiarEstadoRespuestaApi(mostrarSoloRespuestaError = true, datosRespuesta = result)
+                    }
                 }
                 validacionCargaFinalizada++
             }
@@ -392,11 +380,10 @@ fun IniciarInterfazFacturacion(
 
     LaunchedEffect(datosIngresadosBarraBusquedaArticulos) {
         if(datosIngresadosBarraBusquedaArticulos.isNotEmpty()){
-            isCargandoArticulos = true
             listaArticulosEncontrados = emptyList()
             apiConsultaBusquedaArticulos?.cancel()
             apiConsultaBusquedaArticulos= cortinaConsultaApiBusquedaArticulos.launch{
-                delay(300)
+                delay(200)
                 listaArticulosEncontrados = listaArticulosFacturacion.filter {
                     it.descripcion.contains(datosIngresadosBarraBusquedaArticulos, ignoreCase = true) ||
                             it.codigo.contains(datosIngresadosBarraBusquedaArticulos, ignoreCase = true)
@@ -428,8 +415,9 @@ fun IniciarInterfazFacturacion(
                     shape = RoundedCornerShape(objetoAdaptardor.ajustarAltura(16))
                 )
                 .clickable {
+                    isAgregar = true
                     articuloActual = articulo
-                    listaArticulosFacturacion = emptyList()
+                    listaArticulosEncontrados = emptyList()
                     datosIngresadosBarraBusquedaArticulos = ""
                     iniciarMenuSeleccionarArticulo = false
                     iniciarMenuDatosArticulo = true
@@ -538,6 +526,531 @@ fun IniciarInterfazFacturacion(
                 textColor = Color.Black,
                 fontSize = obtenerEstiloBodyMedium()
             )
+        }
+    }
+
+    @Composable
+    fun ProductoDialog(
+        mostrarVentanaArticulo: Boolean,
+        onDismiss: () -> Unit,
+        opcionesPresentacion: List<String>,
+        articulo : ArticuloFacturacion,
+        objetoAdaptardor: FuncionesParaAdaptarContenido,
+        codigoMoneda : String,
+        descuentoCliente : String,
+        isAgregar: Boolean,
+        agregaEditaArticulo : (ArticuloLineaProforma)->Unit
+    ) {
+        if (mostrarVentanaArticulo) {
+            var bodegaSeleccionda by remember { mutableStateOf(articulo.listaBodegas.first()) }
+            var tipoPrecioSeleccionado by remember { mutableStateOf(articulo.listaPrecios.first()) }
+            var cantidadProducto by remember { mutableStateOf(articulo.articuloCantidad.toString()) }
+            var precioProducto by remember {mutableStateOf(articulo.precio.toString()) }
+            var seleccionPresentacion by remember { mutableStateOf("Unidad") }
+            var descuentoProducto by remember { mutableStateOf(descuentoCliente) }
+            var montoDescuento by remember { mutableStateOf("") }
+            var subtotal by remember { mutableDoubleStateOf(0.0) }
+            var montoIVA by remember { mutableDoubleStateOf(0.0) }
+            var totalProducto by remember { mutableDoubleStateOf(0.0) }
+            var esCambioPorMontoDescuento by remember { mutableStateOf(false) }
+            var isMenuVisible by remember { mutableStateOf(false) }
+            val simboloMonedaArticulo by remember { mutableStateOf(if(codigoMoneda == "CRC") "\u20A1 " else "\u0024 ") }
+
+            // Función para calcular totales
+            fun calcularTotales() {
+                var cantidad = if (cantidadProducto.isEmpty()) 0.00 else cantidadProducto.toDouble()
+                val precio = if (precioProducto.isEmpty()) 0.00 else precioProducto.toDouble()
+                var porcentajeDescuento = if(descuentoProducto.isEmpty()) 0.00 else descuentoProducto.toDouble()
+                var tempMontoDescuento = if(montoDescuento.isEmpty()) 0.00 else montoDescuento.toDouble()
+
+
+                if (seleccionPresentacion != "Unidad"){
+                    cantidad *= articulo.unidadXMedida
+                }
+                subtotal = cantidad * precio
+
+                if (esCambioPorMontoDescuento){
+                    porcentajeDescuento =  tempMontoDescuento * 100 / subtotal
+                    descuentoProducto = porcentajeDescuento.toString()
+                }else{
+                    tempMontoDescuento = (subtotal * porcentajeDescuento)/100
+                    montoDescuento = tempMontoDescuento.toString()
+                }
+
+                val subtotalConDescuento = subtotal - tempMontoDescuento
+                val iva = subtotalConDescuento * (articulo.impuesto) / 100
+
+                montoIVA = iva
+                totalProducto = subtotalConDescuento + iva
+
+
+                esCambioPorMontoDescuento = false
+            }
+
+            LaunchedEffect(Unit) {
+                calcularTotales()
+            }
+
+            LaunchedEffect(Unit) {
+                delay(100)
+                isMenuVisible = true
+            }
+
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.3f))
+                    .clickable(enabled = false) {},
+                contentAlignment = Alignment.Center
+            ) {
+                AnimatedVisibility(
+                    visible = isMenuVisible,
+                    enter = fadeIn(animationSpec = tween(500)) + slideInVertically(initialOffsetY = { it }),
+                    exit = fadeOut(animationSpec = tween(500)) + slideOutVertically(targetOffsetY = { it })
+                ) {
+                    Card(
+                        modifier = Modifier
+                            .width(objetoAdaptardor.ajustarAncho(400))
+                            .wrapContentHeight()
+                            .clickable(enabled = false) { }
+                            .padding(objetoAdaptardor.ajustarAltura(16)),
+                        shape = RoundedCornerShape(objetoAdaptardor.ajustarAltura(16)),
+                        colors = CardDefaults.cardColors(containerColor = Color.White)
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(objetoAdaptardor.ajustarAltura(16)),
+                            horizontalAlignment = Alignment.Start
+                        ) {
+
+                            TText(
+                                text = if (seleccionPresentacion == "Unidad") "Unidad ${articulo.descripcion}" else  "Caja ${articulo.descripcion}" ,
+                                modifier = Modifier.fillMaxWidth(),
+                                fontSize = obtenerEstiloHeadMedium(),
+                                textAlign = TextAlign.Center,
+                                maxLines = 2
+                            )
+                            TText(
+                                text = "Código: ${articulo.codigo}",
+                                fontSize = obtenerEstiloBodyBig(),
+                                fontWeight = FontWeight.Light
+                            )
+
+                            Spacer(modifier = Modifier.height(8.dp))
+
+                            TText(
+                                text = "Bodega:",
+                                fontSize = obtenerEstiloBodyBig(),
+                                modifier = Modifier.fillMaxWidth(),
+                                fontWeight = FontWeight.Light,
+                                color = Color.DarkGray,
+                                textAlign = TextAlign.Start
+                            )
+                            TextFieldMultifuncional(
+                                label = "Bodega",
+                                textPlaceholder = "Selccione una bodega.",
+                                nuevoValor2 = {bodegaSeleccionda = it},
+                                valor = bodegaSeleccionda.valor,
+                                contieneOpciones = true,
+                                usarOpciones4 = true,
+                                opciones4 = articulo.listaBodegas,
+                                usarModifierForSize = true,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .border(2.dp,
+                                        color = Color.Gray,
+                                        RoundedCornerShape(objetoAdaptardor.ajustarAltura(12))
+                                    ),
+                                mostrarLeadingIcon = true,
+                                leadingIcon = Icons.Default.Warehouse,
+                                isUltimo = true,
+                                medidaAncho = 350,
+                                tomarAnchoMaximo = false,
+                                fontSize = obtenerEstiloBodyBig(),
+                                mostrarLabel = false
+                            )
+
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(objetoAdaptardor.ajustarAltura(4)),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                TText(
+                                    text = "Codigo: ${bodegaSeleccionda.clave}",
+                                    fontSize = obtenerEstiloBodyBig(),
+                                    modifier = Modifier
+                                        .weight(1f),
+                                    textAlign = TextAlign.Start
+                                )
+                                TText(
+                                    text = "Existencia: ${bodegaSeleccionda.existencia}",
+                                    modifier = Modifier
+                                        .weight(1f),
+                                    fontSize = obtenerEstiloBodyBig(),
+                                    textAlign = TextAlign.End
+                                )
+                            }
+                            Spacer(modifier = Modifier.height(8.dp))
+
+                            // Tipo medida
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(15.dp)
+                            ){
+                                Column(
+                                    modifier = Modifier.weight(1f)
+                                ){
+                                    TText(
+                                        text = "Tipo de Medida:",
+                                        fontSize = obtenerEstiloBodyMedium(),
+                                        fontWeight = FontWeight.Light,
+                                        color = Color.DarkGray
+                                    )
+                                    TextFieldMultifuncional(
+                                        label = "Medida",
+                                        textPlaceholder = "Medida",
+                                        nuevoValor = {
+                                            seleccionPresentacion = it
+                                            calcularTotales()
+                                        },
+                                        valor = seleccionPresentacion,
+                                        contieneOpciones = true,
+                                        usarOpciones3 = true,
+                                        opciones3 = opcionesPresentacion,
+                                        usarModifierForSize = true,
+
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .border(
+                                                2.dp,
+                                                color = Color.Gray,
+                                                RoundedCornerShape(objetoAdaptardor.ajustarAltura(12))
+                                            ),
+                                        mostrarLeadingIcon = true,
+                                        leadingIcon = Icons.Default.Straighten,
+                                        isUltimo = true,
+                                        medidaAncho = 350,
+                                        tomarAnchoMaximo = false,
+                                        fontSize = obtenerEstiloBodyBig(),
+                                        mostrarLabel = false,
+                                        cantidadLineas = 1
+                                    )
+                                }
+
+                                Column(
+                                    modifier = Modifier.weight(1f)
+                                ) {
+                                    TText(
+                                        text = "Tipo de Precio:",
+                                        fontSize = obtenerEstiloBodyMedium(),
+                                        fontWeight = FontWeight.Light,
+                                        color = Color.DarkGray
+                                    )
+                                    TextFieldMultifuncional(
+                                        label = "Precio",
+                                        textPlaceholder = "Precio",
+                                        nuevoValor2 = {
+                                            tipoPrecioSeleccionado = it
+                                            precioProducto = it.valor
+                                            calcularTotales()
+                                        },
+                                        valor = tipoPrecioSeleccionado.clave,
+                                        mostrarClave = true,
+                                        contieneOpciones = true,
+                                        usarOpciones4 = true,
+                                        opciones4 = articulo.listaPrecios,
+                                        usarModifierForSize = true,
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .border(
+                                                2.dp,
+                                                color = Color.Gray,
+                                                RoundedCornerShape(objetoAdaptardor.ajustarAltura(12))
+                                            ),
+                                        mostrarLeadingIcon = true,
+                                        leadingIcon = Icons.Filled.PriceChange,
+                                        isUltimo = true,
+                                        medidaAncho = 350,
+                                        tomarAnchoMaximo = false,
+                                        fontSize = obtenerEstiloBodyBig(),
+                                        mostrarLabel = false,
+                                        cantidadLineas = 1
+                                    )
+                                }
+
+                            }
+
+
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(15.dp)
+                            ) {
+                                Column(
+                                    modifier = Modifier.weight(1f)
+                                ) {
+                                    TText(
+                                        text = "Cantidad:",
+                                        fontSize = obtenerEstiloBodyMedium(),
+                                        fontWeight = FontWeight.Light,
+                                        color = Color.DarkGray
+                                    )
+                                    TextFieldMultifuncional(
+                                        nuevoValor = {
+                                            cantidadProducto = it
+                                            calcularTotales()
+                                        },
+                                        valor = cantidadProducto,
+                                        usarModifierForSize = true,
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .border(2.dp, color = Color.Gray, RoundedCornerShape(objetoAdaptardor.ajustarAltura(12))),
+                                        isUltimo = true,
+                                        fontSize = obtenerEstiloBodyBig(),
+                                        cantidadLineas = 1,
+                                        mostrarPlaceholder = true,
+                                        textPlaceholder = "0.00",
+                                        mostrarLabel = false,
+                                        soloPermitirValoresNumericos = true
+                                    )
+                                }
+
+                                Column(
+                                    modifier = Modifier.weight(1f)
+                                ) {
+                                    TText(
+                                        text = "Precio:",
+                                        fontSize = obtenerEstiloBodyMedium(),
+                                        fontWeight = FontWeight.Light,
+                                        color = Color.DarkGray
+                                    )
+                                    TextFieldMultifuncional(
+                                        nuevoValor = {
+                                            precioProducto = it
+                                            calcularTotales()
+                                        },
+                                        valor = precioProducto,
+                                        usarModifierForSize = true,
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .border(2.dp, color = Color.Gray, RoundedCornerShape(objetoAdaptardor.ajustarAltura(12))),
+                                        isUltimo = true,
+                                        fontSize = obtenerEstiloBodyBig(),
+                                        cantidadLineas = 1,
+                                        mostrarPlaceholder = true,
+                                        textPlaceholder = "0.00",
+                                        mostrarLabel = false,
+                                        soloPermitirValoresNumericos = true,
+                                        darFormatoMiles = true,
+                                        permitirPuntosDedimales = true
+                                    )
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(8.dp))
+
+                            // Cantidad y descuento
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(15.dp)
+                            ) {
+
+                                Column(
+                                    modifier = Modifier.weight(1f)
+                                ) {
+                                    TText(
+                                        text = "Descuento (%)",
+                                        fontSize = obtenerEstiloBodyMedium(),
+                                        fontWeight = FontWeight.Light,
+                                        color = Color.DarkGray
+                                    )
+                                    TextFieldMultifuncional(
+                                        label = "Descuento",
+                                        textPlaceholder = "0.00",
+                                        nuevoValor = {
+                                            val temp = if(it.isEmpty()) 0.00 else it.toDouble()
+                                            if (temp<=articulo.descuentoAdmitido){
+                                                descuentoProducto = it
+                                                calcularTotales()
+                                            }
+                                        },
+                                        modoEdicionActivado = (articulo.descuentoAdmitido != 0.00),
+                                        valor = descuentoProducto,
+                                        usarModifierForSize = true,
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .border(
+                                                2.dp,
+                                                color = Color.Gray,
+                                                RoundedCornerShape(objetoAdaptardor.ajustarAltura(12))
+                                            ),
+                                        isUltimo = true,
+                                        medidaAncho = 350,
+                                        tomarAnchoMaximo = false,
+                                        fontSize = obtenerEstiloBodyBig(),
+                                        mostrarLabel = false,
+                                        soloPermitirValoresNumericos = true,
+                                        permitirPuntosDedimales = true,
+                                        cantidadLineas = 1
+                                    )
+                                }
+
+                                Column(
+                                    modifier = Modifier.weight(1f)
+                                ) {
+                                    TText(
+                                        text = "Monto Descuento:",
+                                        fontSize = obtenerEstiloBodyMedium(),
+                                        fontWeight = FontWeight.Light,
+                                        color = Color.DarkGray
+                                    )
+                                    TextFieldMultifuncional(
+                                        nuevoValor = {
+                                            montoDescuento = it
+                                            esCambioPorMontoDescuento = true
+                                            calcularTotales()
+                                        },
+                                        valor = montoDescuento,
+                                        modoEdicionActivado = (articulo.descuentoAdmitido != 0.00),
+                                        usarModifierForSize = true,
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .border(2.dp, color = Color.Gray, RoundedCornerShape(objetoAdaptardor.ajustarAltura(12))),
+                                        isUltimo = true,
+                                        fontSize = obtenerEstiloBodyBig(),
+                                        cantidadLineas = 1,
+                                        mostrarPlaceholder = true,
+                                        textPlaceholder = "0.00",
+                                        mostrarLabel = false,
+                                        soloPermitirValoresNumericos = true,
+                                        darFormatoMiles = true
+                                    )
+                                }
+
+                            }
+
+                            Spacer(modifier = Modifier.height(8.dp))
+
+                            // Impuestos y Total
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                            ) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    TText(
+                                        text = "Monto Descuento:",
+                                        textAlign = TextAlign.Start,
+                                        fontSize = obtenerEstiloBodyBig()
+                                    )
+                                    Spacer(modifier = Modifier.weight(1f))
+                                    TText(
+                                        text = simboloMonedaArticulo + separacionDeMiles(montoString = montoDescuento, isString = true) +" $codigoMoneda",
+                                        textAlign = TextAlign.End,
+                                        fontSize = obtenerEstiloBodyBig()
+                                    )
+                                }
+                                HorizontalDivider(modifier = Modifier.padding(vertical = objetoAdaptardor.ajustarAltura(4)))
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    TText(
+                                        text = "Subtotal:",
+                                        textAlign = TextAlign.Start,
+                                        fontSize = obtenerEstiloBodyBig()
+                                    )
+                                    Spacer(modifier = Modifier.weight(1f))
+                                    TText(
+                                        text = simboloMonedaArticulo + separacionDeMiles(subtotal) +" $codigoMoneda",
+                                        textAlign = TextAlign.End,
+                                        fontSize = obtenerEstiloBodyBig()
+                                    )
+                                }
+                                HorizontalDivider(modifier = Modifier.padding(vertical = objetoAdaptardor.ajustarAltura(4)))
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    TText(
+                                        text = "Monto IVA:" ,
+                                        textAlign = TextAlign.End,
+                                        fontSize = obtenerEstiloBodyBig()
+                                    )
+                                    Spacer(modifier = Modifier.weight(1f))
+                                    TText(
+                                        text = "$simboloMonedaArticulo${separacionDeMiles(montoIVA)} $codigoMoneda",
+                                        textAlign = TextAlign.End,
+                                        fontSize = obtenerEstiloBodyBig()
+                                    )
+                                }
+                                HorizontalDivider(modifier = Modifier.padding(vertical = objetoAdaptardor.ajustarAltura(4)))
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    TText(
+                                        text = "Total: ",
+                                        textAlign = TextAlign.End,
+                                        fontSize = obtenerEstiloTitleSmall()
+                                    )
+                                    Spacer(modifier = Modifier.weight(1f))
+                                    TText(
+                                        text = "$simboloMonedaArticulo${separacionDeMiles(totalProducto)} $codigoMoneda",
+                                        textAlign = TextAlign.End,
+                                        fontSize = obtenerEstiloTitleSmall()
+                                    )
+                                }
+                            }
+
+
+                            // Botones de acción
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                BButton(
+                                    text = "Cancelar",
+                                    objetoAdaptardor = objetoAdaptardor,
+                                    onClick = {
+                                        onDismiss()
+                                    },
+                                    modifier = Modifier.weight(1f),
+                                    backgroundColor = Color.Red,
+                                    textSize = obtenerEstiloTitleBig()
+                                )
+
+                                BButton(
+                                    text = if (isAgregar) "Agregar" else "Editar",
+                                    objetoAdaptardor = objetoAdaptardor,
+                                    onClick = {
+                                        val articuloTemp = ArticuloLineaProforma(
+                                            numero = numeroProforma,
+                                            articuloLine = articulo.articuloLineaId,
+                                            tipoDocumento = "01",
+                                            articuloCodigo = articulo.codigo,
+                                            articuloTipoPrecio = tipoPrecioSeleccionado.clave,
+                                            articuloActividadEconomica = articulo.actividadEconomica,
+                                            articuloCantidad = cantidadProducto.toInt(),
+                                            articuloUnidadMedida = articulo.unidadMedida
+
+
+                                        )
+                                        agregaEditaArticulo(articuloTemp)
+                                    },
+                                    modifier = Modifier.weight(1f),
+                                    backgroundColor = Color(0xFF244BC0),
+                                    textSize = obtenerEstiloTitleBig()
+                                )
+
+                            }
+                        }
+                    }
+                }
+
+            }
         }
     }
 
@@ -1158,8 +1671,21 @@ fun IniciarInterfazFacturacion(
                                             modifier = Modifier
                                                 .fillMaxWidth()
                                                 .clickable {
-                                                    articuloActual = articulo
-                                                    iniciarMenuDatosArticulo = true
+                                                    val articuloTemp = listaArticulosFacturacion.find { it.codigo == articulo.codigo }
+                                                    if (articuloTemp != null){
+                                                        val listaBodegas = articuloTemp.listaBodegas
+                                                        val listaPrecios = articuloTemp.listaPrecios
+                                                        articulo.listaBodegas = listaBodegas
+                                                        articulo.listaPrecios = listaPrecios
+                                                        articulo.descuentoAdmitido = articuloTemp.descuentoAdmitido
+                                                        articulo.unidadXMedida = articuloTemp.unidadXMedida
+                                                        articulo.actividadEconomica = articuloTemp.actividadEconomica
+                                                        articuloActual = articulo
+                                                        isAgregar = false
+                                                        iniciarMenuDatosArticulo = true
+                                                    }else{
+                                                        mostrarMensajeError("No se logró encontrar las bodegas y los precios de este artículo actualice y vuelva a intentar.")
+                                                    }
                                                 }
                                                 .padding(vertical = objetoAdaptardor.ajustarAltura(2))
                                         ) {
@@ -1605,13 +2131,19 @@ fun IniciarInterfazFacturacion(
 
     ProductoDialog(
         mostrarVentanaArticulo = iniciarMenuDatosArticulo,
-        onDismiss = {iniciarMenuDatosArticulo = false},
-        opcionesPresentacion = listOf("Caja", "Unidad"),
+        onDismiss = { iniciarMenuDatosArticulo = false },
+        opcionesPresentacion = if(articuloActual.unidadXMedida>1) listOf("Caja", "Unidad") else listOf("Unidad"),
         objetoAdaptardor = objetoAdaptardor,
-        artculo = articuloActual,
-        codigoMoneda = codMonedaProforma
+        articulo = articuloActual,
+        codigoMoneda = codMonedaProforma,
+        descuentoCliente = when {
+            descuento.toDouble() > 0 && articuloActual.descuentoAdmitido != 0.00 -> descuento
+            articuloActual.descuentoAdmitido != 0.00 -> articuloActual.descuentoFijo.toString()
+            else -> "0.0"
+        },
+        isAgregar = isAgregar,
+        agregaEditaArticulo = {}
     )
-
     if(iniciarMenuSeleccionarArticulo){
         var isMenuVisible by remember { mutableStateOf(false) }
         val focusRequester = remember { FocusRequester() }
@@ -1670,6 +2202,7 @@ fun IniciarInterfazFacturacion(
                                 BBasicTextField(
                                     value = datosIngresadosBarraBusquedaArticulos,
                                     onValueChange = {
+                                        isCargandoArticulos = true
                                         datosIngresadosBarraBusquedaArticulos = it
                                         if (it.isEmpty()){
                                             apiConsultaBusquedaArticulos?.cancel()
@@ -1688,7 +2221,7 @@ fun IniciarInterfazFacturacion(
                                     onClick = {
                                         iniciarMenuSeleccionarArticulo = false
                                         isMenuVisible = false
-                                        listaArticulosFacturacion = emptyList()
+                                        listaArticulosEncontrados = emptyList()
                                         datosIngresadosBarraBusquedaArticulos = ""
                                     },
                                     modifier = Modifier.weight(0.1f)
@@ -1722,7 +2255,7 @@ fun IniciarInterfazFacturacion(
                                             )
                                         }
                                     }else{
-                                        if (datosIngresadosBarraBusquedaArticulos.isEmpty() || listaArticulosEncontrados.isEmpty()){
+                                        if (datosIngresadosBarraBusquedaArticulos.isEmpty() || (listaArticulosEncontrados.isEmpty() && !isCargandoArticulos)){
                                             Column(
                                                 verticalArrangement = Arrangement.spacedBy(objetoAdaptardor.ajustarAltura(8)),
                                                 horizontalAlignment = Alignment.CenterHorizontally,
@@ -1744,10 +2277,23 @@ fun IniciarInterfazFacturacion(
                                                 )
                                             }
                                         }else{
-                                            listaArticulosEncontrados.forEach{ articulo ->
-                                                BxContenedorArticulosFacturacion(articulo)
+                                            listaArticulosEncontrados.forEachIndexed { index, articulo ->
+                                                var isArticuloVisible by remember { mutableStateOf(false) }
+                                                LaunchedEffect(isArticuloVisible) {
+                                                    delay(index * 100L) // Retrasa cada artículo en 100ms según su índice
+                                                    isArticuloVisible = true
+                                                }
+
+                                                AnimatedVisibility(
+                                                    visible = isArticuloVisible,
+                                                    enter = fadeIn(animationSpec = tween(500)) + slideInVertically(initialOffsetY = { it })
+                                                ) {
+                                                    BxContenedorArticulosFacturacion(articulo)
+                                                }
+
                                                 Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(16)))
                                             }
+
                                         }
                                     }
                                 }
@@ -1769,464 +2315,7 @@ fun IniciarInterfazFacturacion(
 
 
 
-@Composable
-fun ProductoDialog(
-    mostrarVentanaArticulo: Boolean,
-    onDismiss: () -> Unit,
-    opcionesPresentacion: List<String>,
-    artculo : ArticuloFacturacion,
-    objetoAdaptardor: FuncionesParaAdaptarContenido,
-    codigoMoneda : String
-) {
-    if (mostrarVentanaArticulo) {
-        var bodegaSeleccionda by remember { mutableStateOf(artculo.listaBodegas.first()) }
-        var cantidadProducto by remember { mutableIntStateOf(1) }
-        var precioProducto by remember {mutableDoubleStateOf(artculo.precio) }
-        var seleccionPresentacion by remember { mutableStateOf("Unidad") }
-        var descuentoProducto by remember { mutableDoubleStateOf(artculo.descuentoFijo) }
-        var montoDescuento by remember { mutableDoubleStateOf(0.0) }
-        var isVerDatosBodega by remember { mutableStateOf(false) }
-        var subtotal by remember { mutableDoubleStateOf(0.0) }
-        var montoIVA by remember { mutableDoubleStateOf(0.0) }
-        var totalProducto by remember { mutableDoubleStateOf(0.0) }
-        var esCambioPorPorcentaje by remember { mutableStateOf(true) }
-        var esCambioPorMontoDescuento by remember { mutableStateOf(false) }
-        var isMenuVisible by remember { mutableStateOf(false) }
-        val simboloMoneda by remember { mutableStateOf(if(codigoMoneda == "CRC") "\u20A1 " else "\u0024 ") }
 
-
-        // Función para calcular totales
-        fun calcularTotales() {
-            val cantidad = cantidadProducto
-            val precio = precioProducto
-
-            subtotal = cantidad * precio
-
-            val descuento = if (esCambioPorPorcentaje) {
-                val porcentaje = descuentoProducto
-                subtotal * porcentaje / 100
-            } else {
-                montoDescuento
-            }
-
-            if (esCambioPorPorcentaje) {
-                montoDescuento = descuento
-            } else if (esCambioPorMontoDescuento) {
-                val porcentajeCalculado = if (subtotal > 0) (descuento / subtotal) * 100 else 0.0
-                descuentoProducto = porcentajeCalculado
-                esCambioPorMontoDescuento = false
-            }
-
-            val subtotalConDescuento = subtotal - descuento
-            val iva = subtotalConDescuento * (artculo.impuesto) / 100
-            montoIVA = iva
-            totalProducto = subtotalConDescuento + iva
-        }
-
-        LaunchedEffect(Unit) {
-            esCambioPorPorcentaje = true
-            calcularTotales()
-        }
-
-        LaunchedEffect(Unit) {
-            delay(100)
-            isMenuVisible = true
-        }
-
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(Color.Black.copy(alpha = 0.3f))
-                .clickable(enabled = false) {},
-            contentAlignment = Alignment.Center
-        ) {
-            AnimatedVisibility(
-                visible = isMenuVisible,
-                enter = fadeIn(animationSpec = tween(500)) + slideInVertically(initialOffsetY = { it }),
-                exit = fadeOut(animationSpec = tween(500)) + slideOutVertically(targetOffsetY = { it })
-            ) {
-                Card(
-                    modifier = Modifier
-                        .width(objetoAdaptardor.ajustarAncho(400))
-                        .wrapContentHeight()
-                        .clickable(enabled = false) { }
-                        .padding(objetoAdaptardor.ajustarAltura(16)),
-                    shape = RoundedCornerShape(objetoAdaptardor.ajustarAltura(16)),
-                    colors = CardDefaults.cardColors(containerColor = Color.White)
-                ) {
-                    Column(
-                        modifier = Modifier.padding(objetoAdaptardor.ajustarAltura(16)),
-                        horizontalAlignment = Alignment.Start
-                    ) {
-
-                        TText(
-                            text = artculo.descripcion,
-                            modifier = Modifier.fillMaxWidth(),
-                            fontSize = obtenerEstiloHeadMedium(),
-                            textAlign = TextAlign.Center,
-                            maxLines = 2
-                        )
-                        TText(
-                            text = "Código: ${artculo.codigo}",
-                            fontSize = obtenerEstiloBodyBig(),
-                            fontWeight = FontWeight.Light
-                        )
-
-                        Spacer(modifier = Modifier.height(8.dp))
-
-                        TText(
-                            text = "Bodega:",
-                            fontSize = obtenerEstiloBodyBig(),
-                            modifier = Modifier.fillMaxWidth(),
-                            fontWeight = FontWeight.Light,
-                            color = Color.DarkGray,
-                            textAlign = TextAlign.Start
-                        )
-                        TextFieldMultifuncional(
-                            label = "Bodega",
-                            textPlaceholder = "Selccione una bodega.",
-                            nuevoValor2 = {bodegaSeleccionda = it},
-                            valor = bodegaSeleccionda.valor,
-                            contieneOpciones = true,
-                            usarOpciones4 = true,
-                            opciones4 = artculo.listaBodegas,
-                            usarModifierForSize = true,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .border(2.dp,
-                                    color = Color.Gray,
-                                    RoundedCornerShape(objetoAdaptardor.ajustarAltura(12))
-                                ),
-                            mostrarLeadingIcon = true,
-                            leadingIcon = Icons.Default.Warehouse,
-                            isUltimo = true,
-                            medidaAncho = 350,
-                            tomarAnchoMaximo = false,
-                            fontSize = obtenerEstiloBodyBig(),
-                            mostrarLabel = false
-                        )
-
-                        if (isVerDatosBodega) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                TText(
-                                    text = "Codigo: ${bodegaSeleccionda.clave}",
-                                    modifier = Modifier
-                                        .weight(1f),
-                                    textAlign = TextAlign.Start
-                                )
-                                TText(
-                                    text = "Existencia: ${bodegaSeleccionda.existencia}",
-                                    modifier = Modifier
-                                        .weight(1f),
-                                    textAlign = TextAlign.End
-                                )
-                            }
-                        }
-
-                        TextButton(
-                            onClick = { isVerDatosBodega = !isVerDatosBodega },
-                            colors = ButtonDefaults.textButtonColors(
-                                contentColor = Color(0xFF244BC0)
-                            )
-                        ) {
-                            TText(
-                                text = if (isVerDatosBodega) "Ocultar" else "Mostrar detalles",
-                                textAlign = TextAlign.Center,
-                                color = Color(0xFF244BC0)
-                            )
-                        }
-
-
-
-                        Spacer(modifier = Modifier.height(8.dp))
-
-                        // Cantidad y Precio en la misma línea
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(15.dp)
-                        ) {
-                            Column(
-                                modifier = Modifier.weight(1f)
-                            ) {
-                                TText(
-                                    text = "Cantidad:",
-                                    fontSize = obtenerEstiloBodyMedium(),
-                                    fontWeight = FontWeight.Light,
-                                    color = Color.DarkGray
-                                )
-                                TextFieldMultifuncional(
-                                    nuevoValor = {cantidadProducto = it.toInt()},
-                                    valor = cantidadProducto.toString(),
-                                    usarModifierForSize = true,
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .border(2.dp, color = Color.Gray, RoundedCornerShape(objetoAdaptardor.ajustarAltura(12))),
-                                    isUltimo = true,
-                                    fontSize = obtenerEstiloBodySmall(),
-                                    cantidadLineas = 1,
-                                    mostrarPlaceholder = false,
-                                    mostrarLabel = false,
-                                    soloPermitirValoresNumericos = true
-                                )
-                            }
-
-                            Column(
-                                modifier = Modifier.weight(1f)
-                            ) {
-                                TText(
-                                    text = "Precio:",
-                                    fontSize = obtenerEstiloBodyMedium(),
-                                    fontWeight = FontWeight.Light,
-                                    color = Color.DarkGray
-                                )
-                                TextFieldMultifuncional(
-                                    nuevoValor = {precioProducto = it.toDouble()},
-                                    valor = precioProducto.toString(),
-                                    usarModifierForSize = true,
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .border(2.dp, color = Color.Gray, RoundedCornerShape(objetoAdaptardor.ajustarAltura(12))),
-                                    isUltimo = true,
-                                    fontSize = obtenerEstiloBodySmall(),
-                                    cantidadLineas = 1,
-                                    mostrarPlaceholder = false,
-                                    mostrarLabel = false,
-                                    soloPermitirValoresNumericos = true,
-                                    darFormatoMiles = true
-                                )
-                            }
-                        }
-
-                        Spacer(modifier = Modifier.height(8.dp))
-
-
-                        TText(
-                            text = "Tipo de Medida:",
-                            fontSize = obtenerEstiloBodyMedium(),
-                            fontWeight = FontWeight.Light,
-                            color = Color.DarkGray
-                        )
-                        TextFieldMultifuncional(
-                            label = "Medida",
-                            textPlaceholder = "Medida",
-                            nuevoValor = { seleccionPresentacion = it },
-                            valor = seleccionPresentacion,
-                            contieneOpciones = true,
-                            usarOpciones3 = true,
-                            opciones3 = opcionesPresentacion,
-                            usarModifierForSize = true,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .border(
-                                    2.dp,
-                                    color = Color.Gray,
-                                    RoundedCornerShape(objetoAdaptardor.ajustarAltura(12))
-                                ),
-                            mostrarLeadingIcon = true,
-                            leadingIcon = Icons.Default.Straighten,
-                            isUltimo = true,
-                            medidaAncho = 350,
-                            tomarAnchoMaximo = false,
-                            fontSize = obtenerEstiloBodyBig(),
-                            mostrarLabel = false,
-                            cantidadLineas = 1
-                        )
-
-                        Spacer(modifier = Modifier.height(8.dp))
-
-                        // Descuento y Monto Descuento en la misma línea
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(15.dp)
-                        ) {
-                            Column(
-                                modifier = Modifier.weight(1f)
-                            ) {
-                                TText(
-                                    text = "Descuento (%)",
-                                    fontSize = obtenerEstiloBodyMedium(),
-                                    fontWeight = FontWeight.Light,
-                                    color = Color.DarkGray
-                                )
-                                TextFieldMultifuncional(
-                                    label = "Descuento",
-                                    textPlaceholder = "Descuento",
-                                    nuevoValor = { descuentoProducto = it.toDouble() },
-                                    valor = descuentoProducto.toString(),
-                                    usarModifierForSize = true,
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .border(
-                                            2.dp,
-                                            color = Color.Gray,
-                                            RoundedCornerShape(objetoAdaptardor.ajustarAltura(12))
-                                        ),
-                                    isUltimo = true,
-                                    medidaAncho = 350,
-                                    tomarAnchoMaximo = false,
-                                    fontSize = obtenerEstiloBodyBig(),
-                                    mostrarLabel = false,
-                                    soloPermitirValoresNumericos = true,
-                                    permitirComas = true,
-                                    cantidadLineas = 1
-                                )
-                            }
-
-                            Column(
-                                modifier = Modifier.weight(1f)
-                            ) {
-                                TText(
-                                    text =  "Monto Descuento:",
-                                    fontSize = obtenerEstiloBodyMedium(),
-                                    fontWeight = FontWeight.Light,
-                                    color = Color.DarkGray
-                                )
-                                TextFieldMultifuncional(
-                                    label = "Monto",
-                                    textPlaceholder = "Monto",
-                                    nuevoValor = { newValue ->
-                                        montoDescuento = newValue.toDouble()
-                                        esCambioPorMontoDescuento = true
-                                        calcularTotales()
-                                    },
-                                    valor = montoDescuento.toString(),
-                                    usarModifierForSize = true,
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .border(
-                                            2.dp,
-                                            color = Color.Gray,
-                                            RoundedCornerShape(objetoAdaptardor.ajustarAltura(12))
-                                        ),
-                                    isUltimo = true,
-                                    medidaAncho = 350,
-                                    tomarAnchoMaximo = false,
-                                    fontSize = obtenerEstiloBodyBig(),
-                                    mostrarLabel = false,
-                                    soloPermitirValoresNumericos = true,
-                                    permitirComas = true,
-                                    cantidadLineas = 1
-                                )
-                            }
-                        }
-
-                        Spacer(modifier = Modifier.height(8.dp))
-
-                        // Impuestos y Total
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                        ) {
-                            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                TText(
-                                    text = "Monto Descuento:",
-                                    textAlign = TextAlign.Start,
-                                    fontSize = obtenerEstiloBodyBig()
-                                )
-                                Spacer(modifier = Modifier.weight(1f))
-                                TText(
-                                    text = simboloMoneda + separacionDeMiles(montoDescuento) +" ${artculo.codTipoMoneda}",
-                                    textAlign = TextAlign.End,
-                                    fontSize = obtenerEstiloBodyBig()
-                                )
-                            }
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                TText(
-                                    text = "Subtotal:",
-                                    textAlign = TextAlign.Start,
-                                    fontSize = obtenerEstiloBodyBig()
-                                )
-                                Spacer(modifier = Modifier.weight(1f))
-                                TText(
-                                    text = simboloMoneda + separacionDeMiles(subtotal) +" ${artculo.codTipoMoneda}",
-                                    textAlign = TextAlign.End,
-                                    fontSize = obtenerEstiloBodyBig()
-                                )
-                            }
-                            Spacer(modifier = Modifier.height(8.dp))
-
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                TText(
-                                    text = "Impuesto (IVA %): ${artculo.impuesto}%" ,
-                                    textAlign = TextAlign.End,
-                                    fontSize = obtenerEstiloBodyBig()
-                                )
-                                Spacer(modifier = Modifier.weight(1f))
-                                TText(
-                                    text = "Monto IVA: $simboloMoneda${separacionDeMiles(montoIVA)} ${artculo.codTipoMoneda}",
-                                    textAlign = TextAlign.End,
-                                    fontSize = obtenerEstiloBodyBig()
-                                )
-                            }
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                TText(
-                                    text = "Total: ",
-                                    textAlign = TextAlign.End,
-                                    fontSize = obtenerEstiloTitleSmall()
-                                )
-                                Spacer(modifier = Modifier.weight(1f))
-                                TText(
-                                    text = "$simboloMoneda${separacionDeMiles(totalProducto)} ${artculo.codTipoMoneda}",
-                                    textAlign = TextAlign.End,
-                                    fontSize = obtenerEstiloTitleSmall()
-                                )
-                            }
-                        }
-
-
-                        // Botones de acción
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            BButton(
-                                text = "Cancelar",
-                                objetoAdaptardor = objetoAdaptardor,
-                                onClick = {
-                                    onDismiss()
-                                },
-                                modifier = Modifier.weight(1f),
-                                backgroundColor = Color.Red,
-                                textSize = obtenerEstiloTitleBig()
-                            )
-
-                            BButton(
-                                text = "Agregar",
-                                objetoAdaptardor = objetoAdaptardor,
-                                onClick = {
-                                },
-                                modifier = Modifier.weight(1f),
-                                backgroundColor = Color(0xFF244BC0),
-                                textSize = obtenerEstiloTitleBig()
-                            )
-
-                        }
-                    }
-                }
-            }
-
-        }
-    }
-}
 
 @Composable
 @Preview

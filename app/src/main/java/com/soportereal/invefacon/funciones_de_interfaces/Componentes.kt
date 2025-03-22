@@ -276,6 +276,7 @@ internal fun TextFieldMultifuncional(
     mostrarPlaceholder: Boolean = true,
     mostrarLabel: Boolean = true
     ){
+
     val fontAksharPrincipal = FontFamily(Font(R.font.akshar_medium))
     val configuration = LocalConfiguration.current
     val dpAnchoPantalla = configuration.screenWidthDp
@@ -530,7 +531,7 @@ internal fun TextFieldMultifuncional(
                             },
                             text = {
                                 Text(
-                                    contenido.valor,
+                                    if(mostrarClave) contenido.clave else contenido.valor,
                                     fontFamily = fontAksharPrincipal,
                                     fontWeight = FontWeight.Medium,
                                     fontSize = fontSize,
