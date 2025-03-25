@@ -1,5 +1,6 @@
 package com.soportereal.invefacon.interfaces.modulos.facturacion
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
@@ -98,6 +99,7 @@ import com.google.accompanist.systemuicontroller.SystemUiController
 import com.soportereal.invefacon.R
 import com.soportereal.invefacon.funciones_de_interfaces.BBasicTextField
 import com.soportereal.invefacon.funciones_de_interfaces.BButton
+import com.soportereal.invefacon.funciones_de_interfaces.MenuConfirmacion
 import com.soportereal.invefacon.funciones_de_interfaces.ParClaveValor
 import com.soportereal.invefacon.funciones_de_interfaces.TText
 import com.soportereal.invefacon.funciones_de_interfaces.TextFieldMultifuncional
@@ -106,6 +108,7 @@ import com.soportereal.invefacon.funciones_de_interfaces.mostrarTeclado
 import com.soportereal.invefacon.funciones_de_interfaces.separacionDeMiles
 import com.soportereal.invefacon.funciones_de_interfaces.validarExitoRestpuestaServidor
 import com.soportereal.invefacon.interfaces.FuncionesParaAdaptarContenido
+import com.soportereal.invefacon.interfaces.modulos.clientes.ProcesarDatosModuloClientes
 import com.soportereal.invefacon.interfaces.obtenerEstiloBodyBig
 import com.soportereal.invefacon.interfaces.obtenerEstiloBodyMedium
 import com.soportereal.invefacon.interfaces.obtenerEstiloBodySmall
@@ -117,6 +120,7 @@ import com.soportereal.invefacon.interfaces.obtenerEstiloTitleBig
 import com.soportereal.invefacon.interfaces.obtenerEstiloTitleMedium
 import com.soportereal.invefacon.interfaces.obtenerEstiloTitleSmall
 import com.soportereal.invefacon.interfaces.pantallas_principales.estadoRespuestaApi
+import com.soportereal.invefacon.interfaces.pantallas_principales.objetoEstadoPantallaCarga
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -167,11 +171,13 @@ fun IniciarInterfazFacturacion(
     var codMonedaCliente by remember { mutableStateOf("") }
     var codMonedaProforma by remember { mutableStateOf("") }
     var numeroProforma by remember { mutableStateOf("") }
-    var cuenta by remember { mutableStateOf("") }
+    var tipoDocumento by remember { mutableStateOf("") }
+    var clienteId by remember { mutableStateOf("") }
     val objectoProcesadorDatosApi = ProcesarDatosModuloFacturacion(token)
-    var isCargandoDatos by remember { mutableStateOf(false) }
+    val objectoProcesadorDatosApiCliente = ProcesarDatosModuloClientes(token)
+    var isCargandoDatos by remember { mutableStateOf(true) }
     var iniciarDescargaArticulos by remember { mutableStateOf(false) }
-    var iniciarMenuDatosArticulo by remember { mutableStateOf(false) }
+    var iniciarMenuAgregaEditaArticulo by remember { mutableStateOf(false) }
     var iniciarMenuSeleccionarArticulo by remember { mutableStateOf(false) }
     var actuzalizarDatosProforma by remember { mutableStateOf(true) }
     var apiConsultaProforma by remember { mutableStateOf<Job?>(null) }
@@ -180,15 +186,32 @@ fun IniciarInterfazFacturacion(
     val cortinaConsultaApiArticulos= CoroutineScope(Dispatchers.IO)
     var apiConsultaBusquedaArticulos by remember { mutableStateOf<Job?>(null) }
     val cortinaConsultaApiBusquedaArticulos= CoroutineScope(Dispatchers.IO)
+    var apiConsultaBusquedaClientes by remember { mutableStateOf<Job?>(null) }
+    val cortinaConsultaApiBusquedaClientes= CoroutineScope(Dispatchers.IO)
     var errorCargarProforma by remember { mutableStateOf(false) }
     var simboloMoneda by remember { mutableStateOf("") }
     var listaArticulosFacturacion by remember { mutableStateOf(emptyList<ArticuloFacturacion>()) }
     var listaArticulosEncontrados by remember { mutableStateOf(emptyList<ArticuloFacturacion>()) }
+    var listaClientesEncontrados by remember { mutableStateOf(emptyList<ClienteFacturacion>()) }
     var datosIngresadosBarraBusquedaArticulos by remember { mutableStateOf("") }
+    var isCargandoClientes by remember { mutableStateOf(false) }
     var isCargandoArticulos by remember { mutableStateOf(false) }
+    var agregarEditarArticuloActual by remember { mutableStateOf(false) }
+    var actualizarListaArticulos by remember { mutableStateOf(true) }
+    var articuloLineaProforma by remember { mutableStateOf(ArticuloLineaProforma()) }
     var isAgregar by remember { mutableStateOf(false) }
     var articuloActual by remember { mutableStateOf(ArticuloFacturacion()) }
     var validacionCargaFinalizada by remember { mutableIntStateOf(0) } // si es '2' las dos peticiones al api ya finalizaron
+    var iniciarMenuConfirmacionSalidaModulo by remember { mutableStateOf(false) }
+    var eliminarLinea by remember { mutableStateOf(false) }
+    var lineaAcual by remember { mutableStateOf("") }
+    var soloActualizarArticulos by remember { mutableStateOf(false) }
+    var soloActualizarDatosCliente by remember { mutableStateOf(false) }
+    var iniciarMenuSeleccionarProforma by remember { mutableStateOf(false) }
+    var iniciarMenuSeleccionarCliente by remember { mutableStateOf(false) }
+    var datosIngresadosBarraBusquedaCliente by remember { mutableStateOf("") }
+    var cambiarClienteProforma by remember { mutableStateOf(false) }
+    var clienteSeleccionado by remember { mutableStateOf(ClienteFacturacion()) }
     val transition = rememberInfiniteTransition(label = "shimmer")
     val shimmerTranslate by transition.animateFloat(
         initialValue = -800f,
@@ -210,10 +233,10 @@ fun IniciarInterfazFacturacion(
     )
 
 
-    LaunchedEffect(actuzalizarDatosProforma) {
-        if (actuzalizarDatosProforma){
+    LaunchedEffect(actuzalizarDatosProforma, soloActualizarArticulos, soloActualizarDatosCliente) {
+        if (actuzalizarDatosProforma || soloActualizarArticulos || soloActualizarDatosCliente){
             listaArticulosSeleccionados.clear()
-            isCargandoDatos = true
+            isCargandoDatos = (!soloActualizarArticulos  && !soloActualizarDatosCliente)
             errorCargarProforma = false
             iniciarDescargaArticulos = false
             apiConsultaArticulos?.cancel()
@@ -228,7 +251,7 @@ fun IniciarInterfazFacturacion(
 
                         //DATOS CLIENTE
                         val datosCliente = data.getJSONArray("cliente").getJSONObject(0)
-                        cuenta= datosCliente.getString("ClienteID")
+                        clienteId= datosCliente.getString("ClienteID")
                         nombre= datosCliente.getString("ClienteNombre")
                         nombreComercial = datosCliente.getString("clientenombrecomercial")
                         numeroCedula = datosCliente.getString("Cedula")
@@ -243,11 +266,12 @@ fun IniciarInterfazFacturacion(
                         //DATOS PROFORMA
                         val datosProforma = data.getJSONArray("datos").getJSONObject(0)
                         numeroProforma= datosProforma.getString("Numero")
+                        tipoDocumento = datosProforma.getString("TipoDocumento")
 
                         //Tipo Moneda
                         codMonedaProforma = data.getString("monedaDocumento")
                         simboloMoneda =  if(codMonedaProforma == "CRC") "\u20A1 " else "\u0024 "
-                        iniciarDescargaArticulos = true
+                        iniciarDescargaArticulos = actualizarListaArticulos
 
                         //Totales
                         val totales = data.getJSONArray("totales").getJSONObject(0)
@@ -265,12 +289,15 @@ fun IniciarInterfazFacturacion(
                         val articulos = data.getJSONArray("proforma")
                         for(i in 0 until articulos.length()){
                             val datosArticulo = articulos.getJSONObject(i)
+
+                            val montoIvaUnitario = datosArticulo.getDouble("PrecioUd") * datosArticulo.getDouble("ArticuloIvaPorcentage") / 100
                             val articuloFacturado = ArticuloFacturacion(
                                 codigo = datosArticulo.getString("ArticuloCodigo"),
                                 codPrecioVenta = datosArticulo.getString("PV"),
                                 descripcion = datosArticulo.getString("Descripcion"),
-                                articuloCantidad = datosArticulo.getInt("ArticuloCantidad"),
+                                articuloCantidad = datosArticulo.getDouble("ArticuloCantidad"),
                                 precio = datosArticulo.getDouble("PrecioUd"),
+                                precioNeto = datosArticulo.getDouble("PrecioUd") + montoIvaUnitario,
                                 articuloDescuentoPorcentaje = datosArticulo.getDouble("ArticuloDescuentoPorcentage"),
                                 articuloDescuentoMonto = datosArticulo.getDouble("ArticuloDescuentoMonto"),
                                 articuloVentaSubTotal2 = datosArticulo.getDouble("ArticuloVentaSubTotal2"),
@@ -295,6 +322,8 @@ fun IniciarInterfazFacturacion(
                     }
                 }
                 validacionCargaFinalizada++
+                soloActualizarArticulos = false
+                soloActualizarDatosCliente = false
             }
         }
     }
@@ -352,6 +381,7 @@ fun IniciarInterfazFacturacion(
                                 descuentoFijo = datosArticulo.getDouble("Descuento_Fijo"),
                                 codTarifaImpuesto = datosArticulo.getString("Cod_Tarifa_Impuesto"),
                                 impuesto = datosArticulo.getDouble("Impuesto"),
+                                Cod_Tarifa_Impuesto =  datosArticulo.getString("Cod_Tarifa_Impuesto"),
                                 codEstado = datosArticulo.getString("Cod_Estado"),
                                 codTipoMoneda = datosArticulo.getString("Cod_Tipo_Moneda"),
                                 codNaturalezaArticulo = datosArticulo.getString("Cod_Naturaleza_Articulo"),
@@ -402,6 +432,120 @@ fun IniciarInterfazFacturacion(
         }
     }
 
+    LaunchedEffect(agregarEditarArticuloActual) {
+        if (agregarEditarArticuloActual){
+            objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(true)
+            val result = objectoProcesadorDatosApi.agregarActualizarLinea(articuloLineaProforma)
+            if (result != null){
+                if (validarExitoRestpuestaServidor(result)){
+                    iniciarMenuAgregaEditaArticulo = false
+                    objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
+                    delay(100)
+                    actualizarListaArticulos = false
+                    validacionCargaFinalizada++
+                    soloActualizarArticulos = true
+                }else{
+                    estadoRespuestaApi.cambiarEstadoRespuestaApi(mostrarSoloRespuestaError = true, datosRespuesta = result)
+                    objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
+                }
+            }
+        }
+        agregarEditarArticuloActual = false
+    }
+
+    LaunchedEffect(eliminarLinea) {
+        if (eliminarLinea){
+            objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(true)
+            val result = objectoProcesadorDatosApi.eliminarLineaProforma(numero = numeroProforma, lineaArticulo = lineaAcual)
+            if (result != null){
+                estadoRespuestaApi.cambiarEstadoRespuestaApi(mostrarSoloRespuestaError = true, datosRespuesta = result)
+                objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
+                if (validarExitoRestpuestaServidor(result)){
+                    delay(100)
+                    actualizarListaArticulos = false
+                    validacionCargaFinalizada++
+                    soloActualizarArticulos = true
+                    lineaAcual = ""
+                }
+            }
+        }
+        eliminarLinea = false
+    }
+
+    LaunchedEffect(datosIngresadosBarraBusquedaCliente) {
+        if (datosIngresadosBarraBusquedaCliente.isNotEmpty()){
+            isCargandoClientes = true
+            listaClientesEncontrados = emptyList()
+            apiConsultaBusquedaClientes?.cancel()
+            apiConsultaBusquedaClientes= cortinaConsultaApiBusquedaClientes.launch{
+                delay(250)
+                val result = objectoProcesadorDatosApiCliente.obtenerDatosClientes(
+                    clienteEstado = "1",
+                    clienteDatoBusqueda = datosIngresadosBarraBusquedaCliente,
+                    clientesPorPagina = "50",
+                    paginaCliente = "1",
+                    busquedaPor = "BusquedaMixta"
+                )
+                if (result != null){
+                    estadoRespuestaApi.cambiarEstadoRespuestaApi(mostrarSoloRespuestaError = true, datosRespuesta = result)
+                    if (validarExitoRestpuestaServidor(result)){
+                        val resultado= result.getJSONObject("resultado")
+                        val datosClientes= resultado.getJSONArray("data")
+                        val listaClientes = mutableListOf<ClienteFacturacion>()
+                        for (i in 0 until datosClientes.length()) {
+                            val datosCliente = datosClientes.getJSONObject(i)
+                            val cliente = ClienteFacturacion(
+                                codigo = datosCliente.getString("codigo"),
+                                nombreComercial = datosCliente.getString("nombrecomercial"),
+                                nombreJuridico = datosCliente.getString("nombrejuridico"),
+                                telefono = datosCliente.getString("telefonos"),
+                                correo = datosCliente.getString("emailgeneral"),
+                                codMoneda = datosCliente.getString("moneda"),
+                                tipoPrecio = datosCliente.getString("tipoprecio")
+                            )
+                            listaClientes.add(cliente)
+                        }
+                        listaClientesEncontrados = listaClientes
+                    }
+                }
+                isCargandoClientes = false
+            }
+        }
+    }
+
+    LaunchedEffect(cambiarClienteProforma) {
+        if(cambiarClienteProforma){
+            objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(true)
+            val result = objectoProcesadorDatosApi.cambiarClienteProforma(
+                numero = numeroProforma,
+                clienteFacturacion = clienteSeleccionado
+            )
+            if (result != null){
+                estadoRespuestaApi.cambiarEstadoRespuestaApi(mostrarSoloRespuestaError = true, datosRespuesta = result)
+                objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
+                if(validarExitoRestpuestaServidor(result)){
+                    iniciarMenuSeleccionarCliente = false
+                    validacionCargaFinalizada++
+                    actualizarListaArticulos = false
+                    soloActualizarDatosCliente = true
+                }
+            }
+        }
+        cambiarClienteProforma = false
+    }
+
+    // Interceptar el botón de retroceso
+    BackHandler {
+        if (iniciarMenuAgregaEditaArticulo || iniciarMenuSeleccionarProforma || iniciarMenuSeleccionarCliente || iniciarMenuSeleccionarArticulo){
+            iniciarMenuSeleccionarProforma = false
+            iniciarMenuSeleccionarCliente = false
+            iniciarMenuAgregaEditaArticulo = false
+            iniciarMenuSeleccionarArticulo = false
+        }else{
+            iniciarMenuConfirmacionSalidaModulo = true
+        }
+    }
+
     @Composable
     fun BxContenedorArticulosFacturacion(
         articulo : ArticuloFacturacion
@@ -420,7 +564,7 @@ fun IniciarInterfazFacturacion(
                     listaArticulosEncontrados = emptyList()
                     datosIngresadosBarraBusquedaArticulos = ""
                     iniciarMenuSeleccionarArticulo = false
-                    iniciarMenuDatosArticulo = true
+                    iniciarMenuAgregaEditaArticulo = true
                 },
             shape = RoundedCornerShape(objetoAdaptardor.ajustarAltura(16)),
             colors = CardDefaults.cardColors(containerColor =Color(0xFF31BF59))
@@ -494,6 +638,76 @@ fun IniciarInterfazFacturacion(
     }
 
     @Composable
+    fun BxContenedorClienteFacturacion(
+        cliente : ClienteFacturacion
+    ) {
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .wrapContentHeight()
+                .shadow(
+                    elevation = objetoAdaptardor.ajustarAltura(7),
+                    shape = RoundedCornerShape(objetoAdaptardor.ajustarAltura(16))
+                )
+                .clickable {
+                    clienteSeleccionado = cliente
+                    cambiarClienteProforma = true
+                },
+            shape = RoundedCornerShape(objetoAdaptardor.ajustarAltura(16)),
+            colors = CardDefaults.cardColors(containerColor =Color(0xFF31BF59))
+        ){
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .padding(start = objetoAdaptardor.ajustarAncho(16))
+                    .fillMaxSize()
+                    .background(Color.White)
+            ) {
+
+                Column(
+                    horizontalAlignment = Alignment.Start
+                ) {
+                    TText(
+                        text = "#" + cliente.codigo,
+                        modifier = Modifier
+                            .padding(start = objetoAdaptardor.ajustarAncho(8), top = objetoAdaptardor.ajustarAltura(8)),
+                        fontSize = obtenerEstiloBodySmall(),
+                        color = Color(0xFF787877)
+                    )
+                    TText(
+                        text = cliente.nombreJuridico,
+                        fontSize = obtenerEstiloBodyBig(),
+                        maxLines = 2,
+                        modifier = Modifier.padding(start = objetoAdaptardor.ajustarAncho(8), end = objetoAdaptardor.ajustarAncho(16))
+                    )
+                    TText(
+                        text = cliente.nombreComercial,
+                        modifier = Modifier
+                            .padding(start = objetoAdaptardor.ajustarAncho(8), bottom = objetoAdaptardor.ajustarAltura(8)),
+                        fontSize = obtenerEstiloBodyMedium(),
+                        color = Color(0xFF5E5E5E)
+                    )
+                    TText(
+                        text = cliente.telefono,
+                        modifier = Modifier
+                            .padding(start = objetoAdaptardor.ajustarAncho(8), bottom = objetoAdaptardor.ajustarAltura(8)),
+                        fontSize = obtenerEstiloBodySmall(),
+                        color = Color(0xFF5E5E5E)
+                    )
+                    TText(
+                        text = cliente.correo,
+                        modifier = Modifier
+                            .padding(start = objetoAdaptardor.ajustarAncho(8), bottom = objetoAdaptardor.ajustarAltura(8)),
+                        fontSize = obtenerEstiloBodySmall(),
+                        color = Color(0xFF5E5E5E)
+                    )
+                }
+            }
+
+        }
+    }
+
+    @Composable
     fun BasicTexfiuldWithText(
         textTitle: String,
         text: String,
@@ -530,7 +744,7 @@ fun IniciarInterfazFacturacion(
     }
 
     @Composable
-    fun ProductoDialog(
+    fun MenuAgregaEditaArticulo(
         mostrarVentanaArticulo: Boolean,
         onDismiss: () -> Unit,
         opcionesPresentacion: List<String>,
@@ -539,15 +753,19 @@ fun IniciarInterfazFacturacion(
         codigoMoneda : String,
         descuentoCliente : String,
         isAgregar: Boolean,
-        agregaEditaArticulo : (ArticuloLineaProforma)->Unit
+        agregaEditaArticulo : (ArticuloLineaProforma)->Unit,
+        bodega : ParClaveValor,
+        precioVenta: String
     ) {
         if (mostrarVentanaArticulo) {
-            var bodegaSeleccionda by remember { mutableStateOf(articulo.listaBodegas.first()) }
-            var tipoPrecioSeleccionado by remember { mutableStateOf(articulo.listaPrecios.first()) }
-            var cantidadProducto by remember { mutableStateOf(articulo.articuloCantidad.toString()) }
+            var bodegaSeleccionda by remember { mutableStateOf(bodega) }
+            var tipoPrecioSeleccionado by remember { mutableStateOf(articulo.listaPrecios.find { it.clave == precioVenta.trim() }?:ParClaveValor()) }
+            var cantidadProducto by remember { mutableStateOf(if (articulo.articuloCantidad > 0) articulo.articuloCantidad.toString() else "1.0") }
+            var cantidadProductoForApi by remember { mutableDoubleStateOf(0.0) }
+            var precioUnitarioIva by remember { mutableDoubleStateOf(0.0) }
             var precioProducto by remember {mutableStateOf(articulo.precio.toString()) }
             var seleccionPresentacion by remember { mutableStateOf("Unidad") }
-            var descuentoProducto by remember { mutableStateOf(descuentoCliente) }
+            var porcentajeDescuentoProducto by remember { mutableStateOf(descuentoCliente) }
             var montoDescuento by remember { mutableStateOf("") }
             var subtotal by remember { mutableDoubleStateOf(0.0) }
             var montoIVA by remember { mutableDoubleStateOf(0.0) }
@@ -560,18 +778,20 @@ fun IniciarInterfazFacturacion(
             fun calcularTotales() {
                 var cantidad = if (cantidadProducto.isEmpty()) 0.00 else cantidadProducto.toDouble()
                 val precio = if (precioProducto.isEmpty()) 0.00 else precioProducto.toDouble()
-                var porcentajeDescuento = if(descuentoProducto.isEmpty()) 0.00 else descuentoProducto.toDouble()
+                var porcentajeDescuento = if(porcentajeDescuentoProducto.isEmpty()) 0.00 else porcentajeDescuentoProducto.toDouble()
                 var tempMontoDescuento = if(montoDescuento.isEmpty()) 0.00 else montoDescuento.toDouble()
-
 
                 if (seleccionPresentacion != "Unidad"){
                     cantidad *= articulo.unidadXMedida
                 }
+
+                precioUnitarioIva = precio + (precio * (articulo.impuesto) / 100)
+                cantidadProductoForApi = cantidad
                 subtotal = cantidad * precio
 
                 if (esCambioPorMontoDescuento){
                     porcentajeDescuento =  tempMontoDescuento * 100 / subtotal
-                    descuentoProducto = porcentajeDescuento.toString()
+                    porcentajeDescuentoProducto = porcentajeDescuento.toString()
                 }else{
                     tempMontoDescuento = (subtotal * porcentajeDescuento)/100
                     montoDescuento = tempMontoDescuento.toString()
@@ -629,6 +849,7 @@ fun IniciarInterfazFacturacion(
                                 textAlign = TextAlign.Center,
                                 maxLines = 2
                             )
+
                             TText(
                                 text = "Código: ${articulo.codigo}",
                                 fontSize = obtenerEstiloBodyBig(),
@@ -645,9 +866,10 @@ fun IniciarInterfazFacturacion(
                                 color = Color.DarkGray,
                                 textAlign = TextAlign.Start
                             )
+
                             TextFieldMultifuncional(
                                 label = "Bodega",
-                                textPlaceholder = "Selccione una bodega.",
+                                textPlaceholder = if (bodegaSeleccionda.valor.isEmpty()) "Sin Bodegas" else "Selccione una bodega.",
                                 nuevoValor2 = {bodegaSeleccionda = it},
                                 valor = bodegaSeleccionda.valor,
                                 contieneOpciones = true,
@@ -669,6 +891,7 @@ fun IniciarInterfazFacturacion(
                                 mostrarLabel = false
                             )
 
+                            // DATOS BODEGA
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -690,9 +913,10 @@ fun IniciarInterfazFacturacion(
                                     textAlign = TextAlign.End
                                 )
                             }
+
                             Spacer(modifier = Modifier.height(8.dp))
 
-                            // Tipo medida
+                            // Tipo medida Y TIPO PRECIO
                             Row(
                                 horizontalArrangement = Arrangement.spacedBy(15.dp)
                             ){
@@ -746,7 +970,7 @@ fun IniciarInterfazFacturacion(
                                         color = Color.DarkGray
                                     )
                                     TextFieldMultifuncional(
-                                        label = "Precio",
+                                        label = "Precio Unitario:",
                                         textPlaceholder = "Precio",
                                         nuevoValor2 = {
                                             tipoPrecioSeleccionado = it
@@ -773,14 +997,15 @@ fun IniciarInterfazFacturacion(
                                         tomarAnchoMaximo = false,
                                         fontSize = obtenerEstiloBodyBig(),
                                         mostrarLabel = false,
-                                        cantidadLineas = 1
+                                        cantidadLineas = 1,
+                                        permitirPuntosDedimales = seleccionPresentacion == "Unidad"
                                     )
                                 }
-
                             }
 
-
                             Spacer(modifier = Modifier.height(8.dp))
+
+                            // PRECIO Y CANTIDAD
                             Row(
                                 horizontalArrangement = Arrangement.spacedBy(15.dp)
                             ) {
@@ -847,88 +1072,90 @@ fun IniciarInterfazFacturacion(
 
                             Spacer(modifier = Modifier.height(8.dp))
 
-                            // Cantidad y descuento
-                            Row(
-                                horizontalArrangement = Arrangement.spacedBy(15.dp)
-                            ) {
-
-                                Column(
-                                    modifier = Modifier.weight(1f)
+                            // MONTO DESCUENTO Y PORCENTAJE DE DESCUENTO
+                            if (articulo.descuentoAdmitido != 0.00){
+                                Row(
+                                    horizontalArrangement = Arrangement.spacedBy(15.dp)
                                 ) {
-                                    TText(
-                                        text = "Descuento (%)",
-                                        fontSize = obtenerEstiloBodyMedium(),
-                                        fontWeight = FontWeight.Light,
-                                        color = Color.DarkGray
-                                    )
-                                    TextFieldMultifuncional(
-                                        label = "Descuento",
-                                        textPlaceholder = "0.00",
-                                        nuevoValor = {
-                                            val temp = if(it.isEmpty()) 0.00 else it.toDouble()
-                                            if (temp<=articulo.descuentoAdmitido){
-                                                descuentoProducto = it
+
+                                    Column(
+                                        modifier = Modifier.weight(1f)
+                                    ) {
+                                        TText(
+                                            text = "Descuento (%)",
+                                            fontSize = obtenerEstiloBodyMedium(),
+                                            fontWeight = FontWeight.Light,
+                                            color = Color.DarkGray
+                                        )
+                                        TextFieldMultifuncional(
+                                            label = "Descuento",
+                                            textPlaceholder = "0.00",
+                                            nuevoValor = {
+                                                val temp = if(it.isEmpty()) 0.00 else it.toDouble()
+                                                if (temp<=articulo.descuentoAdmitido){
+                                                    porcentajeDescuentoProducto = it
+                                                    calcularTotales()
+                                                }
+                                            },
+                                            modoEdicionActivado = (articulo.descuentoAdmitido != 0.00),
+                                            valor = porcentajeDescuentoProducto,
+                                            usarModifierForSize = true,
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .border(
+                                                    2.dp,
+                                                    color = Color.Gray,
+                                                    RoundedCornerShape(objetoAdaptardor.ajustarAltura(12))
+                                                ),
+                                            isUltimo = true,
+                                            medidaAncho = 350,
+                                            tomarAnchoMaximo = false,
+                                            fontSize = obtenerEstiloBodyBig(),
+                                            mostrarLabel = false,
+                                            soloPermitirValoresNumericos = true,
+                                            permitirPuntosDedimales = true,
+                                            cantidadLineas = 1
+                                        )
+                                    }
+
+                                    Column(
+                                        modifier = Modifier.weight(1f)
+                                    ) {
+                                        TText(
+                                            text = "Monto Descuento:",
+                                            fontSize = obtenerEstiloBodyMedium(),
+                                            fontWeight = FontWeight.Light,
+                                            color = Color.DarkGray
+                                        )
+                                        TextFieldMultifuncional(
+                                            nuevoValor = {
+                                                montoDescuento = it
+                                                esCambioPorMontoDescuento = true
                                                 calcularTotales()
-                                            }
-                                        },
-                                        modoEdicionActivado = (articulo.descuentoAdmitido != 0.00),
-                                        valor = descuentoProducto,
-                                        usarModifierForSize = true,
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .border(
-                                                2.dp,
-                                                color = Color.Gray,
-                                                RoundedCornerShape(objetoAdaptardor.ajustarAltura(12))
-                                            ),
-                                        isUltimo = true,
-                                        medidaAncho = 350,
-                                        tomarAnchoMaximo = false,
-                                        fontSize = obtenerEstiloBodyBig(),
-                                        mostrarLabel = false,
-                                        soloPermitirValoresNumericos = true,
-                                        permitirPuntosDedimales = true,
-                                        cantidadLineas = 1
-                                    )
+                                            },
+                                            valor = montoDescuento,
+                                            modoEdicionActivado = (articulo.descuentoAdmitido != 0.00),
+                                            usarModifierForSize = true,
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .border(2.dp, color = Color.Gray, RoundedCornerShape(objetoAdaptardor.ajustarAltura(12))),
+                                            isUltimo = true,
+                                            fontSize = obtenerEstiloBodyBig(),
+                                            cantidadLineas = 1,
+                                            mostrarPlaceholder = true,
+                                            textPlaceholder = "0.00",
+                                            mostrarLabel = false,
+                                            soloPermitirValoresNumericos = true,
+                                            darFormatoMiles = true
+                                        )
+                                    }
+
                                 }
 
-                                Column(
-                                    modifier = Modifier.weight(1f)
-                                ) {
-                                    TText(
-                                        text = "Monto Descuento:",
-                                        fontSize = obtenerEstiloBodyMedium(),
-                                        fontWeight = FontWeight.Light,
-                                        color = Color.DarkGray
-                                    )
-                                    TextFieldMultifuncional(
-                                        nuevoValor = {
-                                            montoDescuento = it
-                                            esCambioPorMontoDescuento = true
-                                            calcularTotales()
-                                        },
-                                        valor = montoDescuento,
-                                        modoEdicionActivado = (articulo.descuentoAdmitido != 0.00),
-                                        usarModifierForSize = true,
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .border(2.dp, color = Color.Gray, RoundedCornerShape(objetoAdaptardor.ajustarAltura(12))),
-                                        isUltimo = true,
-                                        fontSize = obtenerEstiloBodyBig(),
-                                        cantidadLineas = 1,
-                                        mostrarPlaceholder = true,
-                                        textPlaceholder = "0.00",
-                                        mostrarLabel = false,
-                                        soloPermitirValoresNumericos = true,
-                                        darFormatoMiles = true
-                                    )
-                                }
-
+                                Spacer(modifier = Modifier.height(8.dp))
                             }
 
-                            Spacer(modifier = Modifier.height(8.dp))
-
-                            // Impuestos y Total
+                            // Totales
                             Column(
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -939,13 +1166,13 @@ fun IniciarInterfazFacturacion(
                                     horizontalArrangement = Arrangement.SpaceBetween
                                 ) {
                                     TText(
-                                        text = "Monto Descuento:",
+                                        text = "Precio unitario (con IVA): ",
                                         textAlign = TextAlign.Start,
                                         fontSize = obtenerEstiloBodyBig()
                                     )
                                     Spacer(modifier = Modifier.weight(1f))
                                     TText(
-                                        text = simboloMonedaArticulo + separacionDeMiles(montoString = montoDescuento, isString = true) +" $codigoMoneda",
+                                        text = simboloMonedaArticulo + separacionDeMiles(precioUnitarioIva) +" $codigoMoneda",
                                         textAlign = TextAlign.End,
                                         fontSize = obtenerEstiloBodyBig()
                                     )
@@ -957,7 +1184,7 @@ fun IniciarInterfazFacturacion(
                                     horizontalArrangement = Arrangement.SpaceBetween
                                 ) {
                                     TText(
-                                        text = "Subtotal:",
+                                        text = "Subtotal (sin IVA): ",
                                         textAlign = TextAlign.Start,
                                         fontSize = obtenerEstiloBodyBig()
                                     )
@@ -974,7 +1201,7 @@ fun IniciarInterfazFacturacion(
                                     horizontalArrangement = Arrangement.SpaceBetween
                                 ) {
                                     TText(
-                                        text = "Monto IVA:" ,
+                                        text = "IVA (${articulo.impuesto}%): " ,
                                         textAlign = TextAlign.End,
                                         fontSize = obtenerEstiloBodyBig()
                                     )
@@ -991,7 +1218,7 @@ fun IniciarInterfazFacturacion(
                                     horizontalArrangement = Arrangement.SpaceBetween
                                 ) {
                                     TText(
-                                        text = "Total: ",
+                                        text = "Total a pagar: ",
                                         textAlign = TextAlign.End,
                                         fontSize = obtenerEstiloTitleSmall()
                                     )
@@ -999,11 +1226,10 @@ fun IniciarInterfazFacturacion(
                                     TText(
                                         text = "$simboloMonedaArticulo${separacionDeMiles(totalProducto)} $codigoMoneda",
                                         textAlign = TextAlign.End,
-                                        fontSize = obtenerEstiloTitleSmall()
+                                        fontSize = obtenerEstiloTitleMedium()
                                     )
                                 }
                             }
-
 
                             // Botones de acción
                             Row(
@@ -1026,19 +1252,34 @@ fun IniciarInterfazFacturacion(
                                     text = if (isAgregar) "Agregar" else "Editar",
                                     objetoAdaptardor = objetoAdaptardor,
                                     onClick = {
-                                        val articuloTemp = ArticuloLineaProforma(
-                                            numero = numeroProforma,
-                                            articuloLine = articulo.articuloLineaId,
-                                            tipoDocumento = "01",
-                                            articuloCodigo = articulo.codigo,
-                                            articuloTipoPrecio = tipoPrecioSeleccionado.clave,
-                                            articuloActividadEconomica = articulo.actividadEconomica,
-                                            articuloCantidad = cantidadProducto.toInt(),
-                                            articuloUnidadMedida = articulo.unidadMedida
+                                        if (cantidadProducto.isNotEmpty() && precioProducto.isNotEmpty()){
+                                            val articuloTemp = ArticuloLineaProforma(
+                                                numero = numeroProforma,
+                                                articuloLine = articulo.articuloLineaId,
+                                                tipoDocumento = tipoDocumento,
+                                                articuloCodigo = articulo.codigo,
+                                                articuloTipoPrecio = tipoPrecioSeleccionado.clave,
+                                                articuloActividadEconomica = articulo.actividadEconomica,
+                                                articuloCantidad = cantidadProductoForApi,
+                                                articuloUnidadMedida = articulo.unidadMedida,
+                                                presentacion = seleccionPresentacion,
+                                                articuloBodegaCodigo = bodegaSeleccionda.clave,
+                                                articuloVenta = precioProducto.toDouble(),
+                                                articuloDescuentoPorcentage = porcentajeDescuentoProducto.toDouble(),
+                                                articuloIvaPorcentage = articulo.impuesto,
+                                                articuloIvaTarifa = articulo.Cod_Tarifa_Impuesto,
+                                                idCliente = clienteId,
+                                                articuloVentaSubTotal1 = precioProducto.toDouble()
+                                            )
+                                            agregaEditaArticulo(articuloTemp)
+                                        }else{
+                                            if (cantidadProducto.isEmpty() ){
+                                                mostrarMensajeError("La cantidad del artículo deber ser mayor a '0.00'.")
+                                            }else{
+                                                mostrarMensajeError("El Precio del artículo deber ser mayor a '0.00'.")
+                                            }
 
-
-                                        )
-                                        agregaEditaArticulo(articuloTemp)
+                                        }
                                     },
                                     modifier = Modifier.weight(1f),
                                     backgroundColor = Color(0xFF244BC0),
@@ -1119,6 +1360,8 @@ fun IniciarInterfazFacturacion(
 
         IconButton(
             onClick = {
+                validacionCargaFinalizada++
+                actualizarListaArticulos = false
                 actuzalizarDatosProforma = true
             },
             modifier = Modifier.constrainAs(iconoActualizar) {
@@ -1184,6 +1427,8 @@ fun IniciarInterfazFacturacion(
                             .wrapContentSize()
                             .padding(objetoAdaptardor.ajustarAltura(8))
                     ) {
+
+                        // PANEL DE CARGA BOTONES SUPERIORES
                         if (isCargandoDatos){
                             Box(
                                 modifier = Modifier
@@ -1193,6 +1438,7 @@ fun IniciarInterfazFacturacion(
                             )
                         }
 
+                        // BOTONES SUPERIORES
                         AnimatedVisibility(
                             visible = !isCargandoDatos,
                             enter = expandVertically(animationSpec = tween(300)) + fadeIn(),
@@ -1229,6 +1475,7 @@ fun IniciarInterfazFacturacion(
                             }
                         }
 
+                        // CARD DE DATOS CLIENTE
                         Card(
                             modifier = Modifier
                                 .wrapContentHeight()
@@ -1241,7 +1488,7 @@ fun IniciarInterfazFacturacion(
                             shape = RoundedCornerShape(objetoAdaptardor.ajustarAltura(20)),
                             colors = CardDefaults.cardColors(containerColor = Color.White)
                         ) {
-                            if (isCargandoDatos){
+                            if (isCargandoDatos || soloActualizarDatosCliente){
                                 Box(
                                     modifier = Modifier
                                         .fillMaxSize()
@@ -1340,7 +1587,7 @@ fun IniciarInterfazFacturacion(
                             }
 
                             AnimatedVisibility(
-                                visible = !isCargandoDatos,
+                                visible = (!isCargandoDatos && !soloActualizarDatosCliente),
                                 enter = expandVertically(animationSpec = tween(300)) + fadeIn(),
                                 exit = shrinkVertically(animationSpec = tween(300)) + fadeOut()
                             ){
@@ -1379,7 +1626,7 @@ fun IniciarInterfazFacturacion(
                                         horizontalArrangement = Arrangement.spacedBy(objetoAdaptardor.ajustarAncho(8))
                                     ){
                                         TText(
-                                            text = "Cuenta: $cuenta",
+                                            text = "Cuenta: $clienteId",
                                             modifier = Modifier
                                                 .fillMaxSize()
                                                 .weight(1f),
@@ -1395,7 +1642,11 @@ fun IniciarInterfazFacturacion(
                                         )
                                         BButton(
                                             text = "Buscar",
-                                            onClick = {},
+                                            onClick = {
+                                                datosIngresadosBarraBusquedaCliente = ""
+                                                listaClientesEncontrados = emptyList()
+                                                iniciarMenuSeleccionarCliente = true
+                                            },
                                             modifier = Modifier
                                                 .weight(0.8f),
                                             textSize = obtenerEstiloBodyBig(),
@@ -1476,6 +1727,7 @@ fun IniciarInterfazFacturacion(
                             }
                         }
 
+                        // CARD DE DATOS ARTICULOS
                         Card(
                             modifier = Modifier
                                 .wrapContentHeight()
@@ -1488,7 +1740,7 @@ fun IniciarInterfazFacturacion(
                             shape = RoundedCornerShape(objetoAdaptardor.ajustarAltura(20)),
                             colors = CardDefaults.cardColors(containerColor = Color.White)
                         ) {
-                            if (isCargandoDatos){
+                            if (isCargandoDatos || soloActualizarArticulos){
                                 Box(
                                     modifier = Modifier
                                         .fillMaxSize()
@@ -1600,7 +1852,7 @@ fun IniciarInterfazFacturacion(
                             }
 
                             AnimatedVisibility(
-                                visible = !isCargandoDatos,
+                                visible = (!isCargandoDatos && !soloActualizarArticulos),
                                 enter = expandVertically(animationSpec = tween(300)) + fadeIn(),
                                 exit = shrinkVertically(animationSpec = tween(300)) + fadeOut()
                             ){
@@ -1680,9 +1932,11 @@ fun IniciarInterfazFacturacion(
                                                         articulo.descuentoAdmitido = articuloTemp.descuentoAdmitido
                                                         articulo.unidadXMedida = articuloTemp.unidadXMedida
                                                         articulo.actividadEconomica = articuloTemp.actividadEconomica
+                                                        articulo.Cod_Tarifa_Impuesto = articuloTemp.codTarifaImpuesto
+                                                        articulo.unidadMedida = articuloTemp.unidadMedida
                                                         articuloActual = articulo
                                                         isAgregar = false
-                                                        iniciarMenuDatosArticulo = true
+                                                        iniciarMenuAgregaEditaArticulo = true
                                                     }else{
                                                         mostrarMensajeError("No se logró encontrar las bodegas y los precios de este artículo actualice y vuelva a intentar.")
                                                     }
@@ -1709,12 +1963,15 @@ fun IniciarInterfazFacturacion(
 
                                             TText(articulo.descripcion, Modifier.weight(1f), textAlign = TextAlign.Start, maxLines = 3)
                                             TText(articulo.articuloCantidad.toString(), Modifier.weight(0.5f), textAlign =TextAlign.Center, maxLines = 3)
-                                            TText(simboloMoneda + separacionDeMiles(articulo.precio), Modifier.weight(1f), textAlign = TextAlign.Center, maxLines = 3)
+                                            TText(simboloMoneda + separacionDeMiles(articulo.precioNeto), Modifier.weight(1f), textAlign = TextAlign.Center, maxLines = 3)
                                             TText("${articulo.articuloDescuentoPorcentaje}%", Modifier.weight(0.5f), textAlign = TextAlign.Center, maxLines = 3)
                                             TText(simboloMoneda + separacionDeMiles(articulo.articuloVentaTotal), Modifier.weight(1f), textAlign = TextAlign.End, maxLines = 3)
 
                                             IconButton(
-                                                onClick = { /* Lógica para eliminar */ },
+                                                onClick = {
+                                                    lineaAcual = articulo.articuloLineaId
+                                                    eliminarLinea = true
+                                                },
                                                 modifier = Modifier.size(objetoAdaptardor.ajustarAltura(18))
                                             ) {
                                                 Icon(
@@ -1734,6 +1991,7 @@ fun IniciarInterfazFacturacion(
                             }
                         }
 
+                        // CARD DE TOTALES
                         Card(
                             modifier = Modifier
                                 .wrapContentHeight()
@@ -2129,9 +2387,9 @@ fun IniciarInterfazFacturacion(
         }
     }
 
-    ProductoDialog(
-        mostrarVentanaArticulo = iniciarMenuDatosArticulo,
-        onDismiss = { iniciarMenuDatosArticulo = false },
+    MenuAgregaEditaArticulo(
+        mostrarVentanaArticulo = iniciarMenuAgregaEditaArticulo,
+        onDismiss = { iniciarMenuAgregaEditaArticulo = false },
         opcionesPresentacion = if(articuloActual.unidadXMedida>1) listOf("Caja", "Unidad") else listOf("Unidad"),
         objetoAdaptardor = objetoAdaptardor,
         articulo = articuloActual,
@@ -2142,8 +2400,14 @@ fun IniciarInterfazFacturacion(
             else -> "0.0"
         },
         isAgregar = isAgregar,
-        agregaEditaArticulo = {}
+        agregaEditaArticulo = {
+            articuloLineaProforma = it
+            agregarEditarArticuloActual = true
+        },
+        bodega = if (articuloActual.articuloBodegaCodigo.isEmpty()) articuloActual.listaBodegas.first() else articuloActual.listaBodegas.find { it.clave == articuloActual.articuloBodegaCodigo } ?: ParClaveValor(),
+        precioVenta = articuloActual.codPrecioVenta.ifEmpty { tipoPrecio }
     )
+
     if(iniciarMenuSeleccionarArticulo){
         var isMenuVisible by remember { mutableStateOf(false) }
         val focusRequester = remember { FocusRequester() }
@@ -2181,136 +2445,304 @@ fun IniciarInterfazFacturacion(
                     shape = RoundedCornerShape(objetoAdaptardor.ajustarAltura(16)),
                     color = Color.White
                 ) {
-                    Box(
-                        contentAlignment = Alignment.TopCenter,
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(objetoAdaptardor.ajustarAltura(8)),
+                        horizontalAlignment = Alignment.CenterHorizontally,
                         modifier = Modifier.padding(objetoAdaptardor.ajustarAltura(16))
                     ) {
-                        Column(
-                            verticalArrangement = Arrangement.spacedBy(objetoAdaptardor.ajustarAltura(8)),
+                        TText(
+                            text = "Agregar Artículo",
+                            fontSize = obtenerEstiloHeadSmall(),
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        Row (
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(objetoAdaptardor.ajustarAncho(16))
+                        ){
+                            BBasicTextField(
+                                value = datosIngresadosBarraBusquedaArticulos,
+                                onValueChange = {
+                                    isCargandoArticulos = true
+                                    datosIngresadosBarraBusquedaArticulos = it
+                                    if (it.isEmpty()){
+                                        apiConsultaBusquedaArticulos?.cancel()
+                                        isCargandoArticulos = false
+                                        listaArticulosEncontrados = emptyList()
+                                    }
+                                },
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .focusRequester(focusRequester),
+                                objetoAdaptardor = objetoAdaptardor,
+                                utilizarMedidas = false,
+                                fontSize = obtenerEstiloTitleMedium()
+                            )
+                            IconButton(
+                                onClick = {
+                                    iniciarMenuSeleccionarArticulo = false
+                                    isMenuVisible = false
+                                    listaArticulosEncontrados = emptyList()
+                                    datosIngresadosBarraBusquedaArticulos = ""
+                                },
+                                modifier = Modifier.weight(0.1f)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Filled.Close,
+                                    contentDescription = "Cerrar",
+                                    tint = Color.Gray,
+                                    modifier = Modifier.size(objetoAdaptardor.ajustarAltura(25))
+                                )
+                            }
+                        }
+
+                        LazyColumn(
+                            modifier = Modifier
+                                .height(objetoAdaptardor.ajustarAltura(400)),
+                            verticalArrangement = Arrangement.Top,
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
-                            TText(
-                                text = "Agregar Artículo",
-                                fontSize = obtenerEstiloHeadSmall(),
-                                textAlign = TextAlign.Center,
-                                modifier = Modifier.fillMaxWidth()
-                            )
-                            Row (
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(objetoAdaptardor.ajustarAncho(16))
-                            ){
-                                BBasicTextField(
-                                    value = datosIngresadosBarraBusquedaArticulos,
-                                    onValueChange = {
-                                        isCargandoArticulos = true
-                                        datosIngresadosBarraBusquedaArticulos = it
-                                        if (it.isEmpty()){
-                                            apiConsultaBusquedaArticulos?.cancel()
-                                            isCargandoArticulos = false
-                                            listaArticulosEncontrados = emptyList()
-                                        }
-                                    },
-                                    modifier = Modifier
-                                        .weight(1f)
-                                        .focusRequester(focusRequester),
-                                    objetoAdaptardor = objetoAdaptardor,
-                                    utilizarMedidas = false,
-                                    fontSize = obtenerEstiloTitleMedium()
-                                )
-                                IconButton(
-                                    onClick = {
-                                        iniciarMenuSeleccionarArticulo = false
-                                        isMenuVisible = false
-                                        listaArticulosEncontrados = emptyList()
-                                        datosIngresadosBarraBusquedaArticulos = ""
-                                    },
-                                    modifier = Modifier.weight(0.1f)
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Filled.Close,
-                                        contentDescription = "Cerrar",
-                                        tint = Color.Gray,
-                                        modifier = Modifier.size(objetoAdaptardor.ajustarAltura(25))
-                                    )
-                                }
-                            }
+                            item {
+                                if (isCargandoArticulos){
+                                    Box(modifier = Modifier
+                                        .fillMaxSize(),
+                                        contentAlignment = Alignment.Center
+                                    ){
+                                        CircularProgressIndicator(
+                                            color = Color(0xFF244BC0),
+                                            modifier = Modifier
+                                                .size(objetoAdaptardor.ajustarAltura(50))
+                                                .padding(2.dp)
+                                        )
+                                    }
+                                }else{
+                                    if (datosIngresadosBarraBusquedaArticulos.isEmpty() || (listaArticulosEncontrados.isEmpty() && !isCargandoArticulos)){
+                                        Column(
+                                            verticalArrangement = Arrangement.spacedBy(objetoAdaptardor.ajustarAltura(8)),
+                                            horizontalAlignment = Alignment.CenterHorizontally,
+                                            modifier = Modifier.fillMaxWidth()
+                                        ) {
+                                            Icon(
+                                                imageVector = if (datosIngresadosBarraBusquedaArticulos.isEmpty()) Icons.Default.Search else Icons.Default.Dangerous,
+                                                contentDescription = "ICONO DE PELIGRO",
+                                                modifier = Modifier.size(objetoAdaptardor.ajustarAltura(50)),
+                                                tint = if (datosIngresadosBarraBusquedaArticulos.isEmpty()) Color(0xFF244BC0) else Color(0xFFEB4242)
+                                            )
 
-                            LazyColumn(
-                                modifier = Modifier
-                                    .height(objetoAdaptardor.ajustarAltura(400)),
-                                verticalArrangement = Arrangement.Top,
-                                horizontalAlignment = Alignment.CenterHorizontally
-                            ) {
-                                item {
-                                    if (isCargandoArticulos){
-                                        Box(modifier = Modifier
-                                            .fillMaxSize(),
-                                            contentAlignment = Alignment.Center
-                                        ){
-                                            CircularProgressIndicator(
-                                                color = Color(0xFF244BC0),
-                                                modifier = Modifier
-                                                    .size(objetoAdaptardor.ajustarAltura(50))
-                                                    .padding(2.dp)
+                                            TText(
+                                                text = if (datosIngresadosBarraBusquedaArticulos.isEmpty()) "Ingrese datos para iniciar la búsqueda." else "No se encontró ningún artículo relacionado con la palabra '$datosIngresadosBarraBusquedaArticulos'",
+                                                modifier = Modifier.width(objetoAdaptardor.ajustarAncho(200)),
+                                                fontSize = obtenerEstiloTitleMedium(),
+                                                maxLines = 5,
+                                                textAlign = TextAlign.Center
                                             )
                                         }
                                     }else{
-                                        if (datosIngresadosBarraBusquedaArticulos.isEmpty() || (listaArticulosEncontrados.isEmpty() && !isCargandoArticulos)){
-                                            Column(
-                                                verticalArrangement = Arrangement.spacedBy(objetoAdaptardor.ajustarAltura(8)),
-                                                horizontalAlignment = Alignment.CenterHorizontally,
-                                                modifier = Modifier.fillMaxWidth()
+                                        listaArticulosEncontrados.forEachIndexed { index, articulo ->
+                                            var isArticuloVisible by remember { mutableStateOf(false) }
+                                            LaunchedEffect(isArticuloVisible) {
+                                                delay(index * 100L) // Retrasa cada artículo en 100ms según su índice
+                                                isArticuloVisible = true
+                                            }
+
+                                            AnimatedVisibility(
+                                                visible = isArticuloVisible,
+                                                enter = fadeIn(animationSpec = tween(500)) + slideInVertically(initialOffsetY = { it })
                                             ) {
-                                                Icon(
-                                                    imageVector = if (datosIngresadosBarraBusquedaArticulos.isEmpty()) Icons.Default.Search else Icons.Default.Dangerous,
-                                                    contentDescription = "ICONO DE PELIGRO",
-                                                    modifier = Modifier.size(objetoAdaptardor.ajustarAltura(50)),
-                                                    tint = if (datosIngresadosBarraBusquedaArticulos.isEmpty()) Color(0xFF244BC0) else Color(0xFFEB4242)
-                                                )
-
-                                                TText(
-                                                    text = if (datosIngresadosBarraBusquedaArticulos.isEmpty()) "Ingrese datos para iniciar la búsqueda." else "No se encontró ningún artículo relacionado con la palabra '$datosIngresadosBarraBusquedaArticulos'",
-                                                    modifier = Modifier.width(objetoAdaptardor.ajustarAncho(200)),
-                                                    fontSize = obtenerEstiloTitleMedium(),
-                                                    maxLines = 5,
-                                                    textAlign = TextAlign.Center
-                                                )
-                                            }
-                                        }else{
-                                            listaArticulosEncontrados.forEachIndexed { index, articulo ->
-                                                var isArticuloVisible by remember { mutableStateOf(false) }
-                                                LaunchedEffect(isArticuloVisible) {
-                                                    delay(index * 100L) // Retrasa cada artículo en 100ms según su índice
-                                                    isArticuloVisible = true
-                                                }
-
-                                                AnimatedVisibility(
-                                                    visible = isArticuloVisible,
-                                                    enter = fadeIn(animationSpec = tween(500)) + slideInVertically(initialOffsetY = { it })
-                                                ) {
-                                                    BxContenedorArticulosFacturacion(articulo)
-                                                }
-
-                                                Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(16)))
+                                                BxContenedorArticulosFacturacion(articulo)
                                             }
 
+                                            Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(16)))
                                         }
+
                                     }
                                 }
                             }
-                            TText(
-                                text = "Artículos encontrados: " + listaArticulosEncontrados.size.toString(),
-                                fontSize = obtenerEstiloBodyBig(),
-                                modifier = Modifier.fillMaxWidth(),
-                                textAlign = TextAlign.Center,
-                                color = Color(0xFF244BC0)
-                            )
                         }
+                        TText(
+                            text = "Artículos encontrados: " + listaArticulosEncontrados.size.toString(),
+                            fontSize = obtenerEstiloBodyBig(),
+                            modifier = Modifier.fillMaxWidth(),
+                            textAlign = TextAlign.Center,
+                            color = Color(0xFF244BC0)
+                        )
                     }
                 }
             }
         }
     }
+
+    if(iniciarMenuSeleccionarCliente){
+        var isMenuVisible by remember { mutableStateOf(false) }
+        val focusRequester = remember { FocusRequester() }
+
+        LaunchedEffect(Unit) {
+            delay(100)
+            isMenuVisible = true
+        }
+
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black.copy(alpha = 0.5f))
+                .clickable(enabled = false) {},
+            contentAlignment = Alignment.Center
+        ) {
+            AnimatedVisibility(
+                visible = isMenuVisible,
+                enter = fadeIn(animationSpec = tween(500)) + slideInVertically(initialOffsetY = { it }),
+                exit = fadeOut(animationSpec = tween(500)) + slideOutVertically(targetOffsetY = { it })
+            ) {
+
+                LaunchedEffect(Unit) {
+                    delay(100)
+                    focusRequester.requestFocus()
+                    mostrarTeclado(context)
+                }
+
+                Surface(
+                    modifier = Modifier
+                        .wrapContentWidth(Alignment.CenterHorizontally)
+                        .wrapContentHeight()
+                        .padding(objetoAdaptardor.ajustarAltura(24))
+                        .align(Alignment.TopCenter),
+                    shape = RoundedCornerShape(objetoAdaptardor.ajustarAltura(16)),
+                    color = Color.White
+                ) {
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(objetoAdaptardor.ajustarAltura(8)),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier.padding(objetoAdaptardor.ajustarAltura(16))
+                    ) {
+                        TText(
+                            text = "Buscar Cliente",
+                            fontSize = obtenerEstiloHeadSmall(),
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        Row (
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(objetoAdaptardor.ajustarAncho(16))
+                        ){
+                            BBasicTextField(
+                                value = datosIngresadosBarraBusquedaCliente,
+                                onValueChange = {
+                                    datosIngresadosBarraBusquedaCliente = it
+                                },
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .focusRequester(focusRequester),
+                                objetoAdaptardor = objetoAdaptardor,
+                                utilizarMedidas = false,
+                                fontSize = obtenerEstiloTitleMedium()
+                            )
+                            IconButton(
+                                onClick = {
+                                    iniciarMenuSeleccionarCliente = false
+                                    isMenuVisible = false
+                                    datosIngresadosBarraBusquedaCliente = ""
+                                },
+                                modifier = Modifier.weight(0.1f)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Filled.Close,
+                                    contentDescription = "Cerrar",
+                                    tint = Color.Gray,
+                                    modifier = Modifier.size(objetoAdaptardor.ajustarAltura(25))
+                                )
+                            }
+                        }
+
+                        LazyColumn(
+                            modifier = Modifier
+                                .height(objetoAdaptardor.ajustarAltura(400)),
+                            verticalArrangement = Arrangement.Top,
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            item {
+                                if (isCargandoClientes){
+                                    Box(modifier = Modifier
+                                        .fillMaxSize(),
+                                        contentAlignment = Alignment.Center
+                                    ){
+                                        CircularProgressIndicator(
+                                            color = Color(0xFF244BC0),
+                                            modifier = Modifier
+                                                .size(objetoAdaptardor.ajustarAltura(50))
+                                                .padding(2.dp)
+                                        )
+                                    }
+                                }else{
+                                    if (datosIngresadosBarraBusquedaCliente.isEmpty() || (listaClientesEncontrados.isEmpty() && !isCargandoClientes)){
+                                        Column(
+                                            verticalArrangement = Arrangement.spacedBy(objetoAdaptardor.ajustarAltura(8)),
+                                            horizontalAlignment = Alignment.CenterHorizontally,
+                                            modifier = Modifier.fillMaxWidth()
+                                        ) {
+                                            Icon(
+                                                imageVector = if (datosIngresadosBarraBusquedaCliente.isEmpty()) Icons.Default.Search else Icons.Default.Dangerous,
+                                                contentDescription = "ICONO DE PELIGRO",
+                                                modifier = Modifier.size(objetoAdaptardor.ajustarAltura(50)),
+                                                tint = if (datosIngresadosBarraBusquedaCliente.isEmpty()) Color(0xFF244BC0) else Color(0xFFEB4242)
+                                            )
+
+                                            TText(
+                                                text = if (datosIngresadosBarraBusquedaCliente.isEmpty()) "Ingrese datos para iniciar la búsqueda." else "No se encontró ningún cliente relacionado con la palabra '$datosIngresadosBarraBusquedaCliente'",
+                                                modifier = Modifier.width(objetoAdaptardor.ajustarAncho(200)),
+                                                fontSize = obtenerEstiloTitleMedium(),
+                                                maxLines = 5,
+                                                textAlign = TextAlign.Center
+                                            )
+                                        }
+                                    }else{
+                                        listaClientesEncontrados.forEachIndexed { index, cliente ->
+                                            var isClienteVisible by remember { mutableStateOf(false) }
+                                            LaunchedEffect(isClienteVisible) {
+                                                delay(index * 100L)
+                                                isClienteVisible = true
+                                            }
+
+                                            AnimatedVisibility(
+                                                visible = isClienteVisible,
+                                                enter = fadeIn(animationSpec = tween(500)) + slideInVertically(initialOffsetY = { it })
+                                            ) {
+                                                BxContenedorClienteFacturacion(cliente)
+                                            }
+
+                                            Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(16)))
+                                        }
+
+                                    }
+                                }
+                            }
+                        }
+                        TText(
+                            text = "Clientes encontrados: " + listaClientesEncontrados.size.toString(),
+                            fontSize = obtenerEstiloBodyBig(),
+                            modifier = Modifier.fillMaxWidth(),
+                            textAlign = TextAlign.Center,
+                            color = Color(0xFF244BC0)
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+
+
+    MenuConfirmacion(
+        onAceptar = {
+            navController.popBackStack()
+            iniciarMenuConfirmacionSalidaModulo = false
+        },
+        onDenegar = {
+            iniciarMenuConfirmacionSalidaModulo = false
+        },
+        mostrarMenu = iniciarMenuConfirmacionSalidaModulo,
+        titulo = "Salir del Módulo de Facturación.",
+        subTitulo = "¿Está seguro que desea salir del Módulo de Facturación?"
+    )
 }
 
 

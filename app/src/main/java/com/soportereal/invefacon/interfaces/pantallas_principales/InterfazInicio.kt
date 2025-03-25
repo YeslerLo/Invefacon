@@ -70,6 +70,7 @@ import coil.compose.SubcomposeAsyncImage
 import com.google.accompanist.systemuicontroller.SystemUiController
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.soportereal.invefacon.R
+import com.soportereal.invefacon.funciones_de_interfaces.MenuConfirmacion
 import com.soportereal.invefacon.funciones_de_interfaces.RutasPatallas
 import com.soportereal.invefacon.funciones_de_interfaces.actualizarParametro
 import com.soportereal.invefacon.funciones_de_interfaces.obtenerParametro
@@ -102,95 +103,12 @@ fun IniciarInterfazInicio(
     var iniciarPantallaModulo by remember { mutableStateOf(false) }
     var rutaPantallaModulo by remember { mutableStateOf("") }
     val contexto = LocalContext.current
+    var iniciarMenuConfirmacionSalidaModulo by remember { mutableStateOf(false) }
 
-    // Estado para controlar la visibilidad del diálogo
-    val showDialog = remember { mutableStateOf(false) }
 
     // Interceptar el botón de retroceso
     BackHandler {
-        showDialog.value = true // Mostrar el diálogo
-    }
-
-    // Mostrar el diálogo si es necesario
-    if (showDialog.value) {
-        AlertDialog(
-            modifier = Modifier.background(Color.White),
-            containerColor = Color.White,
-            onDismissRequest = { showDialog.value = false }, // Cerrar el diálogo sin acción
-            title = {
-                Text(
-                    "Cerrar sesion",
-                    fontFamily = aksharFont,
-                    fontWeight = FontWeight.Medium,
-                    color = Color.Black,
-                    fontSize = objetoAdaptardor.ajustarFont(18),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-            },
-            text = {
-                Text(
-                    "¿Estás seguro de que quieres salir?",
-                    fontFamily = aksharFont,
-                    fontWeight = FontWeight.Medium,
-                    color = Color.Black,
-                    fontSize = objetoAdaptardor.ajustarFont(18),
-                    overflow = TextOverflow.Ellipsis
-                )
-            },
-            confirmButton = {
-                Button(
-                    colors = ButtonDefaults.buttonColors(
-                    containerColor =Color(0xDFC73434), // Color de fondo del botón
-                    contentColor = Color.White // Color del contenido (texto e iconos)
-                ),
-                    onClick = {
-                        if (obtenerParametro(contexto, "token") =="0"){
-                            navControllerPrincipal.popBackStack()
-                        }else{
-                            actualizarParametro(contexto, "token","0")
-                            actualizarParametro(contexto, "nombreUsuario","0")
-                            actualizarParametro(contexto, "nombreEmpresa","0")
-                            actualizarParametro(contexto, "codUsuario","0")
-                            navControllerPrincipal.navigate("auth") {
-                                popUpTo("main") { inclusive = true }
-                            }
-                        }
-                        showDialog.value = false // Cerrar el diálog
-                    }
-                ) {
-                    Text(
-                        "Salir",
-                        fontFamily = aksharFont,
-                        fontWeight = FontWeight.Medium,
-                        color = Color.White,
-                        fontSize = objetoAdaptardor.ajustarFont(17),
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
-            },
-            dismissButton = {
-                Button(
-                    onClick = { showDialog.value = false },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor =Color(0xFF244BC0), // Color de fondo del botón
-                        contentColor = Color.White // Color del contenido (texto e iconos)
-                    )
-                ) {
-                    Text(
-                        "Cancelar",
-                        fontFamily = aksharFont,
-                        fontWeight = FontWeight.Medium,
-                        color = Color.White,
-                        fontSize = objetoAdaptardor.ajustarFont(17),
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
-            },
-            properties = DialogProperties(dismissOnBackPress = false, dismissOnClickOutside = false)
-        )
+        iniciarMenuConfirmacionSalidaModulo = true
     }
 
     LaunchedEffect(iniciarPantallaModulo) {
@@ -372,6 +290,30 @@ fun IniciarInterfazInicio(
             }
         }
     }
+
+    MenuConfirmacion(
+        onAceptar = {
+            if (obtenerParametro(contexto, "token") =="0"){
+                navControllerPrincipal.popBackStack()
+            }else{
+                actualizarParametro(contexto, "token","0")
+                actualizarParametro(contexto, "nombreUsuario","0")
+                actualizarParametro(contexto, "nombreEmpresa","0")
+                actualizarParametro(contexto, "codUsuario","0")
+                navControllerPrincipal.navigate("auth") {
+                    popUpTo("main") { inclusive = true }
+                }
+            }
+            iniciarMenuConfirmacionSalidaModulo = false
+        },
+        onDenegar = {
+            iniciarMenuConfirmacionSalidaModulo = false
+        },
+        mostrarMenu = iniciarMenuConfirmacionSalidaModulo,
+        titulo = "Cerrar sesion",
+        subTitulo = "¿Estás seguro de que quieres salir?"
+    )
+
     objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
 }
 

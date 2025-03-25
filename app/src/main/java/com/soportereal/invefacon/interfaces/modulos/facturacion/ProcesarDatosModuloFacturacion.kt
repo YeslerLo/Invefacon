@@ -82,6 +82,25 @@ class ProcesarDatosModuloFacturacion(
             .build()
         return objetoFuncionesHttpInvefacon.metodoPost(formBody = formBody, apiDirectorio = "facturacion/articulosfacturar.php")
     }
+
+    suspend fun eliminarLineaProforma(numero: String, lineaArticulo : String): JSONObject?{
+        val formBody = MultipartBody.Builder().setType(MultipartBody.FORM)
+            .addFormDataPart("Numero",numero)
+            .addFormDataPart("ArticuloLineaId", lineaArticulo)
+            .build()
+        return objetoFuncionesHttpInvefacon.metodoPost(formBody = formBody, apiDirectorio = "facturacion/eliminarlineaproformahija.php")
+    }
+
+    suspend fun cambiarClienteProforma(numero: String, clienteFacturacion: ClienteFacturacion): JSONObject?{
+        val formBody = MultipartBody.Builder().setType(MultipartBody.FORM)
+            .addFormDataPart("numero",numero)
+            .addFormDataPart("clienteid", clienteFacturacion.codigo)
+            .addFormDataPart("monedacodigo", clienteFacturacion.codMoneda)
+            .addFormDataPart("tipoprecioventa", clienteFacturacion.tipoPrecio)
+            .addFormDataPart("clientenombre", clienteFacturacion.nombreJuridico)
+            .build()
+        return objetoFuncionesHttpInvefacon.metodoPost(formBody = formBody, apiDirectorio = "facturacion/cambiaclienteproforma.php")
+    }
 }
 
 
@@ -100,7 +119,7 @@ data class ArticuloFacturacion(
     var codCabys: String = "",
     var actividadEconomica: String = "",
     var marca: String = "",
-    var articuloCantidad : Int = 1,
+    var articuloCantidad : Double = 0.0,
     var unidadXMedida: Double = 0.0,
     var unidadMedida: String = "",
     var fraccionamiento: Int = 0,
@@ -128,7 +147,8 @@ data class ArticuloFacturacion(
     var existencia: Double = 0.0,
     var articuloLineaId: String = "",
     var articuloCosto: Double = 0.0,
-    var utilidad: Double = 0.0
+    var utilidad: Double = 0.0,
+    var Cod_Tarifa_Impuesto : String = "08"
 )
 
 data class ArticuloLineaProforma(
@@ -138,8 +158,9 @@ data class ArticuloLineaProforma(
     val articuloCodigo : String= "",
     val articuloTipoPrecio : String= "",
     val articuloActividadEconomica : String= "",
-    val articuloCantidad : Int = 0,
+    val articuloCantidad : Double = 0.0,
     val articuloUnidadMedida : String= "",
+    val presentacion : String = "",
     val articuloBodegaCodigo: String= "",
     val articuloCosto: Double = 0.00,
     val articuloVenta : Double = 0.00,
@@ -149,7 +170,7 @@ data class ArticuloLineaProforma(
     val articuloOtrosCargos : Double = 0.00,
     val articuloVentaSubTotal3 : Double = 0.00,
     val articuloIvaPorcentage : Double = 0.00,
-    val articuloIvaTarifa : Double = 0.00,
+    val articuloIvaTarifa :  String= "",
     val articuloIvaExonerado : Double = 0.00,
     val articuloIvaMonto : Double = 0.00,
     val articuloIvaDevuelto : Double = 0.00,
@@ -158,6 +179,16 @@ data class ArticuloLineaProforma(
     val articuloVentaExento : Double = 0.00,
     val articuloVentaTotal : Double = 0.00,
     val idCliente : String = ""
+)
+
+data class ClienteFacturacion(
+    val codigo : String = "",
+    val nombreJuridico : String = "",
+    val nombreComercial : String = "",
+    val telefono : String = "",
+    val correo : String = "",
+    val codMoneda : String = "",
+    val tipoPrecio : String = ""
 )
 
 

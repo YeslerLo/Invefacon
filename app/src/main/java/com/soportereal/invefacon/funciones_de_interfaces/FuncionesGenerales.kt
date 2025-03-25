@@ -1,9 +1,7 @@
 package com.soportereal.invefacon.funciones_de_interfaces
 
-import android.app.Activity
 import android.content.Context
 import android.content.SharedPreferences
-import android.view.View
 import android.view.inputmethod.InputMethodManager
 import com.soportereal.invefacon.interfaces.pantallas_principales.estadoRespuestaApi
 import org.json.JSONObject

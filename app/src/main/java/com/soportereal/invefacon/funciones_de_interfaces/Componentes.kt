@@ -32,6 +32,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenu
@@ -68,10 +69,13 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.DialogProperties
 import com.soportereal.invefacon.R
 import com.soportereal.invefacon.interfaces.FuncionesParaAdaptarContenido
+import com.soportereal.invefacon.interfaces.obtenerEstiloBodyBig
 import com.soportereal.invefacon.interfaces.obtenerEstiloLabelBig
 import com.soportereal.invefacon.interfaces.obtenerEstiloBodySmall
+import com.soportereal.invefacon.interfaces.obtenerEstiloTitleMedium
 import com.soportereal.invefacon.interfaces.pantallas_principales.estadoRespuestaApi
 import org.json.JSONObject
 import java.util.Calendar
@@ -583,6 +587,88 @@ internal fun TextFieldMultifuncional(
                 diaActual
             ).show()
         }
+    }
+}
+
+@Composable
+fun MenuConfirmacion(
+    titulo: String,
+    subTitulo: String,
+    onAceptar: ()-> Unit,
+    onDenegar : ()-> Unit,
+    txBtAceptar : String = "Salir",
+    txBtDenegar : String = "Cancelar",
+    mostrarMenu: Boolean
+){
+    // Mostrar el diálogo si es necesario
+    if (mostrarMenu) {
+        AlertDialog(
+            modifier = Modifier.background(Color.White),
+            containerColor = Color.White,
+            onDismissRequest = { onDenegar() }, // Cerrar el diálogo sin acción
+            title = {
+                Text(
+                    titulo,
+                    fontFamily = FontFamily(Font(R.font.akshar_medium)),
+                    fontWeight = FontWeight.Medium,
+                    color = Color.Black,
+                    fontSize = obtenerEstiloTitleMedium(),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            },
+            text = {
+                Text(
+                    subTitulo,
+                    fontFamily = FontFamily(Font(R.font.akshar_medium)),
+                    fontWeight = FontWeight.Medium,
+                    color = Color.Black,
+                    fontSize = obtenerEstiloBodyBig(),
+                    overflow = TextOverflow.Ellipsis
+                )
+            },
+            confirmButton = {
+                Button(
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor =Color(0xDFC73434), // Color de fondo del botón
+                        contentColor = Color.White // Color del contenido (texto e iconos)
+                    ),
+                    onClick = {
+                        onAceptar()
+                    }
+                ) {
+                    Text(
+                        txBtAceptar,
+                        fontFamily = FontFamily(Font(R.font.akshar_medium)),
+                        fontWeight = FontWeight.Medium,
+                        color = Color.White,
+                        fontSize = obtenerEstiloBodyBig(),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+            },
+            dismissButton = {
+                Button(
+                    onClick = {onDenegar()},
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor =Color(0xFF244BC0), // Color de fondo del botón
+                        contentColor = Color.White // Color del contenido (texto e iconos)
+                    )
+                ) {
+                    Text(
+                        txBtDenegar,
+                        fontFamily = FontFamily(Font(R.font.akshar_medium)),
+                        fontWeight = FontWeight.Medium,
+                        color = Color.White,
+                        fontSize = obtenerEstiloBodyBig(),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+            },
+            properties = DialogProperties(dismissOnBackPress = false, dismissOnClickOutside = false)
+        )
     }
 }
 
