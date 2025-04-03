@@ -1,4 +1,4 @@
-package com.soportereal.invefacon.interfaces.pantallas_principales
+package com.soportereal.invefacon.interfaces.pantallas_principales.salir
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -37,6 +37,7 @@ import com.soportereal.invefacon.R
 import com.soportereal.invefacon.funciones_de_interfaces.actualizarParametro
 import com.soportereal.invefacon.funciones_de_interfaces.obtenerParametro
 import com.soportereal.invefacon.interfaces.FuncionesParaAdaptarContenido
+import com.soportereal.invefacon.interfaces.pantallas_principales.objetoEstadoPantallaCarga
 
 
 @Composable

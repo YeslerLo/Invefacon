@@ -1,4 +1,4 @@
-package com.soportereal.invefacon.interfaces.pantallas_principales
+package com.soportereal.invefacon.interfaces.pantallas_principales.inicio
 
 import android.annotation.SuppressLint
 import android.app.Activity
@@ -36,7 +36,6 @@ import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Receipt
 import androidx.compose.material.icons.filled.RestaurantMenu
 import androidx.compose.material.icons.filled.ShoppingCart
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -62,7 +61,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.DialogProperties
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
@@ -73,10 +71,14 @@ import com.soportereal.invefacon.R
 import com.soportereal.invefacon.funciones_de_interfaces.MenuConfirmacion
 import com.soportereal.invefacon.funciones_de_interfaces.RutasPatallas
 import com.soportereal.invefacon.funciones_de_interfaces.actualizarParametro
+import com.soportereal.invefacon.funciones_de_interfaces.descargarImagenSiNoExiste
+import com.soportereal.invefacon.funciones_de_interfaces.gestorImpresora
 import com.soportereal.invefacon.funciones_de_interfaces.obtenerParametro
 import com.soportereal.invefacon.interfaces.FuncionesParaAdaptarContenido
+import com.soportereal.invefacon.interfaces.pantallas_principales.objetoEstadoPantallaCarga
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 
@@ -105,6 +107,15 @@ fun IniciarInterfazInicio(
     val contexto = LocalContext.current
     var iniciarMenuConfirmacionSalidaModulo by remember { mutableStateOf(false) }
 
+    LaunchedEffect(Unit) {
+        descargarImagenSiNoExiste(contexto,"https://invefacon.com/img/$nombreEmpresa/$nombreEmpresa.png", nombreArchivo = "$nombreEmpresa.png")
+    }
+
+    LaunchedEffect(Unit) {
+        delay(1000)
+        if (gestorImpresora.validarConexion(contexto)) return@LaunchedEffect
+        gestorImpresora.reconectar(contexto)
+    }
 
     // Interceptar el botón de retroceso
     BackHandler {
@@ -124,8 +135,7 @@ fun IniciarInterfazInicio(
         .background(Color(0xFFFFFFFF))
         .statusBarsPadding()
         .navigationBarsPadding()
-    )
-    {
+    ) {
         val ( bxContenedorBtModulos, bxSuperior)= createRefs()
 
         @Composable

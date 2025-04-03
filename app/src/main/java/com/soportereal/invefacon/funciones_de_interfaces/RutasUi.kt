@@ -38,11 +38,12 @@ import com.soportereal.invefacon.interfaces.modulos.clientes.IniciarInterfazModu
 import com.soportereal.invefacon.interfaces.modulos.facturacion.IniciarInterfazFacturacion
 import com.soportereal.invefacon.interfaces.modulos.sac.InterfazModuloSac
 import com.soportereal.invefacon.interfaces.modulos.sac.InterfazSacComanda
-import com.soportereal.invefacon.interfaces.pantallas_principales.IniciarInterfazAjustes
-import com.soportereal.invefacon.interfaces.pantallas_principales.IniciarInterfazInicio
+import com.soportereal.invefacon.interfaces.pantallas_principales.ajustes.IniciarInterfazAjustes
+import com.soportereal.invefacon.interfaces.pantallas_principales.inicio.IniciarInterfazInicio
 import com.soportereal.invefacon.interfaces.pantallas_principales.IniciarInterfazMenuPrincipalCompact
-import com.soportereal.invefacon.interfaces.pantallas_principales.IniciarInterfazSalir
+import com.soportereal.invefacon.interfaces.pantallas_principales.salir.IniciarInterfazSalir
 import com.soportereal.invefacon.interfaces.pantallas_principales.PantallaCarga
+import com.soportereal.invefacon.interfaces.pantallas_principales.ajustes.IniciarInterfazAjustesImpresora
 
 
 sealed class RutasPatallas(val ruta: String){
@@ -50,7 +51,7 @@ sealed class RutasPatallas(val ruta: String){
     // Auntenticacion
     data object InicioSesion : RutasPatallas("auth/Inicio Sesion")
 
-    // Principales ]
+    // Principales
     data object Inicio : RutasPatallas("main/Inicio")
     data object InicioAuto : RutasPatallas("main/InicioAuto")
 
@@ -66,7 +67,8 @@ sealed class RutasPatallas(val ruta: String){
     // Sac
     data object SacComanda : RutasPatallas("Sac/Comanda")
 
-
+    // Ajustes
+    data object  AjustImpresora : RutasPatallas("Ajust/Impresora")
 }
 
 sealed class RutasPantallasMenuPrincipal(
@@ -105,6 +107,7 @@ fun NavegacionPantallas(
     guardarParametroSiNoExiste(contexto, "nombreUsuario", "0")
     guardarParametroSiNoExiste(contexto, "nombreEmpresa", "0")
     guardarParametroSiNoExiste(contexto, "codUsuario", "0")
+    guardarParametroSiNoExiste(contexto, "macImpresora", "0")
     Box(
         modifier = Modifier.fillMaxSize()
     ){
@@ -196,7 +199,7 @@ fun NavegacionPantallas(
             }
 
             // Navigacion pantallas Modulo Clientes
-            navigation(startDestination = RutasPatallas.Clientes.ruta, "Clientes"){
+            navigation(startDestination = RutasPatallas.Clientes.ruta, route = "Clientes"){
                 composable(
                     route = RutasPatallas.Clientes.ruta+"/{token}",
                     arguments = listOf(
@@ -470,44 +473,79 @@ fun NavHostPantallasMenuPrincipal(
 ){
     NavHost(
         navController = navControllerPantallasMenuPrincipal,
-        startDestination = PantallaInicio.ruta,
+        startDestination = "Inicio",
         modifier = Modifier
             .fillMaxSize()
             .padding(innerPadding)
     ) {
-        composable(
-            PantallaInicio.ruta,
-            enterTransition = { slideInHorizontally(
-                animationSpec = tween(durationMillis = 500, easing = FastOutSlowInEasing)
-            ) { it } },
-            exitTransition = { slideOutHorizontally(
-                animationSpec = tween(durationMillis = 500, easing = FastOutSlowInEasing)
-            ) { -it } }
-        ) {
-            IniciarInterfazInicio(
-                token = token,
-                nombreUsuario = nombreUsuario,
-                nombreEmpresa = nombreEmpresa,
-                navControllerPrincipal = navControllerPrincipal,
-                systemUiController= systemUiController,
-                codUsuario = codUsuario
-            )
+        // Navigacion pantalla Inicio
+        navigation(
+            startDestination = PantallaInicio.ruta, route = "Inicio"){
+
+            composable(
+                PantallaInicio.ruta,
+                enterTransition = { slideInHorizontally(
+                    animationSpec = tween(durationMillis = 500, easing = FastOutSlowInEasing)
+                ) { it } },
+                exitTransition = { slideOutHorizontally(
+                    animationSpec = tween(durationMillis = 500, easing = FastOutSlowInEasing)
+                ) { -it } }
+            ) {
+                IniciarInterfazInicio(
+                    token = token,
+                    nombreUsuario = nombreUsuario,
+                    nombreEmpresa = nombreEmpresa,
+                    navControllerPrincipal = navControllerPrincipal,
+                    systemUiController= systemUiController,
+                    codUsuario = codUsuario
+                )
+            }
         }
-        composable(
-            PantallaAjustes.ruta,
-            enterTransition = { slideInHorizontally(
-                animationSpec = tween(durationMillis = 500, easing = FastOutSlowInEasing)
-            ) { it } },
-            exitTransition = { slideOutHorizontally(
-                animationSpec = tween(durationMillis = 500, easing = FastOutSlowInEasing)
-            ) { -it } }
-        ) {
-            IniciarInterfazAjustes()
+
+        // Navigacion pantallas Ajustes
+        navigation(
+            startDestination = PantallaAjustes.ruta, route = "Ajustes"){
+
+            composable(
+                PantallaAjustes.ruta,
+                enterTransition = { slideInHorizontally(
+                    animationSpec = tween(durationMillis = 500, easing = FastOutSlowInEasing)
+                ) { it } },
+                exitTransition = { slideOutHorizontally(
+                    animationSpec = tween(durationMillis = 500, easing = FastOutSlowInEasing)
+                ) { -it } }
+            ) {
+                IniciarInterfazAjustes(
+                    navController = navControllerPantallasMenuPrincipal
+                )
+            }
+
+            composable(
+                RutasPatallas.AjustImpresora.ruta,
+                enterTransition = { slideInHorizontally(
+                    animationSpec = tween(durationMillis = 500, easing = FastOutSlowInEasing)
+                ) { it } },
+                exitTransition = { slideOutHorizontally(
+                    animationSpec = tween(durationMillis = 500, easing = FastOutSlowInEasing)
+                ) { -it } }
+            ) {
+                IniciarInterfazAjustesImpresora(
+                    navController = navControllerPantallasMenuPrincipal,
+                    nombreEmpresa
+                )
+            }
         }
-        composable(
-            PantallaSalir.ruta
-        ) {
-            IniciarInterfazSalir(navControllerPrincipal)
+
+        // Navigacion pantalla Salir
+        navigation(
+            startDestination = PantallaSalir.ruta, route = "Salir"){
+
+            composable(
+                PantallaSalir.ruta
+            ) {
+                IniciarInterfazSalir(navControllerPrincipal)
+            }
         }
+
     }
 }

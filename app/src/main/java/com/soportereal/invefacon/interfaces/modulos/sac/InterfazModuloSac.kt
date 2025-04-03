@@ -1248,21 +1248,25 @@ fun InterfazModuloSac(
             )
         }
 
-        BBasicTextField(
-            value = datosIngresadosBarraBusqueda,
-            onValueChange =  { nuevoValor ->
-                salonActual = if(nuevoValor.isEmpty()) "TODOS" else ""
-                datosIngresadosBarraBusqueda = nuevoValor
-                actualizarListaMesas= true
-            },
-            alto = 45,
-            ancho = 170,
-            objetoAdaptardor = objetoAdaptardor,
+        Box(
             modifier = Modifier.constrainAs(txfBarraBusqueda) {
                 top.linkTo(bxSuperior.bottom, margin = objetoAdaptardor.ajustarAltura(8))
                 start.linkTo(parent.start, margin = objetoAdaptardor.ajustarAncho(8))
             }
-        )
+        ){
+            BBasicTextField(
+                value = datosIngresadosBarraBusqueda,
+                onValueChange =  { nuevoValor ->
+                    salonActual = if(nuevoValor.isEmpty()) "TODOS" else ""
+                    datosIngresadosBarraBusqueda = nuevoValor
+                    actualizarListaMesas= true
+                },
+                alto = 45,
+                ancho = 170,
+                objetoAdaptardor = objetoAdaptardor
+            )
+        }
+
 
         Box(
             modifier = Modifier

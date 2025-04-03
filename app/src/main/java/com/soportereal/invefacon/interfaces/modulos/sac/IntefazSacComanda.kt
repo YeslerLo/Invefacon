@@ -1118,19 +1118,23 @@ fun InterfazSacComanda(
             )
         }
 
-        BBasicTextField(
-            value = datosIngresadosBarraBusqueda,
-            onValueChange = {datosIngresadosBarraBusqueda = it},
-            objetoAdaptardor = objetoAdaptardor,
+        Box(
             modifier = Modifier
                 .width(objetoAdaptardor.ajustarAncho(200))
                 .height(objetoAdaptardor.ajustarAltura(45))
                 .constrainAs(txfBarraBusqueda) {
                     top.linkTo(bxSuperior.bottom, margin = objetoAdaptardor.ajustarAltura(8))
                     start.linkTo(parent.start, margin = objetoAdaptardor.ajustarAncho(8))
-                },
-            utilizarMedidas = false
-        )
+                }
+        ){
+            BBasicTextField(
+                value = datosIngresadosBarraBusqueda,
+                onValueChange = {datosIngresadosBarraBusqueda = it},
+                objetoAdaptardor = objetoAdaptardor,
+                utilizarMedidas = false
+            )
+        }
+
 
         Box(
             modifier = Modifier

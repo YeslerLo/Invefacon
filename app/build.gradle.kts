@@ -84,4 +84,10 @@ dependencies {
     implementation (libs.androidx.animation)
     implementation (libs.accompanist.navigation.animation.v0320)
     implementation(libs.gson)
+    implementation(libs.material)
+    implementation ("com.github.DantSu:ESCPOS-ThermalPrinter-Android:3.3.0")
+    implementation ("com.github.bumptech.glide:glide:4.12.0")  // Asegúrate de usar la versión más reciente
+    annotationProcessor ("com.github.bumptech.glide:compiler:4.12.0")
+
+
 }

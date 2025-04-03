@@ -27,8 +27,10 @@ import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AddCircle
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Search
@@ -43,6 +45,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateMapOf
@@ -72,13 +75,16 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
 import com.soportereal.invefacon.R
 import com.soportereal.invefacon.interfaces.FuncionesParaAdaptarContenido
+import com.soportereal.invefacon.interfaces.inicio_sesion.ocultarTeclado
 import com.soportereal.invefacon.interfaces.obtenerEstiloBodyBig
 import com.soportereal.invefacon.interfaces.obtenerEstiloLabelBig
 import com.soportereal.invefacon.interfaces.obtenerEstiloBodySmall
 import com.soportereal.invefacon.interfaces.obtenerEstiloTitleMedium
 import com.soportereal.invefacon.interfaces.pantallas_principales.estadoRespuestaApi
 import org.json.JSONObject
+import java.text.SimpleDateFormat
 import java.util.Calendar
+import java.util.Date
 import java.util.Locale
 
 @Composable
@@ -101,84 +107,193 @@ internal fun BBasicTextField(
     mostrarTrailingIcon : Boolean = false,
     utilizarMedidas : Boolean = true,
     fontSize: TextUnit = obtenerEstiloLabelBig(),
-    cantidadLineas: Int = 1
+    cantidadLineas: Int = 1,
+    mostrarLeadingIcon: Boolean = true,
+    textAlign: TextAlign = TextAlign.Justify,
+    darFormatoMiles: Boolean = false,
+    soloPermitirValoresNumericos : Boolean = false,
+    mostrarClave: Boolean = false,
+    opciones: List<ParClaveValor> = emptyList(),
+    enable: Boolean = true
 ) {
-    BasicTextField(
-        value = value,
-        onValueChange = onValueChange,
-        maxLines = cantidadLineas,
-        textStyle = TextStyle(
-            fontFamily = FontFamily(Font(R.font.akshar_medium)),
-            fontWeight = fontWeight,
-            color = textColor,
-            textAlign = TextAlign.Justify,
-            fontSize = fontSize
-        ),
-        keyboardOptions = KeyboardOptions.Default.copy(
-            imeAction = ImeAction.Done
-        ),
-        decorationBox = { innerTextField ->
-            Box(
-                modifier = modifier
-                    .wrapContentSize()
-                    .background(backgroundColor, RoundedCornerShape(objetoAdaptardor.ajustarAltura(10)))
-                    .padding(horizontal = 16.dp, vertical = 4.dp),
-                contentAlignment = Alignment.CenterStart
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.weight(1f)
-                    ) {
-                        Icon(
-                            imageVector = icono,
-                            contentDescription = "Icono Buscar",
-                            tint = iconTint,
-                            modifier = Modifier.size(objetoAdaptardor.ajustarAltura(30))
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Box(modifier = Modifier.weight(1f)) {
-                            if (value.isEmpty()) {
-                                Text(
-                                    text = placeholder,
-                                    fontFamily = FontFamily(Font(R.font.akshar_medium)),
-                                    fontWeight = fontWeight,
-                                    color = placeholderColor,
-                                    maxLines = 1,
-                                    fontSize = fontSize
-                                )
-                            }
-                            innerTextField()
+    var tieneFoco by remember { mutableStateOf(false) }
+    var expanded by remember { mutableStateOf(false) }
+    val iconoDdmOpcionesFlechasLaterales = if (expanded) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown
+    Box(
+        contentAlignment = Alignment.Center
+    ){
+        Column {
+            BasicTextField(
+                value = if (darFormatoMiles) {
+                    if (tieneFoco) {
+                        value // Mostrar el valor sin formato mientras el campo tiene el foco
+                    } else {
+                        try {
+                            if (value.isNotEmpty()) {
+                                String.format(Locale.US, "%,.2f", value.replace(",", "").toDouble())
+                            } else ""
+                        } catch (e: NumberFormatException) {
+                            value // En caso de error, mostrar el valor tal como está
                         }
                     }
-                    if (mostrarTrailingIcon){
-                        Icon(
-                            imageVector = trailingIcon,
-                            contentDescription = "Trailing Icon",
-                            tint = iconTint,
-                            modifier = Modifier
-                                .size(objetoAdaptardor.ajustarAltura(30))
-                                .clickable { onTrailingIconClick(true) }
+                }else value,
+                onValueChange = onValueChange,
+                maxLines = cantidadLineas,
+                textStyle = TextStyle(
+                    fontFamily = FontFamily(Font(R.font.akshar_medium)),
+                    fontWeight = fontWeight,
+                    color = textColor,
+                    textAlign = textAlign,
+                    fontSize = fontSize
+                ),
+                enabled = if (opciones.isNotEmpty()) false else enable,
+                keyboardOptions = if (soloPermitirValoresNumericos) {
+                    KeyboardOptions(keyboardType = KeyboardType.Number) // Solo permite números
+                } else {
+                    KeyboardOptions.Default.copy(
+                        imeAction = ImeAction.Done
+                    ) // Permite cualquier tipo de entrada
+                },
+                singleLine = cantidadLineas ==1,
+                decorationBox = { innerTextField ->
+                    Box(
+                        modifier = modifier
+                            .wrapContentSize()
+                            .background(backgroundColor, RoundedCornerShape(objetoAdaptardor.ajustarAltura(10)))
+                            .padding(horizontal = 8.dp, vertical = 4.dp),
+                        contentAlignment = Alignment.CenterStart
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                if (mostrarLeadingIcon){
+                                    Icon(
+                                        imageVector = icono,
+                                        contentDescription = "Icono Buscar",
+                                        tint = iconTint,
+                                        modifier = Modifier.size(objetoAdaptardor.ajustarAltura(30))
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                }
+                                Box(modifier = Modifier.weight(1f)) {
+                                    if (value.isEmpty()) {
+                                        Text(
+                                            text = placeholder,
+                                            fontFamily = FontFamily(Font(R.font.akshar_medium)),
+                                            fontWeight = fontWeight,
+                                            color = placeholderColor,
+                                            maxLines = 1,
+                                            fontSize = fontSize,
+                                            textAlign = textAlign,
+                                            modifier = Modifier.fillMaxWidth()
+                                        )
+                                    }
+                                    innerTextField()
+                                }
+                            }
+                            if (mostrarTrailingIcon || opciones.isNotEmpty()){
+                                if (opciones.isEmpty()){
+                                    Icon(
+                                        imageVector = trailingIcon,
+                                        contentDescription = "Trailing Icon",
+                                        tint = iconTint,
+                                        modifier = Modifier
+                                            .size(objetoAdaptardor.ajustarAltura(30))
+                                            .clickable { onTrailingIconClick(true) }
+                                    )
+                                }else{
+                                    IconButton(
+                                        onClick = {expanded = !expanded},
+                                        modifier = Modifier
+                                            .size(objetoAdaptardor.ajustarAltura(22))
+                                            .padding(0.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = iconoDdmOpcionesFlechasLaterales,
+                                            contentDescription = "Icono flechas",
+                                            tint = Color.Black,
+                                            modifier = Modifier
+                                                .size(objetoAdaptardor.ajustarAltura(22))
+                                                .padding(0.dp)
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                modifier = Modifier
+                    .onFocusChanged { estadoFoco ->
+                        tieneFoco = estadoFoco.isFocused // Detectar el estado de foco
+                    }
+                    .let {
+                        if (opciones.isNotEmpty()) {
+                            it.clickable { expanded = !expanded }
+                        } else {
+                            it
+                        }
+                    }
+                    .then(
+                        if (utilizarMedidas){
+                            Modifier.width(objetoAdaptardor.ajustarAncho(ancho))
+                                .height(objetoAdaptardor.ajustarAltura(alto))
+                        }else{
+                            Modifier
+                        }
+                    )
+                    .then(modifier)
+            )
+
+            AnimatedVisibility(
+                visible = expanded,
+                enter = expandVertically(animationSpec = tween(300)) + fadeIn(),
+                exit = shrinkVertically(animationSpec = tween(300)) + fadeOut()
+            ) {
+                DropdownMenu(
+                    expanded = expanded,
+                    onDismissRequest = { expanded = false },
+                    modifier = Modifier
+                        .background(Color.White)
+                        .heightIn(max = objetoAdaptardor.ajustarAltura(700))
+                        .widthIn(
+                            max = objetoAdaptardor.ajustarAncho(350),
+                            min = objetoAdaptardor.ajustarAncho(100)
                         )
+                ) {
+                    opciones.forEach { contenido->
+                        DropdownMenuItem(
+                            onClick = {
+                                onValueChange(contenido.clave)
+                                expanded = false // Cierra el menú después de seleccionar
+                            },
+                            text = {
+                                Text(
+                                    if (mostrarClave) contenido.clave else contenido.valor,
+                                    fontFamily = FontFamily(Font(R.font.akshar_medium)),
+                                    fontWeight = FontWeight.Medium,
+                                    fontSize = fontSize,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    textAlign = TextAlign.Center,
+                                    color = Color.Black
+                                )
+                            },
+                            modifier = Modifier.background(Color.White)
+                        )
+
                     }
                 }
             }
-        },
-        modifier = Modifier
-            .then(
-                if (utilizarMedidas){
-                    Modifier.width(objetoAdaptardor.ajustarAncho(ancho))
-                        .height(objetoAdaptardor.ajustarAltura(alto))
-                }else{
-                    Modifier
-                }
-            )
-            .then(modifier)
-    )
+        }
+    }
+
+
 }
 
 @Composable
@@ -192,7 +307,9 @@ internal fun BButton(
     onClick : (Boolean) -> Unit,
     text : String,
     conSombra : Boolean = true,
-    objetoAdaptardor: FuncionesParaAdaptarContenido
+    objetoAdaptardor: FuncionesParaAdaptarContenido,
+    mostrarIcono : Boolean = false,
+    icono: ImageVector = Icons.Default.AddCircle
 ){
     Button(
         modifier = Modifier.then(modifier),
@@ -208,17 +325,32 @@ internal fun BButton(
         }, contentPadding =  PaddingValues(start = objetoAdaptardor.ajustarAncho(6), end = objetoAdaptardor.ajustarAncho(6), top = 0.dp, bottom = 0.dp),
         shape = RoundedCornerShape(objetoAdaptardor.ajustarAltura(10)),
     ) {
-        Box(contentAlignment = Alignment.Center){
-            Text(
-                text,
-                fontFamily = FontFamily(Font(R.font.akshar_medium)),
-                fontWeight = FontWeight.Light,
-                fontSize = textSize,
-                maxLines = maxLines,
-                overflow = TextOverflow.Ellipsis,
-                textAlign = TextAlign.Center
-            )
+        Box(
+            contentAlignment = Alignment.Center
+        ){
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(objetoAdaptardor.ajustarAncho(4))){
+
+                if (mostrarIcono){
+                    Icon(
+                        imageVector = icono,
+                        contentDescription = "",
+                        modifier = Modifier.size(objetoAdaptardor.ajustarAltura(20)).padding(0.dp),
+                        tint = contenteColor
+                    )
+                }
+
+                Text(
+                    text,
+                    fontFamily = FontFamily(Font(R.font.akshar_medium)),
+                    fontWeight = FontWeight.Light,
+                    fontSize = textSize,
+                    maxLines = maxLines,
+                    overflow = TextOverflow.Ellipsis,
+                    textAlign = TextAlign.Center
+                )
+            }
         }
+
     }
 }
 
@@ -278,9 +410,11 @@ internal fun TextFieldMultifuncional(
     modifier: Modifier = Modifier,
     fontSize: TextUnit = obtenerEstiloLabelBig(),
     mostrarPlaceholder: Boolean = true,
-    mostrarLabel: Boolean = true
-    ){
-
+    mostrarLabel: Boolean = true,
+    usarFormatoFecha2: Boolean = false,
+    textAlign: TextAlign = TextAlign.Start,
+    mostrarTrailingIcon: Boolean = true
+){
     val fontAksharPrincipal = FontFamily(Font(R.font.akshar_medium))
     val configuration = LocalConfiguration.current
     val dpAnchoPantalla = configuration.screenWidthDp
@@ -321,13 +455,24 @@ internal fun TextFieldMultifuncional(
             )
             expanded = false
         } else {
-            val fechaFormateada = String.format(
-                Locale.ROOT,
-                "%04d-%02d-%02d 00:00:00.000",
-                anio, mes + 1, dia
-            )
-            nuevoValor(fechaFormateada)
-            expanded = false
+            if (usarFormatoFecha2){
+                val fechaFormateada = String.format(
+                    Locale.ROOT,
+                    "%04d-%02d-%02d",
+                    anio, mes + 1, dia
+                )
+                nuevoValor(fechaFormateada)
+                expanded = false
+            }else{
+                val fechaFormateada = String.format(
+                    Locale.ROOT,
+                    "%04d-%02d-%02d 00:00:00.000",
+                    anio, mes + 1, dia
+                )
+                nuevoValor(fechaFormateada)
+                expanded = false
+            }
+
         }
     }
 
@@ -369,8 +514,9 @@ internal fun TextFieldMultifuncional(
                 fontWeight =    FontWeight.Light,
                 fontSize =  fontSize,
                 color = Color.Black,
-                textAlign = TextAlign.Start
+                textAlign = textAlign
             ),
+            singleLine = cantidadLineas == 1,
             label = if(mostrarLabel){
                 {
                     Text(
@@ -380,7 +526,7 @@ internal fun TextFieldMultifuncional(
                         fontSize = fontSize ,
                         color = Color.DarkGray,
                         overflow = TextOverflow.Ellipsis,
-                        textAlign = TextAlign.Center,
+                        textAlign = TextAlign.Start,
                         maxLines = cantidadLineas
                     )
                 }
@@ -427,30 +573,38 @@ internal fun TextFieldMultifuncional(
                         fontSize =  fontSize,
                         color = Color.DarkGray,
                         overflow = TextOverflow.Ellipsis,
-                        textAlign = TextAlign.Center,
-                        maxLines = cantidadLineas
+                        textAlign = textAlign,
+                        maxLines = cantidadLineas,
+                        modifier = Modifier.fillMaxWidth()
                     )
                 }
             }else{
                 null
             }
             ,
-            trailingIcon = {
-                if (contieneOpciones && modoEdicionActivado && !isSeleccionarFecha){
-                    IconButton(onClick = {expanded = !expanded}) {
-                        Icon(
-                            imageVector = iconoDdmOpcionesFlechasLaterales,
-                            contentDescription = "Icono flechas",
-                            tint = Color.Black
-                        )
+            trailingIcon = if (contieneOpciones && modoEdicionActivado && !isSeleccionarFecha && mostrarTrailingIcon){
+                    {
+                        IconButton(onClick = {expanded = !expanded}) {
+                            Icon(
+                                imageVector = iconoDdmOpcionesFlechasLaterales,
+                                contentDescription = "Icono flechas",
+                                tint = Color.Black
+                            )
+                        }
                     }
-                }
-            },
+                }else{
+                    null
+                },
             keyboardOptions = if (soloPermitirValoresNumericos) {
                 KeyboardOptions(keyboardType = KeyboardType.Number) // Solo permite números
             } else {
                 KeyboardOptions.Default // Permite cualquier tipo de entrada
             },
+            keyboardActions = KeyboardActions(
+                onAny = {
+                    ocultarTeclado(contexto)
+                }
+            ),
             maxLines = cantidadLineas,
             leadingIcon =  if (mostrarLeadingIcon) {
                 {
@@ -629,32 +783,14 @@ fun MenuConfirmacion(
             },
             confirmButton = {
                 Button(
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor =Color(0xDFC73434), // Color de fondo del botón
-                        contentColor = Color.White // Color del contenido (texto e iconos)
-                    ),
-                    onClick = {
-                        onAceptar()
-                    }
-                ) {
-                    Text(
-                        txBtAceptar,
-                        fontFamily = FontFamily(Font(R.font.akshar_medium)),
-                        fontWeight = FontWeight.Medium,
-                        color = Color.White,
-                        fontSize = obtenerEstiloBodyBig(),
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
-            },
-            dismissButton = {
-                Button(
                     onClick = {onDenegar()},
                     colors = ButtonDefaults.buttonColors(
-                        containerColor =Color(0xFF244BC0), // Color de fondo del botón
+                        containerColor = Color(0xFF244BC0), // Color de fondo del botón
                         contentColor = Color.White // Color del contenido (texto e iconos)
-                    )
+                    ),
+                     contentPadding =  PaddingValues(6.dp),
+                    shape = RoundedCornerShape(10.dp),
+                    elevation = ButtonDefaults.buttonElevation(defaultElevation = 5.dp)
                 ) {
                     Text(
                         txBtDenegar,
@@ -663,13 +799,138 @@ fun MenuConfirmacion(
                         color = Color.White,
                         fontSize = obtenerEstiloBodyBig(),
                         maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.padding(6.dp)
+                    )
+                }
+            },
+            dismissButton = {
+                Button(
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFFF44336),
+                        contentColor = Color.White // Color del contenido (texto e iconos)
+                    ),
+                    onClick = {
+                        onAceptar()
+                    },
+                    contentPadding =  PaddingValues(6.dp),
+                    shape = RoundedCornerShape(10.dp),
+                    elevation = ButtonDefaults.buttonElevation(defaultElevation = 5.dp)
+                ) {
+                    Text(
+                        txBtAceptar,
+                        fontFamily = FontFamily(Font(R.font.akshar_medium)),
+                        fontWeight = FontWeight.Medium,
+                        color = Color.White,
+                        fontSize = obtenerEstiloBodyBig(),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.padding(6.dp)
                     )
                 }
             },
             properties = DialogProperties(dismissOnBackPress = false, dismissOnClickOutside = false)
         )
     }
+}
+
+@Composable
+fun ButtonFecha(
+    modifier: Modifier = Modifier,
+    backgroundColor: Color =  Color(0xFF244BC0),
+    contenteColor: Color = Color.White,
+    maxLines: Int = 1,
+    textSize: TextUnit = obtenerEstiloBodySmall(),
+    nuevoValor : (String) -> Unit,
+    valor : String,
+    conSombra : Boolean = true,
+    objetoAdaptardor: FuncionesParaAdaptarContenido
+) {
+
+    var mostrarCalendario by remember { mutableStateOf(false) }
+    // Fecha actual para inicializar el DatePicker
+    val contexto = LocalContext.current
+    val calendario = Calendar.getInstance()
+    val anioActual = calendario.get(Calendar.YEAR)
+    val mesActual = calendario.get(Calendar.MONTH)
+    val diaActual = calendario.get(Calendar.DAY_OF_MONTH)
+
+    val onFechaSeleccionada: (Int, Int, Int) -> Unit = { anio, mes, dia ->
+        // Obtenemos la fecha actual
+        val calendarioActual = Calendar.getInstance()
+        val fechaActual = calendarioActual.timeInMillis
+
+        // Creamos una instancia de Calendar para la fecha seleccionada
+        val calendarioSeleccionado = Calendar.getInstance().apply {
+            set(anio, mes, dia, 0, 0, 0)  // Establecemos el año, mes y día seleccionados
+            set(Calendar.MILLISECOND, 0)
+        }
+        val fechaSeleccionada = calendarioSeleccionado.timeInMillis
+
+        // Validamos que la fecha seleccionada no sea mayor a la fecha actual
+        if (fechaSeleccionada > fechaActual) {
+            mostrarMensajeError("La fecha seleccionada no puede ser mayor a la de hoy")
+            mostrarCalendario = false
+        } else {
+            val fechaFormateada = String.format(
+                Locale.ROOT,
+                "%04d-%02d-%02d",
+                anio, mes + 1, dia
+            )
+            nuevoValor(fechaFormateada)
+            mostrarCalendario = false
+        }
+    }
+    
+    fun formatearFecha(fechaStr: String): String {
+        val inputFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()) // Formato de entrada
+        val outputFormat = SimpleDateFormat("dd MMM yyyy", Locale("es", "ES")) // Formato de salida en español
+
+        val date: Date = inputFormat.parse(fechaStr)!! // Convertimos el string a Date
+        return outputFormat.format(date) // Convertimos Date a string en el formato deseado
+    }
+
+    Button(
+        modifier = Modifier.then(modifier),
+        colors = ButtonDefaults.buttonColors(
+            containerColor = backgroundColor,
+            contentColor = contenteColor,
+            disabledContainerColor = backgroundColor,
+            disabledContentColor = contenteColor
+        ),
+        elevation = ButtonDefaults.buttonElevation(defaultElevation = if (conSombra) 5.dp else 0.dp),
+        onClick = {
+            DatePickerDialog(
+                contexto,
+                { _, anio, mes, dia ->
+                    onFechaSeleccionada(anio, mes, dia)
+                },
+                anioActual,
+                mesActual,
+                diaActual
+            ).show()
+        },
+        contentPadding = PaddingValues(
+            start = objetoAdaptardor.ajustarAncho(6),
+            end = objetoAdaptardor.ajustarAncho(6),
+            top = 0.dp,
+            bottom = 0.dp
+        ),
+        shape = RoundedCornerShape(objetoAdaptardor.ajustarAltura(10)),
+    ) {
+        Box(contentAlignment = Alignment.Center) {
+            Text(
+                formatearFecha(valor),
+                fontFamily = FontFamily(Font(R.font.akshar_medium)),
+                fontWeight = FontWeight.Light,
+                fontSize = textSize,
+                maxLines = maxLines,
+                overflow = TextOverflow.Ellipsis,
+                textAlign = TextAlign.Center
+            )
+        }
+    }
+
 }
 
 data class ParClaveValor(

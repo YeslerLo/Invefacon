@@ -97,11 +97,7 @@ fun IniciarInterfazInformacionCliente(
     val dpFontPantalla= configuration.fontScale
     val objetoAdaptardor= FuncionesParaAdaptarContenido(dpAltoPantalla, dpAnchoPantalla, dpFontPantalla)
     val lazyState= rememberLazyListState()
-    var datosCliente by remember { mutableStateOf(JSONObject("{\"codigo\":\"502\",\"cedula\":\"00119690923\",\"cedulatipo\":\"00\",\"nombrejuridico\":\"sintaxis\n" +
-            "web work\",\"nombrecomercial\":\"Kendall\",\"direccion\":\"Leon\n" +
-            "XIII\",\"telefonos\":\"63707362\",\"emailgeneral\":\"\",\"emailfactura\":\"kendall@gmail.com\",\"emailcobros\":\"kendall@gmail.com\",\"contacto\":\"Kendall\",\"creditomonto\":\"1000000.00\",\"creditoplazo\":\"500\",\"diacobro\":\"15\",\"zona\":\"3\",\"descripcion_zona\":\"CARTAGO\",\"clientetipo\":\"A\",\"descripcion_tipo\":\"Empresas\",\"ultimaventa\":null,\"agenteventas\":\"00007\",\"tipoprecio\":\"1\",\"descuento\":\"15.00\",\"moneda\":\"CRC\",\"estado\":\"1\",\"tienecredito\":\"0\",\"noforzarcredito\":\"0\",\"fechacreado\":\"2024-11-20\n" +
-            "08:32:35.000\",\"FechaNacimiento\":\"2006-01-16\n" +
-            "00:00:00.000\",\"MontoContrato\":\"1000000.0000\",\"DetalleContrato\":\"1000000\",\"exento\":\"0\",\"exonerado\":\"0\"}")) }
+    var datosCliente by remember { mutableStateOf(JSONObject("{}")) }
     var modoEdicionActivado by remember { mutableStateOf(false) }
     var errorResultadoApi by remember { mutableStateOf<Boolean?>(null) }
     var mostrarDatosCliente by remember { mutableStateOf(false) }
@@ -121,7 +117,6 @@ fun IniciarInterfazInformacionCliente(
     var guardarEdicionCliente by remember { mutableStateOf(false) }
     val isClienteActualizado by estadoRespuestaApi.estadoBtOk.collectAsState()
     var regresarPantallaAnterior by remember { mutableStateOf(false) }
-
 
     val opcionesEstadoCliente= remember {
         mutableStateMapOf(
@@ -155,6 +150,7 @@ fun IniciarInterfazInformacionCliente(
             "04" to "Nite"
         )
     }
+
     var codigoTipoIdentificacionClienteSeleccionada by remember { mutableStateOf("") }
 
     LaunchedEffect(isClienteActualizado, regresarPantallaAnterior) {
@@ -266,9 +262,6 @@ fun IniciarInterfazInformacionCliente(
         }
     }
 
-
-
-
     ConstraintLayout(
         modifier = Modifier
             .fillMaxSize()
@@ -312,6 +305,7 @@ fun IniciarInterfazInformacionCliente(
                 )
             }
         }
+
         IconButton(
             onClick = {regresarPantallaAnterior=true},
             modifier = Modifier.constrainAs(flechaRegresar){
@@ -326,6 +320,7 @@ fun IniciarInterfazInformacionCliente(
                 modifier = Modifier.size(objetoAdaptardor.ajustarAltura(25))
             )
         }
+
         if (!mostrarDatosCliente) {
             Box(
                 modifier =
@@ -452,8 +447,6 @@ fun IniciarInterfazInformacionCliente(
                         EmailFactura = emailFactura,
                         EmailCobro = emailCobros,
                     )
-                    println(clienteModificado.ClienteNombreComercial)
-                    println("444")
                     if (ValidarCamposObligatoriosClientes(clienteModificado)){
                         objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(true)
                         val result= objectoProcesadorDatosApi.actualizarDatosClientes(
@@ -469,9 +462,6 @@ fun IniciarInterfazInformacionCliente(
                     guardarEdicionCliente=false
                 }
             }
-
-
-
 
             //Box contenedor Lazy Column
             Box(

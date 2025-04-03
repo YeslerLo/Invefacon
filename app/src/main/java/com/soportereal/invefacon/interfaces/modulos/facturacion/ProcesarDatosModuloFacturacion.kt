@@ -1,7 +1,18 @@
 package com.soportereal.invefacon.interfaces.modulos.facturacion
 
+import android.content.Context
+import android.widget.Toast
 import com.soportereal.invefacon.funciones_de_interfaces.FuncionesHttp
 import com.soportereal.invefacon.funciones_de_interfaces.ParClaveValor
+import com.soportereal.invefacon.funciones_de_interfaces.addText
+import com.soportereal.invefacon.funciones_de_interfaces.addTextBig
+import com.soportereal.invefacon.funciones_de_interfaces.addTextTall
+import com.soportereal.invefacon.funciones_de_interfaces.agregarDobleLinea
+import com.soportereal.invefacon.funciones_de_interfaces.agregarLinea
+import com.soportereal.invefacon.funciones_de_interfaces.gestorImpresora
+import com.soportereal.invefacon.funciones_de_interfaces.imagenAHexadecimal
+import com.soportereal.invefacon.funciones_de_interfaces.obtenerParametro
+import com.soportereal.invefacon.funciones_de_interfaces.separacionDeMiles
 import okhttp3.MultipartBody
 import org.json.JSONObject
 
@@ -18,10 +29,11 @@ class ProcesarDatosModuloFacturacion(
         return objetoFuncionesHttpInvefacon.metodoPost(formBody = formBody, apiDirectorio = "facturacion/nuevaproforma.php")
     }
 
-    suspend fun abrirProforma():JSONObject?{
+    suspend fun abrirProforma(numero: String = ""):JSONObject?{
         val formBody = MultipartBody.Builder().setType(MultipartBody.FORM)
             .addFormDataPart("0","")
             .addFormDataPart("0","")
+            .addFormDataPart("numerodocumento",numero)
             .build()
         return objetoFuncionesHttpInvefacon.metodoPost(formBody = formBody, apiDirectorio = "facturacion/AbrirProforma.php")
     }
@@ -91,6 +103,86 @@ class ProcesarDatosModuloFacturacion(
         return objetoFuncionesHttpInvefacon.metodoPost(formBody = formBody, apiDirectorio = "facturacion/eliminarlineaproformahija.php")
     }
 
+    suspend fun guardarProformaBorrador(numero: String): JSONObject?{
+        val formBody = MultipartBody.Builder().setType(MultipartBody.FORM)
+            .addFormDataPart("proforma", numero)
+            .addFormDataPart("0", "")
+            .addFormDataPart("0", "")
+            .build()
+        return objetoFuncionesHttpInvefacon.metodoPost(formBody = formBody, apiDirectorio = "facturacion/guardarproformaborrador.php")
+    }
+
+    suspend fun guardarProforma(numero: String, tipoPago: String, tipo: String, correo: String): JSONObject?{
+        val formBody = MultipartBody.Builder().setType(MultipartBody.FORM)
+            .addFormDataPart("proforma", numero)
+            .addFormDataPart("tipo", tipo)
+            .addFormDataPart("procesar", "")
+            .addFormDataPart("correo", correo)
+            .addFormDataPart("tipoPago", tipoPago)
+            .build()
+        return objetoFuncionesHttpInvefacon.metodoPost(formBody = formBody, apiDirectorio = "facturacion/guardarproforma.php")
+    }
+
+    suspend fun clonarProforma(numero: String): JSONObject?{
+        val formBody = MultipartBody.Builder().setType(MultipartBody.FORM)
+            .addFormDataPart("FacturaClona", numero)
+            .addFormDataPart("0", "")
+            .addFormDataPart("0", "")
+            .build()
+        return objetoFuncionesHttpInvefacon.metodoPost(formBody = formBody, apiDirectorio = "facturacion/clonar.php")
+    }
+
+    suspend fun exonerarProforma(numero: String, codigoCliente: String): JSONObject?{
+        val formBody = MultipartBody.Builder().setType(MultipartBody.FORM)
+            .addFormDataPart("ClienteId", codigoCliente)
+            .addFormDataPart("Numero", numero)
+            .build()
+        return objetoFuncionesHttpInvefacon.metodoPost(formBody = formBody, apiDirectorio = "facturacion/exonerarfactura.php")
+    }
+
+    suspend fun cambiarMonedaProforma(numero: String, codigoMoneda: String): JSONObject?{
+        val formBody = MultipartBody.Builder().setType(MultipartBody.FORM)
+            .addFormDataPart("monedacodigo", codigoMoneda)
+            .addFormDataPart("numero", numero)
+            .build()
+        return objetoFuncionesHttpInvefacon.metodoPost(formBody = formBody, apiDirectorio = "facturacion/cambiamonedaproforma.php")
+    }
+
+    suspend fun cambiarTipoPrecio(numero: String, tipoPrecio: String, lineas : String, monedaFactura : String): JSONObject?{
+        val formBody = MultipartBody.Builder().setType(MultipartBody.FORM)
+            .addFormDataPart("tipoPrecio", tipoPrecio)
+            .addFormDataPart("numero", numero)
+            .addFormDataPart("lineas", lineas)
+            .addFormDataPart("monedaFactura", monedaFactura)
+            .build()
+        return objetoFuncionesHttpInvefacon.metodoPost(formBody = formBody, apiDirectorio = "facturacion/CambiarTodosTipoPrecio.php")
+    }
+
+    suspend fun aplicarDescuento(numero: String, descuento: String, lineas : String): JSONObject?{
+        val formBody = MultipartBody.Builder().setType(MultipartBody.FORM)
+            .addFormDataPart("descuento", descuento)
+            .addFormDataPart("numero", numero)
+            .addFormDataPart("lineas", lineas)
+            .build()
+        return objetoFuncionesHttpInvefacon.metodoPost(formBody = formBody, apiDirectorio = "facturacion/ActualizaDescuentoGlobal.php")
+    }
+
+    suspend fun quitarExoneracionProforma(numero: String): JSONObject?{
+        val formBody = MultipartBody.Builder().setType(MultipartBody.FORM)
+            .addFormDataPart("0", "")
+            .addFormDataPart("Numero", numero)
+            .build()
+        return objetoFuncionesHttpInvefacon.metodoPost(formBody = formBody, apiDirectorio = "facturacion/quitaexoneracionfactura.php")
+    }
+
+    suspend fun obtenerMediosPago(): JSONObject?{
+        val formBody = MultipartBody.Builder().setType(MultipartBody.FORM)
+            .addFormDataPart("0", "")
+            .addFormDataPart("0", "")
+            .build()
+        return objetoFuncionesHttpInvefacon.metodoPost(formBody = formBody, apiDirectorio = "varios/cuentasmediopago.php")
+    }
+
     suspend fun cambiarClienteProforma(numero: String, clienteFacturacion: ClienteFacturacion): JSONObject?{
         val formBody = MultipartBody.Builder().setType(MultipartBody.FORM)
             .addFormDataPart("numero",numero)
@@ -101,6 +193,92 @@ class ProcesarDatosModuloFacturacion(
             .build()
         return objetoFuncionesHttpInvefacon.metodoPost(formBody = formBody, apiDirectorio = "facturacion/cambiaclienteproforma.php")
     }
+
+    suspend fun obtenerProformas(
+        nombreCliente: String,
+        fechaInicio: String,
+        fechaFinal: String,
+        estadoProforma: String
+    ): JSONObject?{
+        val formBody = MultipartBody.Builder().setType(MultipartBody.FORM)
+            .addFormDataPart("fechainicial",fechaInicio)
+            .addFormDataPart("fechafinal",fechaFinal)
+            .addFormDataPart("clientenombre",nombreCliente)
+            .addFormDataPart("tipo",estadoProforma)
+            .build()
+        return objetoFuncionesHttpInvefacon.metodoPost(formBody = formBody, apiDirectorio = "facturacion/consultarproformas.php")
+    }
+
+    suspend fun obtenerFactura(
+        referencia: String
+    ): JSONObject?{
+        val formBody = MultipartBody.Builder().setType(MultipartBody.FORM)
+            .addFormDataPart("referencia",referencia)
+            .addFormDataPart("0","")
+            .build()
+        return objetoFuncionesHttpInvefacon.metodoPost(formBody = formBody, apiDirectorio = "facturacion/obtenerFactura.php")
+    }
+
+    suspend fun agregarFormaPago(pago:Pago): JSONObject?{
+        val formBody = MultipartBody.Builder().setType(MultipartBody.FORM)
+            .addFormDataPart("id",pago.Id)
+            .addFormDataPart("documento",pago.Documento)
+            .addFormDataPart("cuentaContable", pago.CuentaContable)
+            .addFormDataPart("codigoMoneda", pago.CodigoMoneda)
+            .addFormDataPart("monto",pago.Monto)
+            .addFormDataPart("tipoCambio", pago.TipoCambio)
+            .addFormDataPart("funcion", pago.funcion)
+            .build()
+        return objetoFuncionesHttpInvefacon.metodoPost(formBody = formBody, apiDirectorio = "facturacion/DocumentoMedioPago.php")
+    }
+}
+
+fun imprimirFactura(factura: Factura, context: Context, nombreEmpresa : String) : Boolean{
+    var facturaTexto = ""
+    try {
+        val rutaImagen = obtenerParametro(context, clave = "$nombreEmpresa.png")
+        val imagenHex = imagenAHexadecimal(rutaImagen, gestorImpresora.impresora)
+        facturaTexto = if (imagenHex != null) {
+            "[C]<img>$imagenHex</img>\n"
+        } else {
+            ""
+        }
+    }catch (e:Exception){
+        Toast.makeText(context, "Error en impresión de Logo", Toast.LENGTH_SHORT).show()
+    }
+
+    facturaTexto += addTextBig(factura.empresa.nombre, "C")
+    facturaTexto += addText(factura.empresa.cedula, "C")
+    facturaTexto += addTextTall("FACTURA ELECTRONICA", "C", destacar = true)
+    facturaTexto += addTextTall("DOC: ${factura.ventaMadre.Numero}", "C")
+    facturaTexto += addText("CLAVE: ${factura.clave}", "l")
+    facturaTexto += addText("FECHA: ${factura.ventaMadre.Fecha}", "L")
+    facturaTexto += addText("CEDULA: ${factura.cliente.Cedula}", "L")
+    facturaTexto += addText("NOMBRE: ${factura.cliente.Nombre}", "L")
+    facturaTexto += addText("EMAIL: ${factura.cliente.EmailFactura}", "L")
+    facturaTexto += "\n"
+    facturaTexto += addText("CANT/COD/NOMBRE/PRECIO/TOTAL", "L")
+    facturaTexto += agregarLinea()
+    for (i in 0 until factura.ventaHija.size) {
+        val articulo = factura.ventaHija[i]
+        facturaTexto += addText("   ${articulo.nombreArticulo}", "L", destacar = true)
+        facturaTexto += addText("${articulo.ArticuloCantidad} [L](${articulo.ArticuloCodigo}) [R]${separacionDeMiles(isString = true, montoString = articulo.ArticuloVentaTotal)}", "L")
+        facturaTexto += addText("Cabys: ${articulo.ArticuloCabys}", "L")
+        facturaTexto += agregarLinea()
+    }
+    facturaTexto += "\n"
+    facturaTexto += agregarDobleLinea()
+    facturaTexto += addText("SUB TOTAL: [R]${separacionDeMiles(isString = true, montoString = factura.ventaMadre.TotalVenta)}", "R")
+    facturaTexto += addText("DESCUENTO: [R]${separacionDeMiles(isString = true, montoString = factura.ventaMadre.TotalDescuento)}", "R")
+    facturaTexto += addText("MERC GRAVADA: [R]${ separacionDeMiles(isString = true, montoString = factura.ventaMadre.TotalMercGravado)}", "R")
+    facturaTexto += addText("IVA: [R]${separacionDeMiles(isString = true, montoString = factura.ventaMadre.TotalIva)}", "R")
+    facturaTexto += addText("SERVICIO: [R]${separacionDeMiles(isString = true, montoString = factura.ventaMadre.TotalImpuestoServicio)}", "R")
+    facturaTexto += agregarLinea(ajustarATexto = true, text = "  ${factura.ventaMadre.MonedaCodigo} TOTAL ${factura.ventaMadre.Total}", justification = "R")
+    facturaTexto += addTextTall("  ${factura.ventaMadre.MonedaCodigo} TOTAL ${separacionDeMiles(isString = true, montoString = factura.ventaMadre.Total)}", "R", destacar = true)
+    facturaTexto += "\n"
+    facturaTexto += addText("GRACIAS POR SU COMPRA!", "C")
+    facturaTexto += addText(factura.leyenda, "C")
+    return gestorImpresora.imprimir(text = facturaTexto, context)
 }
 
 
@@ -190,5 +368,145 @@ data class ClienteFacturacion(
     val codMoneda : String = "",
     val tipoPrecio : String = ""
 )
+
+data class Proforma(
+    val numero : String = "",
+    val nombreCliente : String = "",
+    val total : String = ""
+)
+
+data class VentaMadre(
+    val Id: String = "",
+    val Numero: String = "",
+    val TipoDocumento: String = "",
+    val Referencia: String = "",
+    val Estado: String = "",
+    val Fecha: String = "",
+    val MonedaCodigo: String = "",
+    val MonedaTipoCambio: String = "",
+    val ClienteID: String = "",
+    val ClienteNombre: String = "",
+    val UsuarioCodigo: String = "",
+    val AgenteCodigo: String = "",
+    val RefereridoCodigo: String = "",
+    val Oficina: String = "",
+    val CajaNumero: String = "",
+    val FormaPagoCodigo: String = "",
+    val MedioPagoCodigo: String = "",
+    val MedioPagoDetalle: String = "",
+    val ModEntregaCodigo: String = "",
+    val DetallePide: String = "",
+    val Detalle: String = "",
+    val TotalCosto: String = "0",
+    val TotalVenta: String = "0",
+    val TotalDescuento: String = "0",
+    val TotalMercGravado: String = "0",
+    val TotalMercExonerado: String = "0",
+    val TotalMercExento: String = "0",
+    val TotalServGravado: String = "0",
+    val TotalServExonerado: String = "0",
+    val TotalServExento: String = "0",
+    val TotalImpuestoServicio: String = "0",
+    val TotalIva: String = "0",
+    val TotalIvaDevuelto: String = "0",
+    val Total: String = "0"
+)
+
+data class VentaHija(
+    val ArticuloLineaId: String = "",
+    val Numero: String = "",
+    val TipoDocumento: String = "",
+    val ArticuloCodigo: String = "",
+    val ArticuloCabys: String = "",
+    val ArticuloActividadEconomica: String = "",
+    val ArticuloCantidad: String = "0",
+    val ArticuloUnidadMedida: String = "",
+    val ArticuloSerie: String = "",
+    val ArticuloTipoPrecio: String = "",
+    val ArticuloBodegaCodigo: String = "",
+    val ArticuloCosto: String = "0",
+    val ArticuloVenta: String = "0",
+    val ArticuloVentaSubTotal1: String = "0",
+    val ArticuloDescuentoPorcentage: String = "0",
+    val ArticuloDescuentoMonto: String = "0",
+    val ArticuloVentaSubTotal2: String = "0",
+    val ArticuloOtrosCargos: String = "0",
+    val ArticuloVentaSubTotal3: String = "0",
+    val ArticuloIvaPorcentage: String = "0",
+    val ArticuloIvaTarifa: String = "0",
+    val ArticuloIvaExonerado: String = "0",
+    val ArticuloIvaMonto: String = "0",
+    val ArticuloIvaDevuelto: String = "0",
+    val ArticuloVentaGravado: String = "0",
+    val ArticuloVentaExonerado: String = "0",
+    val ArticuloVentaExento: String = "0",
+    val ArticuloVentaTotal: String = "0",
+    val nombreArticulo: String = ""
+)
+
+data class Empresa(
+    val nombre: String = "",
+    val cedula: String = "",
+    val telefono: String = "",
+    val direccion: String = "",
+    val correo: String = ""
+)
+
+data class Cliente(
+    val Id_Cliente: String = "",
+    val Nombre: String = "",
+    val Telefonos: String = "",
+    val Direccion: String = "",
+    val Fecha: String = "",
+    val TipoPrecioVenta: String = "",
+    val Cod_Tipo_Cliente: String = "",
+    val Email: String = "",
+    val DiaCobro: String = "",
+    val Contacto: String = "",
+    val Exento: String = "",
+    val AgenteVentas: String = "",
+    val Cod_Estado: String = "",
+    val UltimaVenta: String = "",
+    val Cod_Zona: String = "",
+    val DetalleContrato: String = "",
+    val MontoContrato: String = "0",
+    val NoForzarCredito: String = "",
+    val Descuento: String = "0",
+    val DivisionTerritorial: String = "",
+    val MontoCredito: String = "0",
+    val plazo: String = "",
+    val TieneCredito: String = "0",
+    val Cedula: String = "",
+    val FechaNacimiento: String = "",
+    val Cod_Moneda: String = "",
+    val FechaVencimiento: String = "",
+    val TipoIdentificacion: String = "",
+    val ClienteNombreComercial: String = "",
+    val EmailFactura: String = "",
+    val EmailCobro: String = "",
+    val PorcentajeInteres: String = "0"
+)
+
+data class Factura(
+    val ventaMadre: VentaMadre = VentaMadre(),
+    val ventaHija: List<VentaHija> = listOf(),
+    val empresa: Empresa = Empresa(),
+    val cliente: Cliente = Cliente(),
+    val clave: String = "",
+    val leyenda: String = ""
+)
+
+data class Pago(
+    var Id : String = "0",
+    var funcion : String = "crear",
+    var Documento: String = "",
+    var TipoDocumento: String = "",
+    var Monto: String = "",
+    var CuentaContable: String = "",
+    var CodigoMoneda: String = "",
+    var TipoCambio: String = "500",
+    var Total: String = ""
+)
+
 
 

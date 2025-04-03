@@ -1,6 +1,7 @@
-package com.soportereal.invefacon.interfaces.pantallas_principales
+package com.soportereal.invefacon.interfaces.pantallas_principales.ajustes
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -8,14 +9,20 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Error
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -28,19 +35,32 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.constraintlayout.compose.ConstraintLayout
+import androidx.navigation.NavController
+import androidx.navigation.compose.rememberNavController
 import com.soportereal.invefacon.R
+import com.soportereal.invefacon.funciones_de_interfaces.RutasPatallas
+import com.soportereal.invefacon.funciones_de_interfaces.TText
 import com.soportereal.invefacon.interfaces.FuncionesParaAdaptarContenido
+import com.soportereal.invefacon.interfaces.obtenerEstiloDisplayMedium
+import com.soportereal.invefacon.interfaces.obtenerEstiloDisplaySmall
+import com.soportereal.invefacon.interfaces.obtenerEstiloHeadBig
+import com.soportereal.invefacon.interfaces.obtenerEstiloTitleBig
+import com.soportereal.invefacon.interfaces.pantallas_principales.objetoEstadoPantallaCarga
 
 @Composable
-fun IniciarInterfazAjustes(){
+fun IniciarInterfazAjustes(
+    navController: NavController
+){
     val fontAksharPrincipal = FontFamily(Font(R.font.akshar_medium))
     val configuration = LocalConfiguration.current
     val dpAnchoPantalla = configuration.screenWidthDp
     val dpAltoPantalla = configuration.screenHeightDp
     val dpFontPantalla= configuration.fontScale
     val objetoAdaptardor= FuncionesParaAdaptarContenido(dpAltoPantalla, dpAnchoPantalla, dpFontPantalla)
+
 
     ConstraintLayout(
         modifier = Modifier
@@ -50,7 +70,7 @@ fun IniciarInterfazAjustes(){
             .statusBarsPadding()
             .navigationBarsPadding()
     ){
-        val (bxSuperior)= createRefs()
+        val (bxSuperior, lzColumPrincipal)= createRefs()
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -87,18 +107,59 @@ fun IniciarInterfazAjustes(){
             }
         }
 
-        Box(
+        LazyColumn(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(objetoAdaptardor.ajustarAltura(660)),
-            contentAlignment = Alignment.Center
-        ){
-            Column(verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
-                Icon(imageVector = Icons.Filled.Error, tint = Color.Red, contentDescription = "")
-                Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(20)))
-                Text("En desarrollo...", textAlign = TextAlign.Center)
+                .heightIn(max = objetoAdaptardor.ajustarAltura(660))
+                .constrainAs(lzColumPrincipal) {
+                    start.linkTo(parent.start)
+                    top.linkTo(bxSuperior.bottom)
+                }
+        ) {
+            item {
+                OpcionesInterfazAjsutes.opciones.forEach { opcion ->
+                    Button(
+                        onClick = {
+                            navController.navigate(RutasPatallas.AjustImpresora.ruta)
+                        },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color.White,
+                            contentColor = Color.White,
+                            disabledContainerColor = Color.White,
+                            disabledContentColor = Color.White
+                        )
+                    ) {
+                        Row (
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(objetoAdaptardor.ajustarAncho(16))
+                        ){
+                            Icon(
+                                imageVector = opcion.icono,
+                                contentDescription = "",
+                                tint = Color.Black,
+                                modifier = Modifier.size(objetoAdaptardor.ajustarAltura(35))
+                            )
+                            TText(
+                                text = opcion.titulo,
+                                fontSize = obtenerEstiloHeadBig(),
+                                textAlign = TextAlign.Start,
+                                maxLines = 2,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        }
+                    }
+
+                    HorizontalDivider()
+                }
             }
         }
-        objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
+
     }
+}
+
+@Preview
+@Composable
+private fun preview(){
+    val nav = rememberNavController()
+    IniciarInterfazAjustes(nav)
 }
