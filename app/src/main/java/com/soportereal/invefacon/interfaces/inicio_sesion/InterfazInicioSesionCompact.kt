@@ -4,7 +4,9 @@ import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Context
 import android.content.pm.ActivityInfo
+import android.os.Build
 import android.view.inputmethod.InputMethodManager
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
@@ -97,6 +99,7 @@ import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.soportereal.invefacon.R
 import com.soportereal.invefacon.funciones_de_interfaces.RutasPatallas
 import com.soportereal.invefacon.funciones_de_interfaces.actualizarParametro
+import com.soportereal.invefacon.funciones_de_interfaces.gestorImpresora
 import com.soportereal.invefacon.funciones_de_interfaces.obtenerParametro
 import com.soportereal.invefacon.interfaces.FuncionesParaAdaptarContenido
 import com.soportereal.invefacon.interfaces.obtenerEstiloLabelSmall
@@ -109,6 +112,7 @@ import kotlinx.coroutines.launch
 import java.util.regex.Pattern
 
 
+@RequiresApi(Build.VERSION_CODES.S)
 @SuppressLint("SourceLockedOrientationActivity", "ContextCastToActivity")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -146,6 +150,7 @@ fun IniciarInterfazInicioSesionCompact(
     val activity = LocalContext.current as Activity
     activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
     val contexto = LocalContext.current
+    gestorImpresora.PedirPermisos(contexto)
     val configuration = LocalConfiguration.current
     val dpAnchoPantalla = configuration.screenWidthDp
     val dpAltoPantalla = configuration.screenHeightDp
@@ -968,6 +973,7 @@ fun ocultarTeclado(contexto: Context) {
     }
 }
 
+@RequiresApi(Build.VERSION_CODES.S)
 @Preview(showBackground = true, widthDp = 384, heightDp = 812, fontScale = 1.15F)
 @Composable
 private fun Preview(){

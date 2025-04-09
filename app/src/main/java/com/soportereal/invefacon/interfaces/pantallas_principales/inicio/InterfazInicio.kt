@@ -72,13 +72,12 @@ import com.soportereal.invefacon.funciones_de_interfaces.MenuConfirmacion
 import com.soportereal.invefacon.funciones_de_interfaces.RutasPatallas
 import com.soportereal.invefacon.funciones_de_interfaces.actualizarParametro
 import com.soportereal.invefacon.funciones_de_interfaces.descargarImagenSiNoExiste
-import com.soportereal.invefacon.funciones_de_interfaces.gestorImpresora
+import com.soportereal.invefacon.funciones_de_interfaces.guardarParametroSiNoExiste
 import com.soportereal.invefacon.funciones_de_interfaces.obtenerParametro
 import com.soportereal.invefacon.interfaces.FuncionesParaAdaptarContenido
 import com.soportereal.invefacon.interfaces.pantallas_principales.objetoEstadoPantallaCarga
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 
@@ -106,15 +105,11 @@ fun IniciarInterfazInicio(
     var rutaPantallaModulo by remember { mutableStateOf("") }
     val contexto = LocalContext.current
     var iniciarMenuConfirmacionSalidaModulo by remember { mutableStateOf(false) }
+    guardarParametroSiNoExiste(contexto, "isImpresionActiva$codUsuario$nombreEmpresa", "0")
+    guardarParametroSiNoExiste(contexto, "cantidadCaracPorLineaImpre", "32")
 
     LaunchedEffect(Unit) {
-        descargarImagenSiNoExiste(contexto,"https://invefacon.com/img/$nombreEmpresa/$nombreEmpresa.png", nombreArchivo = "$nombreEmpresa.png")
-    }
-
-    LaunchedEffect(Unit) {
-        delay(1000)
-        if (gestorImpresora.validarConexion(contexto)) return@LaunchedEffect
-        gestorImpresora.reconectar(contexto)
+        descargarImagenSiNoExiste(contexto,"https://invefacon.com/img/$nombreEmpresa/$nombreEmpresa.jpg", nombreArchivo = "$nombreEmpresa.jpg")
     }
 
     // Interceptar el botón de retroceso
@@ -128,8 +123,8 @@ fun IniciarInterfazInicio(
         }
     }
 
-
-    ConstraintLayout(modifier = Modifier
+    ConstraintLayout(
+        modifier = Modifier
         .fillMaxWidth()
         .height(objetoAdaptardor.ajustarAltura(722))
         .background(Color(0xFFFFFFFF))

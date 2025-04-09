@@ -413,7 +413,8 @@ internal fun TextFieldMultifuncional(
     mostrarLabel: Boolean = true,
     usarFormatoFecha2: Boolean = false,
     textAlign: TextAlign = TextAlign.Start,
-    mostrarTrailingIcon: Boolean = true
+    mostrarTrailingIcon: Boolean = true,
+    onFocus : () -> Unit = {}
 ){
     val fontAksharPrincipal = FontFamily(Font(R.font.akshar_medium))
     val configuration = LocalConfiguration.current
@@ -563,6 +564,9 @@ internal fun TextFieldMultifuncional(
                 .focusRequester(solicitadorFoco)
                 .onFocusChanged { estadoFoco ->
                     tieneFoco = estadoFoco.isFocused // Detectar el estado de foco
+                    if (tieneFoco){
+                        onFocus()
+                    }
                 },
             placeholder = if(mostrarPlaceholder) {
                 {
@@ -935,6 +939,7 @@ fun ButtonFecha(
 
 data class ParClaveValor(
     val clave : String = "",
-    val valor: String = "",
+    var valor: String = "",
+    var venta : String = "", // MODULO FACTURACION EN EL CALCULO DE IVAS
     val existencia : Double = 0.00 // Para Bodegas modulo Facturacion
 )

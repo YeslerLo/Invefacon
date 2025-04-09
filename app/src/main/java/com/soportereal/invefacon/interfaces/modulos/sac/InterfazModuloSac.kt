@@ -103,6 +103,7 @@ package com.soportereal.invefacon.interfaces.modulos.sac
  import com.soportereal.invefacon.funciones_de_interfaces.RutasPatallas
  import com.soportereal.invefacon.funciones_de_interfaces.TextFieldMultifuncional
  import com.soportereal.invefacon.funciones_de_interfaces.actualizarParametro
+ import com.soportereal.invefacon.funciones_de_interfaces.guardarParametroSiNoExiste
  import com.soportereal.invefacon.funciones_de_interfaces.mostrarMensajeError
  import com.soportereal.invefacon.funciones_de_interfaces.mostrarMensajeExito
  import com.soportereal.invefacon.funciones_de_interfaces.obtenerDatosClienteByCedula
@@ -205,7 +206,7 @@ fun InterfazModuloSac(
     var iniciarMenuCrearExpress by remember { mutableStateOf(false) }
     var iniciarMenuAjustes by remember { mutableStateOf(false) }
     val context = LocalContext.current
-//    guardarParametroSiNoExiste(context, "prmImp2$nombreEmpresa$codUsuario", "1")
+    guardarParametroSiNoExiste(context, "prmImp2$nombreEmpresa$codUsuario", "1")
     var valorPrmImp2 by remember { mutableStateOf(obtenerParametro(context, "prmImp2$nombreEmpresa$codUsuario")) }
     var codUsuarioIngresado by remember { mutableStateOf(codUsuario) }
     var passwordIngresada by remember { mutableStateOf("") }

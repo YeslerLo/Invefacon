@@ -1,6 +1,9 @@
 package com.soportereal.invefacon.interfaces.modulos.facturacion
 
+import android.os.Build
+import android.widget.Toast
 import androidx.activity.compose.BackHandler
+import androidx.annotation.RequiresApi
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
@@ -82,6 +85,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -120,11 +124,14 @@ import com.soportereal.invefacon.funciones_de_interfaces.ParClaveValor
 import com.soportereal.invefacon.funciones_de_interfaces.TText
 import com.soportereal.invefacon.funciones_de_interfaces.TextFieldMultifuncional
 import com.soportereal.invefacon.funciones_de_interfaces.gestorImpresora
+import com.soportereal.invefacon.funciones_de_interfaces.listaPermisos
 import com.soportereal.invefacon.funciones_de_interfaces.mostrarMensajeError
 import com.soportereal.invefacon.funciones_de_interfaces.mostrarMensajeExito
 import com.soportereal.invefacon.funciones_de_interfaces.mostrarTeclado
 import com.soportereal.invefacon.funciones_de_interfaces.obtenerFechaHoy
+import com.soportereal.invefacon.funciones_de_interfaces.obtenerParametro
 import com.soportereal.invefacon.funciones_de_interfaces.separacionDeMiles
+import com.soportereal.invefacon.funciones_de_interfaces.tienePermiso
 import com.soportereal.invefacon.funciones_de_interfaces.validarExitoRestpuestaServidor
 import com.soportereal.invefacon.interfaces.FuncionesParaAdaptarContenido
 import com.soportereal.invefacon.interfaces.modulos.clientes.ProcesarDatosModuloClientes
@@ -152,6 +159,7 @@ import org.json.JSONArray
 import org.json.JSONObject
 import java.util.concurrent.atomic.AtomicInteger
 
+@RequiresApi(Build.VERSION_CODES.S)
 @Composable
 fun IniciarInterfazFacturacion(
     token: String,
@@ -194,7 +202,7 @@ fun IniciarInterfazFacturacion(
     var totalIvaDevuelto by remember { mutableDoubleStateOf(0.00) }
     var totalMercGrav by remember { mutableDoubleStateOf(0.00) }
     var total by remember { mutableDoubleStateOf(0.00) }
-    val tasaCambio by remember { mutableDoubleStateOf(504.21) }
+    var tasaCambio by remember { mutableDoubleStateOf(504.21) }
     var codMonedaCliente by remember { mutableStateOf("") }
     var codMonedaProforma by remember { mutableStateOf("") }
     var numeroProforma by remember { mutableStateOf("") }
@@ -304,8 +312,9 @@ fun IniciarInterfazFacturacion(
     var datosFacturaEmitida by remember { mutableStateOf(Factura()) }
     var obtenerDatosFacturaEmitida by remember { mutableStateOf(false) }
     var consecutivoFactura by remember { mutableStateOf("") }
+    val valorImpresionActiva by remember { mutableStateOf( obtenerParametro(context, "isImpresionActiva$codUsuario$nombreEmpresa")) }
+    val coroutineScope = rememberCoroutineScope()
     val transition = rememberInfiniteTransition(label = "shimmer")
-
     val shimmerTranslate by transition.animateFloat(
         initialValue = -800f,
         targetValue = 1100f,
@@ -477,13 +486,21 @@ fun IniciarInterfazFacturacion(
             empresa = empresa,
             cliente = cliente,
             clave = clave,
-            leyenda = leyenda
+            leyenda = leyenda,
+            descrpcionFormaPago = resultadoFactura.getString("descrpcionFormaPago"),
+            descripcionMedioPago = resultadoFactura.getString("descripcionMedioPago"),
+            nombreAgente = resultadoFactura.getString("nombreAgente")
         )
 
         return factura
     }
 
+    if (valorImpresionActiva == "1"){
+        gestorImpresora.PedirPermisos(context)
+    }
+
     LaunchedEffect(Unit) {
+        if (valorImpresionActiva != "1") return@LaunchedEffect  Toast.makeText(context, "La impresión está inactiva.", Toast.LENGTH_SHORT).show()
         delay(1000)
         if (gestorImpresora.validarConexion(context)) return@LaunchedEffect
         gestorImpresora.reconectar(context)
@@ -529,6 +546,7 @@ fun IniciarInterfazFacturacion(
                         val actualizarListaArticulos = codMonedaProforma != data.getString("monedaDocumento")
                         validacionCargaFinalizada = if (actualizarListaArticulos) 0 else 1
                         codMonedaProforma = data.getString("monedaDocumento")
+                        tasaCambio = data.getDouble("tipoCambio")
                         nuevoCodigoMoneda = codMonedaProforma
                         simboloMoneda =  if(codMonedaProforma == "CRC") "\u20A1 " else "\u0024 "
                         iniciarDescargaArticulos = actualizarListaArticulos
@@ -599,9 +617,18 @@ fun IniciarInterfazFacturacion(
 
                     }
                     else{
+                        estadoRespuestaApi.cambiarEstadoRespuestaApi(mostrarSoloRespuestaError = true, datosRespuesta = result)
                         numeroProforma = ""
                         errorCargarProforma = true
+                        actualizarDatosProforma = false
                     }
+                }
+                val result2 = objectoProcesadorDatosApi.obtenerPermisosUsuario(codUsuario)
+                if (result2 == null) return@launch
+                if (!validarExitoRestpuestaServidor(result2)) return@launch estadoRespuestaApi.cambiarEstadoRespuestaApi(mostrarSoloRespuestaError = true, datosRespuesta = result2)
+                listaPermisos = (0 until result2.getJSONArray("data").length()).map { i ->
+                    val permiso = result2.getJSONArray("data").getJSONObject(i)
+                    ParClaveValor(clave = permiso.getString("Cod_Derecho"), valor = permiso.getString("Descripcion"))
                 }
                 validacionCargaFinalizada++
                 soloActualizarArticulos = false
@@ -701,6 +728,7 @@ fun IniciarInterfazFacturacion(
                         listaArticulosFacturacion = listaArticulos
                     }else{
                         errorCargarProforma = true
+                        actualizarDatosProforma = false
                     }
                 }
                 validacionCargaFinalizada++
@@ -715,10 +743,19 @@ fun IniciarInterfazFacturacion(
             apiConsultaBusquedaArticulos?.cancel()
             apiConsultaBusquedaArticulos= cortinaConsultaApiBusquedaArticulos.launch{
                 delay(200)
-                listaArticulosEncontrados = listaArticulosFacturacion.filter {
-                    it.descripcion.contains(datosIngresadosBarraBusquedaArticulos, ignoreCase = true) ||
-                            it.codigo.contains(datosIngresadosBarraBusquedaArticulos, ignoreCase = true)
-                }.take(50)
+                val input = datosIngresadosBarraBusquedaArticulos.trim()
+                val coincidenciaExacta = listaArticulosFacturacion.find {
+                    it.codigo.equals(input, ignoreCase = true) ||
+                            it.descripcion.equals(input, ignoreCase = true)
+                }
+                listaArticulosEncontrados = if (coincidenciaExacta != null) {
+                    listOf(coincidenciaExacta)
+                } else {
+                    listaArticulosFacturacion.filter {
+                        it.codigo.contains(input, ignoreCase = true) ||
+                                it.descripcion.contains(input, ignoreCase = true)
+                    }.take(50)
+                }
                 isCargandoArticulos = false
             }
         }
@@ -824,7 +861,8 @@ fun IniciarInterfazFacturacion(
                 nombreCliente = nombreClienteBusquedaProforma,
                 fechaInicio = fechaInicialProforma,
                 fechaFinal = fechafinalProforma,
-                estadoProforma = estadoBusquedaProforma
+                estadoProforma = estadoBusquedaProforma,
+                codUsuario = if (tienePermiso("069")) "" else codUsuario
             )
 
             if (result != null) {
@@ -839,7 +877,8 @@ fun IniciarInterfazFacturacion(
                         Proforma(
                             nombreCliente = datosProforma.getString("ClienteNombre"),
                             numero = datosProforma.getString("Numero"),
-                            total = datosProforma.getString("Total")
+                            total = datosProforma.getString("Total"),
+                            codMoneda = datosProforma.getString("MonedaCodigo")
                         )
                     }
                 }
@@ -993,6 +1032,7 @@ fun IniciarInterfazFacturacion(
 
                         if (validarExitoRestpuestaServidor(result)) {
                             cantidadPagosEnviados.decrementAndGet()
+                            listaPagos.removeIf { it.Monto == "eliminar" }
                         }
                     }
                 }
@@ -1025,10 +1065,21 @@ fun IniciarInterfazFacturacion(
             if (result == null) return@LaunchedEffect
             estadoRespuestaApi.cambiarEstadoRespuestaApi(mostrarSoloRespuestaError = true, datosRespuesta = result)
 
-            if (!validarExitoRestpuestaServidor(result)) return@LaunchedEffect
+            if (!validarExitoRestpuestaServidor(result)){
+               actualizarDatosProforma = true
+                return@LaunchedEffect
+            }
 
             val data = result.getJSONObject("data")
             consecutivoFactura = data.getString("consecutivo")
+
+            if(valorImpresionActiva != "1"){
+                mostrarMensajeExito("La factura se ha emitido exitosamente con el consecutivo: $consecutivoFactura")
+                numeroProforma = ""
+                actualizarDatosProforma = true
+                return@LaunchedEffect
+            }
+
             datosFacturaEmitida = Factura()
             delay(6000)
 
@@ -1227,7 +1278,7 @@ fun IniciarInterfazFacturacion(
                         modifier = Modifier.padding(start = objetoAdaptardor.ajustarAncho(8), end = objetoAdaptardor.ajustarAncho(16))
                     )
                     TText(
-                        text = simboloMoneda + separacionDeMiles(articulo.precio) + " $codMonedaProforma",
+                        text = simboloMoneda + separacionDeMiles(montoString = (articulo.listaPrecios.find { it.clave == tipoPrecio }?.valor ?: articulo.precio).toString(), isString = true) + " $codMonedaProforma",
                         modifier = Modifier
                             .padding(start = objetoAdaptardor.ajustarAncho(8), bottom = objetoAdaptardor.ajustarAltura(8)),
                         fontSize = obtenerEstiloBodyMedium(),
@@ -1360,7 +1411,7 @@ fun IniciarInterfazFacturacion(
                         modifier = Modifier.padding(start = objetoAdaptardor.ajustarAncho(8), end = objetoAdaptardor.ajustarAncho(16))
                     )
                     TText(
-                        text = simboloMoneda + separacionDeMiles(montoString= proforma.total, isString = true) + " $codMonedaProforma",
+                        text = proforma.codMoneda + separacionDeMiles(montoString= proforma.total, isString = true) + " $codMonedaProforma",
                         modifier = Modifier
                             .padding(start = objetoAdaptardor.ajustarAncho(8), bottom = objetoAdaptardor.ajustarAltura(8)),
                         fontSize = obtenerEstiloBodyMedium(),
@@ -1373,13 +1424,7 @@ fun IniciarInterfazFacturacion(
     }
 
     @Composable
-    fun BasicTexfiuldWithText(
-        textTitle: String,
-        text: String,
-        icon: ImageVector,
-        variable: String,
-        nuevoValor: (String) -> Unit
-    ){
+    fun BasicTexfiuldWithText(textTitle: String, text: String, icon: ImageVector, variable: String, nuevoValor: (String) -> Unit){
         Column {
             TText(
                 text = textTitle,
@@ -1440,28 +1485,29 @@ fun IniciarInterfazFacturacion(
             var isMenuVisible by remember { mutableStateOf(false) }
             val simboloMonedaArticulo by remember { mutableStateOf(if(codigoMoneda == "CRC") "\u20A1 " else "\u0024 ") }
 
-            // Función para calcular totales
             fun calcularTotales() {
                 try {
-                    var cantidad = if (cantidadProducto.isEmpty()) 0.00 else cantidadProducto.toDouble()
-                    val precio = if (precioProducto.isEmpty()) 0.00 else precioProducto.toDouble()
-                    var porcentajeDescuento = if(porcentajeDescuentoProducto.isEmpty()) 0.00 else porcentajeDescuentoProducto.toDouble()
-                    var tempMontoDescuento = if(montoDescuento.isEmpty()) 0.00 else montoDescuento.toDouble()
+                    val cantidad = cantidadProducto.toDoubleOrNull() ?: 0.00
+                    val precio = precioProducto.toDoubleOrNull() ?: 0.00
+                    var porcentajeDescuento = porcentajeDescuentoProducto.toDoubleOrNull() ?: 0.00
+                    var tempMontoDescuento = montoDescuento.toDoubleOrNull() ?: 0.00
 
-                    if (seleccionPresentacion != "Unidad"){
-                        cantidad *= articulo.unidadXMedida
+                    cantidadProductoForApi = if (seleccionPresentacion != "Unidad") {
+                        cantidad * articulo.unidadXMedida
+                    } else {
+                        cantidad
                     }
 
-                    cantidadProductoForApi = cantidad
-                    val subtotal = cantidad * precio
+                    val subtotal = cantidadProductoForApi * precio
 
-                    if (esCambioPorMontoDescuento){
-                        porcentajeDescuento =  tempMontoDescuento * 100 / subtotal
+                    if (esCambioPorMontoDescuento) {
+                        porcentajeDescuento = if (subtotal != 0.0) (tempMontoDescuento * 100 / subtotal) else 0.0
                         porcentajeDescuentoProducto = porcentajeDescuento.toString()
-                    }else{
-                        tempMontoDescuento = (subtotal * porcentajeDescuento)/100
+                    } else {
+                        tempMontoDescuento = (subtotal * porcentajeDescuento) / 100
                         montoDescuento = tempMontoDescuento.toString()
                     }
+
                     precioUnitarioIva = precio + (precio * articulo.impuesto) / 100 - (precio * porcentajeDescuento) / 100
                     gravado = subtotal - tempMontoDescuento
                     val iva = gravado * (articulo.impuesto) / 100
@@ -1470,11 +1516,11 @@ fun IniciarInterfazFacturacion(
                     totalProducto = gravado + iva
 
                     esCambioPorMontoDescuento = false
-                }catch (e:Exception){
+
+                } catch (e: Exception) {
                     iniciarMenuAgregaEditaArticulo = false
                     mostrarMensajeError("Error al calcular totales: ${e.message ?: "Valor no válido"}")
                 }
-
             }
 
             LaunchedEffect(Unit) {
@@ -1611,7 +1657,6 @@ fun IniciarInterfazFacturacion(
                                         usarOpciones3 = true,
                                         opciones3 = opcionesPresentacion,
                                         usarModifierForSize = true,
-
                                         modifier = Modifier
                                             .fillMaxWidth()
                                             .border(
@@ -1643,6 +1688,8 @@ fun IniciarInterfazFacturacion(
                                         label = "",
                                         textPlaceholder = "Precio",
                                         nuevoValor2 = {
+                                            if(!tienePermiso("005")) return@TextFieldMultifuncional mostrarMensajeError("No posee el permiso 005 para cambiar el precio de venta.")
+                                            if (it.clave != "1" && ( ( it.clave=="10" && !tienePermiso("040") ) || !tienePermiso( "03${it.clave}" ) ) ) return@TextFieldMultifuncional mostrarMensajeError("No cuenta con el permiso para modificar el tipo de precio a ${it.clave}.")
                                             tipoPrecioSeleccionado = it
                                             precioProducto = it.valor
                                             calcularTotales()
@@ -1703,7 +1750,11 @@ fun IniciarInterfazFacturacion(
                                         mostrarPlaceholder = true,
                                         textPlaceholder = "0.00",
                                         mostrarLabel = false,
-                                        soloPermitirValoresNumericos = true
+                                        soloPermitirValoresNumericos = true,
+                                        onFocus = {
+                                            cantidadProducto = ""
+                                            calcularTotales()
+                                        }
                                     )
                                 }
 
@@ -1718,6 +1769,8 @@ fun IniciarInterfazFacturacion(
                                     )
                                     TextFieldMultifuncional(
                                         nuevoValor = {
+                                            if(!tienePermiso("003")) return@TextFieldMultifuncional mostrarMensajeError("No posee el permiso 003 para actualizar el precio de venta.")
+                                            if(!tienePermiso("024")) return@TextFieldMultifuncional mostrarMensajeError("No posee el permiso 024 para editar el precio de venta desde facturación.")
                                             precioProducto = it
                                             calcularTotales()
                                         },
@@ -1734,96 +1787,109 @@ fun IniciarInterfazFacturacion(
                                         mostrarLabel = false,
                                         soloPermitirValoresNumericos = true,
                                         darFormatoMiles = true,
-                                        permitirPuntosDedimales = true
+                                        permitirPuntosDedimales = true,
+                                        onFocus = {
+                                            if(!tienePermiso("003")) return@TextFieldMultifuncional mostrarMensajeError("No posee el permiso 003 para actualizar el precio de venta.")
+                                            if(!tienePermiso("024")) return@TextFieldMultifuncional mostrarMensajeError("No posee el permiso 024 para editar el precio de venta desde facturación.")
+                                            precioProducto = ""
+                                            calcularTotales()
+                                        }
                                     )
                                 }
                             }
 
                             Spacer(modifier = Modifier.height(8.dp))
 
-                            // MONTO DESCUENTO Y PORCENTAJE DE DESCUENTO
-                            if (articulo.descuentoAdmitido != 0.00){
-                                Row(
-                                    horizontalArrangement = Arrangement.spacedBy(15.dp)
+                            // Descuento
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(15.dp)
+                            ) {
+
+                                Column(
+                                    modifier = Modifier.weight(1f)
                                 ) {
-
-                                    Column(
-                                        modifier = Modifier.weight(1f)
-                                    ) {
-                                        TText(
-                                            text = "Descuento (%)",
-                                            fontSize = obtenerEstiloBodyMedium(),
-                                            fontWeight = FontWeight.Light,
-                                            color = Color.DarkGray
-                                        )
-                                        TextFieldMultifuncional(
-                                            label = "Descuento",
-                                            textPlaceholder = "0.00",
-                                            nuevoValor = {
-                                                val temp = if(it.isEmpty()) 0.00 else it.toDouble()
-                                                if (temp<=articulo.descuentoAdmitido){
-                                                    porcentajeDescuentoProducto = it
-                                                    calcularTotales()
-                                                }
-                                            },
-                                            modoEdicionActivado = (articulo.descuentoAdmitido != 0.00),
-                                            valor = porcentajeDescuentoProducto,
-                                            usarModifierForSize = true,
-                                            modifier = Modifier
-                                                .fillMaxWidth()
-                                                .border(
-                                                    2.dp,
-                                                    color = Color.Gray,
-                                                    RoundedCornerShape(objetoAdaptardor.ajustarAltura(12))
-                                                ),
-                                            isUltimo = true,
-                                            medidaAncho = 350,
-                                            tomarAnchoMaximo = false,
-                                            fontSize = obtenerEstiloBodyBig(),
-                                            mostrarLabel = false,
-                                            soloPermitirValoresNumericos = true,
-                                            permitirPuntosDedimales = true,
-                                            cantidadLineas = 1
-                                        )
-                                    }
-
-                                    Column(
-                                        modifier = Modifier.weight(1f)
-                                    ) {
-                                        TText(
-                                            text = "Monto Descuento:",
-                                            fontSize = obtenerEstiloBodyMedium(),
-                                            fontWeight = FontWeight.Light,
-                                            color = Color.DarkGray
-                                        )
-                                        TextFieldMultifuncional(
-                                            nuevoValor = {
-                                                montoDescuento = it
-                                                esCambioPorMontoDescuento = true
-                                                calcularTotales()
-                                            },
-                                            valor = montoDescuento,
-                                            modoEdicionActivado = (articulo.descuentoAdmitido != 0.00),
-                                            usarModifierForSize = true,
-                                            modifier = Modifier
-                                                .fillMaxWidth()
-                                                .border(2.dp, color = Color.Gray, RoundedCornerShape(objetoAdaptardor.ajustarAltura(12))),
-                                            isUltimo = true,
-                                            fontSize = obtenerEstiloBodyBig(),
-                                            cantidadLineas = 1,
-                                            mostrarPlaceholder = true,
-                                            textPlaceholder = "0.00",
-                                            mostrarLabel = false,
-                                            soloPermitirValoresNumericos = true,
-                                            darFormatoMiles = true,
-                                            permitirPuntosDedimales = true
-                                        )
-                                    }
-
+                                    TText(
+                                        text = "Descuento (%)",
+                                        fontSize = obtenerEstiloBodyMedium(),
+                                        fontWeight = FontWeight.Light,
+                                        color = Color.DarkGray
+                                    )
+                                    TextFieldMultifuncional(
+                                        label = "Descuento",
+                                        textPlaceholder = "0.00",
+                                        nuevoValor = {
+                                            if (!tienePermiso("002")) return@TextFieldMultifuncional mostrarMensajeError("No cuenta con el permiso 002 para modificar el descuento de los artículos.")
+                                            val montoTemp = if(it.isEmpty()) 0.00 else it.toDouble()
+                                            if ( !tienePermiso("023") && montoTemp>=articulo.descuentoAdmitido) return@TextFieldMultifuncional mostrarMensajeError("No cuenta con el permiso 023 para aplicar Descuento ilimitado, el descuento máximo es de: ${articulo.descuentoAdmitido}")
+                                            porcentajeDescuentoProducto = it
+                                            calcularTotales()
+                                        },
+                                        valor = porcentajeDescuentoProducto,
+                                        usarModifierForSize = true,
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .border(
+                                                2.dp,
+                                                color = Color.Gray,
+                                                RoundedCornerShape(objetoAdaptardor.ajustarAltura(12))
+                                            ),
+                                        isUltimo = true,
+                                        medidaAncho = 350,
+                                        tomarAnchoMaximo = false,
+                                        fontSize = obtenerEstiloBodyBig(),
+                                        mostrarLabel = false,
+                                        soloPermitirValoresNumericos = true,
+                                        permitirPuntosDedimales = true,
+                                        cantidadLineas = 1,
+                                        onFocus = {
+                                            if (!tienePermiso("002")) return@TextFieldMultifuncional mostrarMensajeError("No cuenta con el permiso 002 para modificar el descuento de los artículos.")
+                                            porcentajeDescuentoProducto = ""
+                                            calcularTotales()
+                                        }
+                                    )
                                 }
 
-                                Spacer(modifier = Modifier.height(8.dp))
+                                Column(
+                                    modifier = Modifier.weight(1f)
+                                ) {
+                                    TText(
+                                        text = "Monto Descuento:",
+                                        fontSize = obtenerEstiloBodyMedium(),
+                                        fontWeight = FontWeight.Light,
+                                        color = Color.DarkGray
+                                    )
+                                    TextFieldMultifuncional(
+                                        nuevoValor = {
+                                            if (!tienePermiso("002")) return@TextFieldMultifuncional mostrarMensajeError("No cuenta con el permiso 002 para modificar el descuento de los artículos.")
+                                            val montoTemp = if(it.isEmpty()) 0.00 else it.toDouble()
+                                            if ( !tienePermiso("023") && montoTemp>=articulo.descuentoAdmitido) return@TextFieldMultifuncional mostrarMensajeError("No cuenta con el permiso 023 para aplicar Descuento ilimitado, el descuento máximo es de: ${articulo.descuentoAdmitido}")
+                                            montoDescuento = it
+                                            esCambioPorMontoDescuento = true
+                                            calcularTotales()
+                                        },
+                                        valor = montoDescuento,
+                                        usarModifierForSize = true,
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .border(2.dp, color = Color.Gray, RoundedCornerShape(objetoAdaptardor.ajustarAltura(12))),
+                                        isUltimo = true,
+                                        fontSize = obtenerEstiloBodyBig(),
+                                        cantidadLineas = 1,
+                                        mostrarPlaceholder = true,
+                                        textPlaceholder = "0.00",
+                                        mostrarLabel = false,
+                                        soloPermitirValoresNumericos = true,
+                                        darFormatoMiles = true,
+                                        permitirPuntosDedimales = true,
+                                        onFocus = {
+                                            if (!tienePermiso("002")) return@TextFieldMultifuncional mostrarMensajeError("No cuenta con el permiso 002 para modificar el descuento de los artículos.")
+                                            montoDescuento = ""
+                                            calcularTotales()
+                                        }
+                                    )
+                                }
                             }
+                            Spacer(modifier = Modifier.height(8.dp))
 
                             // Totales
                             Column(
@@ -1922,7 +1988,11 @@ fun IniciarInterfazFacturacion(
                                     text = if (isAgregar) "Agregar" else "Editar",
                                     objetoAdaptardor = objetoAdaptardor,
                                     onClick = {
-                                        if ( (cantidadProducto.isNotEmpty() && precioProducto.isNotEmpty()) || (cantidadProducto.toDouble() > 0.00 && precioProducto.toDouble() > 0.00) ){
+                                        cantidadProducto = cantidadProducto.ifEmpty { "0.00" }
+                                        precioProducto = precioProducto.ifEmpty { "0.00" }
+                                        montoDescuento = montoDescuento.ifEmpty { "0.00" }
+                                        porcentajeDescuentoProducto = porcentajeDescuentoProducto.ifEmpty { "0.00" }
+                                        if (cantidadProducto.toDouble() > 0.00 && precioProducto.toDouble() > 0.00){
                                             val articuloTemp = ArticuloLineaProforma(
                                                 numero = numeroProforma,
                                                 articuloLine = articulo.articuloLineaId,
@@ -1943,7 +2013,7 @@ fun IniciarInterfazFacturacion(
                                             )
                                             agregaEditaArticulo(articuloTemp)
                                         }else{
-                                            if (cantidadProducto.isEmpty() || cantidadProducto.toDouble() == 0.0){
+                                            if (cantidadProducto.toDouble() == 0.00){
                                                 mostrarMensajeError("La cantidad del artículo deber ser mayor a '0.00'.")
                                             }else{
                                                 mostrarMensajeError("El Precio del artículo deber ser mayor a '0.00'.")
@@ -3039,8 +3109,10 @@ fun IniciarInterfazFacturacion(
                             exit = shrinkVertically(animationSpec = tween(300)) + fadeOut()
                         ) {
                             BButton(
-                                text = if (estadoProforma =="2") "     Reimprimir     " else "     Procesar     ",
+                                text = if (estadoProforma =="2") if(valorImpresionActiva=="1") "     Reimprimir     "  else "     Reimpresión Inactiva     " else "     Procesar     ",
                                 onClick = {
+                                    if (estadoProforma != "2" && !tienePermiso("078")) return@BButton mostrarMensajeError("No posee permisos para emitir facturas.")
+                                    if (valorImpresionActiva=="0" && estadoProforma =="2") return@BButton mostrarMensajeError("Impresión inactiva. Si desea imprimir, cambie el estado del parámetro en ajustes.")
                                     if (estadoProforma =="2"){
                                         consecutivoFactura = numeroProforma
                                         obtenerDatosFacturaEmitida = true
@@ -3080,7 +3152,7 @@ fun IniciarInterfazFacturacion(
 
             ){
                 Text(
-                    text = "#$codUsuario _ $nombreUsuario _ $nombreEmpresa",
+                    text = "$nombreUsuario _ $nombreEmpresa _ #$codUsuario",
                     color = Color.White,
                     fontFamily = fontAksharPrincipal,
                     fontWeight = FontWeight.Light,
@@ -3748,6 +3820,7 @@ fun IniciarInterfazFacturacion(
                         BButton(
                             text = "Cambiar Moneda",
                             onClick = {
+                                if(!tienePermiso("008")) return@BButton mostrarMensajeError("No posee el permiso 008 para facturar en otra moneda.")
                                 iniciarMenuCambiarMoneda = true
                                 iniciarMenuOpcionesProforma = false
                             },
@@ -3758,9 +3831,11 @@ fun IniciarInterfazFacturacion(
                         BButton(
                             text = "Cambiar Tipo de Precio",
                             onClick = {
-                                nuevoTipoPrecio = tipoPrecio
-                                iniciarMenuCambiarPrecio = true
-                                iniciarMenuOpcionesProforma = false
+                                return@BButton mostrarMensajeError("Esta opción está en desarrollo...")
+//                                if(!tienePermiso("005")) return@BButton mostrarMensajeError("No posee el permiso 005 para cambiar el tipo precio de venta.")
+//                                nuevoTipoPrecio = tipoPrecio
+//                                iniciarMenuCambiarPrecio = true
+//                                iniciarMenuOpcionesProforma = false
                             },
                             textSize = obtenerEstiloBodyBig(),
                             modifier = Modifier.fillMaxWidth(),
@@ -3769,6 +3844,9 @@ fun IniciarInterfazFacturacion(
                         BButton(
                             text = "Aplicar Descuento",
                             onClick = {
+                                if(!tienePermiso("004")) return@BButton mostrarMensajeError("No posee el permiso 004 para aplicar descuento global.")
+                                if(!tienePermiso("002")) return@BButton mostrarMensajeError("No posee el permiso 002 para aplicar descuento a articulos")
+                                if(!tienePermiso("023")) return@BButton mostrarMensajeError("No posee el permiso 023 para dar decuentos ilimitados.")
                                 nuevoPorcentajeDescuento = descuento
                                 iniciarMenuAplicarDescuento = true
                                 iniciarMenuOpcionesProforma = false
@@ -4033,6 +4111,15 @@ fun IniciarInterfazFacturacion(
                                 text =  if (seleccionarTodos) "Deseleccionar todos" else "Seleccionar todos",
                                 onClick = {
                                     seleccionarTodos = !seleccionarTodos
+                                    if (seleccionarTodos) {
+                                        listaArticulosProforma.forEach { articulo ->
+                                            if (!listaArticulosSeleccionados.contains(articulo)) {
+                                                listaArticulosSeleccionados.add(articulo)
+                                            }
+                                        }
+                                    } else {
+                                        listaArticulosSeleccionados.clear()
+                                    }
                                 },
                                 objetoAdaptardor = objetoAdaptardor,
                                 modifier = Modifier.weight(1f),
@@ -4110,17 +4197,6 @@ fun IniciarInterfazFacturacion(
                                             isArticuloVisible = true
                                         }
 
-                                        LaunchedEffect(seleccionarTodos) {
-                                            if (seleccionarTodos) {
-                                                listaArticulosProforma.forEach { articulo ->
-                                                    if (!listaArticulosSeleccionados.contains(articulo)) {
-                                                        listaArticulosSeleccionados.add(articulo)
-                                                    }
-                                                }
-                                            } else {
-                                                listaArticulosSeleccionados.clear()
-                                            }
-                                        }
 
                                         AnimatedVisibility(
                                             visible = isArticuloVisible,
@@ -4136,6 +4212,7 @@ fun IniciarInterfazFacturacion(
                                                         } else {
                                                             listaArticulosSeleccionados.remove(articulo)
                                                         }
+                                                        seleccionarTodos = listaArticulosProforma.size == listaArticulosSeleccionados.size
                                                     }
                                                     .fillMaxWidth()
                                                     .padding(vertical = objetoAdaptardor.ajustarAltura(2))
@@ -4148,6 +4225,7 @@ fun IniciarInterfazFacturacion(
                                                         } else {
                                                             listaArticulosSeleccionados.remove(articulo)
                                                         }
+                                                        seleccionarTodos = listaArticulosProforma.size == listaArticulosSeleccionados.size
                                                     },
                                                     modifier = Modifier.weight(0.2f).scale(0.7f),
                                                     colors = CheckboxDefaults.colors(
@@ -4222,9 +4300,10 @@ fun IniciarInterfazFacturacion(
                             horizontalArrangement = Arrangement.spacedBy(objetoAdaptardor.ajustarAncho(8))
                         ){
                             BButton(
-                                text =  "Cancelar",
+                                text = if(iniciarMenuAplicarDescuento) "Aplicar" else "Cambiar",
                                 onClick = {
-                                    iniciarMenuOpcionesProforma = true
+                                    if (listaArticulosSeleccionados.isEmpty()) return@BButton mostrarMensajeError("Seleccione Artículos para continuar.")
+                                    if (iniciarMenuAplicarDescuento) aplicarDescuento = true else mostrarMensajeError("Esta opción está en desarrollo...")
                                     iniciarMenuAplicarDescuento = false
                                     iniciarMenuCambiarPrecio = false
                                 },
@@ -4234,10 +4313,9 @@ fun IniciarInterfazFacturacion(
                                 backgroundColor = Color.Red
                             )
                             BButton(
-                                text = if(iniciarMenuAplicarDescuento) "Aplicar" else "Cambiar",
+                                text =  "Cancelar",
                                 onClick = {
-                                    if (listaArticulosSeleccionados.isEmpty()) return@BButton mostrarMensajeError("Selecciones Artículos para continuar.")
-                                    if (iniciarMenuAplicarDescuento) aplicarDescuento = true else mostrarMensajeError("Esta opción está en desarrollo...")
+                                    iniciarMenuOpcionesProforma = true
                                     iniciarMenuAplicarDescuento = false
                                     iniciarMenuCambiarPrecio = false
                                 },
@@ -4701,7 +4779,7 @@ fun IniciarInterfazFacturacion(
         }
     }
 
-    if(iniciarMenuConfComoProforma) {
+    if (iniciarMenuConfComoProforma) {
 
         AlertDialog(
             modifier = Modifier.background(Color.White),
@@ -4742,7 +4820,8 @@ fun IniciarInterfazFacturacion(
                             objetoAdaptardor = objetoAdaptardor,
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .wrapContentHeight()
+                                .wrapContentHeight(),
+                            fontSize = obtenerEstiloBodyMedium()
                         )
                     }
                 }
@@ -4774,7 +4853,7 @@ fun IniciarInterfazFacturacion(
         )
     }
 
-    if(iniciarPantallaEstadoImpresion) {
+    if (iniciarPantallaEstadoImpresion) {
         var isMenuVisible by remember { mutableStateOf(false) }
 
         LaunchedEffect(Unit) {
@@ -4860,10 +4939,9 @@ fun IniciarInterfazFacturacion(
                                 horizontalArrangement = Arrangement.spacedBy(objetoAdaptardor.ajustarAncho(8))
                             ){
                                 BButton(
-                                    text = if (estadoProforma == "2") "Salir" else "Continuar",
+                                    text = "Salir",
                                     onClick = {
                                         iniciarPantallaEstadoImpresion = false
-                                        if (estadoProforma == "2") return@BButton
                                         numeroProforma = ""
                                         actualizarDatosProforma = true
                                     },
@@ -4884,10 +4962,11 @@ fun IniciarInterfazFacturacion(
                                 BButton(
                                     text = "Impresora",
                                     onClick = {
-                                        if(gestorImpresora.validarConexion(context)){
+                                        coroutineScope.launch {
+                                            if(!gestorImpresora.validarConexion(context)) return@launch
                                             gestorImpresora.deconectar(context)
+                                            gestorImpresora.reconectar(context)
                                         }
-                                        gestorImpresora.reconectar(context)
                                     },
                                     textSize = obtenerEstiloBodyBig(),
                                     objetoAdaptardor = objetoAdaptardor,
@@ -4999,6 +5078,7 @@ fun IniciarInterfazFacturacion(
     )
 }
 
+@RequiresApi(Build.VERSION_CODES.S)
 @Composable
 @Preview
 private fun Preview(){

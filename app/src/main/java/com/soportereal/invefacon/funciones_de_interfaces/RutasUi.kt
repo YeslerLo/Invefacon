@@ -75,8 +75,7 @@ sealed class RutasPantallasMenuPrincipal(
     val ruta: String,
     val titulo: String,
     val icono: ImageVector
-)
-{
+) {
     data object PantallaInicio: RutasPantallasMenuPrincipal(
         ruta = "PantallaInicio",
         titulo = "Inicio",
@@ -95,6 +94,7 @@ sealed class RutasPantallasMenuPrincipal(
 }
 
 
+
 @SuppressLint("ContextCastToActivity")
 @Composable
 fun NavegacionPantallas(
@@ -107,7 +107,6 @@ fun NavegacionPantallas(
     guardarParametroSiNoExiste(contexto, "nombreUsuario", "0")
     guardarParametroSiNoExiste(contexto, "nombreEmpresa", "0")
     guardarParametroSiNoExiste(contexto, "codUsuario", "0")
-    guardarParametroSiNoExiste(contexto, "macImpresora", "0")
     Box(
         modifier = Modifier.fillMaxSize()
     ){
@@ -443,6 +442,8 @@ fun NavegacionPantallas(
                         requireNotNull(backStackEntry.arguments?.getString("codUsuario"))
                     val nombreUsuario =
                         requireNotNull(backStackEntry.arguments?.getString("nombreUsuario"))
+                    val activity = LocalContext.current as Activity
+                    activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
 
                     IniciarInterfazFacturacion(
                         token = token,
@@ -531,7 +532,7 @@ fun NavHostPantallasMenuPrincipal(
             ) {
                 IniciarInterfazAjustesImpresora(
                     navController = navControllerPantallasMenuPrincipal,
-                    nombreEmpresa
+                    nombreEmpresa, codUsuario
                 )
             }
         }

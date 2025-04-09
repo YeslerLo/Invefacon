@@ -3,13 +3,24 @@ package com.soportereal.invefacon.interfaces.pantallas_principales.ajustes
 import android.Manifest
 import android.annotation.SuppressLint
 import android.content.pm.PackageManager
+import android.os.Build
+import android.widget.Toast
+import androidx.annotation.RequiresApi
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
@@ -19,9 +30,12 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.FormatAlignLeft
 import androidx.compose.material.icons.filled.ArrowBackIosNew
 import androidx.compose.material.icons.filled.Circle
 import androidx.compose.material.icons.filled.Print
@@ -30,8 +44,16 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -49,21 +71,28 @@ import androidx.core.app.ActivityCompat
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.soportereal.invefacon.R
+import com.soportereal.invefacon.funciones_de_interfaces.BBasicTextField
 import com.soportereal.invefacon.funciones_de_interfaces.BButton
+import com.soportereal.invefacon.funciones_de_interfaces.ParClaveValor
 import com.soportereal.invefacon.funciones_de_interfaces.TText
+import com.soportereal.invefacon.funciones_de_interfaces.actualizarParametro
 import com.soportereal.invefacon.funciones_de_interfaces.gestorImpresora
+import com.soportereal.invefacon.funciones_de_interfaces.obtenerParametro
 import com.soportereal.invefacon.interfaces.FuncionesParaAdaptarContenido
 import com.soportereal.invefacon.interfaces.obtenerEstiloBodyBig
+import com.soportereal.invefacon.interfaces.obtenerEstiloBodySmall
 import com.soportereal.invefacon.interfaces.obtenerEstiloTitleBig
 import com.soportereal.invefacon.interfaces.obtenerEstiloTitleSmall
 import com.soportereal.invefacon.interfaces.pantallas_principales.objetoEstadoPantallaCarga
 
 
+@RequiresApi(Build.VERSION_CODES.S)
 @SuppressLint("MissingPermission")
 @Composable
 fun IniciarInterfazAjustesImpresora (
     navController: NavController,
-    nombreEmpresa : String
+    nombreEmpresa : String,
+    codUsuario : String
 ){
     val fontAksharPrincipal = FontFamily(Font(R.font.akshar_medium))
     val configuration = LocalConfiguration.current
@@ -72,6 +101,10 @@ fun IniciarInterfazAjustesImpresora (
     val dpFontPantalla= configuration.fontScale
     val objetoAdaptardor= FuncionesParaAdaptarContenido(dpAltoPantalla, dpAnchoPantalla, dpFontPantalla)
     val context = LocalContext.current
+    var iniciarMenuParametrosImpresora by remember { mutableStateOf(false) }
+    var valorImpresionActiva by remember { mutableStateOf( obtenerParametro(context, "isImpresionActiva$codUsuario$nombreEmpresa")) }
+    gestorImpresora.PedirPermisos(context)
+
 
     ConstraintLayout(
         modifier = Modifier
@@ -211,34 +244,50 @@ fun IniciarInterfazAjustesImpresora (
 
             }
             HorizontalDivider()
-            Row {
-                TText(
-                    text = "Impresoras disponibles:",
-                    textAlign = TextAlign.Center,
-                    fontSize = obtenerEstiloTitleBig()
+            Row(
+                horizontalArrangement = Arrangement.End,
+                modifier = Modifier.fillMaxWidth()
+            ){
+                BButton(
+                    text = "Parametros",
+                    objetoAdaptardor = objetoAdaptardor,
+                    onClick = {
+                        iniciarMenuParametrosImpresora = true
+                    },
+                    textSize = obtenerEstiloBodyBig(),
+                    modifier = Modifier
+                        .height(objetoAdaptardor.ajustarAltura(35))
+                        .padding(4.dp)
                 )
-                Spacer( modifier = Modifier.weight(1f))
                 BButton(
                     text = "Buscar",
                     objetoAdaptardor = objetoAdaptardor,
                     onClick = {
+                        if (valorImpresionActiva != "1") return@BButton Toast.makeText(context, "La impresión está inactiva.", Toast.LENGTH_SHORT).show()
                         gestorImpresora.buscar(context)
                     },
                     textSize = obtenerEstiloBodyBig(),
-                    modifier = Modifier.height(objetoAdaptardor.ajustarAltura(35))
+                    modifier = Modifier
+                        .height(objetoAdaptardor.ajustarAltura(35))
+                        .padding(4.dp)
                 )
             }
-
+            TText(
+                text = "Impresoras disponibles:",
+                textAlign = TextAlign.Start,
+                fontSize = obtenerEstiloTitleBig()
+            )
             LazyColumn(
                 modifier = Modifier
                     .height(objetoAdaptardor.ajustarAltura(400))
             ){
-                if(gestorImpresora.listaImpresoras?.isNotEmpty() == true){
-                    items(gestorImpresora.listaImpresoras!!){ impresora ->
+                if(gestorImpresora.listaImpresoras.isNotEmpty()){
+                    items(gestorImpresora.listaImpresoras){ impresora ->
                         if (ActivityCompat.checkSelfPermission(context, Manifest.permission.BLUETOOTH_CONNECT) == PackageManager.PERMISSION_GRANTED) {
 
                             Button(
                                 onClick = {
+                                    if (valorImpresionActiva != "1") return@Button Toast.makeText(context, "La impresión está inactiva.", Toast.LENGTH_SHORT).show()
                                     gestorImpresora.conexion = impresora
                                     gestorImpresora.conectar(context,impresora.device.address,impresora.device.name)
                                     gestorImpresora.dispositivoActual = impresora
@@ -288,11 +337,129 @@ fun IniciarInterfazAjustesImpresora (
         }
         objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
     }
+
+    if (iniciarMenuParametrosImpresora){
+        var caracteresPorLinea by remember { mutableStateOf( obtenerParametro(context, "cantidadCaracPorLineaImpre")) }
+        var isImpresionActiva by remember { mutableStateOf(valorImpresionActiva=="1") }
+        var isMenuVisible by remember { mutableStateOf(false) }
+
+        LaunchedEffect(Unit) {
+            isMenuVisible = true
+        }
+
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black.copy(alpha = 0.5f))
+                .clickable(enabled = false) {},
+            contentAlignment = Alignment.Center
+        ) {
+            AnimatedVisibility(
+                visible = isMenuVisible,
+                enter = fadeIn(animationSpec = tween(500)) + slideInVertically(initialOffsetY = { it }),
+                exit = fadeOut(animationSpec = tween(500)) + slideOutVertically(targetOffsetY = { it })
+            ) {
+                Surface(
+                    modifier = Modifier
+                        .wrapContentWidth(Alignment.CenterHorizontally)
+                        .wrapContentHeight()
+                        .align(Alignment.Center),
+                    shape = RoundedCornerShape(16.dp),
+                    color = Color.White
+                ) {
+                    Box(
+                        modifier = Modifier.padding(objetoAdaptardor.ajustarAltura(24)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(
+                            verticalArrangement = Arrangement.spacedBy(objetoAdaptardor.ajustarAltura(8)),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text(
+                                "Parametros Impresora",
+                                fontFamily = fontAksharPrincipal,
+                                fontWeight = FontWeight.Medium,
+                                fontSize = objetoAdaptardor.ajustarFont(27),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                textAlign = TextAlign.Center,
+                                color = Color.Black
+                            )
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    "Impresión Activa: ",
+                                    fontFamily = fontAksharPrincipal,
+                                    fontWeight = FontWeight.Medium,
+                                    fontSize = obtenerEstiloBodySmall(),
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    textAlign = TextAlign.Center,
+                                    color = Color.Black
+                                )
+                                Switch(
+                                    checked = isImpresionActiva,
+                                    onCheckedChange = {
+                                        actualizarParametro(context, "isImpresionActiva$codUsuario$nombreEmpresa", if(valorImpresionActiva == "0") "1" else "0")
+                                        valorImpresionActiva = obtenerParametro(context, "isImpresionActiva$codUsuario$nombreEmpresa")
+                                        isImpresionActiva = valorImpresionActiva == "1"
+                                    },colors = SwitchDefaults.colors(
+                                        checkedTrackColor = Color(0xFF1D3FA4)
+                                    )
+                                )
+                            }
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ){
+                                Text(
+                                    "Caracteres por línea: ",
+                                    fontFamily = fontAksharPrincipal,
+                                    fontWeight = FontWeight.Medium,
+                                    fontSize = obtenerEstiloBodySmall(),
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    textAlign = TextAlign.Center,
+                                    color = Color.Black
+                                )
+                                BBasicTextField(
+                                    value = caracteresPorLinea,
+                                    onValueChange = {
+                                        actualizarParametro(context, "cantidadCaracPorLineaImpre", it)
+                                        caracteresPorLinea = obtenerParametro(context, "cantidadCaracPorLineaImpre")
+                                    },
+                                    objetoAdaptardor = objetoAdaptardor,
+                                    icono = Icons.AutoMirrored.Filled.FormatAlignLeft,
+                                    alto = 32,
+                                    ancho = 100,
+                                    opciones = listOf(ParClaveValor("32","32"),
+                                        ParClaveValor("48","48")
+                                    )
+                                )
+                            }
+                            BButton(
+                                text = "Salir",
+                                onClick = {
+                                    iniciarMenuParametrosImpresora= false
+                                },
+                                objetoAdaptardor = objetoAdaptardor,
+                                modifier = Modifier.width(objetoAdaptardor.ajustarAncho(120)),
+                                backgroundColor = Color.Red
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
 
+@RequiresApi(Build.VERSION_CODES.S)
 @Preview
 @Composable
 private fun Preview(){
     val nav = rememberNavController()
-    IniciarInterfazAjustesImpresora(nav,"")
+    IniciarInterfazAjustesImpresora(nav,"", "")
 }
