@@ -48,9 +48,9 @@ import com.soportereal.invefacon.funciones_de_interfaces.NavHostPantallasMenuPri
 import com.soportereal.invefacon.funciones_de_interfaces.RutasPantallasMenuPrincipal.PantallaAjustes
 import com.soportereal.invefacon.funciones_de_interfaces.RutasPantallasMenuPrincipal.PantallaInicio
 import com.soportereal.invefacon.funciones_de_interfaces.RutasPantallasMenuPrincipal.PantallaSalir
-import com.soportereal.invefacon.interfaces.FuncionesParaAdaptarContenido
-import com.soportereal.invefacon.interfaces.obtenerEstiloLabelBig
-import com.soportereal.invefacon.interfaces.obtenerEstiloLabelSmall
+import com.soportereal.invefacon.funciones_de_interfaces.FuncionesParaAdaptarContenido
+import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloLabelBig
+import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloLabelSmall
 
 
 @SuppressLint("SourceLockedOrientationActivity")
@@ -70,7 +70,7 @@ fun IniciarInterfazMenuPrincipalCompact(
     val dpFontPantalla= configuration.fontScale
     val objetoAdaptardor= FuncionesParaAdaptarContenido(dpAltoPantalla, dpAnchoPantalla, dpFontPantalla)
     val navControllerPantallasMenuPrincipal = rememberNavController()
-    val isCargandoPantallaMenuPrincipal by objetoEstadoPantallaCarga.isCargandoPantalla.collectAsState()
+    val isCargandoPantallaMenuPrincipal by gestorEstadoPantallaCarga.isCargandoPantalla.collectAsState()
     val mostrarRespuestaApi by estadoRespuestaApi.mostrarDatosRespuestaApi.collectAsState()
 
     Box(modifier = Modifier

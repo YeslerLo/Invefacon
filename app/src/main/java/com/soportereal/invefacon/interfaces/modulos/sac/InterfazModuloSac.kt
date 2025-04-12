@@ -109,19 +109,21 @@ package com.soportereal.invefacon.interfaces.modulos.sac
  import com.soportereal.invefacon.funciones_de_interfaces.obtenerDatosClienteByCedula
  import com.soportereal.invefacon.funciones_de_interfaces.obtenerParametro
  import com.soportereal.invefacon.funciones_de_interfaces.validarExitoRestpuestaServidor
- import com.soportereal.invefacon.interfaces.FuncionesParaAdaptarContenido
+ import com.soportereal.invefacon.funciones_de_interfaces.FuncionesParaAdaptarContenido
  import com.soportereal.invefacon.interfaces.modulos.clientes.Cliente
  import com.soportereal.invefacon.interfaces.modulos.clientes.ProcesarDatosModuloClientes
  import com.soportereal.invefacon.interfaces.modulos.clientes.quitarTildesYMinusculas
- import com.soportereal.invefacon.interfaces.obtenerEstiloBodyBig
- import com.soportereal.invefacon.interfaces.obtenerEstiloBodyMedium
- import com.soportereal.invefacon.interfaces.obtenerEstiloBodySmall
- import com.soportereal.invefacon.interfaces.obtenerEstiloLabelBig
- import com.soportereal.invefacon.interfaces.obtenerEstiloLabelSmall
- import com.soportereal.invefacon.interfaces.obtenerEstiloTitleBig
- import com.soportereal.invefacon.interfaces.obtenerEstiloTitleSmall
+ import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloBodyBig
+ import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloBodyMedium
+ import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloBodySmall
+ import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloLabelBig
+ import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloLabelSmall
+ import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloTitleBig
+ import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloTitleSmall
+ import com.soportereal.invefacon.funciones_de_interfaces.validacionCedula
+ import com.soportereal.invefacon.funciones_de_interfaces.validarCorreo
  import com.soportereal.invefacon.interfaces.pantallas_principales.estadoRespuestaApi
- import com.soportereal.invefacon.interfaces.pantallas_principales.objetoEstadoPantallaCarga
+ import com.soportereal.invefacon.interfaces.pantallas_principales.gestorEstadoPantallaCarga
  import kotlinx.coroutines.CoroutineScope
  import kotlinx.coroutines.Dispatchers
  import kotlinx.coroutines.Job
@@ -232,7 +234,7 @@ fun InterfazModuloSac(
 
     LaunchedEffect(iniciarPantallaSacComanda) {
         if (iniciarPantallaSacComanda){
-            objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(true)
+            gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(true)
             delay(500)
             navController.navigate(
                 RutasPatallas.SacComanda.ruta+"/"+mesaActual.nombre+"/"+mesaActual.salon+
@@ -250,7 +252,7 @@ fun InterfazModuloSac(
             if (nombreNuevaMesa.isEmpty() && nombreSalonNuevaMesa.isEmpty()){
                 mostrarMensajeError("Complete los campos")
             }else{
-                objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(true)
+                gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(true)
                 val result = objectoProcesadorDatosApi.crearNuevaMesa(nombreNuevaMesa.uppercase(), nombreSalonNuevaMesa.uppercase())
                 if (result!=null){
                     estadoRespuestaApi.cambiarEstadoRespuestaApi(mostrarRespuesta = true, datosRespuesta = result)
@@ -326,7 +328,7 @@ fun InterfazModuloSac(
                 listaSalonesAtuales = listaSalones
             }
             if (isPrimeraVezCargando){
-                objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
+                gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
                 isPrimeraVezCargando=false
                 isCargandoMesas=false
             }
@@ -391,7 +393,7 @@ fun InterfazModuloSac(
                 if(listaSalones!= listaSalonesAtuales){
                     listaSalonesAtuales = listaSalones
                 }
-                objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
+                gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
                 actualizarListaMesas=false
             }
             isCargandoMesas = false
@@ -402,7 +404,7 @@ fun InterfazModuloSac(
         if(iniciarMenuMesaComandada && !iniciarMenuMoverArticulo) {
             articulosComandados.clear()
             opcionesSubCuentas.value.clear()
-            objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(true)
+            gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(true)
             val result = objectoProcesadorDatosApi.obtenerDatosMesaComandada(mesaActual.nombre)
             if (result != null) {
                 if (validarExitoRestpuestaServidor(result)
@@ -465,7 +467,7 @@ fun InterfazModuloSac(
                     iniciarMenuMesaComandada=false
                 }
             }
-            objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
+            gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
             iniciarCalculoMontos= true
         }
     }
@@ -492,7 +494,7 @@ fun InterfazModuloSac(
 
     LaunchedEffect(agregarArticulo, eliminarArticulo) {
         if(agregarArticulo  || (eliminarArticulo&& anotacionComanda.isNotEmpty())){
-            objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(true)
+            gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(true)
             val jsonComandaDetalle = JSONArray()
             val codigo=articuloActualSeleccionado.Cod_Articulo
             val cantidad= if (agregarArticulo) cantidadArticulos else -cantidadArticulos
@@ -555,7 +557,7 @@ fun InterfazModuloSac(
                 mostrarMensajeError("Complete los campos para continuar")
                 quitarMesa=false
             }else{
-                objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(true)
+                gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(true)
                 val result = objectoProcesadorDatosApi.quitarMesa(mesaActual.nombre, passwordIngresada, codUsuarioIngresado)
                 if (result!=null){
                     estadoRespuestaApi.cambiarEstadoRespuestaApi(mostrarRespuesta = true, datosRespuesta = result)
@@ -566,7 +568,7 @@ fun InterfazModuloSac(
                         codUsuarioIngresado=codUsuario
                         passwordIngresada=""
                     }else{
-                        objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
+                        gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
                     }
                 }
                 quitarMesa= false
@@ -576,7 +578,7 @@ fun InterfazModuloSac(
 
     LaunchedEffect(pedirCuenta) {
         if(pedirCuenta){
-            objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(true)
+            gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(true)
             val result = objectoProcesadorDatosApi.pedirCuenta(mesaActual.nombre, subCuentaSeleccionada)
             if (result!=null){
                 estadoRespuestaApi.cambiarEstadoRespuestaApi(mostrarRespuesta = true, datosRespuesta = result)
@@ -584,7 +586,7 @@ fun InterfazModuloSac(
                     iniciarMenuMesaComandada = false
                     actualizarListaMesas= true
                 }else{
-                    objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
+                    gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
                 }
             }
         }
@@ -593,14 +595,14 @@ fun InterfazModuloSac(
 
     LaunchedEffect(reactivarCuenta) {
         if(reactivarCuenta){
-            objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(true)
+            gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(true)
             val result = objectoProcesadorDatosApi.reactivarCuenta(mesaActual.nombre, subCuentaSeleccionada)
             if (result!=null){
                 estadoRespuestaApi.cambiarEstadoRespuestaApi(mostrarRespuesta = true, datosRespuesta = result)
                 if (result.getString("status")=="ok" && result.getString("code")=="200"){
                     actualizarListaMesas= true
                 }else{
-                    objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
+                    gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
                 }
             }
         }
@@ -609,12 +611,12 @@ fun InterfazModuloSac(
 
     LaunchedEffect(actualizarSubCuentasYMesas, mesaDestino) {
         if(actualizarSubCuentasYMesas){
-            objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(true)
+            gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(true)
             var result = objectoProcesadorDatosApi.obetenerNombresMesas()
             if (result!=null){
                 estadoRespuestaApi.cambiarEstadoRespuestaApi(mostrarSoloRespuestaError = true, datosRespuesta = result)
                 if (result.getString("status")!="ok"){
-                    objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
+                    gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
                 }else{
                     val data= result.getJSONObject("data")
                     val mesas= data.getJSONArray("Mesas")
@@ -634,7 +636,7 @@ fun InterfazModuloSac(
                 if (result!= null){
                     estadoRespuestaApi.cambiarEstadoRespuestaApi(mostrarSoloRespuestaError = true, datosRespuesta = result)
                     if (result.getString("status")!="ok"){
-                        objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
+                        gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
                     }else{
                         val data= result.getJSONObject("data")
                         val subCuentas= data.getJSONArray("Subcuentas")
@@ -648,7 +650,7 @@ fun InterfazModuloSac(
                 }
             }
             if (mesaDestino.isNotEmpty() || subCuentaDestinoArticulo.isNotEmpty()){
-                objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
+                gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
                 actualizarSubCuentasYMesas = false
             }
         }
@@ -656,7 +658,7 @@ fun InterfazModuloSac(
 
     LaunchedEffect(moverArticulo) {
         if(moverArticulo){
-            objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(true)
+            gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(true)
             val result= objectoProcesadorDatosApi.moverArticulo(
                 codigoArticulo = articuloActualSeleccionado.Cod_Articulo,
                 cantidadArticulos = cantidadArticulos.toString(),
@@ -686,7 +688,7 @@ fun InterfazModuloSac(
                 mostrarMensajeError("Complete los campos para continuar")
                 moverMesa=false
             }else{
-                objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(true)
+                gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(true)
                 val result = objectoProcesadorDatosApi.moverMesa(
                     mesa = mesaActual.nombre,
                     mesaDestino = mesaDestino,
@@ -701,7 +703,7 @@ fun InterfazModuloSac(
                         iniciarMenuMesaComandada = false
                         iniciarMenuMoverMesa= false
                     }else{
-                        objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
+                        gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
                     }
                 }
                 mesaDestino=""
@@ -739,12 +741,12 @@ fun InterfazModuloSac(
 
     LaunchedEffect(agregarImpuestoServicio) {
         if(agregarImpuestoServicio){
-            objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(true)
+            gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(true)
             val result = objectoProcesadorDatosApi.aplicarImp2( nombreMesa= mesaActual.nombre)
             if (result!= null){
                 estadoRespuestaApi.cambiarEstadoRespuestaApi(mostrarRespuesta = true, datosRespuesta = result)
             }
-            objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
+            gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
         }
         agregarImpuestoServicio= false
     }
@@ -789,7 +791,7 @@ fun InterfazModuloSac(
                     listaClientesActuales=listaClientesActuales+listaClientes
                 }
                 isCargandoClientes=false
-                objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
+                gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
             }
         }
     }
@@ -797,7 +799,7 @@ fun InterfazModuloSac(
     LaunchedEffect(iniciarBusquedaClienteByCedula) {
         if(iniciarBusquedaClienteByCedula){
             if (cedulaCliente.length >=9){
-                objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(true)
+                gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(true)
                 val result = obtenerDatosClienteByCedula(numeroCedula = cedulaCliente)
                 if (result!=null){
                     if ((result.optString("resultcount", "0")) == "1"){
@@ -808,7 +810,7 @@ fun InterfazModuloSac(
                         mostrarMensajeError("El cliente no encontrado")
                     }
                 }
-                objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
+                gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
             }else{
                 mostrarMensajeError("Ingrese una cedula valida")
             }
@@ -818,7 +820,7 @@ fun InterfazModuloSac(
 
     LaunchedEffect(agregarCliente) {
         if(agregarCliente){
-            objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(true)
+            gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(true)
             if (
                 nombreCliente.isNotEmpty() &&
                 telefonoCliente.isNotEmpty() &&
@@ -853,11 +855,11 @@ fun InterfazModuloSac(
                         subCuentaSeleccionada="JUNTOS"
                         iniciarPantallaSacComanda = true
                     }else{
-                        objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
+                        gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
                     }
                 }
             }else{
-                objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
+                gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
                 mostrarMensajeError("Complete los campos de datos validos")
             }
         }
@@ -870,7 +872,7 @@ fun InterfazModuloSac(
                 mostrarMensajeError("Complete los campos para continuar")
                 agregarImpuestoServicio=false
             }else{
-                objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(true)
+                gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(true)
                 val result = objectoProcesadorDatosApi.cambiarPrmImp2(passwordIngresada, codUsuarioIngresado)
                 if (result!=null){
                     estadoRespuestaApi.cambiarEstadoRespuestaApi(mostrarRespuesta = true, datosRespuesta = result)
@@ -880,7 +882,7 @@ fun InterfazModuloSac(
                         estadoImp2 = valorPrmImp2 != "0"
                     }
                 }
-                objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
+                gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
                 passwordIngresada=""
                 codUsuarioIngresado=codUsuario
             }
@@ -2757,7 +2759,8 @@ fun InterfazModuloSac(
                                                 objetoAdaptardor = objetoAdaptardor,
                                                 alto = 60,
                                                 ancho = 230,
-                                                icono = Icons.Filled.Badge
+                                                icono = Icons.Filled.Badge,
+                                                soloPermitirValoresNumericos = true
                                             )
                                             Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(8)))
                                             if(nombreCliente.isEmpty()){
@@ -2801,7 +2804,7 @@ fun InterfazModuloSac(
                                             maxLines = 1,
                                             overflow = TextOverflow.Ellipsis,
                                             textAlign = TextAlign.Center,
-                                            color = Color.Black
+                                            color = Color.Black,
                                         )
                                         BBasicTextField(
                                             value = telefonoCliente,
@@ -2812,7 +2815,8 @@ fun InterfazModuloSac(
                                             objetoAdaptardor = objetoAdaptardor,
                                             alto = 60,
                                             ancho = 360,
-                                            icono = Icons.Filled.Phone
+                                            icono = Icons.Filled.Phone,
+                                            soloPermitirValoresNumericos = true
                                         )
                                     }
                                     Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(8)))
@@ -2858,7 +2862,8 @@ fun InterfazModuloSac(
                                             objetoAdaptardor = objetoAdaptardor,
                                             alto = 60,
                                             ancho = 360,
-                                            icono = Icons.Filled.Place
+                                            icono = Icons.Filled.Place,
+                                            cantidadLineas = 12
                                         )
                                         Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(40)))
 
@@ -2877,7 +2882,10 @@ fun InterfazModuloSac(
                                                 color = 0xFF244BC0,
                                                 onClick = {
                                                     if(isNuevoCliente){
+                                                        if (!validarCorreo(correoCliente)) return@AgregarBt
                                                         agregarCliente = true
+                                                    }else{
+                                                        mostrarMensajeError("Esta opcion esta en desarrollo.")
                                                     }
                                                 }
                                             )
@@ -3280,7 +3288,7 @@ internal fun BxContendorDatosMesa(
 
     LaunchedEffect(iniciarPantallaSacComanda) {
         if (iniciarPantallaSacComanda && datosMesa.estado=="0"){
-            objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(true)
+            gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(true)
             iniciarMenuDetalleComanda(false)
             delay(500)
             navControllerPantallasModuloSac?.navigate(

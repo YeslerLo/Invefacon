@@ -1,4 +1,4 @@
-package com.soportereal.invefacon.interfaces
+package com.soportereal.invefacon.funciones_de_interfaces
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalConfiguration

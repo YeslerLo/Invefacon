@@ -46,6 +46,7 @@ import java.io.InputStream
 import java.net.URL
 import java.util.Calendar
 import java.util.Locale
+import java.util.regex.Pattern
 
 fun mostrarMensajeError(mensaje: String){
     val jsonObject = JSONObject(
@@ -588,7 +589,62 @@ fun tienePermiso(codPermiso:String): Boolean{
     return listaPermisos.find { it.clave == codPermiso } != null
 }
 
+fun obtenerValorParametro(codParametro: String, valorAuxiliar : String): String{
+    val parametro = listaParametros.find { it.clave == codParametro }
+    return if(parametro !=null){
+        parametro.valor
+    }else{
+        mostrarMensajeError("EL PARAMETRO $codParametro NO SE LOGRO ECONTRAR")
+        valorAuxiliar
+    }
+}
+
 var listaPermisos: List<ParClaveValor> = listOf()
+
+var listaParametros : List<ParClaveValor> = listOf()
+
+fun validarCorreo(correo: String): Boolean{
+    val estructuraParaValidacionCorreo = "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z0-9]{2,}$"
+    val objetoValidadorCorreo = Pattern.compile(estructuraParaValidacionCorreo)
+    return if (objetoValidadorCorreo.matcher(correo).matches()){
+        true
+    }else{
+        mostrarMensajeError("El Correo Electrónico ingresado no es válido.")
+        false
+    }
+}
+
+fun validacionCedula(tipo: String, cedula : String):Boolean{
+    if(cedula.isEmpty()){
+        mostrarMensajeError("Ingrese un numero de Cédula")
+        return false
+    }
+    if(tipo=="01"){
+        if (cedula.length!=9){
+            mostrarMensajeError("El número de cédula ingresado no cumple con los requisitos de una cédula física válida.")
+            return false
+        }
+    }
+    if(tipo=="02"){
+        if (cedula.length!=10){
+            mostrarMensajeError("El número de cédula ingresado no cumple con los requisitos de una cédula jurídica válida.")
+            return false
+        }
+    }
+    if(tipo=="03"){
+        if (cedula.length != 11 && cedula.length != 12){
+            mostrarMensajeError("El número de cédula ingresado no cumple con los requisitos de una cédula Dimex válida.")
+            return false
+        }
+    }
+    if(tipo=="04"){
+        if (cedula.length!=10){
+            mostrarMensajeError("El número de cédula ingresado no cumple con los requisitos de una cédula Nite válida.")
+            return false
+        }
+    }
+    return true
+}
 
 
 

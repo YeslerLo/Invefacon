@@ -55,18 +55,13 @@ class ProcesarDatosModuloClientes(apiToken: String){
         formBuilder.addFormDataPart("EmailFactura", clienteModificado.EmailFactura)
         formBuilder.addFormDataPart("Email", clienteModificado.Email)
         formBuilder.addFormDataPart("EmailCobro", clienteModificado.EmailCobro)
-
-        if (clienteActual.Telefonos != clienteModificado.Telefonos) {
-            formBuilder.addFormDataPart("Telefonos", clienteModificado.Telefonos)
-        }
-
-        if (clienteActual.Direccion != clienteModificado.Direccion) {
-            formBuilder.addFormDataPart("Direccion", clienteModificado.Direccion)
-        }
-
-        if (clienteActual.TipoPrecioVenta != clienteModificado.TipoPrecioVenta) {
-            formBuilder.addFormDataPart("TipoPrecioVenta", clienteModificado.TipoPrecioVenta)
-        }
+        formBuilder.addFormDataPart("Telefonos", clienteModificado.Telefonos)
+        formBuilder.addFormDataPart("Direccion", clienteModificado.Direccion)
+        formBuilder.addFormDataPart("AgenteVentas",clienteModificado.AgenteVentas)
+        formBuilder.addFormDataPart("Cod_Moneda", clienteModificado.Cod_Moneda)
+        formBuilder.addFormDataPart("TipoIdentificacion",clienteModificado.TipoIdentificacion)
+        formBuilder.addFormDataPart("ClienteNombreComercial", clienteModificado.ClienteNombreComercial)
+        formBuilder.addFormDataPart("TipoPrecioVenta", clienteModificado.TipoPrecioVenta)
 
         if (clienteActual.Cod_Tipo_Cliente != clienteModificado.Cod_Tipo_Cliente) {
             formBuilder.addFormDataPart("Cod_Tipo_Cliente", clienteModificado.Cod_Tipo_Cliente)
@@ -81,9 +76,7 @@ class ProcesarDatosModuloClientes(apiToken: String){
         if (clienteActual.Exento != clienteModificado.Exento) {
             formBuilder.addFormDataPart("Exento",clienteModificado.Exento)
         }
-        if (clienteActual.AgenteVentas != clienteModificado.AgenteVentas) {
-            formBuilder.addFormDataPart("AgenteVentas",clienteModificado.AgenteVentas)
-        }
+
         if (clienteActual.Cod_Zona != clienteModificado.Cod_Zona) {
             formBuilder.addFormDataPart("Cod_Zona", clienteModificado.Cod_Zona)
         }
@@ -110,19 +103,9 @@ class ProcesarDatosModuloClientes(apiToken: String){
         if (clienteActual.FechaNacimiento != clienteModificado.FechaNacimiento) {
             formBuilder.addFormDataPart("FechaNacimiento", clienteModificado.FechaNacimiento)
         }
-        if (clienteActual.Cod_Moneda != clienteModificado.Cod_Moneda) {
-            formBuilder.addFormDataPart("Cod_Moneda", clienteModificado.Cod_Moneda)
-        }
-        if (clienteActual.TipoIdentificacion != clienteModificado.TipoIdentificacion) {
-            formBuilder.addFormDataPart("TipoIdentificacion",clienteModificado.TipoIdentificacion)
-        }
-        if (clienteActual.ClienteNombreComercial != clienteModificado.ClienteNombreComercial) {
-            formBuilder.addFormDataPart("ClienteNombreComercial", clienteModificado.ClienteNombreComercial)
-        }
 
         // Constuir el cuerpo del formulario
         val formBody = formBuilder.build()
-        println(formBody)
 
         return objetoFuncionesHttpInvefacon.metodoPost(formBody = formBody, apiDirectorio = "clientes/editarcliente.php")
 
@@ -136,7 +119,6 @@ class ProcesarDatosModuloClientes(apiToken: String){
             .addFormDataPart("Telefonos", datosCliente.Telefonos)
             .addFormDataPart("Direccion", datosCliente.Direccion)
             .addFormDataPart("Email", datosCliente.Email)
-            .addFormDataPart("Cedula", datosCliente.cedulaCliente)
             .addFormDataPart("TipoIdentificacion", datosCliente.TipoIdentificacion)
             .addFormDataPart("Cod_Moneda", datosCliente.Cod_Moneda)
             .addFormDataPart("TipoPrecioVenta", datosCliente.TipoPrecioVenta)
@@ -169,7 +151,7 @@ data class Cliente(
     var Nombre: String = "",
     var Telefonos: String = "",
     var Direccion: String = "",
-    var TipoPrecioVenta: String = "",
+    var TipoPrecioVenta: String = "1",
     var Cod_Tipo_Cliente: String = "",
     var Email: String = "",
     var Cedula: String= "",
@@ -185,8 +167,8 @@ data class Cliente(
     var plazo: String = "",
     var TieneCredito: String = "",
     var FechaNacimiento: String = "",
-    var Cod_Moneda: String = "",
-    var TipoIdentificacion: String = "",
+    var Cod_Moneda: String = "CRC",
+    var TipoIdentificacion: String = "01",
     var ClienteNombreComercial: String = "",
     var EmailFactura: String = "",
     var EmailCobro: String = "",

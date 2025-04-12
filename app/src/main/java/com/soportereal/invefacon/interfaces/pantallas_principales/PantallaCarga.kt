@@ -49,7 +49,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import com.google.accompanist.systemuicontroller.SystemUiController
 import com.soportereal.invefacon.R
-import com.soportereal.invefacon.interfaces.FuncionesParaAdaptarContenido
+import com.soportereal.invefacon.funciones_de_interfaces.FuncionesParaAdaptarContenido
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -70,7 +70,7 @@ fun PantallaCarga(
     val mostrarRespuestaApi by estadoRespuestaApi.mostrarDatosRespuestaApi.collectAsState()
     val mostrarSoloRespuestaError by estadoRespuestaApi.mostrarSoloRespuestaError.collectAsState()
     val datosRespuestaApi by estadoRespuestaApi.datosRespuestaApi.collectAsState()
-    val isCargandoPantallaMenuPrincipal by objetoEstadoPantallaCarga.isCargandoPantalla.collectAsState()
+    val isCargandoPantallaMenuPrincipal by gestorEstadoPantallaCarga.isCargandoPantalla.collectAsState()
     val showDialog = remember { mutableStateOf(mostrarRespuestaApi) }
     var exitoRespuestaApi by remember { mutableStateOf(false) }
 
@@ -243,7 +243,7 @@ class EstadoPantallaCarga : ViewModel() {
         _isCargandoPantalla.value = cargando
     }
 }
-val objetoEstadoPantallaCarga= EstadoPantallaCarga()
+val gestorEstadoPantallaCarga= EstadoPantallaCarga()
 
 class EstadoRespuestaApi : ViewModel(){
     private val _mostrarDatosRespuestaApi = MutableStateFlow(false)

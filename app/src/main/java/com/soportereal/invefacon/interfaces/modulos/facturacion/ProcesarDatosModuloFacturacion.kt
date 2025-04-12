@@ -230,8 +230,14 @@ class ProcesarDatosModuloFacturacion(apiToken: String)
         val apiBody = MultipartBody.Builder().setType(MultipartBody.FORM)
             .addFormDataPart("codigousuario", codUsuario)
             .build()
-        // Llama a la función `metodoPost` y devuelve el resultado
         return objetoFuncionesHttpInvefacon.metodoPost(apiBody, "seguridad/derechossistemadelusuario.php")
+    }
+
+    suspend fun obtenerParemetrosEmpresa(): JSONObject? {
+        val apiBody = MultipartBody.Builder().setType(MultipartBody.FORM)
+            .addFormDataPart("0", "0")
+            .build()
+        return objetoFuncionesHttpInvefacon.metodoPost(apiBody, "varios/parametrosempresa.php")
     }
 }
 
@@ -481,13 +487,13 @@ data class Empresa(
 
 data class Cliente(
     val Id_Cliente: String = "",
-    val Nombre: String = "",
+    var Nombre: String = "",
     val Telefonos: String = "",
-    val Direccion: String = "",
+    var Direccion: String = "",
     val Fecha: String = "",
-    val TipoPrecioVenta: String = "",
+    var TipoPrecioVenta: String = "1",
     val Cod_Tipo_Cliente: String = "",
-    val Email: String = "",
+    var Email: String = "",
     val DiaCobro: String = "",
     val Contacto: String = "",
     val Exento: String = "",
@@ -503,14 +509,14 @@ data class Cliente(
     val MontoCredito: String = "0",
     val plazo: String = "",
     val TieneCredito: String = "0",
-    val Cedula: String = "",
+    var Cedula: String = "",
     val FechaNacimiento: String = "",
-    val Cod_Moneda: String = "",
+    var Cod_Moneda: String = "CRC",
     val FechaVencimiento: String = "",
-    val TipoIdentificacion: String = "",
-    val ClienteNombreComercial: String = "",
-    val EmailFactura: String = "",
-    val EmailCobro: String = "",
+    var TipoIdentificacion: String = "01",
+    var ClienteNombreComercial: String = "",
+    var EmailFactura: String = "",
+    var EmailCobro: String = "",
     val PorcentajeInteres: String = "0"
 )
 

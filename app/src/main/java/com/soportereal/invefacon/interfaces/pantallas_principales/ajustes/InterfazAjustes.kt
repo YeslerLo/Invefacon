@@ -43,12 +43,12 @@ import androidx.navigation.compose.rememberNavController
 import com.soportereal.invefacon.R
 import com.soportereal.invefacon.funciones_de_interfaces.RutasPatallas
 import com.soportereal.invefacon.funciones_de_interfaces.TText
-import com.soportereal.invefacon.interfaces.FuncionesParaAdaptarContenido
-import com.soportereal.invefacon.interfaces.obtenerEstiloDisplayMedium
-import com.soportereal.invefacon.interfaces.obtenerEstiloDisplaySmall
-import com.soportereal.invefacon.interfaces.obtenerEstiloHeadBig
-import com.soportereal.invefacon.interfaces.obtenerEstiloTitleBig
-import com.soportereal.invefacon.interfaces.pantallas_principales.objetoEstadoPantallaCarga
+import com.soportereal.invefacon.funciones_de_interfaces.FuncionesParaAdaptarContenido
+import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloDisplayMedium
+import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloDisplaySmall
+import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloHeadBig
+import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloTitleBig
+import com.soportereal.invefacon.interfaces.pantallas_principales.gestorEstadoPantallaCarga
 
 @Composable
 fun IniciarInterfazAjustes(

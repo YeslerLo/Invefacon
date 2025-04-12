@@ -101,9 +101,9 @@ import com.soportereal.invefacon.funciones_de_interfaces.RutasPatallas
 import com.soportereal.invefacon.funciones_de_interfaces.actualizarParametro
 import com.soportereal.invefacon.funciones_de_interfaces.gestorImpresora
 import com.soportereal.invefacon.funciones_de_interfaces.obtenerParametro
-import com.soportereal.invefacon.interfaces.FuncionesParaAdaptarContenido
-import com.soportereal.invefacon.interfaces.obtenerEstiloLabelSmall
-import com.soportereal.invefacon.interfaces.pantallas_principales.objetoEstadoPantallaCarga
+import com.soportereal.invefacon.funciones_de_interfaces.FuncionesParaAdaptarContenido
+import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloLabelSmall
+import com.soportereal.invefacon.interfaces.pantallas_principales.gestorEstadoPantallaCarga
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -957,10 +957,10 @@ fun IniciarInterfazInicioSesionCompact(
 
 
         if (errorResultadoApi==null){
-            objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(true)
+            gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(true)
         }
         else{
-            objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
+            gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
         }
     }
 }

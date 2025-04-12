@@ -78,12 +78,12 @@ import com.soportereal.invefacon.funciones_de_interfaces.TText
 import com.soportereal.invefacon.funciones_de_interfaces.actualizarParametro
 import com.soportereal.invefacon.funciones_de_interfaces.gestorImpresora
 import com.soportereal.invefacon.funciones_de_interfaces.obtenerParametro
-import com.soportereal.invefacon.interfaces.FuncionesParaAdaptarContenido
-import com.soportereal.invefacon.interfaces.obtenerEstiloBodyBig
-import com.soportereal.invefacon.interfaces.obtenerEstiloBodySmall
-import com.soportereal.invefacon.interfaces.obtenerEstiloTitleBig
-import com.soportereal.invefacon.interfaces.obtenerEstiloTitleSmall
-import com.soportereal.invefacon.interfaces.pantallas_principales.objetoEstadoPantallaCarga
+import com.soportereal.invefacon.funciones_de_interfaces.FuncionesParaAdaptarContenido
+import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloBodyBig
+import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloBodySmall
+import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloTitleBig
+import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloTitleSmall
+import com.soportereal.invefacon.interfaces.pantallas_principales.gestorEstadoPantallaCarga
 
 
 @RequiresApi(Build.VERSION_CODES.S)
@@ -335,7 +335,7 @@ fun IniciarInterfazAjustesImpresora (
                 }
             }
         }
-        objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
+        gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
     }
 
     if (iniciarMenuParametrosImpresora){

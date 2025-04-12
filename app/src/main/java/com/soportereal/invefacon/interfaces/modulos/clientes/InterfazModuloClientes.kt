@@ -81,10 +81,10 @@ import com.google.accompanist.systemuicontroller.SystemUiController
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.soportereal.invefacon.R
 import com.soportereal.invefacon.funciones_de_interfaces.RutasPatallas
-import com.soportereal.invefacon.interfaces.FuncionesParaAdaptarContenido
+import com.soportereal.invefacon.funciones_de_interfaces.FuncionesParaAdaptarContenido
 import com.soportereal.invefacon.interfaces.inicio_sesion.ocultarTeclado
 import com.soportereal.invefacon.interfaces.pantallas_principales.EstadoPantallaCarga
-import com.soportereal.invefacon.interfaces.pantallas_principales.objetoEstadoPantallaCarga
+import com.soportereal.invefacon.interfaces.pantallas_principales.gestorEstadoPantallaCarga
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -141,7 +141,7 @@ internal fun IniciarInterfazModuloClientes(
 
     LaunchedEffect(iniciarPantallaAgregarClente) {
         if (iniciarPantallaAgregarClente){
-            objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(true)
+            gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(true)
             navController.navigate(RutasPatallas.ClientesAgregar.ruta+"/$token"){
                 restoreState= true
                 launchSingleTop=true
@@ -219,7 +219,7 @@ internal fun IniciarInterfazModuloClientes(
                     listaClientesActuales=listaClientesActuales+listaClientes
                     isCargandoClientes=false
                 }
-                objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
+                gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
             }
         }
 
@@ -425,7 +425,7 @@ internal fun IniciarInterfazModuloClientes(
                     AgregarBxConenedorInformacionCliente(
                         datosCliente = cliente,
                         navController = navController,
-                        estadoPantallaCarga= objetoEstadoPantallaCarga,
+                        estadoPantallaCarga= gestorEstadoPantallaCarga,
                         token = token
                     )
                 }

@@ -60,9 +60,9 @@ import androidx.navigation.NavController
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.soportereal.invefacon.R
 import com.soportereal.invefacon.funciones_de_interfaces.TextFieldMultifuncional
-import com.soportereal.invefacon.interfaces.FuncionesParaAdaptarContenido
+import com.soportereal.invefacon.funciones_de_interfaces.FuncionesParaAdaptarContenido
 import com.soportereal.invefacon.interfaces.pantallas_principales.estadoRespuestaApi
-import com.soportereal.invefacon.interfaces.pantallas_principales.objetoEstadoPantallaCarga
+import com.soportereal.invefacon.interfaces.pantallas_principales.gestorEstadoPantallaCarga
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -131,7 +131,9 @@ fun IniciarInterfazAgregarCliente(
             "EUR" to "€-Euros"
         )
     }
+
     var tipoMonedaSeleccionada by remember { mutableStateOf("CRC") }
+
     var codigoTipoIdentificacionClienteSeleccionada by remember { mutableStateOf("00") }
 
     val opcionesTipoIndentificacionCliente= remember {
@@ -281,7 +283,7 @@ fun IniciarInterfazAgregarCliente(
     LaunchedEffect(isCosultaDatasFinalizada) {
         if (isCosultaDatasFinalizada==2){
             delay(500)
-            objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
+            gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
             isCosultaDatasFinalizada= 0
         }
     }
@@ -322,14 +324,14 @@ fun IniciarInterfazAgregarCliente(
                 opcionesTipoIndetificacionCliente = opcionesTipoIndentificacionCliente
             )
             if (ValidarCamposObligatoriosClientes(datosCliente)){
-                objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(true)
+                gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(true)
                 val result= objectoProcesadorDatosApi.agregarCliente(datosCliente = datosCliente)
                 if (result != null) {
                     estadoRespuestaApi.cambiarEstadoRespuestaApi(mostrarRespuesta = true, datosRespuesta = result)
                 }
             }
         }
-        objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
+        gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
         guardarCliente=false
     }
 

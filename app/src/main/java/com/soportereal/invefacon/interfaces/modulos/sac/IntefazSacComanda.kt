@@ -99,16 +99,16 @@ import com.soportereal.invefacon.funciones_de_interfaces.TextFieldMultifuncional
 import com.soportereal.invefacon.funciones_de_interfaces.mostrarMensajeError
 import com.soportereal.invefacon.funciones_de_interfaces.mostrarMensajeExito
 import com.soportereal.invefacon.funciones_de_interfaces.obtenerParametro
-import com.soportereal.invefacon.interfaces.FuncionesParaAdaptarContenido
-import com.soportereal.invefacon.interfaces.obtenerEstiloBodyBig
-import com.soportereal.invefacon.interfaces.obtenerEstiloBodyMedium
-import com.soportereal.invefacon.interfaces.obtenerEstiloBodySmall
-import com.soportereal.invefacon.interfaces.obtenerEstiloLabelBig
-import com.soportereal.invefacon.interfaces.obtenerEstiloLabelSmall
-import com.soportereal.invefacon.interfaces.obtenerEstiloTitleBig
-import com.soportereal.invefacon.interfaces.obtenerEstiloTitleSmall
+import com.soportereal.invefacon.funciones_de_interfaces.FuncionesParaAdaptarContenido
+import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloBodyBig
+import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloBodyMedium
+import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloBodySmall
+import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloLabelBig
+import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloLabelSmall
+import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloTitleBig
+import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloTitleSmall
 import com.soportereal.invefacon.interfaces.pantallas_principales.estadoRespuestaApi
-import com.soportereal.invefacon.interfaces.pantallas_principales.objetoEstadoPantallaCarga
+import com.soportereal.invefacon.interfaces.pantallas_principales.gestorEstadoPantallaCarga
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.json.JSONArray
@@ -209,7 +209,7 @@ fun InterfazSacComanda(
                 listaFamiliasSac=listaFamilias
                 familiaActualSeleccionada= listaFamilias[0]
             }else{
-                objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
+                gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
             }
         }
 
@@ -223,7 +223,7 @@ fun InterfazSacComanda(
                     opcionesSubCuentas.value[subCuentas.getString(i)] = subCuentas.getString(i)
                 }
             }else{
-                objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
+                gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
             }
         }
     }
@@ -333,12 +333,12 @@ fun InterfazSacComanda(
                         listaArticulos.add(articulo)
                     }
                 }else{
-                    objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
+                    gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
                 }
             }
             listaArticulosActuales= listaArticulos
             isCargandoArticulos=false
-            objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
+            gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
         }
 
     }
@@ -359,7 +359,7 @@ fun InterfazSacComanda(
         }
 
         if(iniciarComandaSubCuenta && articulosSeleccionados.isNotEmpty()){
-            objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(true)
+            gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(true)
             val jsonComandaDetalle = JSONArray()
             val articulosAEliminar = mutableListOf<ArticulosSeleccionadosSac>()
             articulosSeleccionados.forEach{articulo ->
@@ -435,7 +435,7 @@ fun InterfazSacComanda(
                         }
                         actualizarMontos=true
                         permitirRegresarPantalla = true
-                        objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
+                        gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
                         delay(2000)
                         estadoRespuestaApi.cambiarEstadoRespuestaApi(regresarPantallaAnterior = true)
                     }
@@ -452,7 +452,7 @@ fun InterfazSacComanda(
                 )
                 estadoRespuestaApi.cambiarEstadoRespuestaApi(mostrarRespuesta = true, datosRespuesta = jsonObject )
             }
-            objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
+            gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
             iniciarComandaSubCuenta= false
         }
     }

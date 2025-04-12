@@ -74,8 +74,8 @@ import com.soportereal.invefacon.funciones_de_interfaces.actualizarParametro
 import com.soportereal.invefacon.funciones_de_interfaces.descargarImagenSiNoExiste
 import com.soportereal.invefacon.funciones_de_interfaces.guardarParametroSiNoExiste
 import com.soportereal.invefacon.funciones_de_interfaces.obtenerParametro
-import com.soportereal.invefacon.interfaces.FuncionesParaAdaptarContenido
-import com.soportereal.invefacon.interfaces.pantallas_principales.objetoEstadoPantallaCarga
+import com.soportereal.invefacon.funciones_de_interfaces.FuncionesParaAdaptarContenido
+import com.soportereal.invefacon.interfaces.pantallas_principales.gestorEstadoPantallaCarga
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -319,7 +319,7 @@ fun IniciarInterfazInicio(
         subTitulo = "¿Estás seguro de que quieres salir?"
     )
 
-    objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
+    gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
 }
 
 @Preview(showBackground = true)

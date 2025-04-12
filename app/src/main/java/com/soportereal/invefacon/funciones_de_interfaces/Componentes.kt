@@ -74,12 +74,12 @@ import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
 import com.soportereal.invefacon.R
-import com.soportereal.invefacon.interfaces.FuncionesParaAdaptarContenido
+import com.soportereal.invefacon.funciones_de_interfaces.FuncionesParaAdaptarContenido
 import com.soportereal.invefacon.interfaces.inicio_sesion.ocultarTeclado
-import com.soportereal.invefacon.interfaces.obtenerEstiloBodyBig
-import com.soportereal.invefacon.interfaces.obtenerEstiloLabelBig
-import com.soportereal.invefacon.interfaces.obtenerEstiloBodySmall
-import com.soportereal.invefacon.interfaces.obtenerEstiloTitleMedium
+import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloBodyBig
+import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloLabelBig
+import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloBodySmall
+import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloTitleMedium
 import com.soportereal.invefacon.interfaces.pantallas_principales.estadoRespuestaApi
 import org.json.JSONObject
 import java.text.SimpleDateFormat
@@ -124,19 +124,21 @@ internal fun BBasicTextField(
     ){
         Column {
             BasicTextField(
-                value = if (darFormatoMiles) {
-                    if (tieneFoco) {
-                        value // Mostrar el valor sin formato mientras el campo tiene el foco
-                    } else {
-                        try {
+                value =
+                try{
+                    if (darFormatoMiles) {
+                        if (tieneFoco) {
+                            value
+                        } else {
                             if (value.isNotEmpty()) {
                                 String.format(Locale.US, "%,.2f", value.replace(",", "").toDouble())
                             } else ""
-                        } catch (e: NumberFormatException) {
-                            value // En caso de error, mostrar el valor tal como está
                         }
-                    }
-                }else value,
+                    }else value
+                } catch (e: Exception) {
+                    mostrarMensajeError("ERROR EN DATO INGRESADO:: ${e.message}")
+                    value
+                },
                 onValueChange = onValueChange,
                 maxLines = cantidadLineas,
                 textStyle = TextStyle(
@@ -482,19 +484,22 @@ internal fun TextFieldMultifuncional(
     ) {
         TextField(
             enabled = if (contieneOpciones) false else modoEdicionActivado,
-            value = if (darFormatoMiles) {
-                if (tieneFoco) {
-                    valor // Mostrar el valor sin formato mientras el campo tiene el foco
-                } else {
-                    try {
-                        if (valor.isNotEmpty()) {
-                            String.format(Locale.US, "%,.2f", valor.replace(",", "").toDouble())
-                        } else ""
-                    } catch (e: NumberFormatException) {
-                        valor // En caso de error, mostrar el valor tal como está
-                    }
+            value =
+                try {
+                    if (darFormatoMiles) {
+                        if (tieneFoco) {
+                            valor // Mostrar el valor sin formato mientras el campo tiene el foco
+                        } else {
+                            if (valor.isNotEmpty()) {
+                                String.format(Locale.US, "%,.2f", valor.replace(",", "").toDouble())
+                            } else ""
+                        }
+                    }else valor
+                } catch (e: Exception) {
+                    mostrarMensajeError("ERROR EN DATO INGRESADO: ${e.message}")
+                    valor
                 }
-            }else valor,
+            ,
             onValueChange =  {
                 if (soloPermitirValoresNumericos && permitirPuntosDedimales){
                     // Permitir solo caracteres numéricos y punto decimal
@@ -941,5 +946,6 @@ data class ParClaveValor(
     val clave : String = "",
     var valor: String = "",
     var venta : String = "", // MODULO FACTURACION EN EL CALCULO DE IVAS
-    val existencia : Double = 0.00 // Para Bodegas modulo Facturacion
+    val existencia : Double = 0.00, // Para Bodegas modulo Facturacion
+    val descripcion : String = "" // Descripcion de parametro empresa
 )

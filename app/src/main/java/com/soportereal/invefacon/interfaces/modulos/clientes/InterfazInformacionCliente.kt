@@ -72,9 +72,9 @@ import androidx.navigation.NavController
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.soportereal.invefacon.R
 import com.soportereal.invefacon.funciones_de_interfaces.TextFieldMultifuncional
-import com.soportereal.invefacon.interfaces.FuncionesParaAdaptarContenido
+import com.soportereal.invefacon.funciones_de_interfaces.FuncionesParaAdaptarContenido
 import com.soportereal.invefacon.interfaces.pantallas_principales.estadoRespuestaApi
-import com.soportereal.invefacon.interfaces.pantallas_principales.objetoEstadoPantallaCarga
+import com.soportereal.invefacon.interfaces.pantallas_principales.gestorEstadoPantallaCarga
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.json.JSONObject
@@ -257,7 +257,7 @@ fun IniciarInterfazInformacionCliente(
             opciontieneCreditoSeleccionada= datosCliente.getString("tienecredito")
             opcionExentoSeleccionada= datosCliente.getString("exento")
             delay(500)
-            objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
+            gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
             isCosultaDatasFinalizada=0
         }
     }
@@ -448,7 +448,7 @@ fun IniciarInterfazInformacionCliente(
                         EmailCobro = emailCobros,
                     )
                     if (ValidarCamposObligatoriosClientes(clienteModificado)){
-                        objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(true)
+                        gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(true)
                         val result= objectoProcesadorDatosApi.actualizarDatosClientes(
                             clienteActual = clienteActual,
                             clienteModificado = clienteModificado
@@ -458,7 +458,7 @@ fun IniciarInterfazInformacionCliente(
                             estadoRespuestaApi.cambiarEstadoRespuestaApi(mostrarRespuesta = true, datosRespuesta = result)
                         }
                     }
-                    objetoEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
+                    gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
                     guardarEdicionCliente=false
                 }
             }
