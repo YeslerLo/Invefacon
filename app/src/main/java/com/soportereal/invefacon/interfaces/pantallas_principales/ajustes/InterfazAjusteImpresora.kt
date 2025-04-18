@@ -429,6 +429,10 @@ fun IniciarInterfazAjustesImpresora (
                                     onValueChange = {
                                         actualizarParametro(context, "cantidadCaracPorLineaImpre", it)
                                         caracteresPorLinea = obtenerParametro(context, "cantidadCaracPorLineaImpre")
+                                        if (valorImpresionActiva == "1"){
+                                            gestorImpresora.deconectar(context)
+                                            gestorImpresora.reconectar(context)
+                                        }
                                     },
                                     objetoAdaptardor = objetoAdaptardor,
                                     icono = Icons.AutoMirrored.Filled.FormatAlignLeft,

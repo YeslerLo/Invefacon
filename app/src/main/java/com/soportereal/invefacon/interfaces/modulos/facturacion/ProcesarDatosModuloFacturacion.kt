@@ -281,7 +281,7 @@ suspend fun imprimirFactura(factura: Factura, context: Context, nombreEmpresa : 
         facturaTexto += addText(articulo.nombreArticulo, "L", destacar = true, context = context)
         facturaTexto += addText("CANT: ${articulo.ArticuloCantidad.toDouble()} [R]PREC: ${separacionDeMiles(isString = true, montoString = articulo.ArticuloVenta)}", "L", context = context)
         facturaTexto += addText("SUB TOTAL: ${separacionDeMiles(isString = true, montoString = articulo.ArticuloVentaSubTotal1)}", "R", context = context)
-        facturaTexto += addText("DESC(${articulo.ArticuloDescuentoPorcentage}%): ${separacionDeMiles(isString = true, montoString = articulo.ArticuloDescuentoMonto)}", "R", context = context)
+        facturaTexto += addText("IMP: ${articulo.ArticuloIvaPorcentage}% [R]DESC(${articulo.ArticuloDescuentoPorcentage}%): ${separacionDeMiles(isString = true, montoString = articulo.ArticuloDescuentoMonto)}", "L", context = context)
         facturaTexto += addText("TOTAL: ${separacionDeMiles(isString = true, montoString = articulo.ArticuloVentaGravado)}", "R", context = context, destacar = true)
         facturaTexto += agregarLinea(context = context)
         val ivaTemp = listaIvas.find { it.clave == articulo.ArticuloIvaPorcentage }

@@ -237,6 +237,7 @@ fun IniciarInterfazFacturacion(
     var errorCargarProforma by remember { mutableStateOf(false) }
     var simboloMoneda by remember { mutableStateOf("") }
     var listaArticulosFacturacion by remember { mutableStateOf(emptyList<ArticuloFacturacion>()) }
+    val listaIvas = remember { mutableStateListOf<ParClaveValor>() }
     var listaArticulosEncontrados by remember { mutableStateOf(emptyList<ArticuloFacturacion>()) }
     var listaClientesEncontrados by remember { mutableStateOf(emptyList<ClienteFacturacion>()) }
     var datosIngresadosBarraBusquedaArticulos by remember { mutableStateOf("") }
@@ -517,7 +518,7 @@ fun IniciarInterfazFacturacion(
         return factura
     }
 
-    if (valorImpresionActiva == "1"){
+    if (valorImpresionActiva == "1") {
         gestorImpresora.PedirPermisos(context)
     }
 
@@ -572,7 +573,7 @@ fun IniciarInterfazFacturacion(
                         tasaCambio = data.getDouble("tipoCambio")
                         nuevoCodigoMoneda = codMonedaProforma
                         simboloMoneda =  if(codMonedaProforma == "CRC") "\u20A1 " else "\u0024 "
-                        iniciarDescargaArticulos = actualizarListaArticulos
+                        iniciarDescargaArticulos = listaArticulosFacturacion.isEmpty() || actualizarListaArticulos
 
                         //Totales
                         val totales = data.getJSONArray("totales").getJSONObject(0)
@@ -588,6 +589,7 @@ fun IniciarInterfazFacturacion(
                         // ARTICULOS PROFORMA
                         val listaArticuloFacturados = mutableListOf<ArticuloFacturacion>()
                         val articulos = data.getJSONArray("proforma")
+                        listaIvas.clear()
                         for(i in 0 until articulos.length()){
                             val datosArticulo = articulos.getJSONObject(i)
 
@@ -614,6 +616,12 @@ fun IniciarInterfazFacturacion(
                                 articuloCosto = datosArticulo.getDouble("ArticuloCosto"),
                                 utilidad = datosArticulo.getDouble("Utilidad")
                             )
+                            val ivaTemp = listaIvas.find { it.clave == articuloFacturado.impuesto.toString() }
+                            if ( ivaTemp != null){
+                                ivaTemp.valor = (ivaTemp.valor.toDouble() + articuloFacturado.articuloIvaMonto).toString()
+                            }else{
+                                listaIvas.add(ParClaveValor(clave = articuloFacturado.impuesto.toString(), valor = articuloFacturado.articuloIvaMonto.toString()))
+                            }
                             listaArticuloFacturados.add(articuloFacturado)
                         }
                         listaArticulosProforma = listaArticuloFacturados
@@ -3267,6 +3275,7 @@ fun IniciarInterfazFacturacion(
                                             fontSize = obtenerEstiloBodyBig()
                                         )
                                     }
+
                                     HorizontalDivider(
                                         thickness = 1.dp,
                                         color = Color.LightGray
@@ -3368,6 +3377,26 @@ fun IniciarInterfazFacturacion(
                                                     modifier = Modifier.weight(1f),
                                                     fontSize = obtenerEstiloBodyBig()
                                                 )
+                                            }
+                                            for (i in listaIvas){
+                                                HorizontalDivider(
+                                                    thickness = 1.dp,
+                                                    color = Color.LightGray
+                                                )
+                                                Row {
+                                                    TText(
+                                                        text = "IVA( ${i.clave}% ): ",
+                                                        textAlign = TextAlign.Start,
+                                                        modifier = Modifier.weight(1f),
+                                                        fontSize = obtenerEstiloBodyBig()
+                                                    )
+                                                    TText(
+                                                        text = simboloMoneda + separacionDeMiles(i.valor.toDouble())+" $codMonedaProforma",
+                                                        textAlign = TextAlign.End,
+                                                        modifier = Modifier.weight(1f),
+                                                        fontSize = obtenerEstiloBodyBig()
+                                                    )
+                                                }
                                             }
                                         }
                                     }

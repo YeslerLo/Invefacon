@@ -47,6 +47,8 @@ class ProcesarDatosModuloClientes(apiToken: String){
         clienteModificado: Cliente
     ): JSONObject?
     {
+        clienteModificado.EmailFactura = clienteModificado.EmailFactura.ifEmpty { clienteModificado.Email }
+        clienteModificado.EmailCobro = clienteModificado.EmailCobro.ifEmpty { clienteModificado.Email }
         val formBuilder = MultipartBody.Builder().setType(MultipartBody.FORM)
 
         // Agregar solo los campos que hayan cambiado

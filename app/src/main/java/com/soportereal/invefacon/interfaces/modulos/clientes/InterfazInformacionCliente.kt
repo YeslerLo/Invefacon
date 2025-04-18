@@ -73,6 +73,9 @@ import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.soportereal.invefacon.R
 import com.soportereal.invefacon.funciones_de_interfaces.TextFieldMultifuncional
 import com.soportereal.invefacon.funciones_de_interfaces.FuncionesParaAdaptarContenido
+import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloDisplayBig
+import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloHeadSmall
+import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloTitleMedium
 import com.soportereal.invefacon.interfaces.pantallas_principales.estadoRespuestaApi
 import com.soportereal.invefacon.interfaces.pantallas_principales.gestorEstadoPantallaCarga
 import kotlinx.coroutines.delay
@@ -297,7 +300,7 @@ fun IniciarInterfazInformacionCliente(
                     "Información del Cliente",
                     fontFamily = fontAksharPrincipal,
                     fontWeight =    FontWeight.SemiBold,
-                    fontSize = objetoAdaptardor.ajustarFont(28),
+                    fontSize = obtenerEstiloDisplayBig(),
                     color = Color.White,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
@@ -815,9 +818,9 @@ fun IniciarInterfazInformacionCliente(
                         }
                     }
                 }
-
             }
         }
+
         // Snackbar inferior para mostrar mensajes emergentes para el usuario como:
         // - Problemas de Red
         // - Contraseñas Incorrectas
@@ -898,7 +901,7 @@ internal fun AgregarContenedorDatosClientes(
                     textStyle = TextStyle(
                         fontFamily = fontAksharPrincipal,
                         fontWeight =    FontWeight.Light,
-                        fontSize =  objetoAdaptardor.ajustarFont(18),
+                        fontSize =  obtenerEstiloHeadSmall(),
                         color = Color.Black,
                         textAlign = TextAlign.Start
                     ),
@@ -945,7 +948,7 @@ internal fun AgregarContenedorDatosClientes(
                                         text = "Editar",
                                         fontFamily = fontAksharPrincipal,
                                         fontWeight = FontWeight.Light,
-                                        fontSize = objetoAdaptardor.ajustarFont(20),
+                                        fontSize = obtenerEstiloTitleMedium(),
                                         color = Color.DarkGray,
                                         maxLines = 1,
                                         overflow = TextOverflow.Ellipsis,
@@ -1000,72 +1003,63 @@ internal fun AgregarContenedorDatosClientes(
 }
 
 internal fun ValidarCamposObligatoriosClientes(datosCliente: Cliente): Boolean{
-    var nombreCampo= ""
+    var mensajeError= ""
     val estructuraParaValidacionCorreo = "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z0-9]{2,}$"
     val objetoValidadorCorreo = Pattern.compile(estructuraParaValidacionCorreo)
 
     if (datosCliente.ClienteNombreComercial.isEmpty()){
-        nombreCampo="Ingrese un Nombre Comercial para continuar"
+        mensajeError="Ingrese un Nombre Comercial para continuar"
     }
     if(datosCliente.Nombre.isEmpty()){
-        nombreCampo= "Ingrese un Nombre jurídico para continuar"
+        mensajeError= "Ingrese un Nombre jurídico para continuar"
     }
     if(datosCliente.Cedula.isEmpty()){
-        nombreCampo= "Ingrese un numero de Cédula"
+        mensajeError= "Ingrese un numero de Cédula"
     }
     if(datosCliente.TipoIdentificacion=="01"){
         if (datosCliente.Cedula.length!=9){
-            nombreCampo="El número de cédula ingresado no cumple con los requisitos de una cédula física válida."
+            mensajeError="El número de cédula ingresado no cumple con los requisitos de una cédula física válida."
         }
     }
     if(datosCliente.TipoIdentificacion=="02"){
         if (datosCliente.Cedula.length!=10){
-            nombreCampo="El número de cédula ingresado no cumple con los requisitos de una cédula jurídica válida."
+            mensajeError="El número de cédula ingresado no cumple con los requisitos de una cédula jurídica válida."
         }
     }
     if(datosCliente.TipoIdentificacion=="03"){
         if (datosCliente.Cedula.length != 11 && datosCliente.Cedula.length != 12){
-            nombreCampo="El número de cédula ingresado no cumple con los requisitos de una cédula Dimex válida."
+            mensajeError="El número de cédula ingresado no cumple con los requisitos de una cédula Dimex válida."
         }
     }
     if(datosCliente.TipoIdentificacion=="04"){
         if (datosCliente.Cedula.length!=10){
-            nombreCampo="El número de cédula ingresado no cumple con los requisitos de una cédula Nite válida."
+            mensajeError="El número de cédula ingresado no cumple con los requisitos de una cédula Nite válida."
         }
     }
-    if(datosCliente.Telefonos.length<8){
-        nombreCampo= "Ingrese un teléfono válido para continuar"
+    if(datosCliente.Telefonos.length!=8){
+        mensajeError= "Ingrese un teléfono válido para continuar"
     }
     if(datosCliente.Email.isEmpty()){
-        nombreCampo= "Ingrese un Email general para continuar"
+        mensajeError= "Ingrese un Email general para continuar"
     }
     if(datosCliente.Email.isNotEmpty()){
         if(!objetoValidadorCorreo.matcher(datosCliente.Email).matches()){
-            nombreCampo="El formato del Email general es invalido"
+            mensajeError="El formato del Email general es invalido"
         }
     }
     if(datosCliente.EmailCobro.isNotEmpty()){
         if(!objetoValidadorCorreo.matcher(datosCliente.EmailCobro).matches()){
-            nombreCampo="El formato del Email Cobro es invalido"
+            mensajeError="El formato del Email Cobro es invalido"
         }
     }
     if(datosCliente.EmailFactura.isNotEmpty()){
         if(!objetoValidadorCorreo.matcher(datosCliente.EmailFactura).matches()){
-            nombreCampo="El formato del Email Factura es invalido"
+            mensajeError="El formato del Email Factura es invalido"
         }
     }
-    if(datosCliente.Cod_Tipo_Cliente=="Seleccione un Tipo de cliente"){
-        nombreCampo= "Seleccione un Tipo Cliente para continuar"
-    }
-    if(datosCliente.AgenteVentas=="Seleccione un Agente de ventas"){
-        nombreCampo= "Seleccione un Agente de ventas para continuar"
-    }
-    if(datosCliente.TipoPrecioVenta=="Seleccione un Tipo de precio"){
-        nombreCampo= "Seleccione un Tipo de precio para continuar"
-    }
 
-    if (nombreCampo.isNotEmpty()){
-        val jsonRespuesta= JSONObject("""{"code":400,"status":"error","data":"$nombreCampo"}""")
+    if (mensajeError.isNotEmpty()){
+        val jsonRespuesta= JSONObject("""{"code":400,"status":"error","data":"$mensajeError"}""")
         estadoRespuestaApi.cambiarEstadoRespuestaApi(mostrarRespuesta = true, datosRespuesta = jsonRespuesta)
         return false
     }

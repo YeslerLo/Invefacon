@@ -410,7 +410,7 @@ internal fun TextFieldMultifuncional(
     leadingIconColor: Color = Color.DarkGray,
     usarModifierForSize: Boolean = false,
     modifier: Modifier = Modifier,
-    fontSize: TextUnit = obtenerEstiloLabelBig(),
+    fontSize: TextUnit = obtenerEstiloBodyBig(),
     mostrarPlaceholder: Boolean = true,
     mostrarLabel: Boolean = true,
     usarFormatoFecha2: Boolean = false,

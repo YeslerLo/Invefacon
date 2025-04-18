@@ -1135,7 +1135,6 @@ fun InterfazSacComanda(
             )
         }
 
-
         Box(
             modifier = Modifier
                 .background(Color.White)

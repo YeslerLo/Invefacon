@@ -24,7 +24,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
@@ -92,17 +94,21 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.toSize
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.navigation.NavController
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.soportereal.invefacon.R
+import com.soportereal.invefacon.funciones_de_interfaces.FuncionesParaAdaptarContenido
 import com.soportereal.invefacon.funciones_de_interfaces.RutasPatallas
 import com.soportereal.invefacon.funciones_de_interfaces.actualizarParametro
 import com.soportereal.invefacon.funciones_de_interfaces.gestorImpresora
-import com.soportereal.invefacon.funciones_de_interfaces.obtenerParametro
-import com.soportereal.invefacon.funciones_de_interfaces.FuncionesParaAdaptarContenido
+import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloBodyBig
+import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloBodySmall
+import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloHeadBig
 import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloLabelSmall
+import com.soportereal.invefacon.funciones_de_interfaces.obtenerParametro
 import com.soportereal.invefacon.interfaces.pantallas_principales.gestorEstadoPantallaCarga
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -162,7 +168,6 @@ fun IniciarInterfazInicioSesionCompact(
     var guardarDatosSesion by remember { mutableStateOf(false) }
     val scrollState= rememberScrollState(0)
     var usuarioCorreoEmpresa by remember { mutableStateOf(obtenerParametro(contexto, "ultimoCorreo")) }
-
 
     LaunchedEffect(isInicioSesionAprobado) {
         if (isInicioSesionAprobado){
@@ -238,7 +243,6 @@ fun IniciarInterfazInicioSesionCompact(
         //Texto Binevenido
         Text(
             modifier = Modifier
-                .height(objetoAdaptardor.ajustarAltura(60))
                 .wrapContentSize()
                 .fillMaxWidth()
                 .constrainAs(txBienvenido) {
@@ -247,7 +251,12 @@ fun IniciarInterfazInicioSesionCompact(
             fontFamily = fontAksharPrincipal,
             fontWeight = FontWeight.Bold,
             color = Color.White,
-            fontSize = objetoAdaptardor.ajustarFont(50),
+            fontSize = when {
+                configuration.screenWidthDp < 360 -> 50.sp
+                configuration.screenWidthDp in 360..599 -> 53.sp
+                configuration.screenWidthDp in 600..839 -> 56.sp
+                else ->60.sp
+            },
             text = "¡Bienvenido!",
             textAlign = TextAlign.Center,
             maxLines = 1,
@@ -290,13 +299,17 @@ fun IniciarInterfazInicioSesionCompact(
                     // Texto Inicio Sesion
                     Text(
                         text = "Inicio Sesión",
-                        fontSize = objetoAdaptardor.ajustarFont(45),
+                        fontSize = when {
+                            configuration.screenWidthDp < 360 -> 45.sp
+                            configuration.screenWidthDp in 360..599 -> 48.sp
+                            configuration.screenWidthDp in 600..839 -> 51.sp
+                            else ->55.sp
+                        },
                         fontFamily = fontAksharPrincipal,
                         fontWeight = FontWeight.Bold,
                         color = Color(0xFF5B5B5B),
                         maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.height(objetoAdaptardor.ajustarAltura(57))
+                        overflow = TextOverflow.Ellipsis
                     )
 
                     LaunchedEffect(usuarioCorreoEmpresa) {
@@ -359,7 +372,7 @@ fun IniciarInterfazInicioSesionCompact(
                                 fontFamily = fontAksharPrincipal,
                                 fontWeight = FontWeight.Light,
                                 color = if (existenCorreos==null || existenCorreos==true) Color(0xFF5B5B5B) else Color.Red,
-                                fontSize = objetoAdaptardor.ajustarFont(16),
+                                fontSize = obtenerEstiloBodyBig(),
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis
                             )
@@ -390,7 +403,7 @@ fun IniciarInterfazInicioSesionCompact(
                                 "Ingrese su correo",
                                 fontFamily = fontAksharPrincipal,
                                 fontWeight = FontWeight.Light,
-                                fontSize = objetoAdaptardor.ajustarFont(16),
+                                fontSize = obtenerEstiloBodyBig(),
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis
 
@@ -429,7 +442,7 @@ fun IniciarInterfazInicioSesionCompact(
                                     "Buscando empresas asociadas al correo...",
                                     fontFamily = fontAksharPrincipal,
                                     fontWeight = FontWeight.Light,
-                                    fontSize = objetoAdaptardor.ajustarFont(16),
+                                    fontSize = obtenerEstiloBodyBig(),
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis
                                 )
@@ -446,7 +459,7 @@ fun IniciarInterfazInicioSesionCompact(
                                     fontWeight = FontWeight.Medium,
                                     textAlign = TextAlign.Center
                                     ,
-                                    fontSize = objetoAdaptardor.ajustarFont(16),
+                                    fontSize = obtenerEstiloBodyBig(),
                                     maxLines = 2,
                                     overflow = TextOverflow.Ellipsis
                                 )
@@ -486,7 +499,7 @@ fun IniciarInterfazInicioSesionCompact(
                                         fontFamily = fontAksharPrincipal,
                                         fontWeight = FontWeight.Light,
                                         color = Color.DarkGray,
-                                        fontSize = objetoAdaptardor.ajustarFont(16)
+                                        fontSize = obtenerEstiloBodyBig()
                                     ),
                                     shape = RoundedCornerShape(
                                         objetoAdaptardor.ajustarAltura(
@@ -504,7 +517,7 @@ fun IniciarInterfazInicioSesionCompact(
                                             fontFamily = fontAksharPrincipal,
                                             fontWeight = FontWeight.Light,
                                             color = Color.DarkGray,
-                                            fontSize = objetoAdaptardor.ajustarFont(16),
+                                            fontSize = obtenerEstiloBodyBig(),
                                             maxLines = 1,
                                             overflow = TextOverflow.Ellipsis
                                         )
@@ -523,7 +536,7 @@ fun IniciarInterfazInicioSesionCompact(
                                             color = Color.DarkGray,
                                             fontFamily = fontAksharPrincipal,
                                             fontWeight = FontWeight.Light,
-                                            fontSize = objetoAdaptardor.ajustarFont(16),
+                                            fontSize = obtenerEstiloBodyBig(),
                                             maxLines = 1,
                                             overflow = TextOverflow.Ellipsis
                                         )
@@ -559,7 +572,7 @@ fun IniciarInterfazInicioSesionCompact(
                                                     text = label,
                                                     fontFamily = fontAksharPrincipal,
                                                     fontWeight = FontWeight.Medium,
-                                                    fontSize = objetoAdaptardor.ajustarFont(16),
+                                                    fontSize = obtenerEstiloBodyBig(),
                                                     maxLines = 1,
                                                     overflow = TextOverflow.Ellipsis
                                                 )
@@ -578,7 +591,7 @@ fun IniciarInterfazInicioSesionCompact(
                                                     fontFamily = fontAksharPrincipal,
                                                     fontWeight = FontWeight.Medium,
                                                     color = Color(0xFF31B927),
-                                                    fontSize = objetoAdaptardor.ajustarFont(16),
+                                                    fontSize = obtenerEstiloBodyBig(),
                                                     maxLines = 1,
                                                     overflow = TextOverflow.Ellipsis
                                                 )
@@ -598,7 +611,7 @@ fun IniciarInterfazInicioSesionCompact(
                                                     fontFamily = fontAksharPrincipal,
                                                     fontWeight = FontWeight.Medium,
                                                     color = Color.Red,
-                                                    fontSize = objetoAdaptardor.ajustarFont(16),
+                                                    fontSize = obtenerEstiloBodyBig(),
                                                     maxLines = 1,
                                                     overflow = TextOverflow.Ellipsis
                                                 )
@@ -626,7 +639,7 @@ fun IniciarInterfazInicioSesionCompact(
                                 color = Color.DarkGray,
                                 fontFamily = fontAksharPrincipal,
                                 fontWeight = FontWeight.Light,
-                                fontSize = objetoAdaptardor.ajustarFont(16),
+                                fontSize = obtenerEstiloBodyBig(),
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis
                             )
@@ -769,7 +782,7 @@ fun IniciarInterfazInicioSesionCompact(
                             fontFamily =  fontAksharPrincipal,
                             fontWeight = FontWeight.Light,
                             color = Color.DarkGray,
-                            fontSize = objetoAdaptardor.ajustarFont(15),
+                            fontSize = obtenerEstiloBodySmall(),
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
@@ -828,7 +841,7 @@ fun IniciarInterfazInicioSesionCompact(
                                 "Iniciar Sesión",
                                 fontFamily = fontAksharPrincipal,
                                 fontWeight = FontWeight.Medium,
-                                fontSize = objetoAdaptardor.ajustarFont(25),
+                                fontSize = obtenerEstiloHeadBig(),
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,
                                 textAlign = TextAlign.Center
@@ -845,7 +858,7 @@ fun IniciarInterfazInicioSesionCompact(
                         fontFamily =  fontAksharPrincipal,
                         fontWeight = FontWeight.Light,
                         color = Color(0xFF244BC0),
-                        fontSize = objetoAdaptardor.ajustarFont(15),
+                        fontSize = obtenerEstiloBodySmall(),
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                         modifier = Modifier.height(objetoAdaptardor.ajustarAltura(35))
@@ -963,6 +976,7 @@ fun IniciarInterfazInicioSesionCompact(
             gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
         }
     }
+
 }
 
 fun ocultarTeclado(contexto: Context) {

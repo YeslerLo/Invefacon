@@ -75,6 +75,7 @@ import com.soportereal.invefacon.funciones_de_interfaces.descargarImagenSiNoExis
 import com.soportereal.invefacon.funciones_de_interfaces.guardarParametroSiNoExiste
 import com.soportereal.invefacon.funciones_de_interfaces.obtenerParametro
 import com.soportereal.invefacon.funciones_de_interfaces.FuncionesParaAdaptarContenido
+import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloBodyBig
 import com.soportereal.invefacon.interfaces.pantallas_principales.gestorEstadoPantallaCarga
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -167,7 +168,7 @@ fun IniciarInterfazInicio(
                         fontFamily = aksharFont,
                         fontWeight = FontWeight.Medium,
                         color = Color(0xFF244BC0),
-                        fontSize = objetoAdaptardor.ajustarFont(15),
+                        fontSize = obtenerEstiloBodyBig(),
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )

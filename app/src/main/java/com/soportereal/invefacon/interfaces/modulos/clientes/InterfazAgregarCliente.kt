@@ -90,9 +90,9 @@ fun IniciarInterfazAgregarCliente(
     val objectoProcesadorDatosApi= ProcesarDatosModuloClientes(token)
     var isCosultaDatasFinalizada by remember { mutableIntStateOf(0) }
     val opcionesTipoCliente: SnapshotStateMap<String, String> = remember { mutableStateMapOf() }
-    var codigoTipoClienteSeleccionado by remember { mutableStateOf("Seleccione un Tipo de cliente") }
+    var codigoTipoClienteSeleccionado by remember { mutableStateOf("") }
     val opcionesAgentesVentasClienteActivos: SnapshotStateMap<String, String> = remember { mutableStateMapOf() }
-    var codigoAgenteVentasSeleccionado by remember { mutableStateOf("Seleccione un Agente de ventas") }
+    var codigoAgenteVentasSeleccionado by remember { mutableStateOf("") }
     var opciontieneCreditoSeleccionada by remember { mutableStateOf("0") }
     var opcionExentoSeleccionada by remember { mutableStateOf("0") }
     val opcionExoneradoSeleccionada by remember { mutableStateOf("") }
@@ -172,7 +172,7 @@ fun IniciarInterfazAgregarCliente(
 
     // Informacion de ventas
     var agenteVentas by remember { mutableStateOf("") }
-    var tipoPrecio by remember { mutableStateOf("Seleccione un Tipo de precio") }
+    var tipoPrecio by remember { mutableStateOf("1") }
     var tieneCredito by remember { mutableStateOf("0") }
     var exento by remember { mutableStateOf("0") }
     val zonaCliente by remember { mutableStateOf("") }
