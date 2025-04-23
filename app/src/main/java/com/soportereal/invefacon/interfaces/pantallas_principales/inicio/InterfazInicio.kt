@@ -163,7 +163,7 @@ fun IniciarInterfazInicio(
                 onClick = {
                     if (rutaPantalla != null && !tienePermiso(codPermiso)) return@Button mostrarMensajeError("NO POSEE EL PERMISO $codPermiso PARA ACCEDER AL MODULO ${text.uppercase(Locale.ROOT)}")
                     CoroutineScope(Dispatchers.IO).launch {
-                        if (rutaPantalla==null) return@launch
+                        if (rutaPantalla==null) return@launch mostrarMensajeError("Actualmente el módulo de $text se encuentra en desarrollo...")
                         rutaPantallaModulo=rutaPantalla
                         iniciarPantallaModulo=true
                     }
