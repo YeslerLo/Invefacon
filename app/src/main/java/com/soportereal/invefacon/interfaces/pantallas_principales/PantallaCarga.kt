@@ -1,8 +1,13 @@
 package com.soportereal.invefacon.interfaces.pantallas_principales
 
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -15,6 +20,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
@@ -39,6 +45,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
@@ -46,10 +53,18 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.ViewModel
 import com.google.accompanist.systemuicontroller.SystemUiController
 import com.soportereal.invefacon.R
 import com.soportereal.invefacon.funciones_de_interfaces.FuncionesParaAdaptarContenido
+import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloBodyBig
+import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloDisplayMedium
+import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloDisplaySmall
+import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloHeadSmall
+import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloLabelBig
+import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloTitleBig
+import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloTitleMedium
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -112,7 +127,6 @@ fun PantallaCarga(
                     )
                 }
             }
-
         }
     }
 
@@ -126,82 +140,89 @@ fun PantallaCarga(
                 modifier = Modifier
                     .statusBarsPadding()
                     .navigationBarsPadding()
-                    .clickable(false, onClick = {})
                     .fillMaxSize()
                     .background(Color.Black.copy(alpha = 0.4f)),
                 contentAlignment = Alignment.Center
             ) {
                 AlertDialog(
-                    modifier = Modifier.background(Color.White),
+                    onDismissRequest = {},
                     containerColor = Color.White,
-                    onDismissRequest = { showDialog.value = false }, // Cerrar el diálogo sin acción
-                    text = {
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.Center,
+                    confirmButton = {
+                        Button(
+                            onClick = {  estadoRespuestaApi.cambiarEstadoRespuestaApi(
+                                mostrarRespuesta = false,
+                                regresarPantallaAnterior = exitoRespuestaApi
+                            ) },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color(0xFF244BC0),
+                                contentColor = Color.White
+                            ),
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            Icon(
-                                imageVector = if(exitoRespuestaApi) Icons.Default.CheckCircle else Icons.Filled.Error,
-                                tint = if(exitoRespuestaApi) Color(0xFF4CAF50) else Color(0xFFF44336),
-                                contentDescription = "",
-                                modifier = Modifier.size(objetoAdaptardor.ajustarAltura(70))
-                            )
-                            Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(4)))
                             Text(
-                                if(exitoRespuestaApi) "Éxito" else "Error",
-                                fontFamily = aksharFont,
-                                fontWeight = FontWeight.Medium,
-                                color = Color.Black,
-                                fontSize = objetoAdaptardor.ajustarFont(22),
-                                overflow = TextOverflow.Ellipsis
-                            )
-                            Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(4)))
-                            Text(
-                                datosRespuestaApi.getString("data"),
-                                fontFamily = aksharFont,
-                                fontWeight = FontWeight.Medium,
-                                color = Color.Black,
-                                fontSize = objetoAdaptardor.ajustarFont(18),
-                                overflow = TextOverflow.Ellipsis,
-                                textAlign = TextAlign.Center
+                                text = "Ok",
+                                fontFamily = FontFamily(Font(R.font.akshar_medium)),
+                                fontSize = obtenerEstiloTitleBig()
                             )
                         }
                     },
-                    confirmButton = {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth(),
-                            contentAlignment = Alignment.Center // Centra los botones dentro de la caja
-                        ) {
-                            Button(
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = Color(0xFF244BC0), // Color de fondo del botón
-                                    contentColor = Color.White // Color del contenido (texto e iconos)
-                                ),
-                                onClick = {
-                                    estadoRespuestaApi.cambiarEstadoRespuestaApi(mostrarRespuesta = false, regresarPantallaAnterior = exitoRespuestaApi)
-                                }
-                            ) {
-                                Text(
-                                    "Ok",
-                                    fontFamily = aksharFont,
-                                    fontWeight = FontWeight.Medium,
-                                    color = Color.White,
-                                    fontSize = objetoAdaptardor.ajustarFont(22),
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis
-                                )
-                            }
-                        }
-
-                    },
-                    dismissButton = {
+                    text = {
+                        DialogContent(exito = exitoRespuestaApi, mensaje = datosRespuestaApi.getString("data"), objetoAdaptardor)
                     }
                 )
             }
         }
 
+    }
+}
+
+@Composable
+private fun DialogContent(exito: Boolean, mensaje: String, objetoAdaptarContenido: FuncionesParaAdaptarContenido) {
+    val scale by rememberInfiniteTransition(label = "").animateFloat(
+        initialValue = 0.9f,
+        targetValue = 1.1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(600, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ), label = ""
+    )
+
+    val icon = if (exito) Icons.Default.CheckCircle else Icons.Default.Error
+    val color = if (exito) Color(0xFF4CAF50) else Color(0xFFF44336)
+    val titulo = if (exito) "Éxito" else "Error"
+
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = color,
+            modifier = Modifier
+                .size(objetoAdaptarContenido.ajustarAltura(70))
+                .graphicsLayer(scaleX = scale, scaleY = scale)
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Text(
+            text = titulo,
+            fontFamily = FontFamily(Font(R.font.akshar_medium)),
+            fontSize = obtenerEstiloHeadSmall(),
+            color = Color.Black
+        )
+
+        Spacer(modifier = Modifier.height(objetoAdaptarContenido.ajustarAltura(8)))
+
+        Text(
+            text = mensaje,
+            fontFamily = FontFamily(Font(R.font.akshar_regular)),
+            fontSize = obtenerEstiloTitleMedium(),
+            color = Color.Black,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.padding(horizontal = objetoAdaptarContenido.ajustarAncho(16))
+        )
     }
 }
 

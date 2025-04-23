@@ -73,7 +73,9 @@ import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.soportereal.invefacon.R
 import com.soportereal.invefacon.funciones_de_interfaces.TextFieldMultifuncional
 import com.soportereal.invefacon.funciones_de_interfaces.FuncionesParaAdaptarContenido
+import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloBodyBig
 import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloDisplayBig
+import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloDisplaySmall
 import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloHeadSmall
 import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloTitleMedium
 import com.soportereal.invefacon.interfaces.pantallas_principales.estadoRespuestaApi
@@ -770,7 +772,7 @@ fun IniciarInterfazInformacionCliente(
                                                 maxLines = 1,
                                                 fontFamily = fontAksharPrincipal,
                                                 fontWeight = FontWeight.SemiBold,
-                                                fontSize = objetoAdaptardor.ajustarFont(25)
+                                                fontSize = obtenerEstiloDisplaySmall()
                                             )
                                         }
 
@@ -847,7 +849,7 @@ fun IniciarInterfazInformacionCliente(
                             text = snackbarData.visuals.message,
                             style = TextStyle(
                                 color = Color.Black,
-                                fontSize = objetoAdaptardor.ajustarFont(15),
+                                fontSize = obtenerEstiloBodyBig(),
                                 fontWeight = FontWeight.Light,
                                 fontFamily = fontAksharPrincipal
                             )
@@ -929,7 +931,7 @@ internal fun AgregarContenedorDatosClientes(
                                     titulo,
                                     fontFamily = fontAksharPrincipal,
                                     fontWeight =    FontWeight.Light,
-                                    fontSize =  objetoAdaptardor.ajustarFont(22),
+                                    fontSize =  obtenerEstiloHeadSmall(),
                                     color = Color.DarkGray,
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis,

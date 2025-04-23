@@ -35,8 +35,11 @@ import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.navigation.NavController
 import com.soportereal.invefacon.R
 import com.soportereal.invefacon.funciones_de_interfaces.actualizarParametro
-import com.soportereal.invefacon.funciones_de_interfaces.obtenerParametro
+import com.soportereal.invefacon.funciones_de_interfaces.obtenerParametroLocal
 import com.soportereal.invefacon.funciones_de_interfaces.FuncionesParaAdaptarContenido
+import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloDisplayBig
+import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloDisplaySmall
+import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloHeadBig
 import com.soportereal.invefacon.interfaces.pantallas_principales.gestorEstadoPantallaCarga
 
 
@@ -87,7 +90,7 @@ fun IniciarInterfazSalir(navControllerPrincipal: NavController){
                     "Salir",
                     fontFamily = fontAksharPrincipal,
                     fontWeight =    FontWeight.SemiBold,
-                    fontSize = objetoAdaptardor.ajustarFont(30),
+                    fontSize = obtenerEstiloDisplayBig(),
                     color = Color.White,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
@@ -106,7 +109,7 @@ fun IniciarInterfazSalir(navControllerPrincipal: NavController){
                 modifier =
                 Modifier.wrapContentSize(),
                 onClick = {
-                    if (obtenerParametro(contexto, "token") =="0"){
+                    if (obtenerParametroLocal(contexto, "token") =="0"){
                         navControllerPrincipal.popBackStack()
                     }else{
                         actualizarParametro(contexto, "token","0")
@@ -129,7 +132,7 @@ fun IniciarInterfazSalir(navControllerPrincipal: NavController){
                     "Salir",
                     fontFamily = fontAksharPrincipal,
                     fontWeight = FontWeight.Medium,
-                    fontSize = objetoAdaptardor.ajustarFont(20),
+                    fontSize = obtenerEstiloHeadBig(),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     textAlign = TextAlign.Center,

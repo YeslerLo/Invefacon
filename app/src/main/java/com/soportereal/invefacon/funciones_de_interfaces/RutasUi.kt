@@ -110,7 +110,7 @@ fun NavegacionPantallas(
     Box(
         modifier = Modifier.fillMaxSize()
     ){
-        NavHost(navController= navcontroller, startDestination = if(obtenerParametro(contexto, "token")=="0") "auth" else "main"){
+        NavHost(navController= navcontroller, startDestination = if(obtenerParametroLocal(contexto, "token")=="0") "auth" else "main"){
 
             // Navigacion pantalla Auntenticacion
             navigation(startDestination= RutasPatallas.InicioSesion.ruta, route = "auth"){
@@ -124,7 +124,7 @@ fun NavegacionPantallas(
 
             // Navigacion pantallas Principales
             navigation(
-                startDestination = if(obtenerParametro(contexto, "token")=="0") RutasPatallas.Inicio.ruta else RutasPatallas.InicioAuto.ruta,
+                startDestination = if(obtenerParametroLocal(contexto, "token")=="0") RutasPatallas.Inicio.ruta else RutasPatallas.InicioAuto.ruta,
                 route = "main"
             ) {
                 composable(
@@ -187,12 +187,12 @@ fun NavegacionPantallas(
                     RutasPatallas.InicioAuto.ruta
                 ) {
                     IniciarInterfazMenuPrincipalCompact(
-                        token = obtenerParametro(contexto, "token"),
-                        nombreEmpresa = obtenerParametro(contexto, "nombreEmpresa"),
-                        nombreUsuario = obtenerParametro(contexto, "nombreUsuario"),
+                        token = obtenerParametroLocal(contexto, "token"),
+                        nombreEmpresa = obtenerParametroLocal(contexto, "nombreEmpresa"),
+                        nombreUsuario = obtenerParametroLocal(contexto, "nombreUsuario"),
                         navControllerPrincipal = navcontroller,
                         systemUiController = systemUiController,
-                        codUsuario = obtenerParametro(contexto, "codUsuario")
+                        codUsuario = obtenerParametroLocal(contexto, "codUsuario")
                     )
                 }
             }

@@ -49,6 +49,7 @@ import com.soportereal.invefacon.funciones_de_interfaces.RutasPantallasMenuPrinc
 import com.soportereal.invefacon.funciones_de_interfaces.RutasPantallasMenuPrincipal.PantallaInicio
 import com.soportereal.invefacon.funciones_de_interfaces.RutasPantallasMenuPrincipal.PantallaSalir
 import com.soportereal.invefacon.funciones_de_interfaces.FuncionesParaAdaptarContenido
+import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloBodySmall
 import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloLabelBig
 import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloLabelSmall
 
@@ -209,7 +210,7 @@ fun NavegacionInferior(navController: NavController) {
                         PantallaInicio.titulo,
                         fontFamily = aksharFont,
                         fontWeight = FontWeight.Light,
-                        fontSize = obtenerEstiloLabelBig()
+                        fontSize = obtenerEstiloBodySmall()
                     )
                 },
                 alwaysShowLabel = true,
@@ -242,7 +243,7 @@ fun NavegacionInferior(navController: NavController) {
                         PantallaAjustes.titulo,
                         fontFamily = aksharFont,
                         fontWeight = FontWeight.Light,
-                        fontSize = obtenerEstiloLabelBig()
+                        fontSize = obtenerEstiloBodySmall()
                     )
                 },
                 alwaysShowLabel = true,
@@ -277,7 +278,7 @@ fun NavegacionInferior(navController: NavController) {
                         PantallaSalir.titulo,
                         fontFamily = aksharFont,
                         fontWeight = FontWeight.Light,
-                        fontSize = obtenerEstiloLabelBig(),
+                        fontSize = obtenerEstiloBodySmall(),
                         modifier = Modifier.padding(top = 0.dp)
                     )
                 },

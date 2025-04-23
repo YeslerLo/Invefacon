@@ -59,6 +59,7 @@ import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.toUpperCase
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.constraintlayout.compose.ConstraintLayout
@@ -73,13 +74,22 @@ import com.soportereal.invefacon.funciones_de_interfaces.RutasPatallas
 import com.soportereal.invefacon.funciones_de_interfaces.actualizarParametro
 import com.soportereal.invefacon.funciones_de_interfaces.descargarImagenSiNoExiste
 import com.soportereal.invefacon.funciones_de_interfaces.guardarParametroSiNoExiste
-import com.soportereal.invefacon.funciones_de_interfaces.obtenerParametro
+import com.soportereal.invefacon.funciones_de_interfaces.obtenerParametroLocal
 import com.soportereal.invefacon.funciones_de_interfaces.FuncionesParaAdaptarContenido
+import com.soportereal.invefacon.funciones_de_interfaces.ParClaveValor
+import com.soportereal.invefacon.funciones_de_interfaces.listaPermisos
+import com.soportereal.invefacon.funciones_de_interfaces.mostrarMensajeError
 import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloBodyBig
+import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloHeadSmall
+import com.soportereal.invefacon.funciones_de_interfaces.tienePermiso
+import com.soportereal.invefacon.funciones_de_interfaces.validarExitoRestpuestaServidor
+import com.soportereal.invefacon.interfaces.modulos.facturacion.ProcesarDatosModuloFacturacion
+import com.soportereal.invefacon.interfaces.pantallas_principales.estadoRespuestaApi
 import com.soportereal.invefacon.interfaces.pantallas_principales.gestorEstadoPantallaCarga
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import java.util.Locale
 
 
 @SuppressLint("SourceLockedOrientationActivity", "ContextCastToActivity")
@@ -102,6 +112,7 @@ fun IniciarInterfazInicio(
     val dpAltoPantalla = configuration.screenHeightDp
     val dpFontPantalla= configuration.fontScale
     val objetoAdaptardor= FuncionesParaAdaptarContenido(dpAltoPantalla, dpAnchoPantalla, dpFontPantalla)
+    val objectoProcesadorDatosApi = ProcesarDatosModuloFacturacion(token)
     var iniciarPantallaModulo by remember { mutableStateOf(false) }
     var rutaPantallaModulo by remember { mutableStateOf("") }
     val contexto = LocalContext.current
@@ -111,6 +122,18 @@ fun IniciarInterfazInicio(
 
     LaunchedEffect(Unit) {
         descargarImagenSiNoExiste(contexto,"https://invefacon.com/img/$nombreEmpresa/$nombreEmpresa.jpg", nombreArchivo = "$nombreEmpresa.jpg")
+    }
+
+    LaunchedEffect (Unit) {
+        if (listaPermisos.isNotEmpty()) return@LaunchedEffect
+        val result = objectoProcesadorDatosApi.obtenerPermisosUsuario(codUsuario)
+        if (result == null) return@LaunchedEffect
+        if (!validarExitoRestpuestaServidor(result)) return@LaunchedEffect estadoRespuestaApi.cambiarEstadoRespuestaApi(mostrarSoloRespuestaError = true, datosRespuesta = result)
+        listaPermisos = (0 until result.getJSONArray("data").length()).map { i ->
+            val permiso = result.getJSONArray("data").getJSONObject(i)
+            ParClaveValor(clave = permiso.getString("Cod_Derecho"), valor = permiso.getString("Descripcion"))
+        }
+        gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
     }
 
     // Interceptar el botón de retroceso
@@ -135,14 +158,14 @@ fun IniciarInterfazInicio(
         val ( bxContenedorBtModulos, bxSuperior)= createRefs()
 
         @Composable
-        fun btOpcionesModulos(text: String, icono: ImageVector, rutaPantalla: String?){
+        fun btOpcionesModulos(text: String, icono: ImageVector, rutaPantalla: String?, codPermiso: String = ""){
             Button(
                 onClick = {
+                    if (rutaPantalla != null && !tienePermiso(codPermiso)) return@Button mostrarMensajeError("NO POSEE EL PERMISO $codPermiso PARA ACCEDER AL MODULO ${text.uppercase(Locale.ROOT)}")
                     CoroutineScope(Dispatchers.IO).launch {
-                        if (rutaPantalla!=null){
-                            rutaPantallaModulo=rutaPantalla
-                            iniciarPantallaModulo=true
-                        }
+                        if (rutaPantalla==null) return@launch
+                        rutaPantallaModulo=rutaPantalla
+                        iniciarPantallaModulo=true
                     }
                 },
                 modifier = Modifier
@@ -201,14 +224,14 @@ fun IniciarInterfazInicio(
                 Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(8)))
                 Column {
                     Text(text = nombreUsuario, color = Color.White,
-                        fontSize = objetoAdaptardor.ajustarFont(20),
+                        fontSize = obtenerEstiloHeadSmall(),
                         fontFamily = aksharFont, fontWeight = FontWeight.Light,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                         modifier = Modifier.width(objetoAdaptardor.ajustarAncho(150))
                     )
                     Text(text = " $nombreEmpresa", color = Color.White,
-                        fontSize = objetoAdaptardor.ajustarFont(15),
+                        fontSize = obtenerEstiloBodyBig(),
                         fontFamily = aksharFont,
                         fontWeight = FontWeight.Light,
                         maxLines = 1,
@@ -269,7 +292,7 @@ fun IniciarInterfazInicio(
                         verticalArrangement = Arrangement.spacedBy(objetoAdaptardor.ajustarAltura(12))
                     ) {
                         item { Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(8))) }
-                        item { btOpcionesModulos("Facturación", Icons.Default.Description, RutasPatallas.Facturacion.ruta+"/$token"+"/$nombreEmpresa"+"/$codUsuario"+"/$nombreUsuario") }
+                        item { btOpcionesModulos("Facturación", Icons.Default.Description, RutasPatallas.Facturacion.ruta+"/$token"+"/$nombreEmpresa"+"/$codUsuario"+"/$nombreUsuario", "001") }
                         item { btOpcionesModulos("Ventas", Icons.AutoMirrored.Filled.ShowChart, null) }
                         item { btOpcionesModulos("Inventario", Icons.Default.Inventory, null) }
                         item { btOpcionesModulos("CxC", Icons.Default.CreditCard, null) }
@@ -286,8 +309,8 @@ fun IniciarInterfazInicio(
                     ) {
                         item { Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(8))) }
                         item { btOpcionesModulos("Proformas", Icons.Default.Receipt, null) }
-                        item { btOpcionesModulos("Clientes", Icons.Default.People, RutasPatallas.Clientes.ruta+"/$token") }
-                        item { btOpcionesModulos("SAC", Icons.Default.RestaurantMenu, RutasPatallas.Sac.ruta+"/$token"+"/$nombreEmpresa"+"/$codUsuario/$nombreUsuario") }
+                        item { btOpcionesModulos("Clientes", Icons.Default.People, RutasPatallas.Clientes.ruta+"/$token", "310") }
+                        item { btOpcionesModulos("SAC", Icons.Default.RestaurantMenu, RutasPatallas.Sac.ruta+"/$token"+"/$nombreEmpresa"+"/$codUsuario/$nombreUsuario","700") }
                         item { btOpcionesModulos("CxP", Icons.Default.MonetizationOn, null) }
                         item { btOpcionesModulos("Compras", Icons.Default.ShoppingCart, null) }
                         item { btOpcionesModulos("Resumen", Icons.Default.Assessment, null) }
@@ -299,7 +322,7 @@ fun IniciarInterfazInicio(
 
     MenuConfirmacion(
         onAceptar = {
-            if (obtenerParametro(contexto, "token") =="0"){
+            if (obtenerParametroLocal(contexto, "token") =="0"){
                 navControllerPrincipal.popBackStack()
             }else{
                 actualizarParametro(contexto, "token","0")
@@ -320,7 +343,6 @@ fun IniciarInterfazInicio(
         subTitulo = "¿Estás seguro de que quieres salir?"
     )
 
-    gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
 }
 
 @Preview(showBackground = true)

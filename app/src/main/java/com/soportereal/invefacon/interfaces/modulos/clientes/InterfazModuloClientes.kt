@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -80,8 +81,15 @@ import androidx.navigation.compose.rememberNavController
 import com.google.accompanist.systemuicontroller.SystemUiController
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.soportereal.invefacon.R
+import com.soportereal.invefacon.funciones_de_interfaces.BBasicTextField
 import com.soportereal.invefacon.funciones_de_interfaces.RutasPatallas
 import com.soportereal.invefacon.funciones_de_interfaces.FuncionesParaAdaptarContenido
+import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloBodyBig
+import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloBodyMedium
+import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloBodySmall
+import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloDisplayBig
+import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloHeadMedium
+import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloHeadSmall
 import com.soportereal.invefacon.interfaces.inicio_sesion.ocultarTeclado
 import com.soportereal.invefacon.interfaces.pantallas_principales.EstadoPantallaCarga
 import com.soportereal.invefacon.interfaces.pantallas_principales.gestorEstadoPantallaCarga
@@ -154,7 +162,6 @@ internal fun IniciarInterfazModuloClientes(
             navController .popBackStack()
         }
     }
-
 
     ConstraintLayout(
         modifier = Modifier
@@ -249,7 +256,7 @@ internal fun IniciarInterfazModuloClientes(
                     "Clientes",
                     fontFamily = fontAksharPrincipal,
                     fontWeight =    FontWeight.SemiBold,
-                    fontSize = objetoAdaptardor.ajustarFont(32),
+                    fontSize = obtenerEstiloDisplayBig(),
                     color = Color.White,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
@@ -305,13 +312,14 @@ internal fun IniciarInterfazModuloClientes(
             leadingIcon = {
                 IconButton(
                     onClick = {
+                        datosIngresadosBarraBusqueda = ""
                         buscarClientes()
                     }
                 ) {
                     Icon(imageVector = Icons.Filled.Search,
                         contentDescription = "Icono Buscar",
                         tint= Color.DarkGray,
-                        modifier = Modifier.size(objetoAdaptardor.ajustarAltura(35))
+                        modifier = Modifier.size(objetoAdaptardor.ajustarAltura(30))
                     )
                 }
 
@@ -321,7 +329,7 @@ internal fun IniciarInterfazModuloClientes(
                     Icon(imageVector = Icons.Filled.Tune,
                         contentDescription = "Icono Filtrar",
                         tint= Color.DarkGray,
-                        modifier = Modifier.size(objetoAdaptardor.ajustarAltura(35))
+                        modifier = Modifier.size(objetoAdaptardor.ajustarAltura(30))
                     )
                 }
             },
@@ -329,13 +337,13 @@ internal fun IniciarInterfazModuloClientes(
                 Text("Buscar...",
                     fontFamily = fontAksharPrincipal,
                     fontWeight = FontWeight.Light,
-                    fontSize = objetoAdaptardor.ajustarFont(22),
+                    fontSize = obtenerEstiloHeadSmall(),
                     maxLines = 1
                 )
             },
             modifier = Modifier
                 .width(objetoAdaptardor.ajustarAncho(360))
-                .height(objetoAdaptardor.ajustarAltura(60))
+                .wrapContentHeight()
                 .constrainAs(txfBarraBusqueda){
                     top.linkTo(bxSuperior.bottom, margin = objetoAdaptardor.ajustarAltura(8))
                     start.linkTo(parent.start, margin = objetoAdaptardor.ajustarAncho(12))
@@ -354,7 +362,8 @@ internal fun IniciarInterfazModuloClientes(
             textStyle = TextStyle(
                 fontFamily = fontAksharPrincipal,
                 fontWeight = FontWeight.Light,
-                color = Color.DarkGray, fontSize = objetoAdaptardor.ajustarFont(20),
+                color = Color.DarkGray,
+                fontSize = obtenerEstiloHeadSmall(),
                 textAlign = TextAlign.Justify
             ),
             maxLines = 1,
@@ -397,7 +406,7 @@ internal fun IniciarInterfazModuloClientes(
                         maxLines = 1,
                         fontFamily = fontAksharPrincipal,
                         fontWeight = FontWeight.Light,
-                        fontSize = objetoAdaptardor.ajustarFont(19)
+                        fontSize = obtenerEstiloBodyBig()
                     )
                 }
 
@@ -472,7 +481,7 @@ internal fun IniciarInterfazModuloClientes(
                             text = snackbarData.visuals.message,
                             style = TextStyle(
                                 color = Color.Black,
-                                fontSize = objetoAdaptardor.ajustarFont(15),
+                                fontSize = obtenerEstiloBodyBig(),
                                 fontWeight = FontWeight.Light,
                                 fontFamily = fontAksharPrincipal
                             )
@@ -498,7 +507,7 @@ internal fun IniciarInterfazModuloClientes(
                         "Filtros de búsqueda",
                         fontFamily = fontAksharPrincipal,
                         fontWeight = FontWeight.Medium,
-                        fontSize = objetoAdaptardor.ajustarFont(27),
+                        fontSize = obtenerEstiloHeadMedium(),
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                         textAlign = TextAlign.Center,
@@ -570,7 +579,7 @@ internal fun IniciarInterfazModuloClientes(
                             "Aplicar Filtros",
                             fontFamily = fontAksharPrincipal,
                             fontWeight = FontWeight.Medium,
-                            fontSize = objetoAdaptardor.ajustarFont(15),
+                            fontSize = obtenerEstiloBodyBig(),
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
                             textAlign = TextAlign.Center,
@@ -592,7 +601,7 @@ internal fun IniciarInterfazModuloClientes(
                             "Cancelar",
                             fontFamily = fontAksharPrincipal,
                             fontWeight = FontWeight.Medium,
-                            fontSize = objetoAdaptardor.ajustarFont(15),
+                            fontSize = obtenerEstiloBodyBig(),
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
                             textAlign = TextAlign.Center,
@@ -604,9 +613,6 @@ internal fun IniciarInterfazModuloClientes(
         }
     }
 }
-
-
-
 
 @Composable
 fun AgregarBxConenedorInformacionCliente(
@@ -635,7 +641,7 @@ fun AgregarBxConenedorInformacionCliente(
 
     Card(
         modifier = Modifier
-            .height(objetoAdaptardor.ajustarAltura(115))
+            .wrapContentHeight()
             .clickable {
                 CoroutineScope(Dispatchers.IO).launch {
                     iniciarPantallaInformacionCliente= true
@@ -646,128 +652,116 @@ fun AgregarBxConenedorInformacionCliente(
                 shape = RoundedCornerShape(objetoAdaptardor.ajustarAltura(20))
             ),
         shape = RoundedCornerShape(objetoAdaptardor.ajustarAltura(20)),
-        colors = CardDefaults.cardColors(containerColor = Color.White)
+        colors = CardDefaults.cardColors(containerColor = when (datosCliente.estado) {
+            "1" -> {
+                Color(0xFF00C05A)
+            }
+            "2" -> {
+                Color(0xFFF3ED00)
+            }
+            else -> {
+                Color(0xFFD50000)
+            }
+        })
     ) {
-        Row {
-            Box(modifier = Modifier
-                .fillMaxHeight()
-                .width(objetoAdaptardor.ajustarAncho(20))
-                .background(
-                    when (datosCliente.estado) {
-                        "1" -> {
-                            Color(0xFF00C05A)
-                        }
-                        "2" -> {
-                            Color(0xFFF3ED00)
-                        }
-                        else -> {
-                            Color(0xFFD50000)
-                        }
-                    }
+        Row (
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier
+                .padding(start = objetoAdaptardor.ajustarAncho(16))
+                .fillMaxSize()
+                .background(Color.White)
+        ) {
+            Column (
+                horizontalAlignment = Alignment.Start
+            ) {
+
+                // Codigo Cliente
+                Text(text = "#"+datosCliente.codigo,
+                    fontFamily = fontAksharPrincipal,
+                    fontWeight =    FontWeight.SemiBold,
+                    fontSize = obtenerEstiloBodyMedium(),
+                    color = Color.Black,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    textAlign = TextAlign.Start,
+                    modifier = Modifier
+                        .padding(start = objetoAdaptardor.ajustarAncho(8), top = objetoAdaptardor.ajustarAltura(8))
+                        .width(objetoAdaptardor.ajustarAncho(260))
                 )
-            )
 
-            Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(8)))
+                // Nombre Comercial
+                Text(datosCliente.nombreComercial
+                    ,fontFamily = fontAksharPrincipal,
+                    fontWeight =    FontWeight.SemiBold,
+                    fontSize =  obtenerEstiloBodyBig(),
+                    color = Color.Black,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    textAlign = TextAlign.Start,
+                    modifier = Modifier
+                        .padding(start = objetoAdaptardor.ajustarAncho(8))
+                        .width(objetoAdaptardor.ajustarAncho(260))
+                )
 
-            Box(
-                modifier = Modifier
-                    .fillMaxHeight()
-                    .fillMaxWidth()
-                , contentAlignment = Alignment.CenterStart
-            ){
-                Row {
-                    Column {
-                        Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(2)))
+                // Nombre Juridico
+                Text(datosCliente.nombreJuridico
+                    ,fontFamily = fontAksharPrincipal,
+                    fontWeight =    FontWeight.SemiBold,
+                    fontSize =  obtenerEstiloBodyMedium(),
+                    color = Color(0xFF626262),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    textAlign = TextAlign.Start,
+                    modifier = Modifier
+                        .padding(start = objetoAdaptardor.ajustarAncho(8))
+                        .width(objetoAdaptardor.ajustarAncho(260))
+                )
 
-                        // Codigo Cliente
-                        Text(text = "#"+datosCliente.codigo,
-                            fontFamily = fontAksharPrincipal,
-                            fontWeight =    FontWeight.SemiBold,
-                            fontSize = objetoAdaptardor.ajustarFont(15),
-                            color = Color.Black,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                            textAlign = TextAlign.Start,
-                            modifier = Modifier
-                                .height(objetoAdaptardor.ajustarAltura(19))
-                                .width(objetoAdaptardor.ajustarAncho(260))
-                        )
+                // Telefono
+                Text(datosCliente.Telefonos
+                    ,fontFamily = fontAksharPrincipal,
+                    fontWeight =    FontWeight.SemiBold,
+                    fontSize =  obtenerEstiloBodyMedium(),
+                    color = Color(0xFF626262),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    textAlign = TextAlign.Start,
+                    modifier = Modifier
+                        .padding(start = objetoAdaptardor.ajustarAncho(8))
+                        .width(objetoAdaptardor.ajustarAncho(260))
+                )
 
-                        // Nombre Comercial
-                        Text(datosCliente.nombreComercial
-                            ,fontFamily = fontAksharPrincipal,
-                            fontWeight =    FontWeight.SemiBold,
-                            fontSize =  objetoAdaptardor.ajustarFont(17),
-                            color = Color.Black,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                            textAlign = TextAlign.Start,
-                            modifier = Modifier
-                                .height(objetoAdaptardor.ajustarAltura(26))
-                                .width(objetoAdaptardor.ajustarAncho(260))
-                        )
+                // Correo
+                Text(datosCliente.correo
+                    ,fontFamily = fontAksharPrincipal,
+                    fontWeight =    FontWeight.SemiBold,
+                    fontSize =  obtenerEstiloBodyMedium(),
+                    color = Color(0xFF626262),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    textAlign = TextAlign.Start,
+                    modifier = Modifier
+                        .padding(start = objetoAdaptardor.ajustarAncho(8), bottom = objetoAdaptardor.ajustarAltura(8))
+                        .width(objetoAdaptardor.ajustarAncho(260))
+                )
+            }
 
-                        // Nombre Juridico
-                        Text(datosCliente.nombreJuridico
-                            ,fontFamily = fontAksharPrincipal,
-                            fontWeight =    FontWeight.SemiBold,
-                            fontSize =  objetoAdaptardor.ajustarFont(15),
-                            color = Color(0xFF626262),
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                            textAlign = TextAlign.Start,
-                            modifier = Modifier
-                                .height(objetoAdaptardor.ajustarAltura(23))
-                                .width(objetoAdaptardor.ajustarAncho(260))
-                        )
+            // Opciones
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center){
 
-                        // Telefono
-                        Text(datosCliente.Telefonos
-                            ,fontFamily = fontAksharPrincipal,
-                            fontWeight =    FontWeight.SemiBold,
-                            fontSize =  objetoAdaptardor.ajustarFont(15),
-                            color = Color(0xFF626262),
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                            textAlign = TextAlign.Start,
-                            modifier = Modifier
-                                .height(objetoAdaptardor.ajustarAltura(19))
-                                .width(objetoAdaptardor.ajustarAncho(260))
-                        )
-
-                        // Correo
-                        Text(datosCliente.correo
-                            ,fontFamily = fontAksharPrincipal,
-                            fontWeight =    FontWeight.SemiBold,
-                            fontSize =  objetoAdaptardor.ajustarFont(15),
-                            color = Color(0xFF626262),
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                            textAlign = TextAlign.Start,
-                            modifier = Modifier
-                                .height(objetoAdaptardor.ajustarAltura(23))
-                                .width(objetoAdaptardor.ajustarAncho(260))
-                        )
-                    }
-
-                    // Opciones
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center){
-
-                        IconButton(
-                            onClick = {
-                                CoroutineScope(Dispatchers.IO).launch {
-                                    iniciarPantallaInformacionCliente= true
-                                }
-                            }
-                        ) {
-                            Icon(
-                                imageVector = Icons.Filled.MoreHoriz,
-                                contentDescription = "Icono mostrar opciones clientes",
-                                tint = Color.DarkGray,
-                                modifier = Modifier.size(objetoAdaptardor.ajustarAltura(50))
-                            )
+                IconButton(
+                    onClick = {
+                        CoroutineScope(Dispatchers.IO).launch {
+                            iniciarPantallaInformacionCliente= true
                         }
                     }
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.MoreHoriz,
+                        contentDescription = "Icono mostrar opciones clientes",
+                        tint = Color.DarkGray,
+                        modifier = Modifier.size(objetoAdaptardor.ajustarAltura(50))
+                    )
                 }
             }
         }
@@ -787,7 +781,6 @@ fun FiltroDropdownMenu(
     val dpAnchoPantalla = configuration.screenWidthDp
     val dpAltoPantalla = configuration.screenHeightDp
     val dpFontPantalla= configuration.fontScale
-    val objetoAdaptardor= FuncionesParaAdaptarContenido(dpAltoPantalla, dpAnchoPantalla, dpFontPantalla)
     var expanded by remember { mutableStateOf(false) } // Controla si el menú está abierto
 
     Column(modifier = Modifier.background(Color.White)) {
@@ -795,7 +788,7 @@ fun FiltroDropdownMenu(
             label,
             fontFamily = fontAksharPrincipal,
             fontWeight = FontWeight.Medium,
-            fontSize = objetoAdaptardor.ajustarFont(18),
+            fontSize = obtenerEstiloBodyBig(),
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
             textAlign = TextAlign.Center,
@@ -807,7 +800,7 @@ fun FiltroDropdownMenu(
                 selectedOption,
                 fontFamily = fontAksharPrincipal,
                 fontWeight = FontWeight.Medium,
-                fontSize = objetoAdaptardor.ajustarFont(17),
+                fontSize = obtenerEstiloBodyBig(),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
                 textAlign = TextAlign.Center,
@@ -830,7 +823,7 @@ fun FiltroDropdownMenu(
                             opcion,
                             fontFamily = fontAksharPrincipal,
                             fontWeight = FontWeight.Medium,
-                            fontSize = objetoAdaptardor.ajustarFont(17),
+                            fontSize = obtenerEstiloBodyBig(),
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
                             textAlign = TextAlign.Center,
@@ -861,5 +854,5 @@ fun quitarTildesYMinusculas(texto: String): String {
 private fun Preview(){
     val systemUiController = rememberSystemUiController()
     val nav= rememberNavController()
-    IniciarInterfazModuloClientes("", systemUiController,nav )
+    IniciarInterfazModuloClientes("eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJDb2RpZ28iOiIwMDM2MiIsIk5vbWJyZSI6IllFU0xFUiBMT1JJTyIsIkVtYWlsIjoieWVzbGVybG9yaW9AZ21haWwuY29tIiwiUHVlcnRvIjoiODAxIiwiRW1wcmVzYSI6IlpHVnRiMlpsY25KbCIsIlNlcnZlcklwIjoiTVRreUxqRTJPQzQzTGpNdyIsInRpbWUiOiIyMDI1MDMxMjA1MDMwOSJ9.JrUHQoYYnWJibwMi1B2-iGBTGk-_-2jPqdLAiJ57AJM", systemUiController,nav )
 }

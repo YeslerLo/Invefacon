@@ -107,7 +107,7 @@ package com.soportereal.invefacon.interfaces.modulos.sac
  import com.soportereal.invefacon.funciones_de_interfaces.mostrarMensajeError
  import com.soportereal.invefacon.funciones_de_interfaces.mostrarMensajeExito
  import com.soportereal.invefacon.funciones_de_interfaces.obtenerDatosClienteByCedula
- import com.soportereal.invefacon.funciones_de_interfaces.obtenerParametro
+ import com.soportereal.invefacon.funciones_de_interfaces.obtenerParametroLocal
  import com.soportereal.invefacon.funciones_de_interfaces.validarExitoRestpuestaServidor
  import com.soportereal.invefacon.funciones_de_interfaces.FuncionesParaAdaptarContenido
  import com.soportereal.invefacon.interfaces.modulos.clientes.Cliente
@@ -116,6 +116,7 @@ package com.soportereal.invefacon.interfaces.modulos.sac
  import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloBodyBig
  import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloBodyMedium
  import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloBodySmall
+ import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloDisplayMedium
  import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloLabelBig
  import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloLabelSmall
  import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloTitleBig
@@ -209,7 +210,7 @@ fun InterfazModuloSac(
     var iniciarMenuAjustes by remember { mutableStateOf(false) }
     val context = LocalContext.current
     guardarParametroSiNoExiste(context, "prmImp2$nombreEmpresa$codUsuario", "1")
-    var valorPrmImp2 by remember { mutableStateOf(obtenerParametro(context, "prmImp2$nombreEmpresa$codUsuario")) }
+    var valorPrmImp2 by remember { mutableStateOf(obtenerParametroLocal(context, "prmImp2$nombreEmpresa$codUsuario")) }
     var codUsuarioIngresado by remember { mutableStateOf(codUsuario) }
     var passwordIngresada by remember { mutableStateOf("") }
     var agregarImpuestoServicio by remember { mutableStateOf(false) }
@@ -878,7 +879,7 @@ fun InterfazModuloSac(
                     estadoRespuestaApi.cambiarEstadoRespuestaApi(mostrarRespuesta = true, datosRespuesta = result)
                     if (result.getString("status")=="ok" && result.getString("code")=="200"){
                         actualizarParametro(context, "prmImp2$nombreEmpresa$codUsuario", if(valorPrmImp2=="0") "1" else "0")
-                        valorPrmImp2 = obtenerParametro(context, "prmImp2$nombreEmpresa$codUsuario")
+                        valorPrmImp2 = obtenerParametroLocal(context, "prmImp2$nombreEmpresa$codUsuario")
                         estadoImp2 = valorPrmImp2 != "0"
                     }
                 }
@@ -1723,7 +1724,7 @@ fun InterfazModuloSac(
                     "Crear Nueva Mesa",
                     fontFamily = fontAksharPrincipal,
                     fontWeight = FontWeight.Medium,
-                    fontSize = objetoAdaptardor.ajustarFont(27),
+                    fontSize = obtenerEstiloDisplayMedium(),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     textAlign = TextAlign.Center,
@@ -1802,7 +1803,7 @@ fun InterfazModuloSac(
                     "Crear Nueva Persona",
                     fontFamily = fontAksharPrincipal,
                     fontWeight = FontWeight.Medium,
-                    fontSize = objetoAdaptardor.ajustarFont(27),
+                    fontSize =  obtenerEstiloDisplayMedium(),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     textAlign = TextAlign.Center,
@@ -2634,7 +2635,7 @@ fun InterfazModuloSac(
                                 "Ajustes",
                                 fontFamily = fontAksharPrincipal,
                                 fontWeight = FontWeight.Medium,
-                                fontSize = objetoAdaptardor.ajustarFont(27),
+                                fontSize =  obtenerEstiloDisplayMedium(),
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,
                                 textAlign = TextAlign.Center,
@@ -2725,7 +2726,7 @@ fun InterfazModuloSac(
                                     if(isNuevoCliente)"Agregar Cliente" else "Editar Cliente",
                                     fontFamily = fontAksharPrincipal,
                                     fontWeight = FontWeight.Medium,
-                                    fontSize = objetoAdaptardor.ajustarFont(27),
+                                    fontSize =  obtenerEstiloDisplayMedium(),
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis,
                                     textAlign = TextAlign.Center,
@@ -2919,7 +2920,7 @@ fun InterfazModuloSac(
                                     "Crear Express",
                                     fontFamily = fontAksharPrincipal,
                                     fontWeight = FontWeight.Medium,
-                                    fontSize = objetoAdaptardor.ajustarFont(27),
+                                    fontSize =  obtenerEstiloDisplayMedium(),
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis,
                                     textAlign = TextAlign.Center,
@@ -3101,7 +3102,7 @@ fun InterfazModuloSac(
                     "Quitar Mesa ${mesaActual.nombre}-${mesaActual.salon}",
                     fontFamily = fontAksharPrincipal,
                     fontWeight = FontWeight.Medium,
-                    fontSize = objetoAdaptardor.ajustarFont(25),
+                    fontSize = obtenerEstiloDisplayMedium(),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     textAlign = TextAlign.Center,
@@ -3189,7 +3190,7 @@ fun InterfazModuloSac(
                     "Confirmacion de Cambios",
                     fontFamily = fontAksharPrincipal,
                     fontWeight = FontWeight.Medium,
-                    fontSize = objetoAdaptardor.ajustarFont(25),
+                    fontSize =  obtenerEstiloDisplayMedium(),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     textAlign = TextAlign.Center,

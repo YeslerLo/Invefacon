@@ -23,6 +23,5 @@ class ProcesamientoDatosInterfazInicioSesion {
             .addFormDataPart("empresa", nombreEmpresa)
             .build()
         return objetoFuncionesHttpInvefacon.metodoPost(apiBody, "seguridad/authtoken.php")
-
     }
 }

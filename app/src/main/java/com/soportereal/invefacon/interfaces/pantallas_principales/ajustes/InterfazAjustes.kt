@@ -44,6 +44,7 @@ import com.soportereal.invefacon.R
 import com.soportereal.invefacon.funciones_de_interfaces.RutasPatallas
 import com.soportereal.invefacon.funciones_de_interfaces.TText
 import com.soportereal.invefacon.funciones_de_interfaces.FuncionesParaAdaptarContenido
+import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloDisplayBig
 import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloDisplayMedium
 import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloDisplaySmall
 import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloHeadBig
@@ -98,7 +99,7 @@ fun IniciarInterfazAjustes(
                     "Ajustes",
                     fontFamily = fontAksharPrincipal,
                     fontWeight =    FontWeight.SemiBold,
-                    fontSize = objetoAdaptardor.ajustarFont(30),
+                    fontSize = obtenerEstiloDisplayBig(),
                     color = Color.White,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,

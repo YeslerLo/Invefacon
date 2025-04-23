@@ -89,7 +89,7 @@ fun guardarParametroSiNoExiste(context: Context, clave: String, valor: String) {
     }
 }
 
-fun obtenerParametro(context: Context, clave: String, valorPorDefecto: String = "0"): String {
+fun obtenerParametroLocal(context: Context, clave: String, valorPorDefecto: String = "0"): String {
     val sharedPreferences: SharedPreferences = context.getSharedPreferences("MisPreferencias", Context.MODE_PRIVATE)
     return sharedPreferences.getString(clave, valorPorDefecto) ?: valorPorDefecto
 }
@@ -269,7 +269,14 @@ class ImpresoraViewModel : ViewModel() {
             ).show()
             false
         }
-        return withContext(Dispatchers.IO) {
+        return withContext(Dispatchers.Main) {
+            if (conexion?.isConnected == false){
+                Toast.makeText(
+                    context,
+                    "No hay ninguna impresora conectada.",
+                    Toast.LENGTH_LONG
+                ).show()
+            }
             conexion?.isConnected == true
         }
     }
@@ -284,7 +291,7 @@ class ImpresoraViewModel : ViewModel() {
                     Toast.makeText(context, "Conectando impresora...", Toast.LENGTH_SHORT).show()
                 }
                 try {
-                    cantidadCaracPorLinea = obtenerParametro(context,"cantidadCaracPorLineaImpre").toInt()
+                    cantidadCaracPorLinea = obtenerParametroLocal(context,"cantidadCaracPorLineaImpre").toInt()
                     // Crear la instancia de la impresora con los parámetros configurados
                     impresora = EscPosPrinter(conexion!!, printerDpi, printerWidthMM, cantidadCaracPorLinea, charset)
                     isConectada = true
@@ -347,7 +354,7 @@ class ImpresoraViewModel : ViewModel() {
         viewModelScope.launch(Dispatchers.IO) {
             var textoPrueba = ""
             try{
-                val rutaImagen = obtenerParametro(context, clave = "$nombreEmpresa.jpg")
+                val rutaImagen = obtenerParametroLocal(context, clave = "$nombreEmpresa.jpg")
                 val imagenHex = imagenAHexadecimal(rutaImagen, impresora) ?: "0"
 
                 textoPrueba = if (imagenHex != "0") {
@@ -387,7 +394,7 @@ class ImpresoraViewModel : ViewModel() {
     @RequiresApi(Build.VERSION_CODES.S)
     fun reconectar(context: Context) {
         viewModelScope.launch(Dispatchers.IO) {
-            val lastDeviceAddress = obtenerParametro(context, "macImpresora")
+            val lastDeviceAddress = obtenerParametroLocal(context, "macImpresora")
             buscar(context)
             if (!isPermisosOtorgados) return@launch
             delay(1000)
@@ -437,7 +444,7 @@ class ImpresoraViewModel : ViewModel() {
 }
 
 fun addTextBig(text: String, justification: String, context: Context) : String {
-    val lienas = segmentarTextoConEspacios(texto = text, largoLinea = obtenerParametro(context,"cantidadCaracPorLineaImpre").toInt()/2)
+    val lienas = segmentarTextoConEspacios(texto = text, largoLinea = obtenerParametroLocal(context,"cantidadCaracPorLineaImpre").toInt()/2)
     var textoRetornar = ""
     for(i in lienas){
         textoRetornar += "[$justification]<font size='big'>$i</font>\n"
@@ -446,7 +453,7 @@ fun addTextBig(text: String, justification: String, context: Context) : String {
 }
 
 fun addTextTall(text: String, justification: String, destacar: Boolean = false, context: Context) : String {
-    val lienas = segmentarTextoConEspacios(texto = text, largoLinea = obtenerParametro(context,"cantidadCaracPorLineaImpre").toInt())
+    val lienas = segmentarTextoConEspacios(texto = text, largoLinea = obtenerParametroLocal(context,"cantidadCaracPorLineaImpre").toInt())
     var textoRetornar = ""
     if (destacar){
         for(i in lienas){
@@ -463,7 +470,7 @@ fun addTextTall(text: String, justification: String, destacar: Boolean = false, 
 }
 
 fun addText(text: String, justification: String, destacar: Boolean = false, context: Context, conLiena: Boolean = false) : String {
-    val lienas = segmentarTextoConEspacios(texto = text, largoLinea = obtenerParametro(context,"cantidadCaracPorLineaImpre").toInt())
+    val lienas = segmentarTextoConEspacios(texto = text, largoLinea = obtenerParametroLocal(context,"cantidadCaracPorLineaImpre").toInt())
     var textoRetornar = ""
     return if (destacar) {
         if (conLiena){
@@ -494,7 +501,7 @@ fun addText(text: String, justification: String, destacar: Boolean = false, cont
 
 fun agregarLinea(ajustarATexto: Boolean = false, text: String = "", justification: String ="L", context: Context): String {
     var linea = ""
-    val length = if (ajustarATexto) text.length else obtenerParametro(context,"cantidadCaracPorLineaImpre").toInt()
+    val length = if (ajustarATexto) text.length else obtenerParametroLocal(context,"cantidadCaracPorLineaImpre").toInt()
     for (i in 0 until length) {
         linea += "-"
     }
@@ -503,7 +510,7 @@ fun agregarLinea(ajustarATexto: Boolean = false, text: String = "", justificatio
 
 fun agregarDobleLinea(ajustarATexto: Boolean = false, text: String = "", justification: String ="L", context: Context): String {
     var linea = ""
-    val length = if (ajustarATexto) text.length else obtenerParametro(context,"cantidadCaracPorLineaImpre").toInt()
+    val length = if (ajustarATexto) text.length else obtenerParametroLocal(context,"cantidadCaracPorLineaImpre").toInt()
     for (i in 0 until length) {
         linea += "="
     }
@@ -589,7 +596,7 @@ fun tienePermiso(codPermiso:String): Boolean{
     return listaPermisos.find { it.clave == codPermiso } != null
 }
 
-fun obtenerValorParametro(codParametro: String, valorAuxiliar : String): String{
+fun obtenerValorParametroEmpresa(codParametro: String, valorAuxiliar : String): String{
     val parametro = listaParametros.find { it.clave == codParametro }
     return if(parametro !=null){
         parametro.valor

@@ -61,6 +61,10 @@ import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.soportereal.invefacon.R
 import com.soportereal.invefacon.funciones_de_interfaces.TextFieldMultifuncional
 import com.soportereal.invefacon.funciones_de_interfaces.FuncionesParaAdaptarContenido
+import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloBodyBig
+import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloDisplayBig
+import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloDisplaySmall
+import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloHeadMedium
 import com.soportereal.invefacon.interfaces.pantallas_principales.estadoRespuestaApi
 import com.soportereal.invefacon.interfaces.pantallas_principales.gestorEstadoPantallaCarga
 import kotlinx.coroutines.delay
@@ -370,7 +374,7 @@ fun IniciarInterfazAgregarCliente(
                     "Agregar Cliente",
                     fontFamily = fontAksharPrincipal,
                     fontWeight =    FontWeight.SemiBold,
-                    fontSize = objetoAdaptardor.ajustarFont(28),
+                    fontSize = obtenerEstiloDisplayBig(),
                     color = Color.White,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
@@ -676,7 +680,7 @@ fun IniciarInterfazAgregarCliente(
                                         maxLines = 1,
                                         fontFamily = fontAksharPrincipal,
                                         fontWeight = FontWeight.SemiBold,
-                                        fontSize = objetoAdaptardor.ajustarFont(25)
+                                        fontSize = obtenerEstiloDisplaySmall()
                                     )
                                 }
 
@@ -713,7 +717,7 @@ fun IniciarInterfazAgregarCliente(
                             text = snackbarData.visuals.message,
                             style = TextStyle(
                                 color = Color.Black,
-                                fontSize = objetoAdaptardor.ajustarFont(15),
+                                fontSize = obtenerEstiloBodyBig(),
                                 fontWeight = FontWeight.Light,
                                 fontFamily = fontAksharPrincipal
                             )

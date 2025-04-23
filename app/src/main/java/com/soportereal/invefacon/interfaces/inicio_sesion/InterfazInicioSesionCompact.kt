@@ -24,9 +24,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
@@ -108,7 +106,7 @@ import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloBodyBig
 import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloBodySmall
 import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloHeadBig
 import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloLabelSmall
-import com.soportereal.invefacon.funciones_de_interfaces.obtenerParametro
+import com.soportereal.invefacon.funciones_de_interfaces.obtenerParametroLocal
 import com.soportereal.invefacon.interfaces.pantallas_principales.gestorEstadoPantallaCarga
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -167,7 +165,7 @@ fun IniciarInterfazInicioSesionCompact(
     var isCorreoIngresadoValido by remember { mutableStateOf(false) }
     var guardarDatosSesion by remember { mutableStateOf(false) }
     val scrollState= rememberScrollState(0)
-    var usuarioCorreoEmpresa by remember { mutableStateOf(obtenerParametro(contexto, "ultimoCorreo")) }
+    var usuarioCorreoEmpresa by remember { mutableStateOf(obtenerParametroLocal(contexto, "ultimoCorreo")) }
 
     LaunchedEffect(isInicioSesionAprobado) {
         if (isInicioSesionAprobado){
@@ -387,7 +385,7 @@ fun IniciarInterfazInicioSesionCompact(
                         textStyle = TextStyle(
                             fontFamily = fontAksharPrincipal,
                             fontWeight = FontWeight.Light,
-                            fontSize = objetoAdaptardor.ajustarFont(16)
+                            fontSize = obtenerEstiloBodyBig()
                         ),
                         trailingIcon = {
                             if (existenCorreos==false) {
@@ -429,7 +427,7 @@ fun IniciarInterfazInicioSesionCompact(
                     Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(20)))
 
                     //Segun es el estado de la variable se va a mostrar un componente
-                    // Su funcion es mostrar el estado de busqueda de correos como caragando, correo no econtrado y los resulatados en caso de que el correo este asociado a una empresa
+                    // Su funcion es mostrar el estado de busqueda de correos como cargando, correo no econtrado y los resulatados en caso de que el correo este asociado a una empresa
                     when(existenCorreos){
                         null ->{
                             Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
@@ -457,8 +455,7 @@ fun IniciarInterfazInicioSesionCompact(
                                     color = Color.Red,
                                     fontFamily = fontAksharPrincipal,
                                     fontWeight = FontWeight.Medium,
-                                    textAlign = TextAlign.Center
-                                    ,
+                                    textAlign = TextAlign.Center,
                                     fontSize = obtenerEstiloBodyBig(),
                                     maxLines = 2,
                                     overflow = TextOverflow.Ellipsis
@@ -536,9 +533,7 @@ fun IniciarInterfazInicioSesionCompact(
                                             color = Color.DarkGray,
                                             fontFamily = fontAksharPrincipal,
                                             fontWeight = FontWeight.Light,
-                                            fontSize = obtenerEstiloBodyBig(),
-                                            maxLines = 1,
-                                            overflow = TextOverflow.Ellipsis
+                                            fontSize = obtenerEstiloBodyBig()
                                         )
                                     },
                                     colors = OutlinedTextFieldDefaults.colors(
@@ -650,7 +645,7 @@ fun IniciarInterfazInicioSesionCompact(
                                 "Ingrese su contraseña",
                                 fontFamily = fontAksharPrincipal,
                                 fontWeight = FontWeight.Light,
-                                fontSize = objetoAdaptardor.ajustarFont(16),
+                                fontSize = obtenerEstiloBodyBig(),
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis
                             )
@@ -670,7 +665,12 @@ fun IniciarInterfazInicioSesionCompact(
                         },
                         enabled = isBtIniciarSesionActivo.value,
                         singleLine = true,
-                        textStyle = TextStyle(fontFamily = fontAksharPrincipal, fontWeight = FontWeight.Light, color = Color.DarkGray, fontSize = objetoAdaptardor.ajustarFont(16)),
+                        textStyle = TextStyle(
+                            fontFamily = fontAksharPrincipal,
+                            fontWeight = FontWeight.Light,
+                            color = Color.DarkGray,
+                            fontSize = obtenerEstiloBodyBig()
+                        ),
                         shape = RoundedCornerShape(objetoAdaptardor.ajustarAltura(16)),
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedTextColor = Color(0xFF5B5B5B), // Color del texto cuando está enfocado
@@ -718,7 +718,6 @@ fun IniciarInterfazInicioSesionCompact(
                             }
                         )
                     )
-
 
                     if (!isBtIniciarSesionActivo.value){
                         LaunchedEffect(isBtIniciarSesionActivo) {
@@ -950,7 +949,7 @@ fun IniciarInterfazInicioSesionCompact(
                             text = snackbarData.visuals.message,
                             style = TextStyle(
                                 color = Color.Black,
-                                fontSize = objetoAdaptardor.ajustarFont(18),
+                                fontSize = obtenerEstiloBodyBig(),
                                 fontWeight = FontWeight.Light,
                                 fontFamily = fontAksharPrincipal
                             ),

@@ -77,10 +77,11 @@ import com.soportereal.invefacon.funciones_de_interfaces.ParClaveValor
 import com.soportereal.invefacon.funciones_de_interfaces.TText
 import com.soportereal.invefacon.funciones_de_interfaces.actualizarParametro
 import com.soportereal.invefacon.funciones_de_interfaces.gestorImpresora
-import com.soportereal.invefacon.funciones_de_interfaces.obtenerParametro
+import com.soportereal.invefacon.funciones_de_interfaces.obtenerParametroLocal
 import com.soportereal.invefacon.funciones_de_interfaces.FuncionesParaAdaptarContenido
 import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloBodyBig
 import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloBodySmall
+import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloDisplayBig
 import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloTitleBig
 import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloTitleSmall
 import com.soportereal.invefacon.interfaces.pantallas_principales.gestorEstadoPantallaCarga
@@ -102,7 +103,7 @@ fun IniciarInterfazAjustesImpresora (
     val objetoAdaptardor= FuncionesParaAdaptarContenido(dpAltoPantalla, dpAnchoPantalla, dpFontPantalla)
     val context = LocalContext.current
     var iniciarMenuParametrosImpresora by remember { mutableStateOf(false) }
-    var valorImpresionActiva by remember { mutableStateOf( obtenerParametro(context, "isImpresionActiva$codUsuario$nombreEmpresa")) }
+    var valorImpresionActiva by remember { mutableStateOf( obtenerParametroLocal(context, "isImpresionActiva$codUsuario$nombreEmpresa")) }
     gestorImpresora.PedirPermisos(context)
 
 
@@ -142,7 +143,7 @@ fun IniciarInterfazAjustesImpresora (
                     "Impresora",
                     fontFamily = fontAksharPrincipal,
                     fontWeight =    FontWeight.SemiBold,
-                    fontSize = objetoAdaptardor.ajustarFont(30),
+                    fontSize = obtenerEstiloDisplayBig(),
                     color = Color.White,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
@@ -339,7 +340,7 @@ fun IniciarInterfazAjustesImpresora (
     }
 
     if (iniciarMenuParametrosImpresora){
-        var caracteresPorLinea by remember { mutableStateOf( obtenerParametro(context, "cantidadCaracPorLineaImpre")) }
+        var caracteresPorLinea by remember { mutableStateOf( obtenerParametroLocal(context, "cantidadCaracPorLineaImpre")) }
         var isImpresionActiva by remember { mutableStateOf(valorImpresionActiva=="1") }
         var isMenuVisible by remember { mutableStateOf(false) }
 
@@ -379,7 +380,7 @@ fun IniciarInterfazAjustesImpresora (
                                 "Parametros Impresora",
                                 fontFamily = fontAksharPrincipal,
                                 fontWeight = FontWeight.Medium,
-                                fontSize = objetoAdaptardor.ajustarFont(27),
+                                fontSize = obtenerEstiloDisplayBig(),
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,
                                 textAlign = TextAlign.Center,
@@ -403,7 +404,7 @@ fun IniciarInterfazAjustesImpresora (
                                     checked = isImpresionActiva,
                                     onCheckedChange = {
                                         actualizarParametro(context, "isImpresionActiva$codUsuario$nombreEmpresa", if(valorImpresionActiva == "0") "1" else "0")
-                                        valorImpresionActiva = obtenerParametro(context, "isImpresionActiva$codUsuario$nombreEmpresa")
+                                        valorImpresionActiva = obtenerParametroLocal(context, "isImpresionActiva$codUsuario$nombreEmpresa")
                                         isImpresionActiva = valorImpresionActiva == "1"
                                     },colors = SwitchDefaults.colors(
                                         checkedTrackColor = Color(0xFF1D3FA4)
@@ -428,7 +429,7 @@ fun IniciarInterfazAjustesImpresora (
                                     value = caracteresPorLinea,
                                     onValueChange = {
                                         actualizarParametro(context, "cantidadCaracPorLineaImpre", it)
-                                        caracteresPorLinea = obtenerParametro(context, "cantidadCaracPorLineaImpre")
+                                        caracteresPorLinea = obtenerParametroLocal(context, "cantidadCaracPorLineaImpre")
                                         if (valorImpresionActiva == "1"){
                                             gestorImpresora.deconectar(context)
                                             gestorImpresora.reconectar(context)

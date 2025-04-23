@@ -98,7 +98,7 @@ import com.soportereal.invefacon.funciones_de_interfaces.RutasPatallas
 import com.soportereal.invefacon.funciones_de_interfaces.TextFieldMultifuncional
 import com.soportereal.invefacon.funciones_de_interfaces.mostrarMensajeError
 import com.soportereal.invefacon.funciones_de_interfaces.mostrarMensajeExito
-import com.soportereal.invefacon.funciones_de_interfaces.obtenerParametro
+import com.soportereal.invefacon.funciones_de_interfaces.obtenerParametroLocal
 import com.soportereal.invefacon.funciones_de_interfaces.FuncionesParaAdaptarContenido
 import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloBodyBig
 import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloBodyMedium
@@ -173,7 +173,7 @@ fun InterfazSacComanda(
     var iniciarEdicionArticulo by remember { mutableStateOf(false) }
     var articuloActualSeleccionadoEdicion by remember { mutableStateOf(ArticulosSeleccionadosSac()) }
     val context = LocalContext.current
-    val valorPrmImp2 by remember { mutableStateOf(obtenerParametro(context, "prmImp2$nombreEmpresa$codUsuario")) }
+    val valorPrmImp2 by remember { mutableStateOf(obtenerParametroLocal(context, "prmImp2$nombreEmpresa$codUsuario")) }
     var permitirRegresarPantalla by remember { mutableStateOf(false) }
 
     LaunchedEffect(actualizarMontos) {

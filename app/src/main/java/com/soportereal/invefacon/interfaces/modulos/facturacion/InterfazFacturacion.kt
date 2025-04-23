@@ -137,6 +137,7 @@ import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloBodyBig
 import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloBodyMedium
 import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloBodySmall
 import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloDisplayBig
+import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloDisplayMedium
 import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloHeadBig
 import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloHeadMedium
 import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloHeadSmall
@@ -145,8 +146,8 @@ import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloTitleBig
 import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloTitleMedium
 import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloTitleSmall
 import com.soportereal.invefacon.funciones_de_interfaces.obtenerFechaHoy
-import com.soportereal.invefacon.funciones_de_interfaces.obtenerParametro
-import com.soportereal.invefacon.funciones_de_interfaces.obtenerValorParametro
+import com.soportereal.invefacon.funciones_de_interfaces.obtenerParametroLocal
+import com.soportereal.invefacon.funciones_de_interfaces.obtenerValorParametroEmpresa
 import com.soportereal.invefacon.funciones_de_interfaces.separacionDeMiles
 import com.soportereal.invefacon.funciones_de_interfaces.tienePermiso
 import com.soportereal.invefacon.funciones_de_interfaces.validacionCedula
@@ -166,6 +167,8 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.json.JSONArray
 import org.json.JSONObject
+import java.math.BigDecimal
+import java.math.RoundingMode
 import java.util.concurrent.atomic.AtomicInteger
 
 @RequiresApi(Build.VERSION_CODES.S)
@@ -328,7 +331,7 @@ fun IniciarInterfazFacturacion(
     var datosFacturaEmitida by remember { mutableStateOf(Factura()) }
     var obtenerDatosFacturaEmitida by remember { mutableStateOf(false) }
     var consecutivoFactura by remember { mutableStateOf("") }
-    val valorImpresionActiva by remember { mutableStateOf( obtenerParametro(context, "isImpresionActiva$codUsuario$nombreEmpresa")) }
+    val valorImpresionActiva by remember { mutableStateOf( obtenerParametroLocal(context, "isImpresionActiva$codUsuario$nombreEmpresa")) }
     var iniciarMenuOpcionesCliente by remember { mutableStateOf(false) }
     var iniciarMenuAgregaEditaCliente by remember { mutableStateOf(false) }
     var isEditarCliente by remember { mutableStateOf(false) }
@@ -1581,50 +1584,83 @@ fun IniciarInterfazFacturacion(
             var tipoPrecioSeleccionado by remember { mutableStateOf(articulo.listaPrecios.find { it.clave == precioVenta.trim() }?:ParClaveValor()) }
             var cantidadProducto by remember { mutableStateOf(if (articulo.articuloCantidad > 0) articulo.articuloCantidad.toString() else "1.0") }
             var cantidadProductoForApi by remember { mutableDoubleStateOf(0.0) }
-            var precioUnitarioIva by remember { mutableDoubleStateOf(0.0) }
+            var precioUnitarioIva by remember { mutableStateOf("0.00") }
+            var precioUnitarioIvaDesc by remember { mutableStateOf("0.00") }
             var precioProducto by remember {mutableStateOf(if (isAgregar) tipoPrecioSeleccionado.valor else articulo.precio.toString()) }
             var seleccionPresentacion by remember { mutableStateOf("Unidad") }
             var porcentajeDescuentoProducto by remember { mutableStateOf(descuentoCliente) }
             var montoDescuento by remember { mutableStateOf("") }
             var gravado by remember { mutableDoubleStateOf(0.0) }
             var montoIVA by remember { mutableDoubleStateOf(0.0) }
-            var totalProducto by remember { mutableDoubleStateOf(0.0) }
             var esCambioPorMontoDescuento by remember { mutableStateOf(false) }
+            var isCalculandoPrecioIva by remember { mutableStateOf(false) }
             var isMenuVisible by remember { mutableStateOf(false) }
             val simboloMonedaArticulo by remember { mutableStateOf(if(codigoMoneda == "CRC") "\u20A1 " else "\u0024 ") }
             var precioMinimoPermitido by remember { mutableDoubleStateOf(0.00) }
 
             fun calcularTotales() {
                 try {
-                    val cantidad = cantidadProducto.toDoubleOrNull() ?: 0.00
-                    val precio = precioProducto.toDoubleOrNull() ?: 0.00
-                    var porcentajeDescuento = porcentajeDescuentoProducto.toDoubleOrNull() ?: 0.00
-                    var tempMontoDescuento = montoDescuento.toDoubleOrNull() ?: 0.00
+                    // Conversión segura de String a BigDecimal
+                    val cantidad = cantidadProducto.toBigDecimalOrNull() ?: BigDecimal.ZERO
+                    val precio = precioProducto.toBigDecimalOrNull() ?: BigDecimal.ZERO
+                    var porcentajeDescuento = porcentajeDescuentoProducto.toBigDecimalOrNull() ?: BigDecimal.ZERO
+                    var tempMontoDescuento = montoDescuento.toBigDecimalOrNull() ?: BigDecimal.ZERO
+                    val precioUnitarioIvaTemp = precioUnitarioIva.toBigDecimalOrNull() ?: BigDecimal.ZERO
+                    val impuesto = articulo.impuesto.toBigDecimal()
 
+                    // Cálculo de cantidad para la API
                     cantidadProductoForApi = if (seleccionPresentacion != "Unidad") {
-                        cantidad * articulo.unidadXMedida
+                        cantidad.multiply(BigDecimal(articulo.unidadXMedida)).toDouble()
                     } else {
-                        cantidad
+                        cantidad.toDouble()
                     }
 
-                    val subtotal = cantidadProductoForApi * precio
+                    // Subtotal sin descuento
+                    val subtotal = cantidadProductoForApi.toBigDecimal().multiply(precio)
 
+                    // Cálculo de descuento
                     if (esCambioPorMontoDescuento) {
-                        porcentajeDescuento = if (subtotal != 0.0) (tempMontoDescuento * 100 / subtotal) else 0.0
+                        porcentajeDescuento = if (subtotal.compareTo(BigDecimal.ZERO) != 0) {
+                            tempMontoDescuento.multiply(BigDecimal(100)).divide(subtotal, 2, RoundingMode.HALF_UP)
+                        } else {
+                            BigDecimal.ZERO
+                        }
                         porcentajeDescuentoProducto = porcentajeDescuento.toString()
                     } else {
-                        tempMontoDescuento = (subtotal * porcentajeDescuento) / 100
+                        tempMontoDescuento = subtotal.multiply(porcentajeDescuento).divide(BigDecimal(100), 2, RoundingMode.HALF_UP)
                         montoDescuento = tempMontoDescuento.toString()
                     }
 
-                    precioUnitarioIva = precio + (precio * articulo.impuesto) / 100 - (precio * porcentajeDescuento) / 100
-                    gravado = subtotal - tempMontoDescuento
-                    val iva = gravado * (articulo.impuesto) / 100
+                    // Cálculo del precio unitario con IVA
+                    if (!isCalculandoPrecioIva) {
+                        val factorImpuesto = BigDecimal.ONE.add(impuesto.divide(BigDecimal(100), 4, RoundingMode.HALF_UP))
+                        precioUnitarioIva = precio.multiply(factorImpuesto).setScale(2, RoundingMode.HALF_UP).toString()
+                    }
 
-                    montoIVA = iva
-                    totalProducto = gravado + iva
+                    // Monto gravado y cálculo de IVA
+                    gravado = subtotal.subtract(tempMontoDescuento).toDouble()
+                    val iva = gravado.toBigDecimal().multiply(impuesto).divide(BigDecimal(100), 2, RoundingMode.HALF_UP)
 
+                    montoIVA = iva.toDouble()
+
+                    // Calcular el monto del descuento
+                    val montoDescuentoUnitario = precio.multiply(porcentajeDescuento)
+                        .divide(BigDecimal(100), 2, RoundingMode.HALF_UP)
+
+                    // Precio con descuento
+                    val precioConDescuentoUnitario = precio.subtract(montoDescuentoUnitario)
+
+                    // Calcular el monto del IVA sobre el precio con descuento
+                    val montoIVAUnitario = precioConDescuentoUnitario.multiply(impuesto)
+                        .divide(BigDecimal(100), 2, RoundingMode.HALF_UP)
+
+                    // Precio final con descuento e IVA
+                    precioUnitarioIvaDesc = precioConDescuentoUnitario.add(montoIVAUnitario).setScale(2, RoundingMode.HALF_UP).toString()
+
+                    // Restablecer banderas
+                    isCalculandoPrecioIva = false
                     esCambioPorMontoDescuento = false
+
 
                 } catch (e: Exception) {
                     iniciarMenuAgregaEditaArticulo = false
@@ -1634,7 +1670,7 @@ fun IniciarInterfazFacturacion(
 
             fun esPrecioValidoConDescuento(): Boolean {
                 fun validarParametro(codParametro: String): Boolean {
-                    return obtenerValorParametro(codParametro, "0") != "1"  // SI EL PARAMETRO ES 1 ES QUE NO ES PERMIRTIDO
+                    return obtenerValorParametroEmpresa(codParametro, "0") != "1"  // SI EL PARAMETRO ES 1 ES QUE NO ES PERMIRTIDO EN ESTE CASO
                 }
 
                 val mapaPrecios = mapOf(
@@ -1656,7 +1692,7 @@ fun IniciarInterfazFacturacion(
                     montoDescuento = ""
                     porcentajeDescuentoProducto = ""
                 }
-                val porcentajeUtilidadMinima = obtenerValorParametro("16", "0").toDouble()
+                val porcentajeUtilidadMinima = obtenerValorParametroEmpresa("16", "0").toDouble()
                 precioMinimoPermitido = (articulo.costo * porcentajeUtilidadMinima/100) + articulo.costo
                 calcularTotales()
                 val precioConDesc = precioProducto.ifEmpty {"0.00"}.toDouble() - montoDescuento.ifEmpty { "0.00" }.toDouble()
@@ -1832,7 +1868,7 @@ fun IniciarInterfazFacturacion(
                                         nuevoValor2 = {
                                             if(!tienePermiso("005")) return@TextFieldMultifuncional mostrarMensajeError("No posee el permiso 005 para cambiar el precio de venta.")
                                             if (it.clave != "1" &&  !tienePermiso( if(it.clave=="10") "040" else "03${it.clave}" ) ) return@TextFieldMultifuncional mostrarMensajeError("No cuenta con el permiso ${if(it.clave=="10") "040" else "03${it.clave}"} para modificar el tipo de precio a ${it.clave}.")
-                                            if (obtenerValorParametro("278", "0") == "1"){
+                                            if (obtenerValorParametroEmpresa("278", "0") == "1"){
                                                 porcentajeDescuentoProducto = ""
                                             }// quitar descuento al cambiar el tipo de precio
                                             tipoPrecioSeleccionado = it
@@ -1950,6 +1986,7 @@ fun IniciarInterfazFacturacion(
                                             if(!tienePermiso("003")) return@TextFieldMultifuncional mostrarMensajeError("No posee el permiso 003 para actualizar el precio de venta.")
                                             if(!tienePermiso("024")) return@TextFieldMultifuncional mostrarMensajeError("No posee el permiso 024 para editar el precio de venta desde facturación.")
                                             precioProducto = ""
+                                            precioUnitarioIva = ""
                                             porcentajeDescuentoProducto = ""
                                             calcularTotales()
                                         }
@@ -1957,6 +1994,52 @@ fun IniciarInterfazFacturacion(
                                 }
                             }
 
+                            Spacer(modifier = Modifier.height(8.dp))
+
+                            TText(
+                                text = "Precio (con IVA ${articulo.impuesto}%): ",
+                                fontSize = obtenerEstiloBodyMedium(),
+                                fontWeight = FontWeight.Light,
+                                color = Color.DarkGray
+                            )
+                            TextFieldMultifuncional(
+                                nuevoValor = {
+                                    if(!tienePermiso("003")) return@TextFieldMultifuncional mostrarMensajeError("No posee el permiso 003 para actualizar el precio de venta.")
+                                    if(!tienePermiso("024")) return@TextFieldMultifuncional mostrarMensajeError("No posee el permiso 024 para editar el precio de venta desde facturación.")
+                                    isCalculandoPrecioIva = true
+                                    porcentajeDescuentoProducto = ""
+                                    precioUnitarioIva = it
+                                    val precioUnitarioIvaTemp = precioUnitarioIva.toDoubleOrNull() ?: 0.00
+                                    precioProducto = (precioUnitarioIvaTemp/(1.00+articulo.impuesto/100)).toString()
+                                    calcularTotales()
+                                },
+                                valor = precioUnitarioIva,
+                                usarModifierForSize = true,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .border(
+                                        2.dp,
+                                        color = Color.Gray,
+                                        RoundedCornerShape(objetoAdaptardor.ajustarAltura(12))
+                                    ),
+                                isUltimo = true,
+                                fontSize = obtenerEstiloBodyBig(),
+                                cantidadLineas = 1,
+                                mostrarPlaceholder = true,
+                                textPlaceholder = "0.00",
+                                mostrarLabel = false,
+                                darFormatoMiles = true,
+                                soloPermitirValoresNumericos = true,
+                                onFocus = {
+                                    if(!tienePermiso("003")) return@TextFieldMultifuncional mostrarMensajeError("No posee el permiso 003 para actualizar el precio de venta.")
+                                    if(!tienePermiso("024")) return@TextFieldMultifuncional mostrarMensajeError("No posee el permiso 024 para editar el precio de venta desde facturación.")
+                                    isCalculandoPrecioIva = true
+                                    precioUnitarioIva = ""
+                                    precioProducto = ""
+                                    porcentajeDescuentoProducto = ""
+                                    calcularTotales()
+                                }
+                            )
                             Spacer(modifier = Modifier.height(8.dp))
 
                             // Descuento
@@ -2071,13 +2154,13 @@ fun IniciarInterfazFacturacion(
                                     horizontalArrangement = Arrangement.SpaceBetween
                                 ) {
                                     TText(
-                                        text = "Precio unitario (con IVA): ",
+                                        text = "Precio unitario (incluye desc. + IVA): ",
                                         textAlign = TextAlign.Start,
                                         fontSize = obtenerEstiloBodyBig()
                                     )
                                     Spacer(modifier = Modifier.weight(1f))
                                     TText(
-                                        text = simboloMonedaArticulo + separacionDeMiles(precioUnitarioIva) +" $codigoMoneda",
+                                        text = simboloMonedaArticulo + separacionDeMiles(montoString = precioUnitarioIvaDesc, isString = true) +" $codigoMoneda",
                                         textAlign = TextAlign.End,
                                         fontSize = obtenerEstiloBodyBig()
                                     )
@@ -2129,7 +2212,7 @@ fun IniciarInterfazFacturacion(
                                     )
                                     Spacer(modifier = Modifier.weight(1f))
                                     TText(
-                                        text = "$simboloMonedaArticulo${separacionDeMiles(totalProducto)} $codigoMoneda",
+                                        text = "$simboloMonedaArticulo${separacionDeMiles(montoIVA+gravado)} $codigoMoneda",
                                         textAlign = TextAlign.End,
                                         fontSize = obtenerEstiloTitleMedium()
                                     )
@@ -5029,7 +5112,7 @@ fun IniciarInterfazFacturacion(
                         }
 
                         BButton(
-                            text = "Agregar forma de pago",
+                            text = "Agregar medio de pago",
                             onClick = {
                                 listaPagosTemp.add(Pago(
                                     Documento = numeroProforma,
@@ -5163,7 +5246,7 @@ fun IniciarInterfazFacturacion(
                     "Facturar como Proforma",
                     fontFamily = fontAksharPrincipal,
                     fontWeight = FontWeight.Medium,
-                    fontSize = objetoAdaptardor.ajustarFont(27),
+                    fontSize = obtenerEstiloDisplayMedium(),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     textAlign = TextAlign.Center,
