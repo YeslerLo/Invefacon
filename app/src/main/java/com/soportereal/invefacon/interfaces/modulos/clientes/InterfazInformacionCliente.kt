@@ -73,11 +73,13 @@ import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.soportereal.invefacon.R
 import com.soportereal.invefacon.funciones_de_interfaces.TextFieldMultifuncional
 import com.soportereal.invefacon.funciones_de_interfaces.FuncionesParaAdaptarContenido
+import com.soportereal.invefacon.funciones_de_interfaces.mostrarMensajeError
 import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloBodyBig
 import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloDisplayBig
 import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloDisplaySmall
 import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloHeadSmall
 import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloTitleMedium
+import com.soportereal.invefacon.funciones_de_interfaces.tienePermiso
 import com.soportereal.invefacon.interfaces.pantallas_principales.estadoRespuestaApi
 import com.soportereal.invefacon.interfaces.pantallas_principales.gestorEstadoPantallaCarga
 import kotlinx.coroutines.delay
@@ -969,8 +971,9 @@ internal fun AgregarContenedorDatosClientes(
 
                                     Switch(
                                         checked = valor ?: false,
-                                        onCheckedChange = { nuevoEstado ->
-                                            nuevoValor?.invoke(nuevoEstado)
+                                        onCheckedChange = {
+                                            if(!tienePermiso("311")) return@Switch mostrarMensajeError("No tiene permiso 311 para Actualizar datos del Cliente")
+                                            nuevoValor?.invoke(it)
                                         },
                                         colors = SwitchDefaults.colors(
                                             checkedThumbColor = Color(0xFF244BC0),
@@ -1006,7 +1009,7 @@ internal fun AgregarContenedorDatosClientes(
 
 internal fun ValidarCamposObligatoriosClientes(datosCliente: Cliente): Boolean{
     var mensajeError= ""
-    val estructuraParaValidacionCorreo = "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z0-9]{2,}$"
+    val estructuraParaValidacionCorreo =  "^([A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z0-9]{2,})(\\s*;\\s*[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z0-9]{2,})*\$"
     val objetoValidadorCorreo = Pattern.compile(estructuraParaValidacionCorreo)
 
     if (datosCliente.ClienteNombreComercial.isEmpty()){

@@ -125,7 +125,7 @@ fun IniciarInterfazInicio(
     }
 
     LaunchedEffect (Unit) {
-        if (listaPermisos.isNotEmpty()) return@LaunchedEffect
+        if (listaPermisos.isNotEmpty()) return@LaunchedEffect gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
         val result = objectoProcesadorDatosApi.obtenerPermisosUsuario(codUsuario)
         if (result == null) return@LaunchedEffect
         if (!validarExitoRestpuestaServidor(result)) return@LaunchedEffect estadoRespuestaApi.cambiarEstadoRespuestaApi(mostrarSoloRespuestaError = true, datosRespuesta = result)

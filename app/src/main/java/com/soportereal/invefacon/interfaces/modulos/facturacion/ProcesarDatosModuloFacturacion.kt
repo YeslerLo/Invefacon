@@ -4,8 +4,6 @@ import android.content.Context
 import android.os.Build
 import android.widget.Toast
 import androidx.annotation.RequiresApi
-import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.toUpperCase
 import com.soportereal.invefacon.R
 import com.soportereal.invefacon.funciones_de_interfaces.FuncionesHttp
 import com.soportereal.invefacon.funciones_de_interfaces.ParClaveValor
@@ -53,7 +51,7 @@ class ProcesarDatosModuloFacturacion(apiToken: String)
             .addFormDataPart("articuloUnidadMedida", articulo.articuloUnidadMedida)
             .addFormDataPart("articuloCosto", articulo.articuloCosto.toString())
             .addFormDataPart("idCliente", articulo.idCliente)
-            .addFormDataPart("articuloIvaTarifa", articulo.articuloIvaTarifa.toString())
+            .addFormDataPart("articuloIvaTarifa", articulo.articuloIvaTarifa)
             .addFormDataPart("articuloVenta", articulo.articuloVenta.toString())
             .addFormDataPart("articuloDescuentoPorcentage", articulo.articuloDescuentoPorcentage.toString())
             .addFormDataPart("articuloIvaPorcentage", articulo.articuloIvaPorcentage.toString())

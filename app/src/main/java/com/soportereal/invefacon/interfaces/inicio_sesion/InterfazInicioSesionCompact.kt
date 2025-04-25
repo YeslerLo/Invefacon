@@ -180,7 +180,6 @@ fun IniciarInterfazInicioSesionCompact(
         }
     }
 
-
     LaunchedEffect(snackbarHostState) {
         snackbarHostState.currentSnackbarData?.dismiss()
     }

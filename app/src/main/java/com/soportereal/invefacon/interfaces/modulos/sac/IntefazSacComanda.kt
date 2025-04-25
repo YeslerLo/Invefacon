@@ -260,7 +260,14 @@ fun InterfazSacComanda(
                     val datosArticulosSac = result.getJSONArray("data")
                     for(i in 0 until datosArticulosSac.length()){
                         val datosArticulo= datosArticulosSac.getJSONObject(i)
+
+                        val datosGruposStr = datosArticulo.optString("datosGrupos", "[]")
+                        val datosGrupos = JSONArray(datosGruposStr)
+
                         val imp1 = datosArticulo.getDouble("imp1")
+                        var imp2 = if(valorPrmImp2=="0") 0.0 else 0.1
+
+                        imp2 = if (datosGrupos.length() == 0) imp2 else 0.0
 
                         val precioUnitario = BigDecimal(datosArticulo.getDouble("precioArticulo"))
                             .setScale(2, RoundingMode.DOWN)
@@ -268,16 +275,13 @@ fun InterfazSacComanda(
                         val iva = BigDecimal(datosArticulo.getDouble("precioArticulo")*imp1/100)
                             .setScale(2, RoundingMode.DOWN)
                             .toDouble()
-                        val impuestoServicio = BigDecimal(datosArticulo.getDouble("precioArticulo")*if(valorPrmImp2=="0")0.0 else 0.1)
+                        val impuestoServicio = BigDecimal(datosArticulo.getDouble("precioArticulo")*imp2)
                             .setScale(2, RoundingMode.DOWN)
                             .toDouble()
 
                         val precioFinal = BigDecimal(precioUnitario+iva+impuestoServicio)
                             .setScale(0, RoundingMode.HALF_UP)
                             .toDouble()
-
-                        val datosGruposStr = datosArticulo.optString("datosGrupos", "[]")
-                        val datosGrupos = JSONArray(datosGruposStr)
 
                         val listaGrupos = mutableListOf<SacGrupo>()
                         var cantidadArticulosObli = 0
@@ -296,7 +300,7 @@ fun InterfazSacComanda(
                                 val codigo = datosArticuloGrupo.getString("codigo")
                                 val nombreArticulo = datosArticuloGrupo.getString("nombreArticulo")
                                 val precio = datosArticuloGrupo.getDouble("precio")
-                                val impuestoServicioArticulosGrupo = BigDecimal(precio*if(valorPrmImp2=="0")0.0 else 0.1)
+                                val impuestoServicioArticulosGrupo = BigDecimal(precio*imp2)
                                     .setScale(2, RoundingMode.DOWN)
                                     .toDouble()
                                 val imp13 = datosArticuloGrupo.getString("imp1")

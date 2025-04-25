@@ -1597,6 +1597,7 @@ fun IniciarInterfazFacturacion(
             var isMenuVisible by remember { mutableStateOf(false) }
             val simboloMonedaArticulo by remember { mutableStateOf(if(codigoMoneda == "CRC") "\u20A1 " else "\u0024 ") }
             var precioMinimoPermitido by remember { mutableDoubleStateOf(0.00) }
+            var porcentajeUtilidadMinima by remember { mutableDoubleStateOf(0.00) }
 
             fun calcularTotales() {
                 try {
@@ -1605,7 +1606,6 @@ fun IniciarInterfazFacturacion(
                     val precio = precioProducto.toBigDecimalOrNull() ?: BigDecimal.ZERO
                     var porcentajeDescuento = porcentajeDescuentoProducto.toBigDecimalOrNull() ?: BigDecimal.ZERO
                     var tempMontoDescuento = montoDescuento.toBigDecimalOrNull() ?: BigDecimal.ZERO
-                    val precioUnitarioIvaTemp = precioUnitarioIva.toBigDecimalOrNull() ?: BigDecimal.ZERO
                     val impuesto = articulo.impuesto.toBigDecimal()
 
                     // Cálculo de cantidad para la API
@@ -1620,14 +1620,14 @@ fun IniciarInterfazFacturacion(
 
                     // Cálculo de descuento
                     if (esCambioPorMontoDescuento) {
-                        porcentajeDescuento = if (subtotal.compareTo(BigDecimal.ZERO) != 0) {
-                            tempMontoDescuento.multiply(BigDecimal(100)).divide(subtotal, 2, RoundingMode.HALF_UP)
+                        porcentajeDescuento = if (precio.compareTo(BigDecimal.ZERO) != 0) {
+                            tempMontoDescuento.multiply(BigDecimal(100)).divide(precio, 2, RoundingMode.HALF_UP)
                         } else {
                             BigDecimal.ZERO
                         }
                         porcentajeDescuentoProducto = porcentajeDescuento.toString()
                     } else {
-                        tempMontoDescuento = subtotal.multiply(porcentajeDescuento).divide(BigDecimal(100), 2, RoundingMode.HALF_UP)
+                        tempMontoDescuento = precio.multiply(porcentajeDescuento).divide(BigDecimal(100), 2, RoundingMode.HALF_UP)
                         montoDescuento = tempMontoDescuento.toString()
                     }
 
@@ -1638,7 +1638,7 @@ fun IniciarInterfazFacturacion(
                     }
 
                     // Monto gravado y cálculo de IVA
-                    gravado = subtotal.subtract(tempMontoDescuento).toDouble()
+                    gravado = subtotal.subtract(tempMontoDescuento.multiply(cantidad)).toDouble()
                     val iva = gravado.toBigDecimal().multiply(impuesto).divide(BigDecimal(100), 2, RoundingMode.HALF_UP)
 
                     montoIVA = iva.toDouble()
@@ -1692,8 +1692,8 @@ fun IniciarInterfazFacturacion(
                     montoDescuento = ""
                     porcentajeDescuentoProducto = ""
                 }
-                val porcentajeUtilidadMinima = obtenerValorParametroEmpresa("16", "0").toDouble()
-                precioMinimoPermitido = (articulo.costo * porcentajeUtilidadMinima/100) + articulo.costo
+                porcentajeUtilidadMinima = obtenerValorParametroEmpresa("16", "0").toDouble()
+                precioMinimoPermitido = if(porcentajeUtilidadMinima == 0.00) 0.01 else (articulo.costo * porcentajeUtilidadMinima/100.00) + articulo.costo
                 calcularTotales()
                 val precioConDesc = precioProducto.ifEmpty {"0.00"}.toDouble() - montoDescuento.ifEmpty { "0.00" }.toDouble()
                 if (precioConDesc < precioMinimoPermitido)  {
@@ -2065,7 +2065,7 @@ fun IniciarInterfazFacturacion(
                                             val porcentajeTemp = if(it.isEmpty()) 0.00 else it.toDouble()
                                             val precioConDesc = precioProducto.ifEmpty { "0.00" }.toDouble() - (precioProducto.ifEmpty { "0.00" }.toDouble() * porcentajeTemp / 100)
                                             if ( !tienePermiso("023") && porcentajeTemp>=articulo.descuentoAdmitido) return@TextFieldMultifuncional mostrarMensajeError("No cuenta con el permiso 023 para aplicar Descuento ilimitado, el descuento máximo es de: ${articulo.descuentoAdmitido}%")
-                                            if (porcentajeTemp > 0.00 && (precioConDesc < precioMinimoPermitido) ) return@TextFieldMultifuncional   mostrarMensajeError("El $porcentajeTemp% de descuento supera la utilidad mínima, el precio de venta minimo con o sin descuento es de: ${separacionDeMiles(precioMinimoPermitido)}")
+                                            if (porcentajeTemp > 0.00 && (precioConDesc < precioMinimoPermitido) ) return@TextFieldMultifuncional  if (porcentajeUtilidadMinima == 0.00) mostrarMensajeError("El descuento del $porcentajeTemp% supera el precio mínimo de venta, que es ${separacionDeMiles(precioMinimoPermitido)}, ya sea con o sin aplicar descuentos.") else mostrarMensajeError("El $porcentajeTemp% de descuento supera la utilidad mínima, el precio de venta minimo con o sin descuento es de: ${separacionDeMiles(precioMinimoPermitido)}")
                                             porcentajeDescuentoProducto = it
                                             calcularTotales()
                                         },
@@ -2111,7 +2111,7 @@ fun IniciarInterfazFacturacion(
                                             val montoTemp = if(it.isEmpty()) 0.00 else it.toDouble()
                                             if ( !tienePermiso("023") && montoTemp>=articulo.descuentoAdmitido) return@TextFieldMultifuncional mostrarMensajeError("No cuenta con el permiso 023 para aplicar Descuento ilimitado, el descuento máximo es de: ${articulo.descuentoAdmitido}%")
                                             val precioConDesc = precioProducto.ifEmpty { "0.00" }.toDouble() - montoTemp
-                                            if (montoTemp > 0.00 && (precioConDesc < precioMinimoPermitido) ) return@TextFieldMultifuncional  mostrarMensajeError("El monto ${separacionDeMiles(montoTemp)} de descuento supera la utilidad mínima, el precio de venta minimo con o sin descuento es de: ${separacionDeMiles(precioMinimoPermitido)}")
+                                            if (montoTemp > 0.00 && (precioConDesc < precioMinimoPermitido) ) return@TextFieldMultifuncional  if (porcentajeUtilidadMinima == 0.00) mostrarMensajeError("El monto ${separacionDeMiles(montoTemp)} de descuento supera el precio mínimo de venta, que es ${separacionDeMiles(precioMinimoPermitido)}, ya sea con o sin aplicar descuentos.") else mostrarMensajeError("El monto ${separacionDeMiles(montoTemp)} de descuento supera la utilidad mínima, el precio de venta minimo con o sin descuento es de: ${separacionDeMiles(precioMinimoPermitido)}")
                                             montoDescuento = it
                                             esCambioPorMontoDescuento = true
                                             calcularTotales()
@@ -2141,6 +2141,7 @@ fun IniciarInterfazFacturacion(
                                     )
                                 }
                             }
+
                             Spacer(modifier = Modifier.height(8.dp))
 
                             // Totales
@@ -2154,7 +2155,7 @@ fun IniciarInterfazFacturacion(
                                     horizontalArrangement = Arrangement.SpaceBetween
                                 ) {
                                     TText(
-                                        text = "Precio unitario (incluye desc. + IVA): ",
+                                        text = "P/U (desc. + IVA): ",
                                         textAlign = TextAlign.Start,
                                         fontSize = obtenerEstiloBodyBig()
                                     )
@@ -2258,17 +2259,23 @@ fun IniciarInterfazFacturacion(
                                                 presentacion = seleccionPresentacion,
                                                 articuloBodegaCodigo = bodegaSeleccionda.clave,
                                                 articuloVenta = precioProducto.toDouble(),
+                                                articuloVentaSubTotal1 = precioProducto.toDouble(),
                                                 articuloDescuentoPorcentage = porcentajeDescuentoProducto.toDouble(),
+                                                articuloVentaSubTotal2 = precioProducto.toDouble(),
+                                                articuloVentaSubTotal3 = precioProducto.toDouble(),
                                                 articuloIvaPorcentage = articulo.impuesto,
                                                 articuloIvaTarifa = articulo.Cod_Tarifa_Impuesto,
                                                 idCliente = clienteId,
-                                                articuloVentaSubTotal1 = precioProducto.toDouble()
+                                                articuloVentaGravado = precioProducto.toDouble(),
+                                                articuloVentaTotal = precioProducto.toDouble()
                                             )
                                             agregaEditaArticulo(articuloTemp)
                                         }else{
                                             if (cantidadProducto.toDouble() == 0.00){
+                                                cantidadProducto = ""
                                                 mostrarMensajeError("La cantidad del artículo deber ser mayor a '0.00'.")
                                             }else{
+                                                precioProducto = ""
                                                 mostrarMensajeError("El Precio del artículo deber ser mayor a '0.00'.")
                                             }
 
@@ -3546,6 +3553,7 @@ fun IniciarInterfazFacturacion(
                                         return@BButton
                                     }
                                     if (listaArticulosProforma.isEmpty()) return@BButton mostrarMensajeError("Por favor, agregue al menos un Artículo para continuar.")
+                                    if (clienteId != "SN" && obtenerValorParametroEmpresa("353", "0") == "0") return@BButton mostrarMensajeError("No puedo facturar a un Cliente con tipo Cédula: 'No Definido'")
                                     iniciarMenuProcesar = true
                                 },
                                 objetoAdaptardor = objetoAdaptardor,
@@ -4419,7 +4427,7 @@ fun IniciarInterfazFacturacion(
         }
     }
 
-    if (iniciarMenuCambiarPrecio || iniciarMenuAplicarDescuento){
+    if (iniciarMenuCambiarPrecio || iniciarMenuAplicarDescuento) {
         var isMenuVisible by remember { mutableStateOf(false) }
         var seleccionarTodos by remember { mutableStateOf(false) }
         val listaPrecios by remember {
@@ -4779,7 +4787,7 @@ fun IniciarInterfazFacturacion(
         }
     }
 
-    if (iniciarMenuProcesar){
+    if (iniciarMenuProcesar) {
         var isMenuVisible by remember { mutableStateOf(false) }
 
         LaunchedEffect(Unit) {
@@ -4847,10 +4855,11 @@ fun IniciarInterfazFacturacion(
                         BButton(
                             text = "Crédito",
                             onClick = {
-                                if (estadoProforma != "2" && !tienePermiso("078")) return@BButton mostrarMensajeError("No posee permisos para emitir facturas.")
-                                if (clienteId == "SN") return@BButton mostrarMensajeError("Cliente SN no puede Facturar a Crédito.")
-                                iniciarMenuProcesar = false
-                                iniciarMenuConfPagoCredito = true
+                                return@BButton mostrarMensajeError("Actualmente, esta opción está inactiva por motivos de mantenimiento.")
+//                                if (estadoProforma != "2" && !tienePermiso("078")) return@BButton mostrarMensajeError("No posee permisos para emitir facturas.")
+//                                if (clienteId == "SN") return@BButton mostrarMensajeError("Cliente SN no puede Facturar a Crédito.")
+//                                iniciarMenuProcesar = false
+//                                iniciarMenuConfPagoCredito = true
                             },
                             textSize = obtenerEstiloBodyBig(),
                             modifier = Modifier.fillMaxWidth(),
@@ -4859,6 +4868,7 @@ fun IniciarInterfazFacturacion(
                         BButton(
                             text = "Proforma",
                             onClick = {
+                                if (clienteId == "SN") return@BButton mostrarMensajeError("Cliente SN no se le puede emitir una Proforma.")
                                 iniciarMenuProcesar = false
                                 iniciarMenuConfComoProforma = true
                             },
@@ -5259,7 +5269,7 @@ fun IniciarInterfazFacturacion(
                         verticalArrangement = Arrangement.spacedBy(objetoAdaptardor.ajustarAltura(4))
                     ) {
                         TText(
-                            text = "Si deseas ingresa un correo para recibir una copia de la proforma, escríbelo a continuación:",
+                            text = "Ingrese un correo si desea recibir una copia de la proforma: ",
                             fontSize = obtenerEstiloTitleSmall(),
                             modifier = Modifier.fillMaxWidth(),
                             textAlign = TextAlign.Center,
@@ -5489,9 +5499,11 @@ fun IniciarInterfazFacturacion(
                             modifier = Modifier.fillMaxWidth(),
                             textSize = obtenerEstiloBodyBig()
                         )
+
                         BButton(
                             text = "Editar",
                             onClick = {
+                                if (clienteId == "SN") return@BButton mostrarMensajeError("El cliente SN no puede ser editado.")
                                 if(!tienePermiso("310")) return@BButton mostrarMensajeError("No tiene permiso 310 para acceder al modulo de Clientes")
                                 if(!tienePermiso("311")) return@BButton mostrarMensajeError("No tiene permiso 311 para Agregar y Actualizar datos de Clientes")
                                 clienteTemp = Cliente(

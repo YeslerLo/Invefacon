@@ -610,16 +610,17 @@ var listaPermisos: List<ParClaveValor> = listOf()
 
 var listaParametros : List<ParClaveValor> = listOf()
 
-fun validarCorreo(correo: String): Boolean{
-    val estructuraParaValidacionCorreo = "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z0-9]{2,}$"
+fun validarCorreo(correo: String): Boolean {
+    val estructuraParaValidacionCorreo = "^([A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z0-9]{2,})(\\s*;\\s*[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z0-9]{2,})*\$"
     val objetoValidadorCorreo = Pattern.compile(estructuraParaValidacionCorreo)
-    return if (objetoValidadorCorreo.matcher(correo).matches()){
+    return if (objetoValidadorCorreo.matcher(correo).matches()) {
         true
-    }else{
+    } else {
         mostrarMensajeError("El Correo Electrónico ingresado no es válido.")
         false
     }
 }
+
 
 fun validacionCedula(tipo: String, cedula : String):Boolean{
     if(cedula.isEmpty()){
