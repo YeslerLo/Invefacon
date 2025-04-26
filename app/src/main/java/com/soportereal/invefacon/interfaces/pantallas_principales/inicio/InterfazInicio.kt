@@ -125,7 +125,6 @@ fun IniciarInterfazInicio(
     }
 
     LaunchedEffect (Unit) {
-        if (listaPermisos.isNotEmpty()) return@LaunchedEffect gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
         val result = objectoProcesadorDatosApi.obtenerPermisosUsuario(codUsuario)
         if (result == null) return@LaunchedEffect
         if (!validarExitoRestpuestaServidor(result)) return@LaunchedEffect estadoRespuestaApi.cambiarEstadoRespuestaApi(mostrarSoloRespuestaError = true, datosRespuesta = result)
@@ -164,6 +163,7 @@ fun IniciarInterfazInicio(
                     if (rutaPantalla != null && !tienePermiso(codPermiso)) return@Button mostrarMensajeError("NO POSEE EL PERMISO $codPermiso PARA ACCEDER AL MODULO ${text.uppercase(Locale.ROOT)}")
                     CoroutineScope(Dispatchers.IO).launch {
                         if (rutaPantalla==null) return@launch mostrarMensajeError("Actualmente el módulo de $text se encuentra en desarrollo...")
+                        gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
                         rutaPantallaModulo=rutaPantalla
                         iniciarPantallaModulo=true
                     }

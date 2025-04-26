@@ -64,6 +64,10 @@ class ProcesarDatosModuloClientes(apiToken: String){
         formBuilder.addFormDataPart("TipoIdentificacion",clienteModificado.TipoIdentificacion)
         formBuilder.addFormDataPart("ClienteNombreComercial", clienteModificado.ClienteNombreComercial)
         formBuilder.addFormDataPart("TipoPrecioVenta", clienteModificado.TipoPrecioVenta)
+        formBuilder.addFormDataPart("MontoContrato", clienteModificado.MontoContrato)
+        formBuilder.addFormDataPart("Descuento", clienteModificado.Descuento)
+        formBuilder.addFormDataPart("MontoCredito", clienteModificado.MontoCredito)
+        formBuilder.addFormDataPart("plazo", clienteModificado.plazo)
 
         if (clienteActual.Cod_Tipo_Cliente != clienteModificado.Cod_Tipo_Cliente) {
             formBuilder.addFormDataPart("Cod_Tipo_Cliente", clienteModificado.Cod_Tipo_Cliente)
@@ -85,21 +89,7 @@ class ProcesarDatosModuloClientes(apiToken: String){
         if (clienteActual.DetalleContrato != clienteModificado.DetalleContrato) {
             formBuilder.addFormDataPart("DetalleContrato", clienteModificado.DetalleContrato)
         }
-        if (clienteActual.MontoContrato != clienteModificado.MontoContrato) {
-            formBuilder.addFormDataPart("MontoContrato", clienteModificado.MontoContrato)
-        }
-        if (clienteActual.Descuento != clienteModificado.Descuento) {
-            formBuilder.addFormDataPart("Descuento", clienteModificado.Descuento)
-        }
-        if (clienteActual.MontoCredito != clienteModificado.MontoCredito) {
-            formBuilder.addFormDataPart("MontoCredito", clienteModificado.MontoCredito)
-        }
-        if (clienteActual.plazo != clienteModificado.plazo) {
-            formBuilder.addFormDataPart("plazo", clienteModificado.plazo)
-        }
         if (clienteActual.TieneCredito != clienteModificado.TieneCredito) {
-            println(clienteActual.TieneCredito)
-            println( clienteModificado.TieneCredito)
             formBuilder.addFormDataPart("TieneCredito", clienteModificado.TieneCredito)
         }
         if (clienteActual.FechaNacimiento != clienteModificado.FechaNacimiento) {

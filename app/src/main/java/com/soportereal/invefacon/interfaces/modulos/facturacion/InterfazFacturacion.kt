@@ -22,6 +22,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -51,20 +52,24 @@ import androidx.compose.material.icons.filled.AttachMoney
 import androidx.compose.material.icons.filled.Badge
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.CreditCard
 import androidx.compose.material.icons.filled.Dangerous
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.filled.EditNote
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Error
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Inventory
 import androidx.compose.material.icons.filled.LocalOffer
 import androidx.compose.material.icons.filled.Payments
+import androidx.compose.material.icons.filled.Percent
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PersonPin
 import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.PriceChange
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.RequestQuote
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Straighten
 import androidx.compose.material.icons.filled.Warehouse
@@ -100,9 +105,11 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.Font
@@ -185,6 +192,7 @@ fun IniciarInterfazFacturacion(
     systemUiController?.setNavigationBarColor(Color.Black)
     val fontAksharPrincipal = FontFamily(Font(R.font.akshar_medium))
     val context = LocalContext.current
+    val focusManager = LocalFocusManager.current
     val configuration = LocalConfiguration.current
     val dpAnchoPantalla = configuration.screenWidthDp
     val dpAltoPantalla = configuration.screenHeightDp
@@ -207,6 +215,8 @@ fun IniciarInterfazFacturacion(
     var direccion by remember { mutableStateOf("") }
     var telefonos by remember { mutableStateOf("") }
     var plazoCredito by remember { mutableStateOf("") }
+    var montoCredito by remember { mutableStateOf("") }
+    var montoContrato by remember { mutableStateOf("") }
     var totalGravado by remember { mutableDoubleStateOf(0.00) }
     var totalIva by remember { mutableDoubleStateOf(0.00) }
     var totalDescuento by remember { mutableDoubleStateOf(0.00) }
@@ -222,6 +232,7 @@ fun IniciarInterfazFacturacion(
     var tipoDocumento by remember { mutableStateOf("") }
     var clienteId by remember { mutableStateOf("") }
     var estadoProforma by remember { mutableStateOf("") }
+    var detalleProforma by remember { mutableStateOf("") }
     val objectoProcesadorDatosApi = ProcesarDatosModuloFacturacion(token)
     val objectoProcesadorDatosApiCliente = ProcesarDatosModuloClientes(token)
     var isCargandoDatos by remember { mutableStateOf(true) }
@@ -338,6 +349,7 @@ fun IniciarInterfazFacturacion(
     var clienteTemp by remember { mutableStateOf(Cliente(Cod_Zona = "1", AgenteVentas = codUsuario, noForzaCredito = "0", TipoPrecioVenta = "1", TipoIdentificacion = "01")) }
     var agregarNuevoCliente by remember { mutableStateOf(false) }
     var editarCliente by remember { mutableStateOf(false) }
+    var guardarDetalleFactura by remember { mutableStateOf(false) }
     var iniciarBusquedaClienteByCedula by remember { mutableStateOf(false) }
     val coroutineScope = rememberCoroutineScope()
     val transition = rememberInfiniteTransition(label = "shimmer")
@@ -536,6 +548,8 @@ fun IniciarInterfazFacturacion(
         if (actualizarDatosProforma || soloActualizarArticulos || soloActualizarDatosCliente){
             listaArticulosSeleccionados.clear()
             isCargandoDatos = (!soloActualizarArticulos  && !soloActualizarDatosCliente)
+            expandedTotales = false
+            expandedClientes = false
             errorCargarProforma = false
             iniciarDescargaArticulos = false
             apiConsultaArticulos?.cancel()
@@ -557,10 +571,12 @@ fun IniciarInterfazFacturacion(
                         telefonos = datosCliente.getString("Telefonos")
                         tipoCedula = datosCliente.getString("TipoIdentificacion")
                         plazoCredito = datosCliente.getString("plazo")
+                        montoCredito = datosCliente.getInt("MontoCredito").toString()
+                        montoContrato = datosCliente.getInt("MontoContrato").toString()
                         tipoPrecioCliente = datosCliente.getString("TipoPrecioVenta")
                         nuevoTipoPrecio = tipoPrecioCliente
                         codMonedaCliente = datosCliente.getString("monedacodigo")
-                        descuentoCliente = datosCliente.getString("Descuento")
+                        descuentoCliente = datosCliente.getDouble("Descuento").toString()
                         direccion = datosCliente.getString("direccion")
 
                         //DATOS PROFORMA
@@ -574,6 +590,7 @@ fun IniciarInterfazFacturacion(
                         validacionCargaFinalizada = if (actualizarListaArticulos) 0 else 1
                         codMonedaProforma = data.getString("monedaDocumento")
                         tasaCambio = data.getDouble("tipoCambio")
+                        detalleProforma = data.optString("detalle", "null")
                         nuevoCodigoMoneda = codMonedaProforma
                         simboloMoneda =  if(codMonedaProforma == "CRC") "\u20A1 " else "\u0024 "
                         iniciarDescargaArticulos = listaArticulosFacturacion.isEmpty() || actualizarListaArticulos
@@ -617,7 +634,8 @@ fun IniciarInterfazFacturacion(
                                 existencia = datosArticulo.getDouble("Existencia"),
                                 articuloLineaId = datosArticulo.getString("ArticuloLineaId"),
                                 articuloCosto = datosArticulo.getDouble("ArticuloCosto"),
-                                utilidad = datosArticulo.getDouble("Utilidad")
+                                utilidad = datosArticulo.getDouble("Utilidad"),
+                                articuloSerie = datosArticulo.getString("ArticuloSerie")
                             )
                             val ivaTemp = listaIvas.find { it.clave == articuloFacturado.impuesto.toString() }
                             if ( ivaTemp != null){
@@ -1254,10 +1272,20 @@ fun IniciarInterfazFacturacion(
         val result = objectoProcesadorDatosApiCliente.actualizarDatosClientes(clienteTemp, clienteTemp)
         if (result == null) return@LaunchedEffect gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
         estadoRespuestaApi.cambiarEstadoRespuestaApi(mostrarSoloRespuestaError = true, datosRespuesta = result)
-        if (validarExitoRestpuestaServidor(result)) actualizarDatosProforma = true
+        if (validarExitoRestpuestaServidor(result)) soloActualizarDatosCliente = true
         gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
         clienteTemp = Cliente()
         editarCliente = false
+    }
+
+    LaunchedEffect (guardarDetalleFactura) {
+        if (!guardarDetalleFactura) return@LaunchedEffect
+        gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(true)
+        val result = objectoProcesadorDatosApi.guardarDestalleFactura(if (detalleProforma.isEmpty()) " " else detalleProforma, numeroProforma)
+        if (result == null) return@LaunchedEffect
+        estadoRespuestaApi.cambiarEstadoRespuestaApi(mostrarRespuesta = true, datosRespuesta = result)
+        gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
+        guardarDetalleFactura = false
     }
 
     // Interceptar el botón de retroceso
@@ -1535,7 +1563,14 @@ fun IniciarInterfazFacturacion(
     }
 
     @Composable
-    fun BasicTexfiuldWithText(textTitle: String, text: String, icon: ImageVector, variable: String, nuevoValor: (String) -> Unit){
+    fun BasicTexfiuldWithText(
+        textTitle: String,
+        text: String,
+        icon: ImageVector,
+        variable: String,
+        nuevoValor: (String) -> Unit,
+        darFormatomiles : Boolean = false
+    ) {
         Column {
             TText(
                 text = textTitle,
@@ -1560,6 +1595,7 @@ fun IniciarInterfazFacturacion(
                 iconTint = Color.Gray,
                 textColor = Color.Black,
                 fontSize = obtenerEstiloBodyMedium(),
+                darFormatoMiles = darFormatomiles,
                 enable = false
             )
         }
@@ -1579,311 +1615,208 @@ fun IniciarInterfazFacturacion(
         bodega : ParClaveValor,
         precioVenta: String
     ) {
-        if (mostrarVentanaArticulo) {
-            var bodegaSeleccionda by remember { mutableStateOf(bodega) }
-            var tipoPrecioSeleccionado by remember { mutableStateOf(articulo.listaPrecios.find { it.clave == precioVenta.trim() }?:ParClaveValor()) }
-            var cantidadProducto by remember { mutableStateOf(if (articulo.articuloCantidad > 0) articulo.articuloCantidad.toString() else "1.0") }
-            var cantidadProductoForApi by remember { mutableDoubleStateOf(0.0) }
-            var precioUnitarioIva by remember { mutableStateOf("0.00") }
-            var precioUnitarioIvaDesc by remember { mutableStateOf("0.00") }
-            var precioProducto by remember {mutableStateOf(if (isAgregar) tipoPrecioSeleccionado.valor else articulo.precio.toString()) }
-            var seleccionPresentacion by remember { mutableStateOf("Unidad") }
-            var porcentajeDescuentoProducto by remember { mutableStateOf(descuentoCliente) }
-            var montoDescuento by remember { mutableStateOf("") }
-            var gravado by remember { mutableDoubleStateOf(0.0) }
-            var montoIVA by remember { mutableDoubleStateOf(0.0) }
-            var esCambioPorMontoDescuento by remember { mutableStateOf(false) }
-            var isCalculandoPrecioIva by remember { mutableStateOf(false) }
-            var isMenuVisible by remember { mutableStateOf(false) }
-            val simboloMonedaArticulo by remember { mutableStateOf(if(codigoMoneda == "CRC") "\u20A1 " else "\u0024 ") }
-            var precioMinimoPermitido by remember { mutableDoubleStateOf(0.00) }
-            var porcentajeUtilidadMinima by remember { mutableDoubleStateOf(0.00) }
+        if (!mostrarVentanaArticulo) return
+        var bodegaSeleccionda by remember { mutableStateOf(bodega) }
+        var tipoPrecioSeleccionado by remember { mutableStateOf(articulo.listaPrecios.find { it.clave == precioVenta.trim() }?:ParClaveValor()) }
+        var cantidadProducto by remember { mutableStateOf(if (articulo.articuloCantidad > 0) articulo.articuloCantidad.toString() else "1.0") }
+        var cantidadProductoForApi by remember { mutableDoubleStateOf(0.0) }
+        var precioUnitarioIva by remember { mutableStateOf("0.00") }
+        var precioUnitarioIvaDesc by remember { mutableStateOf("0.00") }
+        var precioProducto by remember {mutableStateOf(if (isAgregar) tipoPrecioSeleccionado.valor else articulo.precio.toString()) }
+        var seleccionPresentacion by remember { mutableStateOf("Unidad") }
+        var porcentajeDescuentoProducto by remember { mutableStateOf(descuentoCliente) }
+        var montoDescuento by remember { mutableStateOf("") }
+        var gravado by remember { mutableDoubleStateOf(0.0) }
+        var montoIVA by remember { mutableDoubleStateOf(0.0) }
+        var esCambioPorMontoDescuento by remember { mutableStateOf(false) }
+        var isCalculandoPrecioIva by remember { mutableStateOf(false) }
+        var isMenuVisible by remember { mutableStateOf(false) }
+        val simboloMonedaArticulo by remember { mutableStateOf(if(codigoMoneda == "CRC") "\u20A1 " else "\u0024 ") }
+        var precioMinimoPermitido by remember { mutableDoubleStateOf(0.00) }
+        var porcentajeUtilidadMinima by remember { mutableDoubleStateOf(0.00) }
+        var detallesAdicionales by remember { mutableStateOf(articulo.articuloSerie) }
 
-            fun calcularTotales() {
-                try {
-                    // Conversión segura de String a BigDecimal
-                    val cantidad = cantidadProducto.toBigDecimalOrNull() ?: BigDecimal.ZERO
-                    val precio = precioProducto.toBigDecimalOrNull() ?: BigDecimal.ZERO
-                    var porcentajeDescuento = porcentajeDescuentoProducto.toBigDecimalOrNull() ?: BigDecimal.ZERO
-                    var tempMontoDescuento = montoDescuento.toBigDecimalOrNull() ?: BigDecimal.ZERO
-                    val impuesto = articulo.impuesto.toBigDecimal()
+        fun calcularTotales() {
+            try {
+                // Conversión segura de String a BigDecimal
+                val cantidad = cantidadProducto.toBigDecimalOrNull() ?: BigDecimal.ZERO
+                val precio = precioProducto.toBigDecimalOrNull() ?: BigDecimal.ZERO
+                var porcentajeDescuento = porcentajeDescuentoProducto.toBigDecimalOrNull() ?: BigDecimal.ZERO
+                var tempMontoDescuento = montoDescuento.toBigDecimalOrNull() ?: BigDecimal.ZERO
+                val impuesto = articulo.impuesto.toBigDecimal()
 
-                    // Cálculo de cantidad para la API
-                    cantidadProductoForApi = if (seleccionPresentacion != "Unidad") {
-                        cantidad.multiply(BigDecimal(articulo.unidadXMedida)).toDouble()
-                    } else {
-                        cantidad.toDouble()
-                    }
-
-                    // Subtotal sin descuento
-                    val subtotal = cantidadProductoForApi.toBigDecimal().multiply(precio)
-
-                    // Cálculo de descuento
-                    if (esCambioPorMontoDescuento) {
-                        porcentajeDescuento = if (precio.compareTo(BigDecimal.ZERO) != 0) {
-                            tempMontoDescuento.multiply(BigDecimal(100)).divide(precio, 2, RoundingMode.HALF_UP)
-                        } else {
-                            BigDecimal.ZERO
-                        }
-                        porcentajeDescuentoProducto = porcentajeDescuento.toString()
-                    } else {
-                        tempMontoDescuento = precio.multiply(porcentajeDescuento).divide(BigDecimal(100), 2, RoundingMode.HALF_UP)
-                        montoDescuento = tempMontoDescuento.toString()
-                    }
-
-                    // Cálculo del precio unitario con IVA
-                    if (!isCalculandoPrecioIva) {
-                        val factorImpuesto = BigDecimal.ONE.add(impuesto.divide(BigDecimal(100), 4, RoundingMode.HALF_UP))
-                        precioUnitarioIva = precio.multiply(factorImpuesto).setScale(2, RoundingMode.HALF_UP).toString()
-                    }
-
-                    // Monto gravado y cálculo de IVA
-                    gravado = subtotal.subtract(tempMontoDescuento.multiply(cantidad)).toDouble()
-                    val iva = gravado.toBigDecimal().multiply(impuesto).divide(BigDecimal(100), 2, RoundingMode.HALF_UP)
-
-                    montoIVA = iva.toDouble()
-
-                    // Calcular el monto del descuento
-                    val montoDescuentoUnitario = precio.multiply(porcentajeDescuento)
-                        .divide(BigDecimal(100), 2, RoundingMode.HALF_UP)
-
-                    // Precio con descuento
-                    val precioConDescuentoUnitario = precio.subtract(montoDescuentoUnitario)
-
-                    // Calcular el monto del IVA sobre el precio con descuento
-                    val montoIVAUnitario = precioConDescuentoUnitario.multiply(impuesto)
-                        .divide(BigDecimal(100), 2, RoundingMode.HALF_UP)
-
-                    // Precio final con descuento e IVA
-                    precioUnitarioIvaDesc = precioConDescuentoUnitario.add(montoIVAUnitario).setScale(2, RoundingMode.HALF_UP).toString()
-
-                    // Restablecer banderas
-                    isCalculandoPrecioIva = false
-                    esCambioPorMontoDescuento = false
-
-
-                } catch (e: Exception) {
-                    iniciarMenuAgregaEditaArticulo = false
-                    mostrarMensajeError("Error al calcular totales: ${e.message ?: "Valor no válido"}")
+                // Cálculo de cantidad para la API
+                cantidadProductoForApi = if (seleccionPresentacion != "Unidad") {
+                    cantidad.multiply(BigDecimal(articulo.unidadXMedida)).toDouble()
+                } else {
+                    cantidad.toDouble()
                 }
+
+                // Subtotal sin descuento
+                val subtotal = cantidadProductoForApi.toBigDecimal().multiply(precio)
+
+                // Cálculo de descuento
+                if (esCambioPorMontoDescuento) {
+                    porcentajeDescuento = if (precio.compareTo(BigDecimal.ZERO) != 0) {
+                        tempMontoDescuento.multiply(BigDecimal(100)).divide(precio, 2, RoundingMode.HALF_UP)
+                    } else {
+                        BigDecimal.ZERO
+                    }
+                    porcentajeDescuentoProducto = porcentajeDescuento.toString()
+                } else {
+                    tempMontoDescuento = precio.multiply(porcentajeDescuento).divide(BigDecimal(100), 2, RoundingMode.HALF_UP)
+                    montoDescuento = tempMontoDescuento.toString()
+                }
+
+                // Cálculo del precio unitario con IVA
+                if (!isCalculandoPrecioIva) {
+                    val factorImpuesto = BigDecimal.ONE.add(impuesto.divide(BigDecimal(100), 4, RoundingMode.HALF_UP))
+                    precioUnitarioIva = precio.multiply(factorImpuesto).setScale(2, RoundingMode.HALF_UP).toString()
+                }
+
+                // Monto gravado y cálculo de IVA
+                gravado = subtotal.subtract(tempMontoDescuento.multiply(cantidad)).toDouble()
+                val iva = gravado.toBigDecimal().multiply(impuesto).divide(BigDecimal(100), 2, RoundingMode.HALF_UP)
+
+                montoIVA = iva.toDouble()
+
+                // Calcular el monto del descuento
+                val montoDescuentoUnitario = precio.multiply(porcentajeDescuento)
+                    .divide(BigDecimal(100), 2, RoundingMode.HALF_UP)
+
+                // Precio con descuento
+                val precioConDescuentoUnitario = precio.subtract(montoDescuentoUnitario)
+
+                // Calcular el monto del IVA sobre el precio con descuento
+                val montoIVAUnitario = precioConDescuentoUnitario.multiply(impuesto)
+                    .divide(BigDecimal(100), 2, RoundingMode.HALF_UP)
+
+                // Precio final con descuento e IVA
+                precioUnitarioIvaDesc = precioConDescuentoUnitario.add(montoIVAUnitario).setScale(2, RoundingMode.HALF_UP).toString()
+
+                // Restablecer banderas
+                isCalculandoPrecioIva = false
+                esCambioPorMontoDescuento = false
+
+
+            } catch (e: Exception) {
+                iniciarMenuAgregaEditaArticulo = false
+                mostrarMensajeError("Error al calcular totales: ${e.message ?: "Valor no válido"}")
+            }
+        }
+
+        fun esPrecioValidoConDescuento(): Boolean {
+            fun validarParametro(codParametro: String): Boolean {
+                return obtenerValorParametroEmpresa(codParametro, "0") != "1"  // SI EL PARAMETRO ES 1 ES QUE NO ES PERMIRTIDO EN ESTE CASO
             }
 
-            fun esPrecioValidoConDescuento(): Boolean {
-                fun validarParametro(codParametro: String): Boolean {
-                    return obtenerValorParametroEmpresa(codParametro, "0") != "1"  // SI EL PARAMETRO ES 1 ES QUE NO ES PERMIRTIDO EN ESTE CASO
-                }
+            val mapaPrecios = mapOf(
+                "10" to "153",
+                "9" to "154",
+                "8" to "155",
+                "7" to "156",
+                "6" to "157",
+                "5" to "158"
+            )
 
-                val mapaPrecios = mapOf(
-                    "10" to "153",
-                    "9" to "154",
-                    "8" to "155",
-                    "7" to "156",
-                    "6" to "157",
-                    "5" to "158"
-                )
+            val codigoParametro = mapaPrecios[tipoPrecioSeleccionado.clave]
 
-                val codigoParametro = mapaPrecios[tipoPrecioSeleccionado.clave]
+            return codigoParametro?.let { validarParametro(it) } ?: true
+        }
 
-                return codigoParametro?.let { validarParametro(it) } ?: true
+        LaunchedEffect(Unit) {
+            if(!esPrecioValidoConDescuento()){
+                montoDescuento = ""
+                porcentajeDescuentoProducto = ""
             }
-
-            LaunchedEffect(Unit) {
-                if(!esPrecioValidoConDescuento()){
-                    montoDescuento = ""
-                    porcentajeDescuentoProducto = ""
-                }
-                porcentajeUtilidadMinima = obtenerValorParametroEmpresa("16", "0").toDouble()
-                precioMinimoPermitido = if(porcentajeUtilidadMinima == 0.00) 0.01 else (articulo.costo * porcentajeUtilidadMinima/100.00) + articulo.costo
+            porcentajeUtilidadMinima = obtenerValorParametroEmpresa("16", "0").toDouble()
+            precioMinimoPermitido = if(porcentajeUtilidadMinima == 0.00) 0.01 else (articulo.costo * porcentajeUtilidadMinima/100.00) + articulo.costo
+            calcularTotales()
+            val precioConDesc = precioProducto.ifEmpty {"0.00"}.toDouble() - montoDescuento.ifEmpty { "0.00" }.toDouble()
+            if (precioConDesc < precioMinimoPermitido)  {
+                mostrarMensajeError("El $porcentajeDescuentoProducto% de descuento supera la utilidad mínima, el precio de venta minimo con o sin descuento es de: ${separacionDeMiles(precioMinimoPermitido)}. Por lo tanto, tanto el porcentaje como el monto de descuento se ajustarán a 0 para que pueda ingresar un descuento válido.")
+                montoDescuento = ""
+                porcentajeDescuentoProducto = ""
                 calcularTotales()
-                val precioConDesc = precioProducto.ifEmpty {"0.00"}.toDouble() - montoDescuento.ifEmpty { "0.00" }.toDouble()
-                if (precioConDesc < precioMinimoPermitido)  {
-                    mostrarMensajeError("El $porcentajeDescuentoProducto% de descuento supera la utilidad mínima, el precio de venta minimo con o sin descuento es de: ${separacionDeMiles(precioMinimoPermitido)}. Por lo tanto, tanto el porcentaje como el monto de descuento se ajustarán a 0 para que pueda ingresar un descuento válido.")
-                    montoDescuento = ""
-                    porcentajeDescuentoProducto = ""
-                    calcularTotales()
-                }
             }
+        }
 
-            LaunchedEffect(Unit) {
-                delay(100)
-                isMenuVisible = true
-            }
+        LaunchedEffect(Unit) {
+            delay(100)
+            isMenuVisible = true
+        }
 
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(Color.Black.copy(alpha = 0.3f))
-                    .clickable(enabled = false) {},
-                contentAlignment = Alignment.Center
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black.copy(alpha = 0.3f))
+                .clickable(enabled = false) {},
+            contentAlignment = Alignment.Center
+        ) {
+            AnimatedVisibility(
+                visible = isMenuVisible,
+                enter = fadeIn(animationSpec = tween(500)) + slideInVertically(initialOffsetY = { it }),
+                exit = fadeOut(animationSpec = tween(500)) + slideOutVertically(targetOffsetY = { it })
             ) {
-                AnimatedVisibility(
-                    visible = isMenuVisible,
-                    enter = fadeIn(animationSpec = tween(500)) + slideInVertically(initialOffsetY = { it }),
-                    exit = fadeOut(animationSpec = tween(500)) + slideOutVertically(targetOffsetY = { it })
+                Card(
+                    modifier = Modifier
+                        .width(objetoAdaptardor.ajustarAncho(400))
+                        .wrapContentHeight()
+                        .pointerInput(Unit) {
+                            detectTapGestures(onTap = {
+                                focusManager.clearFocus()
+                            })
+                        }
+                        .clickable(enabled = false) { }
+                        .padding(vertical = objetoAdaptardor.ajustarAncho(8), horizontal = objetoAdaptardor.ajustarAltura(16)),
+                    shape = RoundedCornerShape(objetoAdaptardor.ajustarAltura(16)),
+                    colors = CardDefaults.cardColors(containerColor = Color.White)
                 ) {
-                    Card(
-                        modifier = Modifier
-                            .width(objetoAdaptardor.ajustarAncho(400))
-                            .wrapContentHeight()
-                            .clickable(enabled = false) { }
-                            .padding(objetoAdaptardor.ajustarAltura(16)),
-                        shape = RoundedCornerShape(objetoAdaptardor.ajustarAltura(16)),
-                        colors = CardDefaults.cardColors(containerColor = Color.White)
+                    Column(
+                        modifier = Modifier.padding(objetoAdaptardor.ajustarAltura(16)),
+                        horizontalAlignment = Alignment.Start
                     ) {
-                        Column(
-                            modifier = Modifier.padding(objetoAdaptardor.ajustarAltura(16)),
-                            horizontalAlignment = Alignment.Start
+
+                        TText(
+                            text = if (seleccionPresentacion == "Unidad") "Unidad ${articulo.descripcion}" else  "Caja ${articulo.descripcion}" ,
+                            modifier = Modifier.fillMaxWidth(),
+                            fontSize = obtenerEstiloHeadMedium(),
+                            textAlign = TextAlign.Center,
+                            maxLines = 2
+                        )
+
+                        TText(
+                            text = "Código: ${articulo.codigo}",
+                            fontSize = obtenerEstiloBodyBig(),
+                            fontWeight = FontWeight.Light
+                        )
+
+                        Spacer(modifier = Modifier.height(4.dp))
+
+                        LazyColumn(
+                            modifier = Modifier.wrapContentSize()
                         ) {
-
-                            TText(
-                                text = if (seleccionPresentacion == "Unidad") "Unidad ${articulo.descripcion}" else  "Caja ${articulo.descripcion}" ,
-                                modifier = Modifier.fillMaxWidth(),
-                                fontSize = obtenerEstiloHeadMedium(),
-                                textAlign = TextAlign.Center,
-                                maxLines = 2
-                            )
-
-                            TText(
-                                text = "Código: ${articulo.codigo}",
-                                fontSize = obtenerEstiloBodyBig(),
-                                fontWeight = FontWeight.Light
-                            )
-
-                            Spacer(modifier = Modifier.height(8.dp))
-
-                            TText(
-                                text = "Bodega:",
-                                fontSize = obtenerEstiloBodyBig(),
-                                modifier = Modifier.fillMaxWidth(),
-                                fontWeight = FontWeight.Light,
-                                color = Color.DarkGray,
-                                textAlign = TextAlign.Start
-                            )
-
-                            TextFieldMultifuncional(
-                                label = "Bodega",
-                                textPlaceholder = if (bodegaSeleccionda.valor.isEmpty()) "Sin Bodegas" else "Selccione una bodega.",
-                                nuevoValor2 = {bodegaSeleccionda = it},
-                                valor = bodegaSeleccionda.valor,
-                                contieneOpciones = true,
-                                usarOpciones4 = true,
-                                opciones4 = articulo.listaBodegas,
-                                usarModifierForSize = true,
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .border(
-                                        2.dp,
-                                        color = Color.Gray,
-                                        RoundedCornerShape(objetoAdaptardor.ajustarAltura(12))
-                                    ),
-                                mostrarLeadingIcon = true,
-                                leadingIcon = Icons.Default.Warehouse,
-                                isUltimo = true,
-                                medidaAncho = 350,
-                                tomarAnchoMaximo = false,
-                                fontSize = obtenerEstiloBodyBig(),
-                                mostrarLabel = false
-                            )
-
-                            // DATOS BODEGA
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(objetoAdaptardor.ajustarAltura(4)),
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                TText(
-                                    text = "Codigo: ${bodegaSeleccionda.clave}",
-                                    fontSize = obtenerEstiloBodyBig(),
-                                    modifier = Modifier
-                                        .weight(1f),
-                                    textAlign = TextAlign.Start
-                                )
-                                TText(
-                                    text = "Existencia: ${bodegaSeleccionda.existencia}",
-                                    modifier = Modifier
-                                        .weight(1f),
-                                    fontSize = obtenerEstiloBodyBig(),
-                                    textAlign = TextAlign.End
-                                )
-                            }
-
-                            Spacer(modifier = Modifier.height(8.dp))
-
-                            // Tipo medida Y TIPO PRECIO
-                            Row(
-                                horizontalArrangement = Arrangement.spacedBy(15.dp)
-                            ){
+                            item {
                                 Column(
-                                    modifier = Modifier.weight(1f)
-                                ){
-                                    TText(
-                                        text = "Tipo de Medida:",
-                                        fontSize = obtenerEstiloBodyMedium(),
-                                        fontWeight = FontWeight.Light,
-                                        color = Color.DarkGray
-                                    )
-                                    TextFieldMultifuncional(
-                                        label = "Medida",
-                                        textPlaceholder = "Medida",
-                                        nuevoValor = {
-                                            seleccionPresentacion = it
-                                            calcularTotales()
-                                        },
-                                        valor = seleccionPresentacion,
-                                        contieneOpciones = true,
-                                        usarOpciones3 = true,
-                                        opciones3 = opcionesPresentacion,
-                                        usarModifierForSize = true,
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .border(
-                                                2.dp,
-                                                color = Color.Gray,
-                                                RoundedCornerShape(objetoAdaptardor.ajustarAltura(12))
-                                            ),
-                                        mostrarLeadingIcon = true,
-                                        leadingIcon = Icons.Default.Straighten,
-                                        isUltimo = true,
-                                        medidaAncho = 350,
-                                        tomarAnchoMaximo = false,
-                                        fontSize = obtenerEstiloBodyBig(),
-                                        mostrarLabel = false,
-                                        cantidadLineas = 1
-                                    )
-                                }
-
-                                Column(
-                                    modifier = Modifier.weight(1f)
+                                    horizontalAlignment = Alignment.Start
                                 ) {
                                     TText(
-                                        text = "Tipo de Precio:",
-                                        fontSize = obtenerEstiloBodyMedium(),
+                                        text = "Bodega:",
+                                        fontSize = obtenerEstiloBodyBig(),
+                                        modifier = Modifier.fillMaxWidth(),
                                         fontWeight = FontWeight.Light,
-                                        color = Color.DarkGray
+                                        color = Color.DarkGray,
+                                        textAlign = TextAlign.Start
                                     )
+
                                     TextFieldMultifuncional(
-                                        label = "",
-                                        textPlaceholder = "Precio",
-                                        nuevoValor2 = {
-                                            if(!tienePermiso("005")) return@TextFieldMultifuncional mostrarMensajeError("No posee el permiso 005 para cambiar el precio de venta.")
-                                            if (it.clave != "1" &&  !tienePermiso( if(it.clave=="10") "040" else "03${it.clave}" ) ) return@TextFieldMultifuncional mostrarMensajeError("No cuenta con el permiso ${if(it.clave=="10") "040" else "03${it.clave}"} para modificar el tipo de precio a ${it.clave}.")
-                                            if (obtenerValorParametroEmpresa("278", "0") == "1"){
-                                                porcentajeDescuentoProducto = ""
-                                            }// quitar descuento al cambiar el tipo de precio
-                                            tipoPrecioSeleccionado = it
-                                            if(!esPrecioValidoConDescuento()){
-                                                montoDescuento = ""
-                                                porcentajeDescuentoProducto = ""
-                                            }
-                                            precioProducto = it.valor
-                                            calcularTotales()
-                                        },
-                                        valor = tipoPrecioSeleccionado.clave,
-                                        mostrarClave = true,
+                                        label = "Bodega",
+                                        textPlaceholder = if (bodegaSeleccionda.valor.isEmpty()) "Sin Bodegas" else "Selccione una bodega.",
+                                        nuevoValor2 = {bodegaSeleccionda = it},
+                                        valor = bodegaSeleccionda.valor,
                                         contieneOpciones = true,
                                         usarOpciones4 = true,
-                                        opciones4 = articulo.listaPrecios,
+                                        opciones4 = articulo.listaBodegas,
                                         usarModifierForSize = true,
                                         modifier = Modifier
                                             .fillMaxWidth()
@@ -1893,398 +1826,547 @@ fun IniciarInterfazFacturacion(
                                                 RoundedCornerShape(objetoAdaptardor.ajustarAltura(12))
                                             ),
                                         mostrarLeadingIcon = true,
-                                        leadingIcon = Icons.Filled.PriceChange,
+                                        leadingIcon = Icons.Default.Warehouse,
                                         isUltimo = true,
                                         medidaAncho = 350,
                                         tomarAnchoMaximo = false,
                                         fontSize = obtenerEstiloBodyBig(),
-                                        mostrarLabel = false,
-                                        cantidadLineas = 1
+                                        mostrarLabel = false
                                     )
-                                }
-                            }
 
-                            Spacer(modifier = Modifier.height(8.dp))
-
-                            // PRECIO Y CANTIDAD
-                            Row(
-                                horizontalArrangement = Arrangement.spacedBy(15.dp)
-                            ) {
-                                Column(
-                                    modifier = Modifier.weight(1f)
-                                ) {
-                                    TText(
-                                        text = "Cantidad:",
-                                        fontSize = obtenerEstiloBodyMedium(),
-                                        fontWeight = FontWeight.Light,
-                                        color = Color.DarkGray
-                                    )
-                                    TextFieldMultifuncional(
-                                        nuevoValor = {
-                                            cantidadProducto = it
-                                            calcularTotales()
-                                        },
-                                        valor = cantidadProducto,
-                                        usarModifierForSize = true,
+                                    // DATOS BODEGA
+                                    Row(
                                         modifier = Modifier
                                             .fillMaxWidth()
-                                            .border(
-                                                2.dp,
-                                                color = Color.Gray,
-                                                RoundedCornerShape(objetoAdaptardor.ajustarAltura(12))
-                                            ),
-                                        isUltimo = true,
-                                        fontSize = obtenerEstiloBodyBig(),
-                                        cantidadLineas = 1,
-                                        mostrarPlaceholder = true,
-                                        textPlaceholder = "0.00",
-                                        mostrarLabel = false,
-                                        soloPermitirValoresNumericos = true,
-                                        onFocus = {
-                                            cantidadProducto = ""
-                                            calcularTotales()
-                                        }
-                                    )
-                                }
+                                            .padding(objetoAdaptardor.ajustarAltura(4)),
+                                        horizontalArrangement = Arrangement.SpaceBetween
+                                    ) {
+                                        TText(
+                                            text = "Código: ${bodegaSeleccionda.clave}",
+                                            fontSize = obtenerEstiloBodyBig(),
+                                            modifier = Modifier
+                                                .weight(1f),
+                                            textAlign = TextAlign.Start
+                                        )
+                                        TText(
+                                            text = "Existencia: ${bodegaSeleccionda.existencia}",
+                                            modifier = Modifier
+                                                .weight(1f),
+                                            fontSize = obtenerEstiloBodyBig(),
+                                            textAlign = TextAlign.End
+                                        )
+                                    }
 
-                                Column(
-                                    modifier = Modifier.weight(1f)
-                                ) {
-                                    TText(
-                                        text = "Precio:",
-                                        fontSize = obtenerEstiloBodyMedium(),
-                                        fontWeight = FontWeight.Light,
-                                        color = Color.DarkGray
-                                    )
-                                    TextFieldMultifuncional(
-                                        nuevoValor = {
-                                            if(!tienePermiso("003")) return@TextFieldMultifuncional mostrarMensajeError("No posee el permiso 003 para actualizar el precio de venta.")
-                                            if(!tienePermiso("024")) return@TextFieldMultifuncional mostrarMensajeError("No posee el permiso 024 para editar el precio de venta desde facturación.")
-                                            porcentajeDescuentoProducto = ""
-                                            precioProducto = it
-                                            calcularTotales()
-                                        },
-                                        valor = precioProducto,
-                                        usarModifierForSize = true,
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .border(
-                                                2.dp,
-                                                color = Color.Gray,
-                                                RoundedCornerShape(objetoAdaptardor.ajustarAltura(12))
-                                            ),
-                                        isUltimo = true,
-                                        fontSize = obtenerEstiloBodyBig(),
-                                        cantidadLineas = 1,
-                                        mostrarPlaceholder = true,
-                                        textPlaceholder = "0.00",
-                                        mostrarLabel = false,
-                                        soloPermitirValoresNumericos = true,
-                                        darFormatoMiles = true,
-                                        permitirPuntosDedimales = true,
-                                        onFocus = {
-                                            if(!tienePermiso("003")) return@TextFieldMultifuncional mostrarMensajeError("No posee el permiso 003 para actualizar el precio de venta.")
-                                            if(!tienePermiso("024")) return@TextFieldMultifuncional mostrarMensajeError("No posee el permiso 024 para editar el precio de venta desde facturación.")
-                                            precioProducto = ""
-                                            precioUnitarioIva = ""
-                                            porcentajeDescuentoProducto = ""
-                                            calcularTotales()
-                                        }
-                                    )
-                                }
-                            }
+//                                        Spacer(modifier = Modifier.height(4.dp))
 
-                            Spacer(modifier = Modifier.height(8.dp))
-
-                            TText(
-                                text = "Precio (con IVA ${articulo.impuesto}%): ",
-                                fontSize = obtenerEstiloBodyMedium(),
-                                fontWeight = FontWeight.Light,
-                                color = Color.DarkGray
-                            )
-                            TextFieldMultifuncional(
-                                nuevoValor = {
-                                    if(!tienePermiso("003")) return@TextFieldMultifuncional mostrarMensajeError("No posee el permiso 003 para actualizar el precio de venta.")
-                                    if(!tienePermiso("024")) return@TextFieldMultifuncional mostrarMensajeError("No posee el permiso 024 para editar el precio de venta desde facturación.")
-                                    isCalculandoPrecioIva = true
-                                    porcentajeDescuentoProducto = ""
-                                    precioUnitarioIva = it
-                                    val precioUnitarioIvaTemp = precioUnitarioIva.toDoubleOrNull() ?: 0.00
-                                    precioProducto = (precioUnitarioIvaTemp/(1.00+articulo.impuesto/100)).toString()
-                                    calcularTotales()
-                                },
-                                valor = precioUnitarioIva,
-                                usarModifierForSize = true,
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .border(
-                                        2.dp,
-                                        color = Color.Gray,
-                                        RoundedCornerShape(objetoAdaptardor.ajustarAltura(12))
-                                    ),
-                                isUltimo = true,
-                                fontSize = obtenerEstiloBodyBig(),
-                                cantidadLineas = 1,
-                                mostrarPlaceholder = true,
-                                textPlaceholder = "0.00",
-                                mostrarLabel = false,
-                                darFormatoMiles = true,
-                                soloPermitirValoresNumericos = true,
-                                onFocus = {
-                                    if(!tienePermiso("003")) return@TextFieldMultifuncional mostrarMensajeError("No posee el permiso 003 para actualizar el precio de venta.")
-                                    if(!tienePermiso("024")) return@TextFieldMultifuncional mostrarMensajeError("No posee el permiso 024 para editar el precio de venta desde facturación.")
-                                    isCalculandoPrecioIva = true
-                                    precioUnitarioIva = ""
-                                    precioProducto = ""
-                                    porcentajeDescuentoProducto = ""
-                                    calcularTotales()
-                                }
-                            )
-                            Spacer(modifier = Modifier.height(8.dp))
-
-                            // Descuento
-                            Row(
-                                horizontalArrangement = Arrangement.spacedBy(15.dp)
-                            ) {
-
-                                Column(
-                                    modifier = Modifier.weight(1f)
-                                ) {
-                                    TText(
-                                        text = "Descuento (%)",
-                                        fontSize = obtenerEstiloBodyMedium(),
-                                        fontWeight = FontWeight.Light,
-                                        color = Color.DarkGray
-                                    )
-                                    TextFieldMultifuncional(
-                                        label = "Descuento",
-                                        textPlaceholder = "0.00",
-                                        nuevoValor = {
-                                            if (!tienePermiso("002")) return@TextFieldMultifuncional mostrarMensajeError("No cuenta con el permiso 002 para modificar el descuento de los artículos.")
-                                            if(!esPrecioValidoConDescuento()) return@TextFieldMultifuncional mostrarMensajeError("No se puede aplicar un descuento a un artículo con precio ${tipoPrecioSeleccionado.clave}")
-                                            val porcentajeTemp = if(it.isEmpty()) 0.00 else it.toDouble()
-                                            val precioConDesc = precioProducto.ifEmpty { "0.00" }.toDouble() - (precioProducto.ifEmpty { "0.00" }.toDouble() * porcentajeTemp / 100)
-                                            if ( !tienePermiso("023") && porcentajeTemp>=articulo.descuentoAdmitido) return@TextFieldMultifuncional mostrarMensajeError("No cuenta con el permiso 023 para aplicar Descuento ilimitado, el descuento máximo es de: ${articulo.descuentoAdmitido}%")
-                                            if (porcentajeTemp > 0.00 && (precioConDesc < precioMinimoPermitido) ) return@TextFieldMultifuncional  if (porcentajeUtilidadMinima == 0.00) mostrarMensajeError("El descuento del $porcentajeTemp% supera el precio mínimo de venta, que es ${separacionDeMiles(precioMinimoPermitido)}, ya sea con o sin aplicar descuentos.") else mostrarMensajeError("El $porcentajeTemp% de descuento supera la utilidad mínima, el precio de venta minimo con o sin descuento es de: ${separacionDeMiles(precioMinimoPermitido)}")
-                                            porcentajeDescuentoProducto = it
-                                            calcularTotales()
-                                        },
-                                        valor = porcentajeDescuentoProducto,
-                                        usarModifierForSize = true,
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .border(
-                                                2.dp,
-                                                color = Color.Gray,
-                                                RoundedCornerShape(objetoAdaptardor.ajustarAltura(12))
-                                            ),
-                                        isUltimo = true,
-                                        medidaAncho = 350,
-                                        tomarAnchoMaximo = false,
-                                        fontSize = obtenerEstiloBodyBig(),
-                                        mostrarLabel = false,
-                                        soloPermitirValoresNumericos = true,
-                                        permitirPuntosDedimales = true,
-                                        cantidadLineas = 1,
-                                        onFocus = {
-                                            if (!tienePermiso("002")) return@TextFieldMultifuncional mostrarMensajeError("No cuenta con el permiso 002 para modificar el descuento de los artículos.")
-                                            porcentajeDescuentoProducto = ""
-                                            calcularTotales()
-                                        }
-                                    )
-                                }
-
-                                Column(
-                                    modifier = Modifier.weight(1f)
-                                ) {
-                                    TText(
-                                        text = "Monto Descuento:",
-                                        fontSize = obtenerEstiloBodyMedium(),
-                                        fontWeight = FontWeight.Light,
-                                        color = Color.DarkGray
-                                    )
-                                    TextFieldMultifuncional(
-                                        valor = montoDescuento,
-                                        nuevoValor = {
-                                            if (!tienePermiso("002")) return@TextFieldMultifuncional mostrarMensajeError("No cuenta con el permiso 002 para modificar el descuento de los artículos.")
-                                            if(!esPrecioValidoConDescuento()) return@TextFieldMultifuncional mostrarMensajeError("No se puede aplicar un descuento a un artículo con precio ${tipoPrecioSeleccionado.clave}")
-                                            val montoTemp = if(it.isEmpty()) 0.00 else it.toDouble()
-                                            if ( !tienePermiso("023") && montoTemp>=articulo.descuentoAdmitido) return@TextFieldMultifuncional mostrarMensajeError("No cuenta con el permiso 023 para aplicar Descuento ilimitado, el descuento máximo es de: ${articulo.descuentoAdmitido}%")
-                                            val precioConDesc = precioProducto.ifEmpty { "0.00" }.toDouble() - montoTemp
-                                            if (montoTemp > 0.00 && (precioConDesc < precioMinimoPermitido) ) return@TextFieldMultifuncional  if (porcentajeUtilidadMinima == 0.00) mostrarMensajeError("El monto ${separacionDeMiles(montoTemp)} de descuento supera el precio mínimo de venta, que es ${separacionDeMiles(precioMinimoPermitido)}, ya sea con o sin aplicar descuentos.") else mostrarMensajeError("El monto ${separacionDeMiles(montoTemp)} de descuento supera la utilidad mínima, el precio de venta minimo con o sin descuento es de: ${separacionDeMiles(precioMinimoPermitido)}")
-                                            montoDescuento = it
-                                            esCambioPorMontoDescuento = true
-                                            calcularTotales()
-                                        },
-                                        usarModifierForSize = true,
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .border(
-                                                2.dp,
-                                                color = Color.Gray,
-                                                RoundedCornerShape(objetoAdaptardor.ajustarAltura(12))
-                                            ),
-                                        isUltimo = true,
-                                        fontSize = obtenerEstiloBodyBig(),
-                                        cantidadLineas = 1,
-                                        mostrarPlaceholder = true,
-                                        textPlaceholder = "0.00",
-                                        mostrarLabel = false,
-                                        soloPermitirValoresNumericos = true,
-                                        darFormatoMiles = true,
-                                        permitirPuntosDedimales = true,
-                                        onFocus = {
-                                            if (!tienePermiso("002")) return@TextFieldMultifuncional mostrarMensajeError("No cuenta con el permiso 002 para modificar el descuento de los artículos.")
-                                            montoDescuento = ""
-                                            calcularTotales()
-                                        }
-                                    )
-                                }
-                            }
-
-                            Spacer(modifier = Modifier.height(8.dp))
-
-                            // Totales
-                            Column(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                            ) {
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceBetween
-                                ) {
-                                    TText(
-                                        text = "P/U (desc. + IVA): ",
-                                        textAlign = TextAlign.Start,
-                                        fontSize = obtenerEstiloBodyBig()
-                                    )
-                                    Spacer(modifier = Modifier.weight(1f))
-                                    TText(
-                                        text = simboloMonedaArticulo + separacionDeMiles(montoString = precioUnitarioIvaDesc, isString = true) +" $codigoMoneda",
-                                        textAlign = TextAlign.End,
-                                        fontSize = obtenerEstiloBodyBig()
-                                    )
-                                }
-                                HorizontalDivider(modifier = Modifier.padding(vertical = objetoAdaptardor.ajustarAltura(4)))
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceBetween
-                                ) {
-                                    TText(
-                                        text = "Gravado: ",
-                                        textAlign = TextAlign.Start,
-                                        fontSize = obtenerEstiloBodyBig()
-                                    )
-                                    Spacer(modifier = Modifier.weight(1f))
-                                    TText(
-                                        text = simboloMonedaArticulo + separacionDeMiles(gravado) +" $codigoMoneda",
-                                        textAlign = TextAlign.End,
-                                        fontSize = obtenerEstiloBodyBig()
-                                    )
-                                }
-                                HorizontalDivider(modifier = Modifier.padding(vertical = objetoAdaptardor.ajustarAltura(4)))
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceBetween
-                                ) {
-                                    TText(
-                                        text = "IVA (${articulo.impuesto}%): " ,
-                                        textAlign = TextAlign.End,
-                                        fontSize = obtenerEstiloBodyBig()
-                                    )
-                                    Spacer(modifier = Modifier.weight(1f))
-                                    TText(
-                                        text = "$simboloMonedaArticulo${separacionDeMiles(montoIVA)} $codigoMoneda",
-                                        textAlign = TextAlign.End,
-                                        fontSize = obtenerEstiloBodyBig()
-                                    )
-                                }
-                                HorizontalDivider(modifier = Modifier.padding(vertical = objetoAdaptardor.ajustarAltura(4)))
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceBetween
-                                ) {
-                                    TText(
-                                        text = "Total a pagar: ",
-                                        textAlign = TextAlign.End,
-                                        fontSize = obtenerEstiloTitleSmall()
-                                    )
-                                    Spacer(modifier = Modifier.weight(1f))
-                                    TText(
-                                        text = "$simboloMonedaArticulo${separacionDeMiles(montoIVA+gravado)} $codigoMoneda",
-                                        textAlign = TextAlign.End,
-                                        fontSize = obtenerEstiloTitleMedium()
-                                    )
-                                }
-                            }
-
-                            // Botones de acción
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                BButton(
-                                    text = "Cancelar",
-                                    objetoAdaptardor = objetoAdaptardor,
-                                    onClick = {
-                                        onDismiss()
-                                    },
-                                    modifier = Modifier.weight(1f),
-                                    backgroundColor = Color.Red,
-                                    textSize = obtenerEstiloTitleBig()
-                                )
-
-                                BButton(
-                                    text = if (isAgregar) "Agregar" else "Editar",
-                                    objetoAdaptardor = objetoAdaptardor,
-                                    onClick = {
-                                        cantidadProducto = cantidadProducto.ifEmpty { "0.00" }
-                                        precioProducto = precioProducto.ifEmpty { "0.00" }
-                                        montoDescuento = montoDescuento.ifEmpty { "0.00" }
-                                        porcentajeDescuentoProducto = porcentajeDescuentoProducto.ifEmpty { "0.00" }
-                                        if (precioProducto.toDouble() < precioMinimoPermitido ) return@BButton  mostrarMensajeError("El precio de venta minimo es de : ${separacionDeMiles(precioMinimoPermitido)}")
-                                        if (cantidadProducto.toDouble() > 0.00 && precioProducto.toDouble() > 0.00){
-                                            val articuloTemp = ArticuloLineaProforma(
-                                                numero = numeroProforma,
-                                                articuloLine = articulo.articuloLineaId,
-                                                tipoDocumento = tipoDocumento,
-                                                articuloCodigo = articulo.codigo,
-                                                articuloTipoPrecio = tipoPrecioSeleccionado.clave,
-                                                articuloActividadEconomica = articulo.actividadEconomica,
-                                                articuloCantidad = cantidadProductoForApi,
-                                                articuloUnidadMedida = articulo.unidadMedida,
-                                                presentacion = seleccionPresentacion,
-                                                articuloBodegaCodigo = bodegaSeleccionda.clave,
-                                                articuloVenta = precioProducto.toDouble(),
-                                                articuloVentaSubTotal1 = precioProducto.toDouble(),
-                                                articuloDescuentoPorcentage = porcentajeDescuentoProducto.toDouble(),
-                                                articuloVentaSubTotal2 = precioProducto.toDouble(),
-                                                articuloVentaSubTotal3 = precioProducto.toDouble(),
-                                                articuloIvaPorcentage = articulo.impuesto,
-                                                articuloIvaTarifa = articulo.Cod_Tarifa_Impuesto,
-                                                idCliente = clienteId,
-                                                articuloVentaGravado = precioProducto.toDouble(),
-                                                articuloVentaTotal = precioProducto.toDouble()
+                                    // Tipo medida Y TIPO PRECIO
+                                    Row(
+                                        horizontalArrangement = Arrangement.spacedBy(15.dp)
+                                    ){
+                                        Column(
+                                            modifier = Modifier.weight(1f)
+                                        ){
+                                            TText(
+                                                text = "Tipo de Medida:",
+                                                fontSize = obtenerEstiloBodyMedium(),
+                                                fontWeight = FontWeight.Light,
+                                                color = Color.DarkGray
                                             )
-                                            agregaEditaArticulo(articuloTemp)
-                                        }else{
-                                            if (cantidadProducto.toDouble() == 0.00){
-                                                cantidadProducto = ""
-                                                mostrarMensajeError("La cantidad del artículo deber ser mayor a '0.00'.")
-                                            }else{
-                                                precioProducto = ""
-                                                mostrarMensajeError("El Precio del artículo deber ser mayor a '0.00'.")
-                                            }
-
+                                            TextFieldMultifuncional(
+                                                label = "Medida",
+                                                textPlaceholder = "Medida",
+                                                nuevoValor = {
+                                                    seleccionPresentacion = it
+                                                    calcularTotales()
+                                                },
+                                                valor = seleccionPresentacion,
+                                                contieneOpciones = true,
+                                                usarOpciones3 = true,
+                                                opciones3 = opcionesPresentacion,
+                                                usarModifierForSize = true,
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .border(
+                                                        2.dp,
+                                                        color = Color.Gray,
+                                                        RoundedCornerShape(objetoAdaptardor.ajustarAltura(12))
+                                                    ),
+                                                mostrarLeadingIcon = true,
+                                                leadingIcon = Icons.Default.Straighten,
+                                                isUltimo = true,
+                                                medidaAncho = 350,
+                                                tomarAnchoMaximo = false,
+                                                fontSize = obtenerEstiloBodyBig(),
+                                                mostrarLabel = false,
+                                                cantidadLineas = 1
+                                            )
                                         }
-                                    },
-                                    modifier = Modifier.weight(1f),
-                                    backgroundColor = Color(0xFF244BC0),
-                                    textSize = obtenerEstiloTitleBig()
-                                )
+
+                                        Column(
+                                            modifier = Modifier.weight(1f)
+                                        ) {
+                                            TText(
+                                                text = "Tipo de Precio:",
+                                                fontSize = obtenerEstiloBodyMedium(),
+                                                fontWeight = FontWeight.Light,
+                                                color = Color.DarkGray
+                                            )
+                                            TextFieldMultifuncional(
+                                                label = "",
+                                                textPlaceholder = "Precio",
+                                                nuevoValor2 = {
+                                                    if(!tienePermiso("005")) return@TextFieldMultifuncional mostrarMensajeError("No posee el permiso 005 para cambiar el precio de venta.")
+                                                    if (it.clave != "1" &&  !tienePermiso( if(it.clave=="10") "040" else "03${it.clave}" ) ) return@TextFieldMultifuncional mostrarMensajeError("No cuenta con el permiso ${if(it.clave=="10") "040" else "03${it.clave}"} para modificar el tipo de precio a ${it.clave}.")
+                                                    if (obtenerValorParametroEmpresa("278", "0") == "1"){
+                                                        porcentajeDescuentoProducto = ""
+                                                    }// quitar descuento al cambiar el tipo de precio
+                                                    tipoPrecioSeleccionado = it
+                                                    if(!esPrecioValidoConDescuento()){
+                                                        montoDescuento = ""
+                                                        porcentajeDescuentoProducto = ""
+                                                    }
+                                                    precioProducto = it.valor
+                                                    calcularTotales()
+                                                },
+                                                valor = tipoPrecioSeleccionado.clave,
+                                                mostrarClave = true,
+                                                contieneOpciones = true,
+                                                usarOpciones4 = true,
+                                                opciones4 = articulo.listaPrecios,
+                                                usarModifierForSize = true,
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .border(
+                                                        2.dp,
+                                                        color = Color.Gray,
+                                                        RoundedCornerShape(objetoAdaptardor.ajustarAltura(12))
+                                                    ),
+                                                mostrarLeadingIcon = true,
+                                                leadingIcon = Icons.Filled.PriceChange,
+                                                isUltimo = true,
+                                                medidaAncho = 350,
+                                                tomarAnchoMaximo = false,
+                                                fontSize = obtenerEstiloBodyBig(),
+                                                mostrarLabel = false,
+                                                cantidadLineas = 1
+                                            )
+                                        }
+                                    }
+
+//                                        Spacer(modifier = Modifier.height(4.dp))
+
+                                    // PRECIO Y CANTIDAD
+                                    Row(
+                                        horizontalArrangement = Arrangement.spacedBy(15.dp)
+                                    ) {
+                                        Column(
+                                            modifier = Modifier.weight(1f)
+                                        ) {
+                                            TText(
+                                                text = "Cantidad:",
+                                                fontSize = obtenerEstiloBodyMedium(),
+                                                fontWeight = FontWeight.Light,
+                                                color = Color.DarkGray
+                                            )
+                                            TextFieldMultifuncional(
+                                                nuevoValor = {
+                                                    cantidadProducto = it.trim()
+                                                    calcularTotales()
+                                                },
+                                                valor = cantidadProducto,
+                                                usarModifierForSize = true,
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .border(
+                                                        2.dp,
+                                                        color = Color.Gray,
+                                                        RoundedCornerShape(objetoAdaptardor.ajustarAltura(12))
+                                                    ),
+                                                isUltimo = true,
+                                                fontSize = obtenerEstiloBodyBig(),
+                                                cantidadLineas = 1,
+                                                mostrarPlaceholder = true,
+                                                textPlaceholder = "0.00",
+                                                mostrarLabel = false,
+                                                permitirPuntosDedimales = true,
+                                                soloPermitirValoresNumericos = true,
+                                                onFocus = {
+                                                    cantidadProducto = ""
+                                                    calcularTotales()
+                                                }
+                                            )
+                                        }
+
+                                        Column(
+                                            modifier = Modifier.weight(1f)
+                                        ) {
+                                            TText(
+                                                text = "Precio:",
+                                                fontSize = obtenerEstiloBodyMedium(),
+                                                fontWeight = FontWeight.Light,
+                                                color = Color.DarkGray
+                                            )
+                                            TextFieldMultifuncional(
+                                                nuevoValor = {
+                                                    if(!tienePermiso("003")) return@TextFieldMultifuncional mostrarMensajeError("No posee el permiso 003 para actualizar el precio de venta.")
+                                                    if(!tienePermiso("024")) return@TextFieldMultifuncional mostrarMensajeError("No posee el permiso 024 para editar el precio de venta desde facturación.")
+                                                    porcentajeDescuentoProducto = ""
+                                                    precioProducto = it.trim()
+                                                    calcularTotales()
+                                                },
+                                                valor = precioProducto,
+                                                usarModifierForSize = true,
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .border(
+                                                        2.dp,
+                                                        color = Color.Gray,
+                                                        RoundedCornerShape(objetoAdaptardor.ajustarAltura(12))
+                                                    ),
+                                                isUltimo = true,
+                                                fontSize = obtenerEstiloBodyBig(),
+                                                cantidadLineas = 1,
+                                                mostrarPlaceholder = true,
+                                                textPlaceholder = "0.00",
+                                                mostrarLabel = false,
+                                                soloPermitirValoresNumericos = true,
+                                                darFormatoMiles = true,
+                                                permitirPuntosDedimales = true,
+                                                onFocus = {
+                                                    if(!tienePermiso("003")) return@TextFieldMultifuncional mostrarMensajeError("No posee el permiso 003 para actualizar el precio de venta.")
+                                                    if(!tienePermiso("024")) return@TextFieldMultifuncional mostrarMensajeError("No posee el permiso 024 para editar el precio de venta desde facturación.")
+                                                    precioProducto = ""
+                                                    precioUnitarioIva = ""
+                                                    porcentajeDescuentoProducto = ""
+                                                    calcularTotales()
+                                                }
+                                            )
+                                        }
+                                    }
+
+//                                        Spacer(modifier = Modifier.height(4.dp))
+
+                                    TText(
+                                        text = "Precio (con IVA ${articulo.impuesto}%): ",
+                                        fontSize = obtenerEstiloBodyMedium(),
+                                        fontWeight = FontWeight.Light,
+                                        color = Color.DarkGray
+                                    )
+                                    TextFieldMultifuncional(
+                                        nuevoValor = {
+                                            if(!tienePermiso("003")) return@TextFieldMultifuncional mostrarMensajeError("No posee el permiso 003 para actualizar el precio de venta.")
+                                            if(!tienePermiso("024")) return@TextFieldMultifuncional mostrarMensajeError("No posee el permiso 024 para editar el precio de venta desde facturación.")
+                                            isCalculandoPrecioIva = true
+                                            porcentajeDescuentoProducto = ""
+                                            precioUnitarioIva = it.trim()
+                                            val precioUnitarioIvaTemp = precioUnitarioIva.toDoubleOrNull() ?: 0.00
+                                            precioProducto = (precioUnitarioIvaTemp/(1.00+articulo.impuesto/100)).toString()
+                                            calcularTotales()
+                                        },
+                                        valor = precioUnitarioIva,
+                                        usarModifierForSize = true,
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .border(
+                                                2.dp,
+                                                color = Color.Gray,
+                                                RoundedCornerShape(objetoAdaptardor.ajustarAltura(12))
+                                            ),
+                                        isUltimo = true,
+                                        fontSize = obtenerEstiloBodyBig(),
+                                        cantidadLineas = 1,
+                                        mostrarPlaceholder = true,
+                                        textPlaceholder = "0.00",
+                                        mostrarLabel = false,
+                                        darFormatoMiles = true,
+                                        soloPermitirValoresNumericos = true,
+                                        onFocus = {
+                                            if(!tienePermiso("003")) return@TextFieldMultifuncional mostrarMensajeError("No posee el permiso 003 para actualizar el precio de venta.")
+                                            if(!tienePermiso("024")) return@TextFieldMultifuncional mostrarMensajeError("No posee el permiso 024 para editar el precio de venta desde facturación.")
+                                            isCalculandoPrecioIva = true
+                                            precioUnitarioIva = ""
+                                            precioProducto = ""
+                                            porcentajeDescuentoProducto = ""
+                                            calcularTotales()
+                                        }
+                                    )
+//                                        Spacer(modifier = Modifier.height(4.dp))
+
+                                    // Descuento
+                                    Row(
+                                        horizontalArrangement = Arrangement.spacedBy(15.dp)
+                                    ) {
+
+                                        Column(
+                                            modifier = Modifier.weight(1f)
+                                        ) {
+                                            TText(
+                                                text = "Descuento (%)",
+                                                fontSize = obtenerEstiloBodyMedium(),
+                                                fontWeight = FontWeight.Light,
+                                                color = Color.DarkGray
+                                            )
+                                            TextFieldMultifuncional(
+                                                label = "Descuento",
+                                                textPlaceholder = "0.00",
+                                                nuevoValor = {
+                                                    if (!tienePermiso("002")) return@TextFieldMultifuncional mostrarMensajeError("No cuenta con el permiso 002 para modificar el descuento de los artículos.")
+                                                    if(!esPrecioValidoConDescuento()) return@TextFieldMultifuncional mostrarMensajeError("No se puede aplicar un descuento a un artículo con precio ${tipoPrecioSeleccionado.clave}")
+                                                    val porcentajeTemp = if(it.trim().isEmpty()) 0.00 else it.trim().toDouble()
+                                                    val precioConDesc = precioProducto.ifEmpty { "0.00" }.toDouble() - (precioProducto.ifEmpty { "0.00" }.toDouble() * porcentajeTemp / 100)
+                                                    if ( !tienePermiso("023") && porcentajeTemp>=articulo.descuentoAdmitido) return@TextFieldMultifuncional mostrarMensajeError("No cuenta con el permiso 023 para aplicar Descuento ilimitado, el descuento máximo es de: ${articulo.descuentoAdmitido}%")
+                                                    if (porcentajeTemp > 0.00 && (precioConDesc < precioMinimoPermitido) ) return@TextFieldMultifuncional  if (porcentajeUtilidadMinima == 0.00) mostrarMensajeError("El descuento del $porcentajeTemp% supera el precio mínimo de venta, que es ${separacionDeMiles(precioMinimoPermitido)}, ya sea con o sin aplicar descuentos.") else mostrarMensajeError("El $porcentajeTemp% de descuento supera la utilidad mínima, el precio de venta minimo con o sin descuento es de: ${separacionDeMiles(precioMinimoPermitido)}")
+                                                    porcentajeDescuentoProducto = it.trim()
+                                                    calcularTotales()
+                                                },
+                                                valor = porcentajeDescuentoProducto,
+                                                usarModifierForSize = true,
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .border(
+                                                        2.dp,
+                                                        color = Color.Gray,
+                                                        RoundedCornerShape(objetoAdaptardor.ajustarAltura(12))
+                                                    ),
+                                                isUltimo = true,
+                                                medidaAncho = 350,
+                                                tomarAnchoMaximo = false,
+                                                fontSize = obtenerEstiloBodyBig(),
+                                                mostrarLabel = false,
+                                                soloPermitirValoresNumericos = true,
+                                                permitirPuntosDedimales = true,
+                                                cantidadLineas = 1,
+                                                onFocus = {
+                                                    if (!tienePermiso("002")) return@TextFieldMultifuncional mostrarMensajeError("No cuenta con el permiso 002 para modificar el descuento de los artículos.")
+                                                    porcentajeDescuentoProducto = ""
+                                                    calcularTotales()
+                                                }
+                                            )
+                                        }
+
+                                        Column(
+                                            modifier = Modifier.weight(1f)
+                                        ) {
+                                            TText(
+                                                text = "Monto Descuento:",
+                                                fontSize = obtenerEstiloBodyMedium(),
+                                                fontWeight = FontWeight.Light,
+                                                color = Color.DarkGray
+                                            )
+                                            TextFieldMultifuncional(
+                                                valor = montoDescuento,
+                                                nuevoValor = {
+                                                    if (!tienePermiso("002")) return@TextFieldMultifuncional mostrarMensajeError("No cuenta con el permiso 002 para modificar el descuento de los artículos.")
+                                                    if(!esPrecioValidoConDescuento()) return@TextFieldMultifuncional mostrarMensajeError("No se puede aplicar un descuento a un artículo con precio ${tipoPrecioSeleccionado.clave}")
+                                                    val montoTemp = if(it.trim().isEmpty()) 0.00 else it.trim().toDouble()
+                                                    if ( !tienePermiso("023") && montoTemp>=articulo.descuentoAdmitido) return@TextFieldMultifuncional mostrarMensajeError("No cuenta con el permiso 023 para aplicar Descuento ilimitado, el descuento máximo es de: ${articulo.descuentoAdmitido}%")
+                                                    val precioConDesc = precioProducto.ifEmpty { "0.00" }.toDouble() - montoTemp
+                                                    if (montoTemp > 0.00 && (precioConDesc < precioMinimoPermitido) ) return@TextFieldMultifuncional  if (porcentajeUtilidadMinima == 0.00) mostrarMensajeError("El monto ${separacionDeMiles(montoTemp)} de descuento supera el precio mínimo de venta, que es ${separacionDeMiles(precioMinimoPermitido)}, ya sea con o sin aplicar descuentos.") else mostrarMensajeError("El monto ${separacionDeMiles(montoTemp)} de descuento supera la utilidad mínima, el precio de venta minimo con o sin descuento es de: ${separacionDeMiles(precioMinimoPermitido)}")
+                                                    montoDescuento = it.trim()
+                                                    esCambioPorMontoDescuento = true
+                                                    calcularTotales()
+                                                },
+                                                usarModifierForSize = true,
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .border(
+                                                        2.dp,
+                                                        color = Color.Gray,
+                                                        RoundedCornerShape(objetoAdaptardor.ajustarAltura(12))
+                                                    ),
+                                                isUltimo = true,
+                                                fontSize = obtenerEstiloBodyBig(),
+                                                cantidadLineas = 1,
+                                                mostrarPlaceholder = true,
+                                                textPlaceholder = "0.00",
+                                                mostrarLabel = false,
+                                                soloPermitirValoresNumericos = true,
+                                                darFormatoMiles = true,
+                                                permitirPuntosDedimales = true,
+                                                onFocus = {
+                                                    if (!tienePermiso("002")) return@TextFieldMultifuncional mostrarMensajeError("No cuenta con el permiso 002 para modificar el descuento de los artículos.")
+                                                    montoDescuento = ""
+                                                    calcularTotales()
+                                                }
+                                            )
+                                        }
+                                    }
+
+//                                        Spacer(modifier = Modifier.height(4.dp))
+
+                                    TText(
+                                        text = "Detalles adicionales: ",
+                                        fontSize = obtenerEstiloBodyMedium(),
+                                        fontWeight = FontWeight.Light,
+                                        color = Color.DarkGray
+                                    )
+                                    TextFieldMultifuncional(
+                                        nuevoValor = {
+                                            detallesAdicionales = it
+                                        },
+                                        valor = detallesAdicionales,
+                                        usarModifierForSize = true,
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .border(
+                                                2.dp,
+                                                color = Color.Gray,
+                                                RoundedCornerShape(objetoAdaptardor.ajustarAltura(12))
+                                            ),
+                                        isUltimo = true,
+                                        fontSize = obtenerEstiloBodyBig(),
+                                        cantidadLineas = 2,
+                                        mostrarPlaceholder = true,
+                                        textPlaceholder = "Serie, Notas, etc..",
+                                        mostrarLabel = false
+                                    )
+
+                                    Spacer(modifier = Modifier.height(4.dp))
+
+                                    // Totales
+                                    Column(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                    ) {
+                                        Row(
+                                            modifier = Modifier
+                                                .fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.SpaceBetween
+                                        ) {
+                                            TText(
+                                                text = "P/U (desc. + IVA): ",
+                                                textAlign = TextAlign.Start,
+                                                fontSize = obtenerEstiloBodyBig()
+                                            )
+                                            Spacer(modifier = Modifier.weight(1f))
+                                            TText(
+                                                text = simboloMonedaArticulo + separacionDeMiles(montoString = precioUnitarioIvaDesc, isString = true) +" $codigoMoneda",
+                                                textAlign = TextAlign.End,
+                                                fontSize = obtenerEstiloBodyBig()
+                                            )
+                                        }
+                                        HorizontalDivider(modifier = Modifier.padding(vertical = objetoAdaptardor.ajustarAltura(4)))
+                                        Row(
+                                            modifier = Modifier
+                                                .fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.SpaceBetween
+                                        ) {
+                                            TText(
+                                                text = "Gravado: ",
+                                                textAlign = TextAlign.Start,
+                                                fontSize = obtenerEstiloBodyBig()
+                                            )
+                                            Spacer(modifier = Modifier.weight(1f))
+                                            TText(
+                                                text = simboloMonedaArticulo + separacionDeMiles(gravado) +" $codigoMoneda",
+                                                textAlign = TextAlign.End,
+                                                fontSize = obtenerEstiloBodyBig()
+                                            )
+                                        }
+                                        HorizontalDivider(modifier = Modifier.padding(vertical = objetoAdaptardor.ajustarAltura(4)))
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.SpaceBetween
+                                        ) {
+                                            TText(
+                                                text = "IVA (${articulo.impuesto}%): " ,
+                                                textAlign = TextAlign.End,
+                                                fontSize = obtenerEstiloBodyBig()
+                                            )
+                                            Spacer(modifier = Modifier.weight(1f))
+                                            TText(
+                                                text = "$simboloMonedaArticulo${separacionDeMiles(montoIVA)} $codigoMoneda",
+                                                textAlign = TextAlign.End,
+                                                fontSize = obtenerEstiloBodyBig()
+                                            )
+                                        }
+                                        HorizontalDivider(modifier = Modifier.padding(vertical = objetoAdaptardor.ajustarAltura(4)))
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.SpaceBetween
+                                        ) {
+                                            TText(
+                                                text = "Total a pagar: ",
+                                                textAlign = TextAlign.End,
+                                                fontSize = obtenerEstiloTitleSmall()
+                                            )
+                                            Spacer(modifier = Modifier.weight(1f))
+                                            TText(
+                                                text = "$simboloMonedaArticulo${separacionDeMiles(montoIVA+gravado)} $codigoMoneda",
+                                                textAlign = TextAlign.End,
+                                                fontSize = obtenerEstiloTitleMedium()
+                                            )
+                                        }
+                                    }
+
+                                    // Botones de acción
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                    ) {
+                                        BButton(
+                                            text = "Cancelar",
+                                            objetoAdaptardor = objetoAdaptardor,
+                                            onClick = {
+                                                onDismiss()
+                                            },
+                                            modifier = Modifier.weight(1f),
+                                            backgroundColor = Color.Red,
+                                            textSize = obtenerEstiloTitleBig()
+                                        )
+
+                                        BButton(
+                                            text = if (isAgregar) "Agregar" else "Editar",
+                                            objetoAdaptardor = objetoAdaptardor,
+                                            onClick = {
+                                                cantidadProducto = cantidadProducto.ifEmpty { "0.00" }
+                                                precioProducto = precioProducto.ifEmpty { "0.00" }
+                                                montoDescuento = montoDescuento.ifEmpty { "0.00" }
+                                                porcentajeDescuentoProducto = porcentajeDescuentoProducto.ifEmpty { "0.00" }
+                                                if (precioProducto.toDouble() < precioMinimoPermitido ) return@BButton  mostrarMensajeError("El precio de venta minimo es de : ${separacionDeMiles(precioMinimoPermitido)}")
+                                                if (cantidadProducto.toDouble() > 0.00 && precioProducto.toDouble() > 0.00){
+                                                    val articuloTemp = ArticuloLineaProforma(
+                                                        numero = numeroProforma,
+                                                        articuloLine = articulo.articuloLineaId,
+                                                        tipoDocumento = tipoDocumento,
+                                                        articuloCodigo = articulo.codigo,
+                                                        articuloTipoPrecio = tipoPrecioSeleccionado.clave,
+                                                        articuloActividadEconomica = articulo.actividadEconomica,
+                                                        articuloCantidad = cantidadProductoForApi,
+                                                        articuloUnidadMedida = articulo.unidadMedida,
+                                                        presentacion = seleccionPresentacion,
+                                                        articuloSerie = detallesAdicionales,
+                                                        articuloBodegaCodigo = bodegaSeleccionda.clave,
+                                                        articuloVenta = precioProducto.toDouble(),
+                                                        articuloVentaSubTotal1 = precioProducto.toDouble(),
+                                                        articuloDescuentoPorcentage = porcentajeDescuentoProducto.toDouble(),
+                                                        articuloVentaSubTotal2 = precioProducto.toDouble(),
+                                                        articuloVentaSubTotal3 = precioProducto.toDouble(),
+                                                        articuloIvaPorcentage = articulo.impuesto,
+                                                        articuloIvaTarifa = articulo.Cod_Tarifa_Impuesto,
+                                                        idCliente = clienteId,
+                                                        articuloVentaGravado = precioProducto.toDouble(),
+                                                        articuloVentaTotal = precioProducto.toDouble()
+                                                    )
+                                                    agregaEditaArticulo(articuloTemp)
+                                                }else{
+                                                    if (cantidadProducto.toDouble() == 0.00){
+                                                        cantidadProducto = ""
+                                                        mostrarMensajeError("La cantidad del artículo deber ser mayor a '0.00'.")
+                                                    }else{
+                                                        precioProducto = ""
+                                                        mostrarMensajeError("El Precio del artículo deber ser mayor a '0.00'.")
+                                                    }
+
+                                                }
+                                            },
+                                            modifier = Modifier.weight(1f),
+                                            backgroundColor = Color(0xFF244BC0),
+                                            textSize = obtenerEstiloTitleBig()
+                                        )
+                                    }
+                                }
                             }
                         }
                     }
@@ -2335,6 +2417,11 @@ fun IniciarInterfazFacturacion(
             .background(Color(0xFFFFFFFF))
             .statusBarsPadding()
             .navigationBarsPadding()
+            .pointerInput(Unit) {
+                detectTapGestures(onTap = {
+                    focusManager.clearFocus()
+                })
+            }
     ) {
         val (bxSuperior,flechaRegresar, lzColumPrincipal, iconoActualizar, bxInferior) = createRefs()
 
@@ -2793,7 +2880,7 @@ fun IniciarInterfazFacturacion(
                                             )
                                             BasicTexfiuldWithText(
                                                 textTitle = "Plazo de Crédito en Dias:",
-                                                text = "Plazo de Crédito en Dias",
+                                                text = "Plazo de Crédito en Días",
                                                 variable = plazoCredito,
                                                 nuevoValor = {plazoCredito=it},
                                                 icon = Icons.Default.Payments
@@ -2804,6 +2891,29 @@ fun IniciarInterfazFacturacion(
                                                 variable = tipoPrecioCliente,
                                                 nuevoValor = {plazoCredito=it},
                                                 icon = Icons.Filled.LocalOffer
+                                            )
+                                            BasicTexfiuldWithText(
+                                                textTitle = "Monto Crédito:",
+                                                text = "Monto Crédito",
+                                                variable = montoCredito,
+                                                nuevoValor = {plazoCredito=it},
+                                                icon = Icons.Filled.CreditCard,
+                                                darFormatomiles = true
+                                            )
+                                            BasicTexfiuldWithText(
+                                                textTitle = "Monto Contrato:",
+                                                text = "Monto Contrato",
+                                                variable = montoContrato,
+                                                nuevoValor = {plazoCredito=it},
+                                                icon = Icons.Filled.RequestQuote,
+                                                darFormatomiles = true
+                                            )
+                                            BasicTexfiuldWithText(
+                                                textTitle = "Descuento(%):",
+                                                text = "Descuento(%)",
+                                                variable = descuentoCliente,
+                                                nuevoValor = {plazoCredito=it},
+                                                icon = Icons.Filled.Percent
                                             )
                                         }
                                     }
@@ -3073,16 +3183,11 @@ fun IniciarInterfazFacturacion(
                                                     val listaPrecios = articuloTemp.listaPrecios
                                                     articulo.listaBodegas = listaBodegas
                                                     articulo.listaPrecios = listaPrecios
-                                                    articulo.descuentoAdmitido =
-                                                        articuloTemp.descuentoAdmitido
-                                                    articulo.unidadXMedida =
-                                                        articuloTemp.unidadXMedida
-                                                    articulo.actividadEconomica =
-                                                        articuloTemp.actividadEconomica
-                                                    articulo.Cod_Tarifa_Impuesto =
-                                                        articuloTemp.codTarifaImpuesto
-                                                    articulo.unidadMedida =
-                                                        articuloTemp.unidadMedida
+                                                    articulo.descuentoAdmitido = articuloTemp.descuentoAdmitido
+                                                    articulo.unidadXMedida = articuloTemp.unidadXMedida
+                                                    articulo.actividadEconomica = articuloTemp.actividadEconomica
+                                                    articulo.Cod_Tarifa_Impuesto = articuloTemp.codTarifaImpuesto
+                                                    articulo.unidadMedida = articuloTemp.unidadMedida
                                                     articulo.costo = articuloTemp.costo
                                                     articuloActual = articulo
                                                     isAgregar = false
@@ -3124,6 +3229,165 @@ fun IniciarInterfazFacturacion(
                             }
                         }
 
+                        // CARD DE DETALLE FACTURA
+                        Card(
+                            modifier = Modifier
+                                .wrapContentHeight()
+                                .fillMaxWidth()
+                                .padding(
+                                    top = objetoAdaptardor.ajustarAltura(8),
+                                    bottom = objetoAdaptardor.ajustarAltura(8)
+                                )
+                                .shadow(
+                                    elevation = objetoAdaptardor.ajustarAltura(7),
+                                    shape = RoundedCornerShape(objetoAdaptardor.ajustarAltura(20))
+                                ),
+                            shape = RoundedCornerShape(objetoAdaptardor.ajustarAltura(20)),
+                            colors = CardDefaults.cardColors(containerColor = Color.White)
+                        ) {
+                            if (isCargandoDatos || soloActualizarArticulos) {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .padding(objetoAdaptardor.ajustarAltura(16))
+                                ) {
+                                    Column(
+                                        horizontalAlignment = Alignment.CenterHorizontally,
+                                        verticalArrangement = Arrangement.spacedBy(
+                                            objetoAdaptardor.ajustarAltura(
+                                                8
+                                            )
+                                        )
+                                    ) {
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(
+                                                objetoAdaptardor.ajustarAncho(8)
+                                            )
+                                        ) {
+                                            Box(
+                                                modifier = Modifier
+                                                    .weight(1f)
+                                                    .height(objetoAdaptardor.ajustarAltura(35))
+                                                    .background(
+                                                        brush,
+                                                        shape = RoundedCornerShape(
+                                                            objetoAdaptardor.ajustarAltura(6)
+                                                        )
+                                                    )
+                                                    .padding(
+                                                        start = objetoAdaptardor.ajustarAncho(8),
+                                                        end = objetoAdaptardor.ajustarAncho(8),
+                                                        top = objetoAdaptardor.ajustarAncho(8)
+                                                    )
+                                            )
+                                            Box(
+                                                modifier = Modifier
+                                                    .weight(1f)
+                                                    .height(objetoAdaptardor.ajustarAltura(35))
+                                                    .background(
+                                                        brush,
+                                                        shape = RoundedCornerShape(
+                                                            objetoAdaptardor.ajustarAltura(6)
+                                                        )
+                                                    )
+                                                    .padding(
+                                                        start = objetoAdaptardor.ajustarAncho(8),
+                                                        end = objetoAdaptardor.ajustarAncho(8),
+                                                        top = objetoAdaptardor.ajustarAncho(8)
+                                                    )
+                                            )
+                                            Box(
+                                                modifier = Modifier
+                                                    .weight(1f)
+                                                    .height(objetoAdaptardor.ajustarAltura(35))
+                                                    .background(
+                                                        brush,
+                                                        shape = RoundedCornerShape(
+                                                            objetoAdaptardor.ajustarAltura(6)
+                                                        )
+                                                    )
+                                                    .padding(
+                                                        start = objetoAdaptardor.ajustarAncho(8),
+                                                        end = objetoAdaptardor.ajustarAncho(8),
+                                                        top = objetoAdaptardor.ajustarAncho(8)
+                                                    )
+                                            )
+                                        }
+                                        Box(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .height(objetoAdaptardor.ajustarAltura(30))
+                                                .background(
+                                                    brush,
+                                                    shape = RoundedCornerShape(
+                                                        objetoAdaptardor.ajustarAltura(6)
+                                                    )
+                                                )
+                                                .padding(
+                                                    start = objetoAdaptardor.ajustarAncho(8),
+                                                    end = objetoAdaptardor.ajustarAncho(8),
+                                                    top = objetoAdaptardor.ajustarAncho(8)
+                                                )
+                                        )
+                                    }
+                                }
+                            }
+
+                            AnimatedVisibility(
+                                visible = (!isCargandoDatos && !soloActualizarArticulos),
+                                enter = expandVertically(animationSpec = tween(300)) + fadeIn(),
+                                exit = shrinkVertically(animationSpec = tween(300)) + fadeOut()
+                            ) {
+                                Column(
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.spacedBy(objetoAdaptardor.ajustarAltura(8)),
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .padding(objetoAdaptardor.ajustarAltura(16))
+                                ) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(objetoAdaptardor.ajustarAncho(8))
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Description,
+                                            contentDescription = "ICONO DE ARTICULOS"
+                                        )
+                                        TText(
+                                            text = "Detalle de Factura",
+                                            fontSize = obtenerEstiloTitleBig()
+                                        )
+                                        Spacer(modifier = Modifier.weight(1f))
+                                        BButton(
+                                            text = "Guardar",
+                                            onClick = {
+                                                if (validarEstadoProforma()) return@BButton
+                                                focusManager.clearFocus()
+                                                guardarDetalleFactura = true
+                                           },
+                                            conSombra = false,
+                                            textSize = obtenerEstiloBodyBig(),
+                                            objetoAdaptardor = objetoAdaptardor,
+                                            modifier = Modifier.width(objetoAdaptardor.ajustarAncho(100))
+                                        )
+                                    }
+
+                                    BBasicTextField(
+                                        value = detalleProforma,
+                                        onValueChange = {
+                                            detalleProforma = it
+                                        },
+                                        objetoAdaptardor = objetoAdaptardor,
+                                        utilizarMedidas = false,
+                                        placeholder = "Ingrese el detalle de la factura",
+                                        icono = Icons.Default.EditNote,
+                                        fontSize = obtenerEstiloBodyBig(),
+                                        enable = estadoProforma != "2"
+                                    )
+                                }
+                            }
+                        }
                         // CARD DE TOTALES
                         Card(
                             modifier = Modifier
@@ -3537,7 +3801,7 @@ fun IniciarInterfazFacturacion(
                             )
                         }
 
-                        // BOTONES SUPERIORES
+                        // BOTONES INFERIORES
                         AnimatedVisibility(
                             visible = !isCargandoDatos,
                             enter = expandVertically(animationSpec = tween(300)) + fadeIn(),
@@ -3553,7 +3817,7 @@ fun IniciarInterfazFacturacion(
                                         return@BButton
                                     }
                                     if (listaArticulosProforma.isEmpty()) return@BButton mostrarMensajeError("Por favor, agregue al menos un Artículo para continuar.")
-                                    if (clienteId != "SN" && obtenerValorParametroEmpresa("353", "0") == "0") return@BButton mostrarMensajeError("No puedo facturar a un Cliente con tipo Cédula: 'No Definido'")
+                                    if (clienteId != "SN" && tipoCedula == "00" && obtenerValorParametroEmpresa("353", "0") == "0") return@BButton mostrarMensajeError("No puedo facturar a un Cliente con tipo Cédula: 'No Definido'")
                                     iniciarMenuProcesar = true
                                 },
                                 objetoAdaptardor = objetoAdaptardor,
@@ -4855,11 +5119,11 @@ fun IniciarInterfazFacturacion(
                         BButton(
                             text = "Crédito",
                             onClick = {
-                                return@BButton mostrarMensajeError("Actualmente, esta opción está inactiva por motivos de mantenimiento.")
-//                                if (estadoProforma != "2" && !tienePermiso("078")) return@BButton mostrarMensajeError("No posee permisos para emitir facturas.")
-//                                if (clienteId == "SN") return@BButton mostrarMensajeError("Cliente SN no puede Facturar a Crédito.")
-//                                iniciarMenuProcesar = false
-//                                iniciarMenuConfPagoCredito = true
+                                if (codMonedaProforma != "CRC") return@BButton mostrarMensajeError("Actualmente, solo es posible procesar a crédito en moneda CRC.")
+                                if (estadoProforma != "2" && !tienePermiso("078")) return@BButton mostrarMensajeError("No posee permisos para emitir facturas.")
+                                if (clienteId == "SN") return@BButton mostrarMensajeError("Cliente SN no puede Facturar a Crédito.")
+                                iniciarMenuProcesar = false
+                                iniciarMenuConfPagoCredito = true
                             },
                             textSize = obtenerEstiloBodyBig(),
                             modifier = Modifier.fillMaxWidth(),
@@ -5519,7 +5783,11 @@ fun IniciarInterfazFacturacion(
                                     EmailCobro = emailGeneral,
                                     TipoPrecioVenta = tipoPrecioCliente,
                                     Cod_Moneda = codMonedaCliente,
-                                    TipoIdentificacion = tipoCedula
+                                    TipoIdentificacion = tipoCedula,
+                                    plazo = plazoCredito,
+                                    MontoCredito = montoCredito,
+                                    Descuento = descuentoCliente,
+                                    MontoContrato = montoContrato
                                 )
                                 isEditarCliente = true
                                 iniciarMenuOpcionesCliente = false
@@ -5529,6 +5797,27 @@ fun IniciarInterfazFacturacion(
                             modifier = Modifier.fillMaxWidth(),
                             textSize = obtenerEstiloBodyBig()
                         )
+
+                        BButton(
+                            text = "Cambiar a SN",
+                            onClick = {
+                                clienteSeleccionado = ClienteFacturacion(
+                                    codigo = "SN",
+                                    nombreComercial = "ESTIMADO CLIENTE",
+                                    nombreJuridico = "ESTIMADO CLIENTE",
+                                    telefono = "",
+                                    correo = "",
+                                    codMoneda = "CRC",
+                                    tipoPrecio = "1"
+                                )
+                                cambiarClienteProforma = true
+                                iniciarMenuOpcionesCliente = false
+                            },
+                            objetoAdaptardor = objetoAdaptardor,
+                            modifier = Modifier.fillMaxWidth(),
+                            textSize = obtenerEstiloBodyBig()
+                        )
+
                         BButton(
                             text = "Salir",
                             onClick = {
@@ -5810,6 +6099,136 @@ fun IniciarInterfazFacturacion(
                                 modifier = Modifier.weight(1f)
                             ) {
                                 TText(
+                                    text = "Plazo Crédito: ",
+                                    modifier = Modifier.fillMaxWidth(),
+                                    fontSize = obtenerEstiloBodySmall(),
+                                    textAlign = TextAlign.Start
+                                )
+                                BBasicTextField(
+                                    value = clienteTemp.plazo,
+                                    onValueChange = {
+                                        clienteTemp.plazo = it.trim().replace(".", "").replace(",", "").replace("-", "")
+                                    },
+                                    objetoAdaptardor = objetoAdaptardor,
+                                    utilizarMedidas = false,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .border(
+                                            1.dp,
+                                            color = Color.Gray,
+                                            RoundedCornerShape(objetoAdaptardor.ajustarAltura(10))
+                                        ),
+                                    backgroundColor = Color.White,
+                                    fontSize = obtenerEstiloBodyBig(),
+                                    mostrarLeadingIcon = false,
+                                    placeholder = "Plazo Crédito",
+                                    soloPermitirValoresNumericos = true
+                                )
+                            }
+                            Column (
+                                modifier = Modifier.weight(1f)
+                            ){
+                                TText(
+                                    text = "Monto Crédito: ",
+                                    modifier = Modifier.fillMaxWidth(),
+                                    fontSize = obtenerEstiloBodySmall(),
+                                    textAlign = TextAlign.Start
+                                )
+                                BBasicTextField(
+                                    value = clienteTemp.MontoCredito,
+                                    onValueChange = {
+                                        clienteTemp.MontoCredito = it.trim().replace(".", "").replace(",", "").replace("-", "")
+                                    },
+                                    objetoAdaptardor = objetoAdaptardor,
+                                    utilizarMedidas = false,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .border(
+                                            1.dp,
+                                            color = Color.Gray,
+                                            RoundedCornerShape(objetoAdaptardor.ajustarAltura(10))
+                                        ),
+                                    fontSize = obtenerEstiloBodyMedium(),
+                                    mostrarLeadingIcon = false,
+                                    placeholder = "Monto Crédito",
+                                    soloPermitirValoresNumericos = true,
+                                    darFormatoMiles = true,
+                                    backgroundColor = Color.White
+                                )
+                            }
+                        }
+                        Row (
+                            horizontalArrangement = Arrangement.spacedBy(objetoAdaptardor.ajustarAncho(8))
+                        ){
+                            Column(
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                TText(
+                                    text = "Descuento(%):",
+                                    modifier = Modifier.fillMaxWidth(),
+                                    fontSize = obtenerEstiloBodySmall(),
+                                    textAlign = TextAlign.Start
+                                )
+                                BBasicTextField(
+                                    value = clienteTemp.Descuento,
+                                    onValueChange = {
+                                        clienteTemp.Descuento = it.trim()
+                                    },
+                                    objetoAdaptardor = objetoAdaptardor,
+                                    utilizarMedidas = false,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .border(
+                                            1.dp,
+                                            color = Color.Gray,
+                                            RoundedCornerShape(objetoAdaptardor.ajustarAltura(10))
+                                        ),
+                                    backgroundColor = Color.White,
+                                    fontSize = obtenerEstiloBodyBig(),
+                                    mostrarLeadingIcon = false,
+                                    placeholder = "Descuento(%)",
+                                    soloPermitirValoresNumericos = true
+                                )
+                            }
+                            Column (
+                                modifier = Modifier.weight(1f)
+                            ){
+                                TText(
+                                    text = "Monto Contrato: ",
+                                    modifier = Modifier.fillMaxWidth(),
+                                    fontSize = obtenerEstiloBodySmall(),
+                                    textAlign = TextAlign.Start
+                                )
+                                BBasicTextField(
+                                    value = clienteTemp.MontoContrato,
+                                    onValueChange = {
+                                        clienteTemp.MontoContrato = it.trim().replace(".", "").replace(",", "").replace("-", "")
+                                    },
+                                    objetoAdaptardor = objetoAdaptardor,
+                                    utilizarMedidas = false,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .border(
+                                            1.dp,
+                                            color = Color.Gray,
+                                            RoundedCornerShape(objetoAdaptardor.ajustarAltura(10))
+                                        ),
+                                    fontSize = obtenerEstiloBodyMedium(),
+                                    mostrarLeadingIcon = false,
+                                    placeholder = "Monto Contrato",
+                                    darFormatoMiles = true,
+                                    soloPermitirValoresNumericos = true,
+                                    backgroundColor = Color.White
+                                )
+                            }
+                        }
+                        Row (
+                            horizontalArrangement = Arrangement.spacedBy(objetoAdaptardor.ajustarAncho(8))
+                        ){
+                            Column(
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                TText(
                                     text = "Tipo de Precio: ",
                                     modifier = Modifier.fillMaxWidth(),
                                     fontSize = obtenerEstiloBodySmall(),
@@ -5857,6 +6276,18 @@ fun IniciarInterfazFacturacion(
                             horizontalArrangement = Arrangement.spacedBy(objetoAdaptardor.ajustarAncho(8))
                         ){
                             BButton(
+                                text = "Salir",
+                                onClick = {
+                                    clienteTemp = Cliente()
+                                    iniciarMenuAgregaEditaCliente = false
+                                },
+                                objetoAdaptardor = objetoAdaptardor,
+                                modifier = Modifier.weight(1f),
+                                textSize = obtenerEstiloBodyBig(),
+                                backgroundColor = if (!isEditarCliente) Color.Red else Color(0xFF244BC0)
+                            )
+
+                            BButton(
                                 text = if(isEditarCliente) "Editar" else "Agregar",
                                 onClick = {
                                     if (!validacionCedula(clienteTemp.TipoIdentificacion, clienteTemp.Cedula)) return@BButton
@@ -5876,17 +6307,6 @@ fun IniciarInterfazFacturacion(
                                 modifier = Modifier.weight(1f),
                                 backgroundColor = if (isEditarCliente) Color.Red else Color(0xFF244BC0),
                                 textSize = obtenerEstiloBodyBig()
-                            )
-                            BButton(
-                                text = "Salir",
-                                onClick = {
-                                    clienteTemp = Cliente()
-                                    iniciarMenuAgregaEditaCliente = false
-                                },
-                                objetoAdaptardor = objetoAdaptardor,
-                                modifier = Modifier.weight(1f),
-                                textSize = obtenerEstiloBodyBig(),
-                                backgroundColor = if (!isEditarCliente) Color.Red else Color(0xFF244BC0)
                             )
                         }
                     }

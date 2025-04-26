@@ -62,6 +62,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
@@ -114,10 +115,13 @@ internal fun BBasicTextField(
     soloPermitirValoresNumericos : Boolean = false,
     mostrarClave: Boolean = false,
     opciones: List<ParClaveValor> = emptyList(),
-    enable: Boolean = true
+    enable: Boolean = true,
+    onFocus : () -> Unit = {}
 ) {
     var tieneFoco by remember { mutableStateOf(false) }
     var expanded by remember { mutableStateOf(false) }
+    val focusManager = LocalFocusManager.current
+    val contexto = LocalContext.current
     val iconoDdmOpcionesFlechasLaterales = if (expanded) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown
     Box(
         contentAlignment = Alignment.Center
@@ -154,15 +158,21 @@ internal fun BBasicTextField(
                 } else {
                     KeyboardOptions.Default.copy(
                         imeAction = ImeAction.Done
-                    ) // Permite cualquier tipo de entrada
+                    )
                 },
+                keyboardActions = KeyboardActions(
+                    onDone = {
+                        ocultarTeclado(contexto)
+                        focusManager.clearFocus()
+                    }
+                ),
                 singleLine = cantidadLineas ==1,
                 decorationBox = { innerTextField ->
                     Box(
                         modifier = modifier
                             .wrapContentSize()
                             .background(backgroundColor, RoundedCornerShape(objetoAdaptardor.ajustarAltura(10)))
-                            .padding(horizontal = 8.dp, vertical = 4.dp),
+                            .padding(horizontal = objetoAdaptardor.ajustarAncho(8), vertical = objetoAdaptardor.ajustarAltura(4)),
                         contentAlignment = Alignment.CenterStart
                     ) {
                         Row(
@@ -233,6 +243,9 @@ internal fun BBasicTextField(
                 modifier = Modifier
                     .onFocusChanged { estadoFoco ->
                         tieneFoco = estadoFoco.isFocused // Detectar el estado de foco
+                        if (tieneFoco){
+                            onFocus()
+                        }
                     }
                     .let {
                         if (opciones.isNotEmpty()) {
@@ -433,6 +446,7 @@ internal fun TextFieldMultifuncional(
 
     // Fecha actual para inicializar el DatePicker
     val contexto = LocalContext.current
+    val focusManager = LocalFocusManager.current
     val calendario = Calendar.getInstance()
     val anioActual = calendario.get(Calendar.YEAR)
     val mesActual = calendario.get(Calendar.MONTH)
@@ -503,13 +517,13 @@ internal fun TextFieldMultifuncional(
             onValueChange =  {
                 if (soloPermitirValoresNumericos && permitirPuntosDedimales){
                     // Permitir solo caracteres numéricos y punto decimal
-                    nuevoValor(it.replace(",", "")) // Actualizar sin comas
+                    nuevoValor(it.replace(",", "").replace("-", "")) // Actualizar sin comas
                 }
                 else if (soloPermitirValoresNumericos && permitirComas){
-                    nuevoValor(it.replace(".", "")) // Actualizar sin comas
+                    nuevoValor(it.replace(".", "").replace("-", "")) // Actualizar sin comas
                 }
                 else if (soloPermitirValoresNumericos){
-                    nuevoValor(it.replace(".", "").replace(",", ""))
+                    nuevoValor(it.replace(".", "").replace(",", "").replace("-", ""))
                 }
                 else{
                     nuevoValor(it)
@@ -607,10 +621,13 @@ internal fun TextFieldMultifuncional(
             keyboardOptions = if (soloPermitirValoresNumericos) {
                 KeyboardOptions(keyboardType = KeyboardType.Number) // Solo permite números
             } else {
-                KeyboardOptions.Default // Permite cualquier tipo de entrada
+                KeyboardOptions.Default.copy(
+                    imeAction = ImeAction.Done
+                ) // Permite cualquier tipo de entrada
             },
             keyboardActions = KeyboardActions(
                 onAny = {
+                    focusManager.clearFocus()
                     ocultarTeclado(contexto)
                 }
             ),

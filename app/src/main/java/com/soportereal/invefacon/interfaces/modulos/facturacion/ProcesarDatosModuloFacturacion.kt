@@ -67,6 +67,7 @@ class ProcesarDatosModuloFacturacion(apiToken: String)
             .addFormDataPart("articuloOtrosCargos", articulo.articuloOtrosCargos.toString())
             .addFormDataPart("articuloIvaExonerado", articulo.articuloIvaExonerado.toString())
             .addFormDataPart("presentacion", "item")
+            .addFormDataPart("articuloSerie", articulo.articuloSerie)
             .addFormDataPart("articuloTipoPrecio", articulo.articuloTipoPrecio)
             .addFormDataPart("articuloVentaGravado", articulo.articuloVentaGravado.toString())
 
@@ -238,6 +239,14 @@ class ProcesarDatosModuloFacturacion(apiToken: String)
             .build()
         return objetoFuncionesHttpInvefacon.metodoPost(apiBody, "varios/parametrosempresa.php")
     }
+
+    suspend fun guardarDestalleFactura(detalle: String, numero: String): JSONObject? {
+        val apiBody = MultipartBody.Builder().setType(MultipartBody.FORM)
+            .addFormDataPart("Numero", numero)
+            .addFormDataPart("Detalle", detalle)
+            .build()
+        return objetoFuncionesHttpInvefacon.metodoPost(apiBody, "facturacion/ActualizaDetalleFacturaProforma.php")
+    }
 }
 
 @RequiresApi(Build.VERSION_CODES.S)
@@ -361,7 +370,8 @@ data class ArticuloFacturacion(
     var articuloLineaId: String = "",
     var articuloCosto: Double = 0.0,
     var utilidad: Double = 0.0,
-    var Cod_Tarifa_Impuesto : String = "08"
+    var Cod_Tarifa_Impuesto : String = "08",
+    var articuloSerie : String = ""
 )
 
 data class ArticuloLineaProforma(
@@ -374,6 +384,7 @@ data class ArticuloLineaProforma(
     val articuloCantidad : Double = 0.0,
     val articuloUnidadMedida : String= "",
     val presentacion : String = "",
+    val articuloSerie : String = "",
     val articuloBodegaCodigo: String= "",
     val articuloCosto: Double = 0.00,
     val articuloVenta : Double = 0.00,
