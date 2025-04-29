@@ -2,6 +2,7 @@ package com.soportereal.invefacon.interfaces.pantallas_principales.ajustes
 
 import android.Manifest
 import android.annotation.SuppressLint
+import android.bluetooth.BluetoothClass
 import android.content.pm.PackageManager
 import android.os.Build
 import android.widget.Toast
@@ -37,7 +38,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.FormatAlignLeft
 import androidx.compose.material.icons.filled.ArrowBackIosNew
+import androidx.compose.material.icons.filled.Bluetooth
 import androidx.compose.material.icons.filled.Circle
+import androidx.compose.material.icons.filled.Headphones
 import androidx.compose.material.icons.filled.Print
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -274,7 +277,7 @@ fun IniciarInterfazAjustesImpresora (
                 )
             }
             TText(
-                text = "Impresoras disponibles:",
+                text = "Dispositivos disponibles:",
                 textAlign = TextAlign.Start,
                 fontSize = obtenerEstiloTitleBig()
             )
@@ -309,8 +312,19 @@ fun IniciarInterfazAjustesImpresora (
                                         .padding(vertical = objetoAdaptardor.ajustarAltura(8))
                                         .wrapContentHeight()
                                 ) {
+
+                                    val deviceClass = impresora.device.bluetoothClass?.deviceClass
+
+                                    val icon = when (deviceClass) {
+                                        1664 -> Icons.Default.Print
+                                        BluetoothClass.Device.AUDIO_VIDEO_HEADPHONES,
+                                        BluetoothClass.Device.AUDIO_VIDEO_LOUDSPEAKER,
+                                        BluetoothClass.Device.AUDIO_VIDEO_WEARABLE_HEADSET -> Icons.Default.Headphones
+                                        else -> Icons.Default.Bluetooth
+                                    }
+
                                     Icon(
-                                        imageVector = Icons.Default.Print,
+                                        imageVector = icon,
                                         contentDescription = "",
                                         modifier = Modifier.size(objetoAdaptardor.ajustarAltura(30)),
                                         tint = Color.DarkGray

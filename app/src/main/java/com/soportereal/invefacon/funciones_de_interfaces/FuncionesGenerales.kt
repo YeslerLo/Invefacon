@@ -206,7 +206,7 @@ class ImpresoraViewModel : ViewModel() {
     }
 
     @RequiresApi(Build.VERSION_CODES.S)
-    fun buscar(context: Context) {
+    fun buscar2(context: Context) {
         ValidarPermisos(context)
         viewModelScope.launch(Dispatchers.IO) {
             withContext(Dispatchers.Main) {
@@ -255,6 +255,63 @@ class ImpresoraViewModel : ViewModel() {
             }
 
 
+        }
+    }
+
+    @SuppressLint("MissingPermission")
+    @RequiresApi(Build.VERSION_CODES.S)
+    fun buscar(context: Context) {
+        ValidarPermisos(context)
+        viewModelScope.launch(Dispatchers.IO) {
+            withContext(Dispatchers.Main) {
+                if (!isPermisosOtorgados) {
+                    Toast.makeText(
+                        context,
+                        "Active el permiso de Dispositivos cercanos en Permisos de la App.",
+                        Toast.LENGTH_LONG
+                    ).show()
+                    return@withContext
+                }
+            }
+            if (!isPermisosOtorgados) return@launch
+
+            val bluetoothManager = context.getSystemService(Context.BLUETOOTH_SERVICE) as? BluetoothManager
+            val bluetoothAdapter = bluetoothManager?.adapter
+
+            if (bluetoothAdapter == null) {
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(context, "Bluetooth no disponible", Toast.LENGTH_SHORT).show()
+                }
+                return@launch
+            }
+
+            if (!bluetoothAdapter.isEnabled) {
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(context, "Por favor, activa Bluetooth", Toast.LENGTH_SHORT).show()
+                }
+                return@launch
+            }
+
+            withContext(Dispatchers.Main) {
+                Toast.makeText(context, "Buscando dispositivos Bluetooth...", Toast.LENGTH_SHORT).show()
+            }
+
+            val dispositivosEmparejados = bluetoothAdapter.bondedDevices?.toList() ?: emptyList()
+
+            if (dispositivosEmparejados.isEmpty()) {
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(context, "No hay dispositivos emparejados.", Toast.LENGTH_SHORT).show()
+                }
+                return@launch
+            }
+            val conexionesBluetooth = dispositivosEmparejados.map { device ->
+                BluetoothConnection(device)
+            }
+            listaImpresoras = conexionesBluetooth
+
+            withContext(Dispatchers.Main) {
+                Toast.makeText(context, "Se encontraron ${listaImpresoras.size} dispositivos.", Toast.LENGTH_SHORT).show()
+            }
         }
     }
 

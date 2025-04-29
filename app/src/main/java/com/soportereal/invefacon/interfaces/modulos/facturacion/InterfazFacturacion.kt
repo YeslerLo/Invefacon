@@ -767,6 +767,7 @@ fun IniciarInterfazFacturacion(
                                 descripcion = datosArticulo.getString("Descripcion"),
                                 stock = datosArticulo.optDouble("Stock", 0.00),
                                 costo = datosArticulo.getDouble("Costo"),
+                                fraccionamiento = datosArticulo.getInt("Fraccionamineto"),
                                 descuentoFijo = datosArticulo.getDouble("Descuento_Fijo"),
                                 codTarifaImpuesto = datosArticulo.getString("Cod_Tarifa_Impuesto"),
                                 impuesto = datosArticulo.getDouble("Impuesto"),
@@ -1857,8 +1858,6 @@ fun IniciarInterfazFacturacion(
                                         )
                                     }
 
-//                                        Spacer(modifier = Modifier.height(4.dp))
-
                                     // Tipo medida Y TIPO PRECIO
                                     Row(
                                         horizontalArrangement = Arrangement.spacedBy(15.dp)
@@ -1953,8 +1952,6 @@ fun IniciarInterfazFacturacion(
                                         }
                                     }
 
-//                                        Spacer(modifier = Modifier.height(4.dp))
-
                                     // PRECIO Y CANTIDAD
                                     Row(
                                         horizontalArrangement = Arrangement.spacedBy(15.dp)
@@ -1988,7 +1985,7 @@ fun IniciarInterfazFacturacion(
                                                 mostrarPlaceholder = true,
                                                 textPlaceholder = "0.00",
                                                 mostrarLabel = false,
-                                                permitirPuntosDedimales = true,
+                                                permitirPuntosDedimales = articulo.fraccionamiento == 1,
                                                 soloPermitirValoresNumericos = true,
                                                 onFocus = {
                                                     cantidadProducto = ""
@@ -2043,8 +2040,6 @@ fun IniciarInterfazFacturacion(
                                             )
                                         }
                                     }
-
-//                                        Spacer(modifier = Modifier.height(4.dp))
 
                                     TText(
                                         text = "Precio (con IVA ${articulo.impuesto}%): ",
@@ -3189,6 +3184,7 @@ fun IniciarInterfazFacturacion(
                                                     articulo.Cod_Tarifa_Impuesto = articuloTemp.codTarifaImpuesto
                                                     articulo.unidadMedida = articuloTemp.unidadMedida
                                                     articulo.costo = articuloTemp.costo
+                                                    articulo.fraccionamiento = articuloTemp.fraccionamiento
                                                     articuloActual = articulo
                                                     isAgregar = false
                                                     iniciarMenuAgregaEditaArticulo = true
@@ -3245,7 +3241,7 @@ fun IniciarInterfazFacturacion(
                             shape = RoundedCornerShape(objetoAdaptardor.ajustarAltura(20)),
                             colors = CardDefaults.cardColors(containerColor = Color.White)
                         ) {
-                            if (isCargandoDatos || soloActualizarArticulos) {
+                            if (isCargandoDatos) {
                                 Box(
                                     modifier = Modifier
                                         .fillMaxSize()
@@ -3335,7 +3331,7 @@ fun IniciarInterfazFacturacion(
                             }
 
                             AnimatedVisibility(
-                                visible = (!isCargandoDatos && !soloActualizarArticulos),
+                                visible = (!isCargandoDatos),
                                 enter = expandVertically(animationSpec = tween(300)) + fadeIn(),
                                 exit = shrinkVertically(animationSpec = tween(300)) + fadeOut()
                             ) {
@@ -3383,11 +3379,13 @@ fun IniciarInterfazFacturacion(
                                         placeholder = "Ingrese el detalle de la factura",
                                         icono = Icons.Default.EditNote,
                                         fontSize = obtenerEstiloBodyBig(),
-                                        enable = estadoProforma != "2"
+                                        enable = estadoProforma != "2",
+                                        cantidadLineas = 30
                                     )
                                 }
                             }
                         }
+
                         // CARD DE TOTALES
                         Card(
                             modifier = Modifier
