@@ -1597,7 +1597,8 @@ fun IniciarInterfazFacturacion(
                 textColor = Color.Black,
                 fontSize = obtenerEstiloBodyMedium(),
                 darFormatoMiles = darFormatomiles,
-                enable = false
+                enable = false,
+                cantidadLineas = 10
             )
         }
     }
@@ -2823,12 +2824,13 @@ fun IniciarInterfazFacturacion(
                                     }
 
                                     BasicTexfiuldWithText(
-                                        textTitle = "Nombre del Cliente:",
-                                        text = "Nombre del Cliente",
-                                        variable = nombreCliente,
-                                        nuevoValor = {nombreCliente=it},
-                                        icon = Icons.Default.PersonPin
+                                        textTitle = "Nombre Comercial:",
+                                        text = "Nombre Comercial",
+                                        variable = nombreComercial,
+                                        nuevoValor = {nombreComercial=it},
+                                        icon = Icons.Default.Person
                                     )
+
                                     AnimatedVisibility(
                                         visible = expandedClientes,
                                         enter = expandVertically(animationSpec = tween(300)) + fadeIn(),
@@ -2838,6 +2840,13 @@ fun IniciarInterfazFacturacion(
                                             horizontalAlignment = Alignment.CenterHorizontally,
                                             verticalArrangement = Arrangement.spacedBy(objetoAdaptardor.ajustarAltura(8))
                                         ) {
+                                            BasicTexfiuldWithText(
+                                                textTitle = "Nombre del Jurídico:",
+                                                text = "Nombre del Jurídico",
+                                                variable = nombreCliente,
+                                                nuevoValor = {nombreCliente=it},
+                                                icon = Icons.Default.PersonPin
+                                            )
                                             BasicTexfiuldWithText(
                                                 textTitle = "Tipo de Cédula:",
                                                 text = "Tipo de Cédula",
@@ -2858,13 +2867,6 @@ fun IniciarInterfazFacturacion(
                                                 variable = emailGeneral,
                                                 nuevoValor = {emailGeneral=it},
                                                 icon = Icons.Default.Email
-                                            )
-                                            BasicTexfiuldWithText(
-                                                textTitle = "Nombre Comercial:",
-                                                text = "Nombre Comercial",
-                                                variable = nombreComercial,
-                                                nuevoValor = {nombreComercial=it},
-                                                icon = Icons.Default.Person
                                             )
                                             BasicTexfiuldWithText(
                                                 textTitle = "Teléfonos:",
@@ -5867,445 +5869,489 @@ fun IniciarInterfazFacturacion(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         modifier = Modifier.padding(objetoAdaptardor.ajustarAltura(16))
                     ) {
+                        // titulo
                         TText(
                             text = if (isEditarCliente) "Editar Cliente" else "Agregar Cliente",
                             modifier = Modifier.fillMaxWidth(),
                             fontSize = obtenerEstiloHeadBig(),
                             textAlign = TextAlign.Center
                         )
-                        Column {
-                            TText(
-                                text = "Tipo de Cédula: ",
-                                modifier = Modifier.fillMaxWidth(),
-                                fontSize = obtenerEstiloBodySmall(),
-                                textAlign = TextAlign.Start
-                            )
-                            BBasicTextField(
-                                value = listaTipoCedula.find { it.clave == clienteTemp.TipoIdentificacion }?.valor ?:"Sin definir",
-                                onValueChange = {
-                                    clienteTemp.TipoIdentificacion = it
-                                },
-                                objetoAdaptardor = objetoAdaptardor,
-                                opciones = listaTipoCedula,
-                                utilizarMedidas = false,
-                                modifier = Modifier.fillMaxWidth(),
-                                fontSize = obtenerEstiloBodyBig(),
-                                icono = Icons.Default.Badge
-                            )
-                        }
-                        Row (
-                            horizontalArrangement = Arrangement.spacedBy(objetoAdaptardor.ajustarAncho(8)),
-                            verticalAlignment = Alignment.CenterVertically
-                        ){
-                            Column (
-                                modifier = Modifier.weight(1f)
-                            ){
-                                TText(
-                                    text = "Cédula: ",
-                                    modifier = Modifier.fillMaxWidth(),
-                                    fontSize = obtenerEstiloBodySmall(),
-                                    textAlign = TextAlign.Start
-                                )
-                                BBasicTextField(
-                                    value = clienteTemp.Cedula,
-                                    onValueChange = {
-                                        clienteTemp.Cedula = it.trim()
-                                    },
-                                    objetoAdaptardor = objetoAdaptardor,
-                                    utilizarMedidas = false,
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .border(
-                                            1.dp,
-                                            color = Color.Gray,
-                                            RoundedCornerShape(objetoAdaptardor.ajustarAltura(10))
-                                        ),
-                                    fontSize = obtenerEstiloBodyMedium(),
-                                    mostrarLeadingIcon = false,
-                                    placeholder = "Cédula",
-                                    soloPermitirValoresNumericos = true,
-                                    backgroundColor = Color.White,
-                                    enable = (clienteId=="SN" || !isEditarCliente)
-                                )
-                            }
-                            if (clienteId=="SN" || !isEditarCliente){
-                                BButton(
-                                    text = "Buscar",
-                                    onClick = {
-                                        iniciarBusquedaClienteByCedula = true
-                                    },
-                                    objetoAdaptardor = objetoAdaptardor,
-                                    textSize = obtenerEstiloBodyBig()
-                                )
-                            }
-                        }
-
-                        Column {
-                            TText(
-                                text = "Nombre Jurídico: ",
-                                modifier = Modifier.fillMaxWidth(),
-                                fontSize = obtenerEstiloBodySmall(),
-                                textAlign = TextAlign.Start
-                            )
-                            BBasicTextField(
-                                value = clienteTemp.Nombre,
-                                onValueChange = {
-                                    clienteTemp.Nombre = it
-                                },
-                                objetoAdaptardor = objetoAdaptardor,
-                                utilizarMedidas = false,
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .border(
-                                        1.dp,
-                                        color = Color.Gray,
-                                        RoundedCornerShape(objetoAdaptardor.ajustarAltura(10))
-                                    ),
-                                backgroundColor = Color.White,
-                                fontSize = obtenerEstiloBodyBig(),
-                                mostrarLeadingIcon = false,
-                                placeholder = "Nombre Jurídico"
-                            )
-                        }
-                        Row (
-                            horizontalArrangement = Arrangement.spacedBy(objetoAdaptardor.ajustarAncho(8))
-                        ){
-
-                            Column(
-                                modifier = Modifier.weight(1f)
-                            ) {
-                                TText(
-                                    text = "Nombre Comercial: ",
-                                    modifier = Modifier.fillMaxWidth(),
-                                    fontSize = obtenerEstiloBodySmall(),
-                                    textAlign = TextAlign.Start
-                                )
-                                BBasicTextField(
-                                    value = clienteTemp.nombreComercial,
-                                    onValueChange = {
-                                        clienteTemp.nombreComercial = it
-                                        clienteTemp.ClienteNombreComercial = it
-                                    },
-                                    objetoAdaptardor = objetoAdaptardor,
-                                    utilizarMedidas = false,
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .border(
-                                            1.dp,
-                                            color = Color.Gray,
-                                            RoundedCornerShape(objetoAdaptardor.ajustarAltura(10))
-                                        ),
-                                    backgroundColor = Color.White,
-                                    fontSize = obtenerEstiloBodyBig(),
-                                    mostrarLeadingIcon = false,
-                                    placeholder = "Nombre Comercial"
-                                )
-                            }
-                            Column (
-                                modifier = Modifier.weight(1f)
-                            ){
-                                TText(
-                                    text = "Telefono: ",
-                                    modifier = Modifier.fillMaxWidth(),
-                                    fontSize = obtenerEstiloBodySmall(),
-                                    textAlign = TextAlign.Start
-                                )
-                                BBasicTextField(
-                                    value = clienteTemp.Telefonos,
-                                    onValueChange = {
-                                        clienteTemp.Telefonos = it.trim()
-                                    },
-                                    objetoAdaptardor = objetoAdaptardor,
-                                    utilizarMedidas = false,
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .border(
-                                            1.dp,
-                                            color = Color.Gray,
-                                            RoundedCornerShape(objetoAdaptardor.ajustarAltura(10))
-                                        ),
-                                    fontSize = obtenerEstiloBodyMedium(),
-                                    mostrarLeadingIcon = false,
-                                    placeholder = "Telefono",
-                                    soloPermitirValoresNumericos = true,
-                                    backgroundColor = Color.White
-                                )
-                            }
-                        }
-                        Column {
-                            TText(
-                                text = "Dirección: ",
-                                modifier = Modifier.fillMaxWidth(),
-                                fontSize = obtenerEstiloBodySmall(),
-                                textAlign = TextAlign.Start
-                            )
-                            BBasicTextField(
-                                value = clienteTemp.Direccion,
-                                onValueChange = {
-                                    clienteTemp.Direccion = it
-                                },
-                                objetoAdaptardor = objetoAdaptardor,
-                                utilizarMedidas = false,
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .border(
-                                        1.dp,
-                                        color = Color.Gray,
-                                        RoundedCornerShape(objetoAdaptardor.ajustarAltura(10))
-                                    ),
-                                backgroundColor = Color.White,
-                                fontSize = obtenerEstiloBodyBig(),
-                                mostrarLeadingIcon = false,
-                                placeholder = "Dirección",
-                                cantidadLineas = 10
-                            )
-                        }
-                        Column {
-                            TText(
-                                text = "Correo Electrónico: ",
-                                modifier = Modifier.fillMaxWidth(),
-                                fontSize = obtenerEstiloBodySmall(),
-                                textAlign = TextAlign.Start
-                            )
-                            BBasicTextField(
-                                value = clienteTemp.Email,
-                                onValueChange = {
-                                    clienteTemp.Email = it.trim()
-                                    clienteTemp.EmailCobro = it.trim()
-                                    clienteTemp.EmailFactura = it.trim()
-                                },
-                                objetoAdaptardor = objetoAdaptardor,
-                                utilizarMedidas = false,
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .border(
-                                        1.dp,
-                                        color = Color.Gray,
-                                        RoundedCornerShape(objetoAdaptardor.ajustarAltura(10))
-                                    ),
-                                backgroundColor = Color.White,
-                                fontSize = obtenerEstiloBodyBig(),
-                                mostrarLeadingIcon = false,
-                                placeholder = "Correo Electrónico",
-                                cantidadLineas = 10
-                            )
-                        }
-                        Row (
-                            horizontalArrangement = Arrangement.spacedBy(objetoAdaptardor.ajustarAncho(8))
-                        ){
-                            Column(
-                                modifier = Modifier.weight(1f)
-                            ) {
-                                TText(
-                                    text = "Plazo Crédito: ",
-                                    modifier = Modifier.fillMaxWidth(),
-                                    fontSize = obtenerEstiloBodySmall(),
-                                    textAlign = TextAlign.Start
-                                )
-                                BBasicTextField(
-                                    value = clienteTemp.plazo,
-                                    onValueChange = {
-                                        clienteTemp.plazo = it.trim().replace(".", "").replace(",", "").replace("-", "")
-                                    },
-                                    objetoAdaptardor = objetoAdaptardor,
-                                    utilizarMedidas = false,
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .border(
-                                            1.dp,
-                                            color = Color.Gray,
-                                            RoundedCornerShape(objetoAdaptardor.ajustarAltura(10))
-                                        ),
-                                    backgroundColor = Color.White,
-                                    fontSize = obtenerEstiloBodyBig(),
-                                    mostrarLeadingIcon = false,
-                                    placeholder = "Plazo Crédito",
-                                    soloPermitirValoresNumericos = true
-                                )
-                            }
-                            Column (
-                                modifier = Modifier.weight(1f)
-                            ){
-                                TText(
-                                    text = "Monto Crédito: ",
-                                    modifier = Modifier.fillMaxWidth(),
-                                    fontSize = obtenerEstiloBodySmall(),
-                                    textAlign = TextAlign.Start
-                                )
-                                BBasicTextField(
-                                    value = clienteTemp.MontoCredito,
-                                    onValueChange = {
-                                        clienteTemp.MontoCredito = it.trim().replace(".", "").replace(",", "").replace("-", "")
-                                    },
-                                    objetoAdaptardor = objetoAdaptardor,
-                                    utilizarMedidas = false,
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .border(
-                                            1.dp,
-                                            color = Color.Gray,
-                                            RoundedCornerShape(objetoAdaptardor.ajustarAltura(10))
-                                        ),
-                                    fontSize = obtenerEstiloBodyMedium(),
-                                    mostrarLeadingIcon = false,
-                                    placeholder = "Monto Crédito",
-                                    soloPermitirValoresNumericos = true,
-                                    darFormatoMiles = true,
-                                    backgroundColor = Color.White
-                                )
-                            }
-                        }
-                        Row (
-                            horizontalArrangement = Arrangement.spacedBy(objetoAdaptardor.ajustarAncho(8))
-                        ){
-                            Column(
-                                modifier = Modifier.weight(1f)
-                            ) {
-                                TText(
-                                    text = "Descuento(%):",
-                                    modifier = Modifier.fillMaxWidth(),
-                                    fontSize = obtenerEstiloBodySmall(),
-                                    textAlign = TextAlign.Start
-                                )
-                                BBasicTextField(
-                                    value = clienteTemp.Descuento,
-                                    onValueChange = {
-                                        clienteTemp.Descuento = it.trim()
-                                    },
-                                    objetoAdaptardor = objetoAdaptardor,
-                                    utilizarMedidas = false,
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .border(
-                                            1.dp,
-                                            color = Color.Gray,
-                                            RoundedCornerShape(objetoAdaptardor.ajustarAltura(10))
-                                        ),
-                                    backgroundColor = Color.White,
-                                    fontSize = obtenerEstiloBodyBig(),
-                                    mostrarLeadingIcon = false,
-                                    placeholder = "Descuento(%)",
-                                    soloPermitirValoresNumericos = true
-                                )
-                            }
-                            Column (
-                                modifier = Modifier.weight(1f)
-                            ){
-                                TText(
-                                    text = "Monto Contrato: ",
-                                    modifier = Modifier.fillMaxWidth(),
-                                    fontSize = obtenerEstiloBodySmall(),
-                                    textAlign = TextAlign.Start
-                                )
-                                BBasicTextField(
-                                    value = clienteTemp.MontoContrato,
-                                    onValueChange = {
-                                        clienteTemp.MontoContrato = it.trim().replace(".", "").replace(",", "").replace("-", "")
-                                    },
-                                    objetoAdaptardor = objetoAdaptardor,
-                                    utilizarMedidas = false,
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .border(
-                                            1.dp,
-                                            color = Color.Gray,
-                                            RoundedCornerShape(objetoAdaptardor.ajustarAltura(10))
-                                        ),
-                                    fontSize = obtenerEstiloBodyMedium(),
-                                    mostrarLeadingIcon = false,
-                                    placeholder = "Monto Contrato",
-                                    darFormatoMiles = true,
-                                    soloPermitirValoresNumericos = true,
-                                    backgroundColor = Color.White
-                                )
-                            }
-                        }
-                        Row (
-                            horizontalArrangement = Arrangement.spacedBy(objetoAdaptardor.ajustarAncho(8))
-                        ){
-                            Column(
-                                modifier = Modifier.weight(1f)
-                            ) {
-                                TText(
-                                    text = "Tipo de Precio: ",
-                                    modifier = Modifier.fillMaxWidth(),
-                                    fontSize = obtenerEstiloBodySmall(),
-                                    textAlign = TextAlign.Start
-                                )
-                                BBasicTextField(
-                                    value = clienteTemp.TipoPrecioVenta,
-                                    onValueChange = {
-                                        clienteTemp.TipoPrecioVenta = it
-                                    },
-                                    opciones = listaTipoPrecios,
-                                    objetoAdaptardor = objetoAdaptardor,
-                                    utilizarMedidas = false,
-                                    modifier = Modifier.fillMaxWidth(),
-                                    fontSize = obtenerEstiloBodyBig(),
-                                    placeholder = "Tipo de Precio",
-                                    icono = Icons.Filled.LocalOffer
-                                )
-                            }
-                            Column(
-                                modifier = Modifier.weight(1f)
-                            ) {
-                                TText(
-                                    text = "Moneda: ",
-                                    modifier = Modifier.fillMaxWidth(),
-                                    fontSize = obtenerEstiloBodySmall(),
-                                    textAlign = TextAlign.Start
-                                )
-                                BBasicTextField(
-                                    value = clienteTemp.Cod_Moneda,
-                                    onValueChange = {
-                                        clienteTemp.Cod_Moneda = it
-                                    },
-                                    opciones = listaMonedas,
-                                    objetoAdaptardor = objetoAdaptardor,
-                                    utilizarMedidas = false,
-                                    modifier = Modifier.fillMaxWidth(),
-                                    fontSize = obtenerEstiloBodyBig(),
-                                    placeholder = "Moneda",
-                                    icono = Icons.Default.AttachMoney
-                                )
-                            }
-                        }
-                        Row (
-                            horizontalArrangement = Arrangement.spacedBy(objetoAdaptardor.ajustarAncho(8))
-                        ){
-                            BButton(
-                                text = "Salir",
-                                onClick = {
-                                    clienteTemp = Cliente()
-                                    iniciarMenuAgregaEditaCliente = false
-                                },
-                                objetoAdaptardor = objetoAdaptardor,
-                                modifier = Modifier.weight(1f),
-                                textSize = obtenerEstiloBodyBig(),
-                                backgroundColor = if (!isEditarCliente) Color.Red else Color(0xFF244BC0)
-                            )
-
-                            BButton(
-                                text = if(isEditarCliente) "Editar" else "Agregar",
-                                onClick = {
-                                    if (!validacionCedula(clienteTemp.TipoIdentificacion, clienteTemp.Cedula)) return@BButton
-                                    if (clienteTemp.Nombre.isEmpty()) return@BButton mostrarMensajeError("Complete el campo de Nombre Jurídico.")
-                                    if (clienteTemp.nombreComercial.isEmpty()) clienteTemp.nombreComercial = clienteTemp.nombreJuridico
-                                    if (clienteTemp.Telefonos.isNotEmpty() && clienteTemp.Telefonos.length<8) return@BButton mostrarMensajeError("Ingrese un numero de telefono valido.")
-                                    if (!validarCorreo(clienteTemp.Email)) return@BButton
-                                    if (isEditarCliente){
-                                        iniciarMenuAgregaEditaCliente = false
-                                        editarCliente = true
-                                    }else{
-                                        iniciarMenuAgregaEditaCliente = false
-                                        agregarNuevoCliente = true
+                        LazyColumn(
+                            modifier = Modifier.wrapContentSize()
+                        ) {
+                            item {
+                                Column(
+                                    verticalArrangement = Arrangement.spacedBy(objetoAdaptardor.ajustarAltura(8)),
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    modifier = Modifier.padding(objetoAdaptardor.ajustarAltura(16))
+                                ) {
+                                    // Tipo Cedula
+                                    Column {
+                                        TText(
+                                            text = "Tipo de Cédula: ",
+                                            modifier = Modifier.fillMaxWidth(),
+                                            fontSize = obtenerEstiloBodySmall(),
+                                            textAlign = TextAlign.Start
+                                        )
+                                        BBasicTextField(
+                                            value = listaTipoCedula.find { it.clave == clienteTemp.TipoIdentificacion }?.valor ?:"Sin definir",
+                                            onValueChange = {
+                                                clienteTemp.TipoIdentificacion = it
+                                            },
+                                            objetoAdaptardor = objetoAdaptardor,
+                                            opciones = listaTipoCedula,
+                                            utilizarMedidas = false,
+                                            modifier = Modifier.fillMaxWidth(),
+                                            fontSize = obtenerEstiloBodyBig(),
+                                            icono = Icons.Default.Badge
+                                        )
                                     }
-                                },
-                                objetoAdaptardor = objetoAdaptardor,
-                                modifier = Modifier.weight(1f),
-                                backgroundColor = if (isEditarCliente) Color.Red else Color(0xFF244BC0),
-                                textSize = obtenerEstiloBodyBig()
-                            )
+
+                                    // Numero de cedula y Boton para obtener el nombre juridico del cliente por el numero de cedula
+                                    Row (
+                                        horizontalArrangement = Arrangement.spacedBy(objetoAdaptardor.ajustarAncho(8)),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ){
+                                        Column (
+                                            modifier = Modifier.weight(1f)
+                                        ){
+                                            TText(
+                                                text = "Cédula: ",
+                                                modifier = Modifier.fillMaxWidth(),
+                                                fontSize = obtenerEstiloBodySmall(),
+                                                textAlign = TextAlign.Start
+                                            )
+                                            BBasicTextField(
+                                                value = clienteTemp.Cedula,
+                                                onValueChange = {
+                                                    clienteTemp.Cedula = it.trim()
+                                                },
+                                                objetoAdaptardor = objetoAdaptardor,
+                                                utilizarMedidas = false,
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .border(
+                                                        1.dp,
+                                                        color = Color.Gray,
+                                                        RoundedCornerShape(objetoAdaptardor.ajustarAltura(10))
+                                                    ),
+                                                fontSize = obtenerEstiloBodyMedium(),
+                                                mostrarLeadingIcon = false,
+                                                placeholder = "Cédula",
+                                                soloPermitirValoresNumericos = true,
+                                                backgroundColor = Color.White,
+                                                enable = (clienteId=="SN" || !isEditarCliente)
+                                            )
+                                        }
+                                        if (clienteId=="SN" || !isEditarCliente){
+                                            BButton(
+                                                text = "Buscar",
+                                                onClick = {
+                                                    iniciarBusquedaClienteByCedula = true
+                                                },
+                                                objetoAdaptardor = objetoAdaptardor,
+                                                textSize = obtenerEstiloBodyBig()
+                                            )
+                                        }
+                                    }
+
+                                    // Nombre Juridico
+                                    Column {
+                                        TText(
+                                            text = "Nombre Jurídico: ",
+                                            modifier = Modifier.fillMaxWidth(),
+                                            fontSize = obtenerEstiloBodySmall(),
+                                            textAlign = TextAlign.Start
+                                        )
+                                        BBasicTextField(
+                                            value = clienteTemp.Nombre,
+                                            onValueChange = {
+                                                clienteTemp.Nombre = it
+                                            },
+                                            objetoAdaptardor = objetoAdaptardor,
+                                            utilizarMedidas = false,
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .border(
+                                                    1.dp,
+                                                    color = Color.Gray,
+                                                    RoundedCornerShape(objetoAdaptardor.ajustarAltura(10))
+                                                ),
+                                            backgroundColor = Color.White,
+                                            fontSize = obtenerEstiloBodyBig(),
+                                            mostrarLeadingIcon = false,
+                                            placeholder = "Nombre Jurídico",
+                                            cantidadLineas = 10
+                                        )
+                                    }
+
+                                    // Nombre comercial y telefono
+                                    Row (
+                                        horizontalArrangement = Arrangement.spacedBy(objetoAdaptardor.ajustarAncho(8))
+                                    ){
+                                        // Nombre Comercial
+                                        Column(
+                                            modifier = Modifier.weight(1f)
+                                        ) {
+                                            TText(
+                                                text = "Nombre Comercial: ",
+                                                modifier = Modifier.fillMaxWidth(),
+                                                fontSize = obtenerEstiloBodySmall(),
+                                                textAlign = TextAlign.Start
+                                            )
+                                            BBasicTextField(
+                                                value = clienteTemp.nombreComercial,
+                                                onValueChange = {
+                                                    clienteTemp.nombreComercial = it
+                                                    clienteTemp.ClienteNombreComercial = it
+                                                },
+                                                objetoAdaptardor = objetoAdaptardor,
+                                                utilizarMedidas = false,
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .border(
+                                                        1.dp,
+                                                        color = Color.Gray,
+                                                        RoundedCornerShape(objetoAdaptardor.ajustarAltura(10))
+                                                    ),
+                                                backgroundColor = Color.White,
+                                                fontSize = obtenerEstiloBodyBig(),
+                                                mostrarLeadingIcon = false,
+                                                placeholder = "Nombre Comercial",
+                                                cantidadLineas = 10
+                                            )
+                                        }
+
+                                        // Telefono
+                                        Column (
+                                            modifier = Modifier.weight(1f)
+                                        ){
+                                            TText(
+                                                text = "Telefono: ",
+                                                modifier = Modifier.fillMaxWidth(),
+                                                fontSize = obtenerEstiloBodySmall(),
+                                                textAlign = TextAlign.Start
+                                            )
+                                            BBasicTextField(
+                                                value = clienteTemp.Telefonos,
+                                                onValueChange = {
+                                                    clienteTemp.Telefonos = it.trim()
+                                                },
+                                                objetoAdaptardor = objetoAdaptardor,
+                                                utilizarMedidas = false,
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .border(
+                                                        1.dp,
+                                                        color = Color.Gray,
+                                                        RoundedCornerShape(objetoAdaptardor.ajustarAltura(10))
+                                                    ),
+                                                fontSize = obtenerEstiloBodyMedium(),
+                                                mostrarLeadingIcon = false,
+                                                placeholder = "Telefono",
+                                                soloPermitirValoresNumericos = true,
+                                                backgroundColor = Color.White
+                                            )
+                                        }
+                                    }
+
+                                    // Direccion
+                                    Column {
+                                        TText(
+                                            text = "Dirección: ",
+                                            modifier = Modifier.fillMaxWidth(),
+                                            fontSize = obtenerEstiloBodySmall(),
+                                            textAlign = TextAlign.Start
+                                        )
+                                        BBasicTextField(
+                                            value = clienteTemp.Direccion,
+                                            onValueChange = {
+                                                clienteTemp.Direccion = it
+                                            },
+                                            objetoAdaptardor = objetoAdaptardor,
+                                            utilizarMedidas = false,
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .border(
+                                                    1.dp,
+                                                    color = Color.Gray,
+                                                    RoundedCornerShape(objetoAdaptardor.ajustarAltura(10))
+                                                ),
+                                            backgroundColor = Color.White,
+                                            fontSize = obtenerEstiloBodyBig(),
+                                            mostrarLeadingIcon = false,
+                                            placeholder = "Dirección",
+                                            cantidadLineas = 10
+                                        )
+                                    }
+
+                                    // Correo Electronico
+                                    Column {
+                                        TText(
+                                            text = "Correo Electrónico: ",
+                                            modifier = Modifier.fillMaxWidth(),
+                                            fontSize = obtenerEstiloBodySmall(),
+                                            textAlign = TextAlign.Start
+                                        )
+                                        BBasicTextField(
+                                            value = clienteTemp.Email,
+                                            onValueChange = {
+                                                clienteTemp.Email = it.trim()
+                                                clienteTemp.EmailCobro = it.trim()
+                                                clienteTemp.EmailFactura = it.trim()
+                                            },
+                                            objetoAdaptardor = objetoAdaptardor,
+                                            utilizarMedidas = false,
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .border(
+                                                    1.dp,
+                                                    color = Color.Gray,
+                                                    RoundedCornerShape(objetoAdaptardor.ajustarAltura(10))
+                                                ),
+                                            backgroundColor = Color.White,
+                                            fontSize = obtenerEstiloBodyBig(),
+                                            mostrarLeadingIcon = false,
+                                            placeholder = "Correo Electrónico",
+                                            cantidadLineas = 10
+                                        )
+                                    }
+
+                                    // Plazo y Monto de credito
+                                    Row (
+                                        horizontalArrangement = Arrangement.spacedBy(objetoAdaptardor.ajustarAncho(8))
+                                    ){
+                                        // Plazo de credito
+                                        Column(
+                                            modifier = Modifier.weight(1f)
+                                        ) {
+                                            TText(
+                                                text = "Plazo Crédito: ",
+                                                modifier = Modifier.fillMaxWidth(),
+                                                fontSize = obtenerEstiloBodySmall(),
+                                                textAlign = TextAlign.Start
+                                            )
+                                            BBasicTextField(
+                                                value = clienteTemp.plazo,
+                                                onValueChange = {
+                                                    clienteTemp.plazo = it.trim().replace(".", "").replace(",", "").replace("-", "")
+                                                },
+                                                objetoAdaptardor = objetoAdaptardor,
+                                                utilizarMedidas = false,
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .border(
+                                                        1.dp,
+                                                        color = Color.Gray,
+                                                        RoundedCornerShape(objetoAdaptardor.ajustarAltura(10))
+                                                    ),
+                                                backgroundColor = Color.White,
+                                                fontSize = obtenerEstiloBodyBig(),
+                                                mostrarLeadingIcon = false,
+                                                placeholder = "Plazo Crédito",
+                                                soloPermitirValoresNumericos = true
+                                            )
+                                        }
+
+                                        // Monto Credito
+                                        Column (
+                                            modifier = Modifier.weight(1f)
+                                        ){
+                                            TText(
+                                                text = "Monto Crédito: ",
+                                                modifier = Modifier.fillMaxWidth(),
+                                                fontSize = obtenerEstiloBodySmall(),
+                                                textAlign = TextAlign.Start
+                                            )
+                                            BBasicTextField(
+                                                value = clienteTemp.MontoCredito,
+                                                onValueChange = {
+                                                    clienteTemp.MontoCredito = it.trim().replace(".", "").replace(",", "").replace("-", "")
+                                                },
+                                                objetoAdaptardor = objetoAdaptardor,
+                                                utilizarMedidas = false,
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .border(
+                                                        1.dp,
+                                                        color = Color.Gray,
+                                                        RoundedCornerShape(objetoAdaptardor.ajustarAltura(10))
+                                                    ),
+                                                fontSize = obtenerEstiloBodyMedium(),
+                                                mostrarLeadingIcon = false,
+                                                placeholder = "Monto Crédito",
+                                                soloPermitirValoresNumericos = true,
+                                                darFormatoMiles = true,
+                                                backgroundColor = Color.White
+                                            )
+                                        }
+                                    }
+
+                                    // Monto de contrato y Descuento
+                                    Row (
+                                        horizontalArrangement = Arrangement.spacedBy(objetoAdaptardor.ajustarAncho(8))
+                                    ){
+                                        // Descuento
+                                        Column(
+                                            modifier = Modifier.weight(1f)
+                                        ) {
+                                            TText(
+                                                text = "Descuento(%):",
+                                                modifier = Modifier.fillMaxWidth(),
+                                                fontSize = obtenerEstiloBodySmall(),
+                                                textAlign = TextAlign.Start
+                                            )
+                                            BBasicTextField(
+                                                value = clienteTemp.Descuento,
+                                                onValueChange = {
+                                                    clienteTemp.Descuento = it.trim()
+                                                },
+                                                objetoAdaptardor = objetoAdaptardor,
+                                                utilizarMedidas = false,
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .border(
+                                                        1.dp,
+                                                        color = Color.Gray,
+                                                        RoundedCornerShape(objetoAdaptardor.ajustarAltura(10))
+                                                    ),
+                                                backgroundColor = Color.White,
+                                                fontSize = obtenerEstiloBodyBig(),
+                                                mostrarLeadingIcon = false,
+                                                placeholder = "Descuento(%)",
+                                                soloPermitirValoresNumericos = true
+                                            )
+                                        }
+
+                                        // Monto de contrato
+                                        Column (
+                                            modifier = Modifier.weight(1f)
+                                        ){
+                                            TText(
+                                                text = "Monto Contrato: ",
+                                                modifier = Modifier.fillMaxWidth(),
+                                                fontSize = obtenerEstiloBodySmall(),
+                                                textAlign = TextAlign.Start
+                                            )
+                                            BBasicTextField(
+                                                value = clienteTemp.MontoContrato,
+                                                onValueChange = {
+                                                    clienteTemp.MontoContrato = it.trim().replace(".", "").replace(",", "").replace("-", "")
+                                                },
+                                                objetoAdaptardor = objetoAdaptardor,
+                                                utilizarMedidas = false,
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .border(
+                                                        1.dp,
+                                                        color = Color.Gray,
+                                                        RoundedCornerShape(objetoAdaptardor.ajustarAltura(10))
+                                                    ),
+                                                fontSize = obtenerEstiloBodyMedium(),
+                                                mostrarLeadingIcon = false,
+                                                placeholder = "Monto Contrato",
+                                                darFormatoMiles = true,
+                                                soloPermitirValoresNumericos = true,
+                                                backgroundColor = Color.White
+                                            )
+                                        }
+                                    }
+
+                                    // Tipo Precio y Moneda
+                                    Row (
+                                        horizontalArrangement = Arrangement.spacedBy(objetoAdaptardor.ajustarAncho(8))
+                                    ){
+                                        // Tipo Precio
+                                        Column(
+                                            modifier = Modifier.weight(1f)
+                                        ) {
+                                            TText(
+                                                text = "Tipo de Precio: ",
+                                                modifier = Modifier.fillMaxWidth(),
+                                                fontSize = obtenerEstiloBodySmall(),
+                                                textAlign = TextAlign.Start
+                                            )
+                                            BBasicTextField(
+                                                value = clienteTemp.TipoPrecioVenta,
+                                                onValueChange = {
+                                                    clienteTemp.TipoPrecioVenta = it
+                                                },
+                                                opciones = listaTipoPrecios,
+                                                objetoAdaptardor = objetoAdaptardor,
+                                                utilizarMedidas = false,
+                                                modifier = Modifier.fillMaxWidth(),
+                                                fontSize = obtenerEstiloBodyBig(),
+                                                placeholder = "Tipo de Precio",
+                                                icono = Icons.Filled.LocalOffer
+                                            )
+                                        }
+
+                                        // Moneda
+                                        Column(
+                                            modifier = Modifier.weight(1f)
+                                        ) {
+                                            TText(
+                                                text = "Moneda: ",
+                                                modifier = Modifier.fillMaxWidth(),
+                                                fontSize = obtenerEstiloBodySmall(),
+                                                textAlign = TextAlign.Start
+                                            )
+                                            BBasicTextField(
+                                                value = clienteTemp.Cod_Moneda,
+                                                onValueChange = {
+                                                    clienteTemp.Cod_Moneda = it
+                                                },
+                                                opciones = listaMonedas,
+                                                objetoAdaptardor = objetoAdaptardor,
+                                                utilizarMedidas = false,
+                                                modifier = Modifier.fillMaxWidth(),
+                                                fontSize = obtenerEstiloBodyBig(),
+                                                placeholder = "Moneda",
+                                                icono = Icons.Default.AttachMoney
+                                            )
+                                        }
+                                    }
+
+                                    // Botones inferiores
+                                    Row (
+                                        horizontalArrangement = Arrangement.spacedBy(objetoAdaptardor.ajustarAncho(8))
+                                    ){
+                                        BButton(
+                                            text = "Salir",
+                                            onClick = {
+                                                clienteTemp = Cliente()
+                                                iniciarMenuAgregaEditaCliente = false
+                                            },
+                                            objetoAdaptardor = objetoAdaptardor,
+                                            modifier = Modifier.weight(1f),
+                                            textSize = obtenerEstiloBodyBig(),
+                                            backgroundColor = if (!isEditarCliente) Color.Red else Color(0xFF244BC0)
+                                        )
+
+                                        BButton(
+                                            text = if(isEditarCliente) "Editar" else "Agregar",
+                                            onClick = {
+                                                if (!validacionCedula(clienteTemp.TipoIdentificacion, clienteTemp.Cedula)) return@BButton
+                                                if (clienteTemp.Nombre.isEmpty()) return@BButton mostrarMensajeError("Complete el campo de Nombre Jurídico.")
+                                                if (clienteTemp.nombreComercial.isEmpty()) clienteTemp.nombreComercial = clienteTemp.nombreJuridico
+                                                if (clienteTemp.Telefonos.isNotEmpty() && clienteTemp.Telefonos.length<8) return@BButton mostrarMensajeError("Ingrese un numero de telefono valido.")
+                                                if (!validarCorreo(clienteTemp.Email)) return@BButton
+                                                if (isEditarCliente){
+                                                    iniciarMenuAgregaEditaCliente = false
+                                                    editarCliente = true
+                                                }else{
+                                                    iniciarMenuAgregaEditaCliente = false
+                                                    agregarNuevoCliente = true
+                                                }
+                                            },
+                                            objetoAdaptardor = objetoAdaptardor,
+                                            modifier = Modifier.weight(1f),
+                                            backgroundColor = if (isEditarCliente) Color.Red else Color(0xFF244BC0),
+                                            textSize = obtenerEstiloBodyBig()
+                                        )
+                                    }
+                                }
+                            }
                         }
                     }
                 }
