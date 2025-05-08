@@ -123,6 +123,7 @@ package com.soportereal.invefacon.interfaces.modulos.sac
  import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloTitleSmall
  import com.soportereal.invefacon.funciones_de_interfaces.validacionCedula
  import com.soportereal.invefacon.funciones_de_interfaces.validarCorreo
+ import com.soportereal.invefacon.funciones_de_interfaces.validarVersionApp
  import com.soportereal.invefacon.interfaces.pantallas_principales.estadoRespuestaApi
  import com.soportereal.invefacon.interfaces.pantallas_principales.gestorEstadoPantallaCarga
  import kotlinx.coroutines.CoroutineScope
@@ -232,6 +233,14 @@ fun InterfazModuloSac(
     var cambiarPrmImp2 by remember { mutableStateOf(false) }
     var estadoImp2 by remember { mutableStateOf(valorPrmImp2 != "0") }
     var iniciarMenuConfCambPrm by remember { mutableStateOf(false) }
+
+    LaunchedEffect(Unit) {
+        gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
+    }
+
+    LaunchedEffect (Unit) {
+        validarVersionApp(context)
+    }
 
     LaunchedEffect(iniciarPantallaSacComanda) {
         if (iniciarPantallaSacComanda){
@@ -1700,7 +1709,7 @@ fun InterfazModuloSac(
                 )
 
                 Text(
-                    text = "Version: $versionApp",
+                    text = "Versión: $versionApp",
                     color = Color.White,
                     fontFamily = fontAksharPrincipal,
                     fontWeight = FontWeight.Light,

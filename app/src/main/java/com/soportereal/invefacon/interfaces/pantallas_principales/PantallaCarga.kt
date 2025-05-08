@@ -264,6 +264,7 @@ class EstadoPantallaCarga : ViewModel() {
         _isCargandoPantalla.value = cargando
     }
 }
+
 val gestorEstadoPantallaCarga= EstadoPantallaCarga()
 
 class EstadoRespuestaApi : ViewModel(){
@@ -291,4 +292,5 @@ class EstadoRespuestaApi : ViewModel(){
         _mostrarSoloRespuestaError.value = mostrarSoloRespuestaError
     }
 }
+
 val estadoRespuestaApi= EstadoRespuestaApi()

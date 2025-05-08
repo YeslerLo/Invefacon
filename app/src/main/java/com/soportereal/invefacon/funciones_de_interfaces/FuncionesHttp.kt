@@ -15,7 +15,6 @@ class FuncionesHttp(
     private val servidorUrl:String = "https://invefacon.com/api/",
     private val apiToken:String = ""
 ) {
-
     suspend fun metodoPost(
         formBody: MultipartBody,
         apiDirectorio: String,
@@ -32,11 +31,12 @@ class FuncionesHttp(
                 .addHeader("Content-Type", "application/json")
                 .addHeader("Authorization", if (enviarToken) "Bearer $apiToken" else "")
                 .build()
+            var responseBody : String? = null
             try {
                 // Ejecutar la solicitud en el contexto de IO
                 val response: Response = client.newCall(request).execute()
                 if (response.isSuccessful) {
-                    val responseBody = response.body?.string()
+                    responseBody = response.body?.string()
                     if (responseBody!=null){
                         println(responseBody)
                         val json = JSONObject(responseBody)
@@ -53,7 +53,11 @@ class FuncionesHttp(
             } catch (e: IOException) {
                 JSONObject("""{"code":401,"status":"error","data":"Revise su conexion a Internet"}""")
             } catch (e: JSONException) {
-                JSONObject("""{"code":401,"status":"error","data":"$e"}""")
+                val jsonError = JSONObject()
+                jsonError.put("code", 401)
+                jsonError.put("status", "error")
+                jsonError.put("data", "Error de formato JSON: ${responseBody?.take(300)}")
+                jsonError
             } catch (e: CancellationException){
                 null
             } catch (e: Exception) {
@@ -123,5 +127,4 @@ class FuncionesHttp(
             }
         }
     }
-
 }

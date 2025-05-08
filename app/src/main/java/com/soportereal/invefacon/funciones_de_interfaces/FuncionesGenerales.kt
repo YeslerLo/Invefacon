@@ -2,13 +2,16 @@ package com.soportereal.invefacon.funciones_de_interfaces
 
 import android.Manifest
 import android.annotation.SuppressLint
+import android.app.AlertDialog
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothManager
 import android.content.Context
+import android.content.Intent
 import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.net.Uri
 import android.os.Build
 import android.util.Log
 import android.view.inputmethod.InputMethodManager
@@ -16,17 +19,52 @@ import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.layout.wrapContentWidth
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.dantsu.escposprinter.BuildConfig
 import com.dantsu.escposprinter.EscPosCharsetEncoding
 import com.dantsu.escposprinter.EscPosPrinter
 import com.dantsu.escposprinter.connection.DeviceConnection
@@ -34,11 +72,16 @@ import com.dantsu.escposprinter.connection.bluetooth.BluetoothConnection
 import com.dantsu.escposprinter.connection.bluetooth.BluetoothPrintersConnections
 import com.dantsu.escposprinter.exceptions.EscPosConnectionException
 import com.dantsu.escposprinter.textparser.PrinterTextParserImg
+import com.soportereal.invefacon.R
 import com.soportereal.invefacon.interfaces.pantallas_principales.estadoRespuestaApi
+import com.soportereal.invefacon.interfaces.pantallas_principales.gestorEstadoPantallaCarga
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import okhttp3.MultipartBody
 import org.json.JSONObject
 import java.io.File
 import java.io.FileOutputStream
@@ -526,6 +569,7 @@ fun addTextTall(text: String, justification: String, destacar: Boolean = false, 
 
 }
 
+
 fun addText(text: String, justification: String, destacar: Boolean = false, context: Context, conLiena: Boolean = false) : String {
     val lienas = segmentarTextoConEspacios(texto = text, largoLinea = obtenerParametroLocal(context,"cantidadCaracPorLineaImpre").toInt())
     var textoRetornar = ""
@@ -678,7 +722,6 @@ fun validarCorreo(correo: String): Boolean {
     }
 }
 
-
 fun validacionCedula(tipo: String, cedula : String):Boolean{
     if(cedula.isEmpty()){
         mostrarMensajeError("Ingrese un numero de Cédula")
@@ -710,6 +753,125 @@ fun validacionCedula(tipo: String, cedula : String):Boolean{
     }
     return true
 }
+
+suspend fun validarVersionApp(context : Context){
+    val resultAppVersion = obtenerUltimaVersionApp()
+    if (resultAppVersion == null) {
+        mostrarMensajeError("Se obtuvo un null a la hora de obtener la versión del App.")
+        return
+    }
+    if (!validarExitoRestpuestaServidor(resultAppVersion)) {
+        estadoRespuestaApi.cambiarEstadoRespuestaApi(mostrarSoloRespuestaError = true, datosRespuesta = resultAppVersion)
+        return
+    }
+    val versionLocal = context.getString(R.string.versionCode)
+    gestorDialogActualizacion.cambiarEstado(versionLocal.toInt() > resultAppVersion.optInt("versionCodeMax", 25) || versionLocal.toInt() < resultAppVersion.getInt("versionCodeMin") )
+}
+
+suspend fun obtenerUltimaVersionApp():JSONObject?{
+    val objetoFuncionesHttpInvefacon = FuncionesHttp()
+    val formBody = MultipartBody.Builder().setType(MultipartBody.FORM)
+        .addFormDataPart("0","")
+        .addFormDataPart("0","")
+        .build()
+    return objetoFuncionesHttpInvefacon.metodoPost(formBody = formBody, apiDirectorio = "seguridad/obtenerVersionAndroid.php", validarJson = false)
+}
+
+@Composable
+fun DialogoActualizacion() {
+    val mostrar by gestorDialogActualizacion.pedirActualizacion.collectAsState()
+    val context = LocalContext.current
+
+    if (!mostrar) return
+
+    val fondoGrisOscuro = Color(0xFF2C2C2C)
+
+    var isMenuVisible by remember { mutableStateOf(false) }
+
+    LaunchedEffect(Unit) {
+        delay(100)
+        isMenuVisible = true
+    }
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.Black.copy(alpha = 0.3f))
+            .clickable(enabled = false) {},
+        contentAlignment = Alignment.BottomCenter
+    ) {
+        AnimatedVisibility(
+            visible = isMenuVisible,
+            enter = fadeIn(animationSpec = tween(500)) + slideInVertically(initialOffsetY = { it }),
+            exit = fadeOut(animationSpec = tween(500)) + slideOutVertically(targetOffsetY = { it })
+        ) {
+            Surface(
+                modifier = Modifier
+                    .wrapContentWidth()
+                    .wrapContentHeight()
+                    .padding(horizontal = 4.dp, vertical = 8.dp)
+                    .align(Alignment.Center),
+                shape = RoundedCornerShape(12.dp),
+                color = fondoGrisOscuro,
+                shadowElevation = 8.dp
+            ) {
+                Column(
+                    modifier = Modifier
+                        .padding(24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        text = "Actualización disponible",
+                        style = MaterialTheme.typography.titleLarge,
+                        color = Color.White,
+                        fontWeight = FontWeight.Bold
+                    )
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    Text(
+                        text = "La aplicación requiere la última versión para funcionar correctamente.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = Color.White
+                    )
+
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    Button(
+                        onClick = {
+                            val intent = Intent(Intent.ACTION_VIEW).apply {
+                                data = Uri.parse("https://play.google.com/store/apps/details?id=${context.packageName}")
+                            }
+                            context.startActivity(intent)
+                        },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = fondoGrisOscuro,
+                            contentColor = Color.White
+                        ),
+                        border = BorderStroke(1.dp, Color.White)
+                    ) {
+                        Text("Actualizar")
+                    }
+                }
+            }
+        }
+    }
+}
+
+class EstadoDialogActualizacion : ViewModel() {
+    private val _pedirActualizacion = MutableStateFlow(false)
+
+    val pedirActualizacion: StateFlow<Boolean> = _pedirActualizacion
+
+    fun cambiarEstado(actualizar: Boolean) {
+        _pedirActualizacion.value = actualizar
+    }
+}
+
+val gestorDialogActualizacion = EstadoDialogActualizacion()
+
+
+
 
 
 

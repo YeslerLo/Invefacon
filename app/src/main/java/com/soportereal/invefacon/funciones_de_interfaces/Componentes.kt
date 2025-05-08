@@ -116,7 +116,8 @@ internal fun BBasicTextField(
     mostrarClave: Boolean = false,
     opciones: List<ParClaveValor> = emptyList(),
     enable: Boolean = true,
-    onFocus : () -> Unit = {}
+    onFocus : () -> Unit = {},
+    offFocus : () -> Unit = {}
 ) {
     var tieneFoco by remember { mutableStateOf(false) }
     var expanded by remember { mutableStateOf(false) }
@@ -245,6 +246,8 @@ internal fun BBasicTextField(
                         tieneFoco = estadoFoco.isFocused // Detectar el estado de foco
                         if (tieneFoco){
                             onFocus()
+                        }else{
+                            offFocus()
                         }
                     }
                     .let {
@@ -377,11 +380,12 @@ internal fun TText(
     color: Color = Color.Black,
     textAlign: TextAlign = TextAlign.Start,
     maxLines: Int = 1,
-    fontWeight: FontWeight = FontWeight.SemiBold
+    fontFamily: FontFamily = FontFamily(Font(R.font.akshar_medium)),
+    fontWeight: FontWeight? = FontWeight.SemiBold
 ){
     Text(
         text = text,
-        fontFamily = FontFamily(Font(R.font.akshar_medium)),
+        fontFamily = fontFamily,
         fontWeight = fontWeight,
         fontSize = fontSize,
         color = color,

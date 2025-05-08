@@ -1,5 +1,6 @@
 package com.soportereal.invefacon.interfaces.modulos.facturacion
 
+import android.annotation.SuppressLint
 import android.os.Build
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
@@ -29,12 +30,15 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
@@ -71,6 +75,7 @@ import androidx.compose.material.icons.filled.PriceChange
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.RequestQuote
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material.icons.filled.Straighten
 import androidx.compose.material.icons.filled.Warehouse
 import androidx.compose.material3.AlertDialog
@@ -160,6 +165,7 @@ import com.soportereal.invefacon.funciones_de_interfaces.tienePermiso
 import com.soportereal.invefacon.funciones_de_interfaces.validacionCedula
 import com.soportereal.invefacon.funciones_de_interfaces.validarCorreo
 import com.soportereal.invefacon.funciones_de_interfaces.validarExitoRestpuestaServidor
+import com.soportereal.invefacon.funciones_de_interfaces.validarVersionApp
 import com.soportereal.invefacon.interfaces.modulos.clientes.Cliente
 import com.soportereal.invefacon.interfaces.modulos.clientes.ProcesarDatosModuloClientes
 import com.soportereal.invefacon.interfaces.pantallas_principales.estadoRespuestaApi
@@ -178,6 +184,7 @@ import java.math.BigDecimal
 import java.math.RoundingMode
 import java.util.concurrent.atomic.AtomicInteger
 
+@SuppressLint("NewApi")
 @RequiresApi(Build.VERSION_CODES.S)
 @Composable
 fun IniciarInterfazFacturacion(
@@ -204,6 +211,7 @@ fun IniciarInterfazFacturacion(
     val listaArticulosSeleccionados = remember { mutableStateListOf<ArticuloFacturacion>() }
     var listaPagos = remember { mutableStateListOf<Pago>() }
     val listaMediosPago = remember { mutableStateListOf<ParClaveValor>() }
+    val listaImpresion = remember { mutableStateListOf<ParClaveValor>() }
     var listaArticulosProforma by remember {  mutableStateOf<List<ArticuloFacturacion>>(emptyList()) }
     var nombreCliente by remember { mutableStateOf("") }
     var descuentoCliente by remember { mutableStateOf("0.00") }
@@ -233,6 +241,7 @@ fun IniciarInterfazFacturacion(
     var clienteId by remember { mutableStateOf("") }
     var estadoProforma by remember { mutableStateOf("") }
     var detalleProforma by remember { mutableStateOf("") }
+    var ordenCompra by remember { mutableStateOf("") }
     val objectoProcesadorDatosApi = ProcesarDatosModuloFacturacion(token)
     val objectoProcesadorDatosApiCliente = ProcesarDatosModuloClientes(token)
     var isCargandoDatos by remember { mutableStateOf(true) }
@@ -299,6 +308,7 @@ fun IniciarInterfazFacturacion(
     var iniciarMenuConfPagoCredito by remember { mutableStateOf(false) }
     var iniciarMenuConfPagoCompleto by remember { mutableStateOf(false) }
     var iniciarMenuConfComoProforma by remember { mutableStateOf(false) }
+    var iniciarMenuActuNombreProforma by remember { mutableStateOf(false) }
     var iniciarMenuConfEliminarArt by remember { mutableStateOf(false) }
     var exonerar by remember { mutableStateOf(false) }
     var iniciarMenuConfQuitarExoneracion by remember { mutableStateOf(false) }
@@ -319,7 +329,7 @@ fun IniciarInterfazFacturacion(
         mutableStateOf(
             listOf(
                 ParClaveValor("00", "No definido"),
-                ParClaveValor("01", "Fisica"),
+                ParClaveValor("01", "Física"),
                 ParClaveValor("02", "Jurídica"),
                 ParClaveValor("03", "Dimex"),
                 ParClaveValor("04", "Nite")
@@ -331,8 +341,10 @@ fun IniciarInterfazFacturacion(
             (1..10).map { ParClaveValor(it.toString(), it.toString()) }
         )
     }
+    var estadoProformaInicial by remember { mutableStateOf("") }
     var agregarFormapago by remember { mutableStateOf(false) }
     var tipoPago by remember { mutableStateOf("") }
+    var tasaCambioDolar by remember { mutableDoubleStateOf(0.00) }
     var tipoFormaProcesar by remember { mutableStateOf("factura") }
     var correoProformaTemp by remember { mutableStateOf("") }
     var iniciarPantallaEstadoImpresion by remember { mutableStateOf(false) }
@@ -350,6 +362,9 @@ fun IniciarInterfazFacturacion(
     var agregarNuevoCliente by remember { mutableStateOf(false) }
     var editarCliente by remember { mutableStateOf(false) }
     var guardarDetalleFactura by remember { mutableStateOf(false) }
+    var guardarOrdenCompra by remember { mutableStateOf(false) }
+    var actualizarNombreProforma by remember { mutableStateOf(false) }
+    var nombreProformaTemp by remember { mutableStateOf("") }
     var iniciarBusquedaClienteByCedula by remember { mutableStateOf(false) }
     val coroutineScope = rememberCoroutineScope()
     val transition = rememberInfiniteTransition(label = "shimmer")
@@ -373,12 +388,37 @@ fun IniciarInterfazFacturacion(
         end = Offset(shimmerTranslate + 800f, 0f)
     )
 
-    fun pagarCompleto(){
+    fun agregarColaImpresion(isContado : Boolean = true, isReimpresion : Boolean = false){
+        if (isContado){
+            val cantidadCopiasImpresion = if (isReimpresion) 0 else obtenerValorParametroEmpresa("99", "0").toInt()
+            listaImpresion.addAll((0..cantidadCopiasImpresion).map {
+                if (isReimpresion){
+                    ParClaveValor(it.toString(),"3")
+                } else if (it==0){
+                    ParClaveValor(it.toString(),"1")
+                }else{
+                    ParClaveValor(it.toString(),"2")
+                }
+            })
+            return
+        }
+        val cantidadCopiasImpresion = obtenerValorParametroEmpresa("98", "0").toInt()
+        listaImpresion.addAll((0..cantidadCopiasImpresion).map {
+            if (it==0){
+                ParClaveValor(it.toString(),"1")
+            }else{
+                ParClaveValor(it.toString(),"2")
+            }
+        })
+    }
 
+    fun pagarCompleto(){
         tipoPago = "contado"
         listaPagos.forEach {
             it.funcion = "eliminar"
         }
+        if (listaMediosPago.isEmpty()) return mostrarMensajeError("No existen Medios de Pago.")
+        agregarColaImpresion()
         listaPagos.add(Pago(
             Documento = numeroProforma,
             CodigoMoneda = codMonedaProforma,
@@ -391,6 +431,7 @@ fun IniciarInterfazFacturacion(
 
     fun pagarACredito(){
         tipoPago = "credito"
+        agregarColaImpresion(false)
         guardarProforma = true
     }
 
@@ -537,6 +578,10 @@ fun IniciarInterfazFacturacion(
         gestorImpresora.PedirPermisos(context)
     }
 
+    LaunchedEffect (Unit) {
+        validarVersionApp(context)
+    }
+
     LaunchedEffect(Unit) {
         if (valorImpresionActiva != "1") return@LaunchedEffect  Toast.makeText(context, "La impresión está inactiva.", Toast.LENGTH_SHORT).show()
         delay(1000)
@@ -564,8 +609,8 @@ fun IniciarInterfazFacturacion(
                         //DATOS CLIENTE
                         val datosCliente = data.getJSONArray("cliente").getJSONObject(0)
                         clienteId= datosCliente.getString("ClienteID")
-                        nombreCliente= datosCliente.getString("ClienteNombre")
-                        nombreComercial = datosCliente.getString("clientenombrecomercial")
+                        nombreCliente= datosCliente.getString("Nombre")
+                        nombreComercial = datosCliente.getString("ClienteNombre")
                         numeroCedula = datosCliente.getString("Cedula")
                         emailGeneral = datosCliente.getString("Email")
                         telefonos = datosCliente.getString("Telefonos")
@@ -584,13 +629,16 @@ fun IniciarInterfazFacturacion(
                         numeroProforma= datosProforma.getString("Numero")
                         tipoDocumento = datosProforma.getString("TipoDocumento")
                         estadoProforma = datosProforma.getString("Estado")
+                        estadoProformaInicial = estadoProforma
 
                         //Tipo Moneda
                         val actualizarListaArticulos = codMonedaProforma != data.getString("monedaDocumento")
                         validacionCargaFinalizada = if (actualizarListaArticulos) 0 else 1
                         codMonedaProforma = data.getString("monedaDocumento")
                         tasaCambio = data.getDouble("tipoCambio")
-                        detalleProforma = data.optString("detalle", "null")
+                        tasaCambioDolar = data.getDouble("tipoCambioDolar")
+                        detalleProforma = data.optString("detalle")
+                        ordenCompra = data.getString("ordenCompra")
                         nuevoCodigoMoneda = codMonedaProforma
                         simboloMoneda =  if(codMonedaProforma == "CRC") "\u20A1 " else "\u0024 "
                         iniciarDescargaArticulos = listaArticulosFacturacion.isEmpty() || actualizarListaArticulos
@@ -760,13 +808,13 @@ fun IniciarInterfazFacturacion(
                                 listaBodegas.add(bodega)
                             }
 
-
+                            val costoTemp = if(codMonedaProforma == "CRC") datosArticulo.getDouble("Costo") else datosArticulo.getDouble("Costo") / tasaCambioDolar
                             val articulo = ArticuloFacturacion(
                                 codigo = datosArticulo.getString("Codigo"),
                                 codBarra = datosArticulo.getString("Cod_Barra"),
                                 descripcion = datosArticulo.getString("Descripcion"),
                                 stock = datosArticulo.optDouble("Stock", 0.00),
-                                costo = datosArticulo.getDouble("Costo"),
+                                costo = costoTemp,
                                 fraccionamiento = datosArticulo.getInt("Fraccionamineto"),
                                 descuentoFijo = datosArticulo.getDouble("Descuento_Fijo"),
                                 codTarifaImpuesto = datosArticulo.getString("Cod_Tarifa_Impuesto"),
@@ -839,7 +887,6 @@ fun IniciarInterfazFacturacion(
                 if (validarExitoRestpuestaServidor(result)){
                     iniciarMenuAgregaEditaArticulo = false
                     gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
-                    delay(100)
                     soloActualizarArticulos = true
                 }else{
                     estadoRespuestaApi.cambiarEstadoRespuestaApi(mostrarSoloRespuestaError = true, datosRespuesta = result)
@@ -858,7 +905,6 @@ fun IniciarInterfazFacturacion(
                 estadoRespuestaApi.cambiarEstadoRespuestaApi(mostrarSoloRespuestaError = true, datosRespuesta = result)
                 gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
                 if (validarExitoRestpuestaServidor(result)){
-                    delay(100)
                     soloActualizarArticulos = true
                     lineaAcual = ""
                 }
@@ -1101,8 +1147,11 @@ fun IniciarInterfazFacturacion(
         }.awaitAll()
         if (cantidadPagosEnviados.get() == 0) {
             actualizarDatosProforma = isSoloAgregarFormaPago
-
             guardarProforma = !isSoloAgregarFormaPago
+        }
+        else{
+            gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
+            actualizarDatosProforma = true
         }
         if (listaPagos.size==0) mostrarMensajeExito("Las formas de pago se han guardado exitosamente.")
         gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
@@ -1134,13 +1183,12 @@ fun IniciarInterfazFacturacion(
             val data = result.getJSONObject("data")
             consecutivoFactura = data.getString("consecutivo")
 
-            if(valorImpresionActiva != "1"){
-                mostrarMensajeExito("La factura se ha emitido exitosamente con el consecutivo: $consecutivoFactura")
+            if(tipoFormaProcesar == "proforma" || valorImpresionActiva != "1"){
+                if (tipoFormaProcesar == "proforma") mostrarMensajeExito("La Proforma se ha emitido exitosamente con el consecutivo: $consecutivoFactura") else mostrarMensajeExito("La factura se ha emitido exitosamente con el consecutivo: $consecutivoFactura")
                 numeroProforma = ""
                 actualizarDatosProforma = true
                 return@LaunchedEffect
             }
-
             datosFacturaEmitida = Factura()
             delay(6000)
 
@@ -1160,6 +1208,7 @@ fun IniciarInterfazFacturacion(
             }
         } finally {
             gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
+            correoProformaTemp = ""
             guardarProforma = false
         }
     }
@@ -1176,11 +1225,16 @@ fun IniciarInterfazFacturacion(
             imprimir = false
             return@LaunchedEffect
         }
-        exitoImpresion = imprimirFactura(datosFacturaEmitida, context, nombreEmpresa)
+        exitoImpresion = imprimirFactura(datosFacturaEmitida, context, nombreEmpresa, listaImpresion.first())
         delay(3500)
         isImprimiendo = false
         if (!exitoImpresion){
             estadoProforma = "2"
+            imprimir = false
+            return@LaunchedEffect
+        }
+        listaImpresion.removeFirst()
+        if (listaImpresion.isNotEmpty()) {
             imprimir = false
             return@LaunchedEffect
         }
@@ -1282,11 +1336,33 @@ fun IniciarInterfazFacturacion(
     LaunchedEffect (guardarDetalleFactura) {
         if (!guardarDetalleFactura) return@LaunchedEffect
         gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(true)
-        val result = objectoProcesadorDatosApi.guardarDestalleFactura(if (detalleProforma.isEmpty()) " " else detalleProforma, numeroProforma)
+        val result = objectoProcesadorDatosApi.guardarDestalleFactura(detalleProforma, numeroProforma)
         if (result == null) return@LaunchedEffect
         estadoRespuestaApi.cambiarEstadoRespuestaApi(mostrarRespuesta = true, datosRespuesta = result)
         gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
         guardarDetalleFactura = false
+    }
+
+    LaunchedEffect (guardarOrdenCompra) {
+        if (!guardarOrdenCompra) return@LaunchedEffect
+        gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(true)
+        val result = objectoProcesadorDatosApi.guardarOrdenCompra(ordenCompra, numeroProforma)
+        if (result == null) return@LaunchedEffect
+        estadoRespuestaApi.cambiarEstadoRespuestaApi(mostrarRespuesta = true, datosRespuesta = result)
+        gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
+        guardarOrdenCompra = false
+    }
+
+    LaunchedEffect (actualizarNombreProforma) {
+        if (!actualizarNombreProforma) return@LaunchedEffect
+        gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(true)
+        val result = objectoProcesadorDatosApi.actualizarNombreProforma(nombreProformaTemp, numeroProforma)
+        if (result == null) return@LaunchedEffect
+        estadoRespuestaApi.cambiarEstadoRespuestaApi(mostrarSoloRespuestaError = true, datosRespuesta = result)
+        gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
+        if (validarExitoRestpuestaServidor(result)) soloActualizarDatosCliente = true
+        nombreProformaTemp = ""
+        actualizarNombreProforma = false
     }
 
     // Interceptar el botón de retroceso
@@ -1340,6 +1416,12 @@ fun IniciarInterfazFacturacion(
     fun BxContenedorArticulosFacturacion(
         articulo : ArticuloFacturacion
     ) {
+        val valorString = articulo.listaPrecios.find { it.clave == tipoPrecioCliente }?.valor
+        val precioArticuloDouble = valorString?.toDoubleOrNull() ?: articulo.precio
+        val precioArticulo = BigDecimal.valueOf(precioArticuloDouble)
+        val impuestoFactor = BigDecimal.ONE + BigDecimal.valueOf(articulo.impuesto).divide(BigDecimal(100))
+        val precioIva = precioArticulo.multiply(impuestoFactor)
+
         Card(
             modifier = Modifier
                 .fillMaxWidth()
@@ -1418,7 +1500,7 @@ fun IniciarInterfazFacturacion(
                         modifier = Modifier.padding(start = objetoAdaptardor.ajustarAncho(8), end = objetoAdaptardor.ajustarAncho(16))
                     )
                     TText(
-                        text = simboloMoneda + separacionDeMiles(montoString = (articulo.listaPrecios.find { it.clave == tipoPrecioCliente }?.valor ?: articulo.precio).toString(), isString = true) + " $codMonedaProforma",
+                        text = simboloMoneda + separacionDeMiles(montoString = precioIva.toString(), isString = true) + " $codMonedaProforma",
                         modifier = Modifier
                             .padding(start = objetoAdaptardor.ajustarAncho(8), bottom = objetoAdaptardor.ajustarAltura(8)),
                         fontSize = obtenerEstiloBodyMedium(),
@@ -1426,7 +1508,6 @@ fun IniciarInterfazFacturacion(
                     )
                 }
             }
-
         }
     }
 
@@ -1770,7 +1851,10 @@ fun IniciarInterfazFacturacion(
                             })
                         }
                         .clickable(enabled = false) { }
-                        .padding(vertical = objetoAdaptardor.ajustarAncho(8), horizontal = objetoAdaptardor.ajustarAltura(16)),
+                        .padding(
+                            vertical = objetoAdaptardor.ajustarAncho(8),
+                            horizontal = objetoAdaptardor.ajustarAltura(16)
+                        ),
                     shape = RoundedCornerShape(objetoAdaptardor.ajustarAltura(16)),
                     colors = CardDefaults.cardColors(containerColor = Color.White)
                 ) {
@@ -1814,7 +1898,10 @@ fun IniciarInterfazFacturacion(
                                     TextFieldMultifuncional(
                                         label = "Bodega",
                                         textPlaceholder = if (bodegaSeleccionda.valor.isEmpty()) "Sin Bodegas" else "Selccione una bodega.",
-                                        nuevoValor2 = {bodegaSeleccionda = it},
+                                        nuevoValor2 = {
+                                            if(obtenerValorParametroEmpresa("102","0") == "0") return@TextFieldMultifuncional mostrarMensajeError("El parámetro 102 no permite seleccionar otra bodega.")
+                                            bodegaSeleccionda = it
+                                        },
                                         valor = bodegaSeleccionda.valor,
                                         contieneOpciones = true,
                                         usarOpciones4 = true,
@@ -1833,7 +1920,10 @@ fun IniciarInterfazFacturacion(
                                         medidaAncho = 350,
                                         tomarAnchoMaximo = false,
                                         fontSize = obtenerEstiloBodyBig(),
-                                        mostrarLabel = false
+                                        mostrarLabel = false,
+                                        onFocus = {
+                                            if(obtenerValorParametroEmpresa("102","0") == "0") mostrarMensajeError("El parámetro 102 no permite seleccionar otra bodega.")
+                                        }
                                     )
 
                                     // DATOS BODEGA
@@ -1889,7 +1979,11 @@ fun IniciarInterfazFacturacion(
                                                     .border(
                                                         2.dp,
                                                         color = Color.Gray,
-                                                        RoundedCornerShape(objetoAdaptardor.ajustarAltura(12))
+                                                        RoundedCornerShape(
+                                                            objetoAdaptardor.ajustarAltura(
+                                                                12
+                                                            )
+                                                        )
                                                     ),
                                                 mostrarLeadingIcon = true,
                                                 leadingIcon = Icons.Default.Straighten,
@@ -1939,7 +2033,11 @@ fun IniciarInterfazFacturacion(
                                                     .border(
                                                         2.dp,
                                                         color = Color.Gray,
-                                                        RoundedCornerShape(objetoAdaptardor.ajustarAltura(12))
+                                                        RoundedCornerShape(
+                                                            objetoAdaptardor.ajustarAltura(
+                                                                12
+                                                            )
+                                                        )
                                                     ),
                                                 mostrarLeadingIcon = true,
                                                 leadingIcon = Icons.Filled.PriceChange,
@@ -1978,7 +2076,11 @@ fun IniciarInterfazFacturacion(
                                                     .border(
                                                         2.dp,
                                                         color = Color.Gray,
-                                                        RoundedCornerShape(objetoAdaptardor.ajustarAltura(12))
+                                                        RoundedCornerShape(
+                                                            objetoAdaptardor.ajustarAltura(
+                                                                12
+                                                            )
+                                                        )
                                                     ),
                                                 isUltimo = true,
                                                 fontSize = obtenerEstiloBodyBig(),
@@ -2019,7 +2121,11 @@ fun IniciarInterfazFacturacion(
                                                     .border(
                                                         2.dp,
                                                         color = Color.Gray,
-                                                        RoundedCornerShape(objetoAdaptardor.ajustarAltura(12))
+                                                        RoundedCornerShape(
+                                                            objetoAdaptardor.ajustarAltura(
+                                                                12
+                                                            )
+                                                        )
                                                     ),
                                                 isUltimo = true,
                                                 fontSize = obtenerEstiloBodyBig(),
@@ -2122,7 +2228,11 @@ fun IniciarInterfazFacturacion(
                                                     .border(
                                                         2.dp,
                                                         color = Color.Gray,
-                                                        RoundedCornerShape(objetoAdaptardor.ajustarAltura(12))
+                                                        RoundedCornerShape(
+                                                            objetoAdaptardor.ajustarAltura(
+                                                                12
+                                                            )
+                                                        )
                                                     ),
                                                 isUltimo = true,
                                                 medidaAncho = 350,
@@ -2168,7 +2278,11 @@ fun IniciarInterfazFacturacion(
                                                     .border(
                                                         2.dp,
                                                         color = Color.Gray,
-                                                        RoundedCornerShape(objetoAdaptardor.ajustarAltura(12))
+                                                        RoundedCornerShape(
+                                                            objetoAdaptardor.ajustarAltura(
+                                                                12
+                                                            )
+                                                        )
                                                     ),
                                                 isUltimo = true,
                                                 fontSize = obtenerEstiloBodyBig(),
@@ -2876,7 +2990,7 @@ fun IniciarInterfazFacturacion(
                                                 icon = Icons.Default.Phone
                                             )
                                             BasicTexfiuldWithText(
-                                                textTitle = "Plazo de Crédito en Dias:",
+                                                textTitle = "Plazo de Crédito en Días:",
                                                 text = "Plazo de Crédito en Días",
                                                 variable = plazoCredito,
                                                 nuevoValor = {plazoCredito=it},
@@ -2943,7 +3057,7 @@ fun IniciarInterfazFacturacion(
                             shape = RoundedCornerShape(objetoAdaptardor.ajustarAltura(20)),
                             colors = CardDefaults.cardColors(containerColor = Color.White)
                         ) {
-                            if (isCargandoDatos || soloActualizarArticulos){
+                            if (isCargandoDatos){
                                 Box(
                                     modifier = Modifier
                                         .fillMaxSize()
@@ -3023,8 +3137,12 @@ fun IniciarInterfazFacturacion(
                                                 )
                                         )
                                         Row(
-                                            horizontalArrangement = Arrangement.spacedBy(objetoAdaptardor.ajustarAncho(4))
-                                        ) {
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(objetoAdaptardor.ajustarAncho(4)),
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .padding(objetoAdaptardor.ajustarAltura(2))
+                                        ){
                                             Box(
                                                 modifier = Modifier
                                                     .weight(1f)
@@ -3036,8 +3154,20 @@ fun IniciarInterfazFacturacion(
                                                         )
                                                     )
                                                     .padding(
-                                                        start = objetoAdaptardor.ajustarAncho(8),
-                                                        end = objetoAdaptardor.ajustarAncho(8),
+                                                        top = objetoAdaptardor.ajustarAncho(8)
+                                                    )
+                                            )
+                                            Box(
+                                                modifier = Modifier
+                                                    .weight(0.5f)
+                                                    .height(objetoAdaptardor.ajustarAltura(30))
+                                                    .background(
+                                                        brush,
+                                                        shape = RoundedCornerShape(
+                                                            objetoAdaptardor.ajustarAltura(6)
+                                                        )
+                                                    )
+                                                    .padding(
                                                         top = objetoAdaptardor.ajustarAncho(8)
                                                     )
                                             )
@@ -3052,14 +3182,12 @@ fun IniciarInterfazFacturacion(
                                                         )
                                                     )
                                                     .padding(
-                                                        start = objetoAdaptardor.ajustarAncho(8),
-                                                        end = objetoAdaptardor.ajustarAncho(8),
                                                         top = objetoAdaptardor.ajustarAncho(8)
                                                     )
                                             )
                                             Box(
                                                 modifier = Modifier
-                                                    .weight(1f)
+                                                    .weight(0.5f)
                                                     .height(objetoAdaptardor.ajustarAltura(30))
                                                     .background(
                                                         brush,
@@ -3068,14 +3196,12 @@ fun IniciarInterfazFacturacion(
                                                         )
                                                     )
                                                     .padding(
-                                                        start = objetoAdaptardor.ajustarAncho(8),
-                                                        end = objetoAdaptardor.ajustarAncho(8),
                                                         top = objetoAdaptardor.ajustarAncho(8)
                                                     )
                                             )
                                             Box(
                                                 modifier = Modifier
-                                                    .weight(1f)
+                                                    .weight(1.25f)
                                                     .height(objetoAdaptardor.ajustarAltura(30))
                                                     .background(
                                                         brush,
@@ -3084,8 +3210,6 @@ fun IniciarInterfazFacturacion(
                                                         )
                                                     )
                                                     .padding(
-                                                        start = objetoAdaptardor.ajustarAncho(8),
-                                                        end = objetoAdaptardor.ajustarAncho(8),
                                                         top = objetoAdaptardor.ajustarAncho(8)
                                                     )
                                             )
@@ -3095,7 +3219,7 @@ fun IniciarInterfazFacturacion(
                             }
 
                             AnimatedVisibility(
-                                visible = (!isCargandoDatos && !soloActualizarArticulos),
+                                visible = (!isCargandoDatos),
                                 enter = expandVertically(animationSpec = tween(300)) + fadeIn(),
                                 exit = shrinkVertically(animationSpec = tween(300)) + fadeOut()
                             ){
@@ -3118,7 +3242,7 @@ fun IniciarInterfazFacturacion(
                                             contentDescription = "ICONO DE ARTICULOS"
                                         )
                                         TText(
-                                            text = "Articulos",
+                                            text = "Artículos",
                                             modifier = Modifier
                                                 .weight(1f),
                                             fontSize = obtenerEstiloTitleBig()
@@ -3161,73 +3285,229 @@ fun IniciarInterfazFacturacion(
                                         TText("Total", Modifier.weight(1.25f), textAlign = TextAlign.Center)
                                     }
 
-                                    listaArticulosProforma.forEach { articulo ->
-                                        Row(
-                                            verticalAlignment = Alignment.CenterVertically,
-                                            horizontalArrangement = Arrangement.spacedBy(objetoAdaptardor.ajustarAncho(2)),
-                                            modifier = Modifier
-                                                .fillMaxWidth()
-                                                .clickable {
-                                                    if (validarEstadoProforma()) return@clickable
-
-                                                    val articuloTemp =
-                                                        listaArticulosFacturacion.find { it.codigo == articulo.codigo }
-                                                    if (articuloTemp == null) return@clickable mostrarMensajeError(
-                                                        "No se logró encontrar las bodegas y los precios de este artículo actualice y vuelva a intentar."
-                                                    )
-
-                                                    val listaBodegas = articuloTemp.listaBodegas
-                                                    val listaPrecios = articuloTemp.listaPrecios
-                                                    articulo.listaBodegas = listaBodegas
-                                                    articulo.listaPrecios = listaPrecios
-                                                    articulo.descuentoAdmitido = articuloTemp.descuentoAdmitido
-                                                    articulo.unidadXMedida = articuloTemp.unidadXMedida
-                                                    articulo.actividadEconomica = articuloTemp.actividadEconomica
-                                                    articulo.Cod_Tarifa_Impuesto = articuloTemp.codTarifaImpuesto
-                                                    articulo.unidadMedida = articuloTemp.unidadMedida
-                                                    articulo.costo = articuloTemp.costo
-                                                    articulo.fraccionamiento = articuloTemp.fraccionamiento
-                                                    articuloActual = articulo
-                                                    isAgregar = false
-                                                    iniciarMenuAgregaEditaArticulo = true
-                                                }
-                                                .padding(vertical = objetoAdaptardor.ajustarAltura(4))
-                                        ) {
-                                            TText(articulo.descripcion,
-                                                Modifier
-                                                    .weight(1f)
-                                                    .padding(start = objetoAdaptardor.ajustarAncho(2)), textAlign = TextAlign.Start, maxLines = 3)
-                                            TText(articulo.articuloCantidad.toString(), Modifier.weight(0.5f), textAlign =TextAlign.Center, maxLines = 3)
-                                            TText(simboloMoneda + separacionDeMiles(articulo.precioNeto), Modifier.weight(1f), textAlign = TextAlign.Center, maxLines = 3)
-                                            TText("${articulo.articuloDescuentoPorcentaje}%", Modifier.weight(0.5f), textAlign = TextAlign.Center, maxLines = 3)
-                                            TText(simboloMoneda + separacionDeMiles(articulo.articuloVentaTotal), Modifier.weight(1f), textAlign = TextAlign.End, maxLines = 3)
-
-                                            IconButton(
-                                                onClick = {
-                                                    if (validarEstadoProforma()) return@IconButton
-                                                    lineaAcual = articulo.articuloLineaId
-                                                    iniciarMenuConfEliminarArt = true
-                                                },
-                                                modifier = Modifier.size(objetoAdaptardor.ajustarAltura(18))
-                                            ) {
-                                                Icon(
-                                                    imageVector = Icons.Filled.Delete,
-                                                    contentDescription = "Eliminar",
-                                                    tint = Color(0xFFEB4242),
+                                    AnimatedVisibility(
+                                        visible = (soloActualizarArticulos),
+                                        enter = expandVertically(animationSpec = tween(300)) + fadeIn(),
+                                        exit = shrinkVertically(animationSpec = tween(300)) + fadeOut()
+                                    ){
+                                        Column(
+                                            horizontalAlignment = Alignment.CenterHorizontally,
+                                            verticalArrangement = Arrangement.spacedBy(objetoAdaptardor.ajustarAltura(6))
+                                        ){
+                                            Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(6)))
+                                            Row(
+                                                verticalAlignment = Alignment.CenterVertically,
+                                                horizontalArrangement = Arrangement.spacedBy(objetoAdaptardor.ajustarAncho(4)),
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .padding(objetoAdaptardor.ajustarAltura(2))
+                                            ){
+                                                Box(
                                                     modifier = Modifier
-                                                        .size(objetoAdaptardor.ajustarAltura(18))
-                                                        .weight(0.25f)
+                                                        .weight(1f)
+                                                        .height(objetoAdaptardor.ajustarAltura(30))
+                                                        .background(
+                                                            brush,
+                                                            shape = RoundedCornerShape(
+                                                                objetoAdaptardor.ajustarAltura(6)
+                                                            )
+                                                        )
+                                                        .padding(
+                                                            top = objetoAdaptardor.ajustarAncho(8)
+                                                        )
+                                                )
+                                                Box(
+                                                    modifier = Modifier
+                                                        .weight(0.5f)
+                                                        .height(objetoAdaptardor.ajustarAltura(30))
+                                                        .background(
+                                                            brush,
+                                                            shape = RoundedCornerShape(
+                                                                objetoAdaptardor.ajustarAltura(6)
+                                                            )
+                                                        )
+                                                        .padding(
+                                                            top = objetoAdaptardor.ajustarAncho(8)
+                                                        )
+                                                )
+                                                Box(
+                                                    modifier = Modifier
+                                                        .weight(1f)
+                                                        .height(objetoAdaptardor.ajustarAltura(30))
+                                                        .background(
+                                                            brush,
+                                                            shape = RoundedCornerShape(
+                                                                objetoAdaptardor.ajustarAltura(6)
+                                                            )
+                                                        )
+                                                        .padding(
+                                                            top = objetoAdaptardor.ajustarAncho(8)
+                                                        )
+                                                )
+                                                Box(
+                                                    modifier = Modifier
+                                                        .weight(0.5f)
+                                                        .height(objetoAdaptardor.ajustarAltura(30))
+                                                        .background(
+                                                            brush,
+                                                            shape = RoundedCornerShape(
+                                                                objetoAdaptardor.ajustarAltura(6)
+                                                            )
+                                                        )
+                                                        .padding(
+                                                            top = objetoAdaptardor.ajustarAncho(8)
+                                                        )
+                                                )
+                                                Box(
+                                                    modifier = Modifier
+                                                        .weight(1.25f)
+                                                        .height(objetoAdaptardor.ajustarAltura(30))
+                                                        .background(
+                                                            brush,
+                                                            shape = RoundedCornerShape(
+                                                                objetoAdaptardor.ajustarAltura(6)
+                                                            )
+                                                        )
+                                                        .padding(
+                                                            top = objetoAdaptardor.ajustarAncho(8)
+                                                        )
                                                 )
                                             }
                                         }
+                                    }
 
-                                        HorizontalDivider(thickness = 1.dp, color = Color.LightGray)
+                                    AnimatedVisibility(
+                                        visible = (!soloActualizarArticulos),
+                                        enter = expandVertically(animationSpec = tween(300)) + fadeIn(),
+                                        exit = shrinkVertically(animationSpec = tween(300)) + fadeOut()
+                                    ){
+                                        Column(
+                                            horizontalAlignment = Alignment.CenterHorizontally,
+                                            verticalArrangement = Arrangement.Center
+                                        ){
+                                            listaArticulosProforma.forEach { articulo ->
+                                                Row(
+                                                    verticalAlignment = Alignment.CenterVertically,
+                                                    horizontalArrangement = Arrangement.spacedBy(objetoAdaptardor.ajustarAncho(2)),
+                                                    modifier = Modifier
+                                                        .fillMaxWidth()
+                                                        .clickable {
+                                                            if (validarEstadoProforma()) return@clickable
+
+                                                            val articuloTemp =
+                                                                listaArticulosFacturacion.find { it.codigo == articulo.codigo }
+                                                            if (articuloTemp == null) return@clickable mostrarMensajeError(
+                                                                "No se logró encontrar las bodegas y los precios de este artículo actualice y vuelva a intentar."
+                                                            )
+
+                                                            val listaBodegas =
+                                                                articuloTemp.listaBodegas
+                                                            val listaPrecios =
+                                                                articuloTemp.listaPrecios
+                                                            articulo.listaBodegas = listaBodegas
+                                                            articulo.listaPrecios = listaPrecios
+                                                            articulo.descuentoAdmitido =
+                                                                articuloTemp.descuentoAdmitido
+                                                            articulo.unidadXMedida =
+                                                                articuloTemp.unidadXMedida
+                                                            articulo.actividadEconomica =
+                                                                articuloTemp.actividadEconomica
+                                                            articulo.Cod_Tarifa_Impuesto =
+                                                                articuloTemp.codTarifaImpuesto
+                                                            articulo.unidadMedida =
+                                                                articuloTemp.unidadMedida
+                                                            articulo.costo = articuloTemp.costo
+                                                            articulo.fraccionamiento =
+                                                                articuloTemp.fraccionamiento
+                                                            articuloActual = articulo
+                                                            isAgregar = false
+                                                            iniciarMenuAgregaEditaArticulo = true
+                                                        }
+                                                        .padding(
+                                                            vertical = objetoAdaptardor.ajustarAltura(
+                                                                4
+                                                            )
+                                                        )
+                                                ) {
+                                                    TText(
+                                                        articulo.descripcion,
+                                                        Modifier
+                                                            .weight(1f)
+                                                            .padding(
+                                                                start = objetoAdaptardor.ajustarAncho(
+                                                                    2
+                                                                )
+                                                            ),
+                                                        textAlign = TextAlign.Start,
+                                                        maxLines = 3,
+                                                        fontFamily = FontFamily(Font(R.font.akshar_regular)),
+                                                        fontWeight = null
+                                                    )
+                                                    TText(
+                                                        articulo.articuloCantidad.toString(),
+                                                        Modifier.weight(0.5f),
+                                                        textAlign =TextAlign.Center,
+                                                        maxLines = 3,
+                                                        fontFamily = FontFamily(Font(R.font.akshar_regular)),
+                                                        fontWeight = null
+                                                    )
+                                                    TText(
+                                                        simboloMoneda + separacionDeMiles(articulo.precioNeto),
+                                                        Modifier.weight(1f),
+                                                        textAlign = TextAlign.Center,
+                                                        maxLines = 3,
+                                                        fontFamily = FontFamily(Font(R.font.akshar_regular)),
+                                                        fontWeight = null
+                                                    )
+                                                    TText(
+                                                        "${articulo.articuloDescuentoPorcentaje}%",
+                                                        Modifier.weight(0.5f),
+                                                        textAlign = TextAlign.Center,
+                                                        maxLines = 3,
+                                                        fontFamily = FontFamily(Font(R.font.akshar_regular)),
+                                                        fontWeight = null
+                                                    )
+                                                    TText(
+                                                        simboloMoneda + separacionDeMiles(articulo.articuloVentaTotal),
+                                                        Modifier.weight(1f),
+                                                        textAlign = TextAlign.End,
+                                                        maxLines = 3,
+                                                        fontFamily = FontFamily(Font(R.font.akshar_regular)),
+                                                        fontWeight = null
+                                                    )
+
+                                                    IconButton(
+                                                        onClick = {
+                                                            if (validarEstadoProforma()) return@IconButton
+                                                            lineaAcual = articulo.articuloLineaId
+                                                            iniciarMenuConfEliminarArt = true
+                                                        },
+                                                        modifier = Modifier.size(objetoAdaptardor.ajustarAltura(18))
+                                                    ) {
+                                                        Icon(
+                                                            imageVector = Icons.Filled.Delete,
+                                                            contentDescription = "Eliminar",
+                                                            tint = Color(0xFFEB4242),
+                                                            modifier = Modifier
+                                                                .size(
+                                                                    objetoAdaptardor.ajustarAltura(
+                                                                        18
+                                                                    )
+                                                                )
+                                                                .weight(0.25f)
+                                                        )
+                                                    }
+                                                }
+
+                                                HorizontalDivider(thickness = 1.dp, color = Color.LightGray)
+                                            }
+                                        }
                                     }
                                 }
                             }
                         }
 
-                        // CARD DE DETALLE FACTURA
+                        // CARD DE DETALLE FACTURA Y ORDEN DE COMPRA
                         Card(
                             modifier = Modifier
                                 .wrapContentHeight()
@@ -3265,23 +3545,7 @@ fun IniciarInterfazFacturacion(
                                         ) {
                                             Box(
                                                 modifier = Modifier
-                                                    .weight(1f)
-                                                    .height(objetoAdaptardor.ajustarAltura(35))
-                                                    .background(
-                                                        brush,
-                                                        shape = RoundedCornerShape(
-                                                            objetoAdaptardor.ajustarAltura(6)
-                                                        )
-                                                    )
-                                                    .padding(
-                                                        start = objetoAdaptardor.ajustarAncho(8),
-                                                        end = objetoAdaptardor.ajustarAncho(8),
-                                                        top = objetoAdaptardor.ajustarAncho(8)
-                                                    )
-                                            )
-                                            Box(
-                                                modifier = Modifier
-                                                    .weight(1f)
+                                                    .weight(2f)
                                                     .height(objetoAdaptardor.ajustarAltura(35))
                                                     .background(
                                                         brush,
@@ -3312,6 +3576,64 @@ fun IniciarInterfazFacturacion(
                                                     )
                                             )
                                         }
+
+                                        Box(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .height(objetoAdaptardor.ajustarAltura(30))
+                                                .background(
+                                                    brush,
+                                                    shape = RoundedCornerShape(
+                                                        objetoAdaptardor.ajustarAltura(6)
+                                                    )
+                                                )
+                                                .padding(
+                                                    start = objetoAdaptardor.ajustarAncho(8),
+                                                    end = objetoAdaptardor.ajustarAncho(8),
+                                                    top = objetoAdaptardor.ajustarAncho(8)
+                                                )
+                                        )
+
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(
+                                                objetoAdaptardor.ajustarAncho(8)
+                                            )
+                                        ) {
+                                            Box(
+                                                modifier = Modifier
+                                                    .weight(2f)
+                                                    .height(objetoAdaptardor.ajustarAltura(35))
+                                                    .background(
+                                                        brush,
+                                                        shape = RoundedCornerShape(
+                                                            objetoAdaptardor.ajustarAltura(6)
+                                                        )
+                                                    )
+                                                    .padding(
+                                                        start = objetoAdaptardor.ajustarAncho(8),
+                                                        end = objetoAdaptardor.ajustarAncho(8),
+                                                        top = objetoAdaptardor.ajustarAncho(8)
+                                                    )
+                                            )
+                                            Box(
+                                                modifier = Modifier
+                                                    .weight(1f)
+                                                    .height(objetoAdaptardor.ajustarAltura(35))
+                                                    .background(
+                                                        brush,
+                                                        shape = RoundedCornerShape(
+                                                            objetoAdaptardor.ajustarAltura(6)
+                                                        )
+                                                    )
+                                                    .padding(
+                                                        start = objetoAdaptardor.ajustarAncho(8),
+                                                        end = objetoAdaptardor.ajustarAncho(8),
+                                                        top = objetoAdaptardor.ajustarAncho(8)
+                                                    )
+                                            )
+                                        }
+
                                         Box(
                                             modifier = Modifier
                                                 .fillMaxWidth()
@@ -3382,7 +3704,63 @@ fun IniciarInterfazFacturacion(
                                         icono = Icons.Default.EditNote,
                                         fontSize = obtenerEstiloBodyBig(),
                                         enable = estadoProforma != "2",
-                                        cantidadLineas = 30
+                                        cantidadLineas = 30,
+                                        offFocus = {
+                                            coroutineScope.launch {
+                                                val result = objectoProcesadorDatosApi.guardarDestalleFactura(detalleProforma, numeroProforma)
+                                                if (result!=null) estadoRespuestaApi.cambiarEstadoRespuestaApi(mostrarSoloRespuestaError = true, datosRespuesta = result)
+                                            }
+                                        }
+                                    )
+
+                                    Spacer(modifier = Modifier.fillMaxWidth())
+                                    HorizontalDivider(thickness = 1.dp, color = Color.LightGray)
+
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(objetoAdaptardor.ajustarAncho(8))
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.ShoppingCart,
+                                            contentDescription = "ICONO DE ARTICULOS"
+                                        )
+                                        TText(
+                                            text = "Orden de Compra",
+                                            fontSize = obtenerEstiloTitleBig()
+                                        )
+                                        Spacer(modifier = Modifier.weight(1f))
+                                        BButton(
+                                            text = "Guardar",
+                                            onClick = {
+                                                if (validarEstadoProforma()) return@BButton
+                                                focusManager.clearFocus()
+                                                guardarOrdenCompra = true
+                                            },
+                                            conSombra = false,
+                                            textSize = obtenerEstiloBodyBig(),
+                                            objetoAdaptardor = objetoAdaptardor,
+                                            modifier = Modifier.width(objetoAdaptardor.ajustarAncho(100))
+                                        )
+                                    }
+
+                                    BBasicTextField(
+                                        value = ordenCompra,
+                                        onValueChange = {
+                                            ordenCompra= it
+                                        },
+                                        objetoAdaptardor = objetoAdaptardor,
+                                        utilizarMedidas = false,
+                                        placeholder = "Ingrese la Orden de Compra",
+                                        icono = Icons.Default.EditNote,
+                                        fontSize = obtenerEstiloBodyBig(),
+                                        enable = estadoProforma != "2",
+                                        cantidadLineas = 30,
+                                        offFocus = {
+                                            coroutineScope.launch {
+                                                val result = objectoProcesadorDatosApi.guardarOrdenCompra(ordenCompra, numeroProforma)
+                                                if (result!=null) estadoRespuestaApi.cambiarEstadoRespuestaApi(mostrarSoloRespuestaError = true, datosRespuesta = result)
+                                            }
+                                        }
                                     )
                                 }
                             }
@@ -3597,6 +3975,7 @@ fun IniciarInterfazFacturacion(
                                         modifier = Modifier.fillMaxWidth(),
                                         fontSize = obtenerEstiloTitleBig()
                                     )
+
                                     Row {
                                         TText(
                                             text = "Total Gravado:",
@@ -3611,6 +3990,7 @@ fun IniciarInterfazFacturacion(
                                             fontSize = obtenerEstiloBodyBig()
                                         )
                                     }
+
                                     HorizontalDivider(
                                         thickness = 1.dp,
                                         color = Color.LightGray
@@ -3812,6 +4192,7 @@ fun IniciarInterfazFacturacion(
                                 onClick = {
                                     if (valorImpresionActiva=="0" && estadoProforma =="2") return@BButton mostrarMensajeError("Impresión inactiva. Si desea imprimir, cambie el estado del parámetro en ajustes.")
                                     if (estadoProforma =="2"){
+                                        agregarColaImpresion(isReimpresion = true)
                                         consecutivoFactura = numeroProforma
                                         obtenerDatosFacturaEmitida = true
                                         return@BButton
@@ -3877,7 +4258,7 @@ fun IniciarInterfazFacturacion(
                 )
 
                 Text(
-                    text = "Version: $versionApp",
+                    text = "Versión: $versionApp",
                     color = Color.White,
                     fontFamily = fontAksharPrincipal,
                     fontWeight = FontWeight.Light,
@@ -3915,7 +4296,7 @@ fun IniciarInterfazFacturacion(
         precioVenta = articuloActual.codPrecioVenta.ifEmpty { tipoPrecioCliente }
     )
 
-    if (iniciarMenuSeleccionarArticulo){
+    if (iniciarMenuSeleccionarArticulo) {
         var isMenuVisible by remember { mutableStateOf(false) }
         val focusRequester = remember { FocusRequester() }
 
@@ -4084,7 +4465,7 @@ fun IniciarInterfazFacturacion(
         }
     }
 
-    if (iniciarMenuSeleccionarCliente){
+    if (iniciarMenuSeleccionarCliente) {
         var isMenuVisible by remember { mutableStateOf(false) }
         val focusRequester = remember { FocusRequester() }
 
@@ -4512,7 +4893,7 @@ fun IniciarInterfazFacturacion(
                             objetoAdaptardor = objetoAdaptardor
                         )
                         BButton(
-                            text = "Quitar Exoneracion",
+                            text = "Quitar Exoneración",
                             onClick = {
                                 iniciarMenuConfQuitarExoneracion = true
                                 iniciarMenuOpcionesProforma = false
@@ -4576,7 +4957,7 @@ fun IniciarInterfazFacturacion(
         }
     }
 
-    if (iniciarMenuCambiarMoneda){
+    if (iniciarMenuCambiarMoneda) {
         var isMenuVisible by remember { mutableStateOf(false) }
 
         LaunchedEffect(Unit) {
@@ -4833,6 +5214,7 @@ fun IniciarInterfazFacturacion(
                                 backgroundColor = if (seleccionarTodos) Color.Red else Color(0xFF244BC0)
                             )
                         }
+
                         if (iniciarMenuAplicarDescuento) {
                             var isDescuentosVisible by remember { mutableStateOf(false) }
 
@@ -5036,6 +5418,7 @@ fun IniciarInterfazFacturacion(
                             BButton(
                                 text =  "Cancelar",
                                 onClick = {
+                                    listaArticulosSeleccionados.clear()
                                     iniciarMenuOpcionesProforma = true
                                     iniciarMenuAplicarDescuento = false
                                     iniciarMenuCambiarPrecio = false
@@ -5132,7 +5515,6 @@ fun IniciarInterfazFacturacion(
                         BButton(
                             text = "Proforma",
                             onClick = {
-                                if (clienteId == "SN") return@BButton mostrarMensajeError("Cliente SN no se le puede emitir una Proforma.")
                                 iniciarMenuProcesar = false
                                 iniciarMenuConfComoProforma = true
                             },
@@ -5157,7 +5539,7 @@ fun IniciarInterfazFacturacion(
 
     }
 
-    if (iniciarMenuSeleccionarMedioPago){
+    if (iniciarMenuSeleccionarMedioPago) {
         var isMenuVisible by remember { mutableStateOf(false) }
         var isModificado by remember { mutableStateOf(false) }
         var vuelto by remember { mutableDoubleStateOf(0.00) }
@@ -5165,17 +5547,21 @@ fun IniciarInterfazFacturacion(
         val listaPagosTemp = listaPagos
 
         fun calcularVuelto(){
-            var totalPagadoTemp = 0.00
-            listaPagosTemp.filter { it.funcion != "eliminar" }.forEach { pago ->
-                val monto = if(pago.Monto.isEmpty()) 0.0 else pago.Monto.toDouble()
-                totalPagadoTemp += if (pago.CodigoMoneda == "CRC"){
-                    if (codMonedaProforma == "CRC") monto else monto/tasaCambio
-                }else{
-                    if (codMonedaProforma == "CRC") monto*tasaCambio else monto
+            try{
+                var totalPagadoTemp = 0.00
+                listaPagosTemp.filter { it.funcion != "eliminar" }.forEach { pago ->
+                    val monto = if(pago.Monto.isEmpty()) 0.0 else pago.Monto.toDouble()
+                    totalPagadoTemp += if (pago.CodigoMoneda == "CRC"){
+                        if (codMonedaProforma == "CRC") monto else monto/tasaCambioDolar
+                    }else{
+                        if (codMonedaProforma == "CRC") monto*tasaCambioDolar else monto
+                    }
                 }
+                totalPagado = totalPagadoTemp
+                vuelto = totalPagadoTemp - total
+            }catch (e: Exception){
+                mostrarMensajeError("Hubo un error al calcular el vuelto")
             }
-            totalPagado = totalPagadoTemp
-            vuelto = totalPagadoTemp - total
         }
 
         LaunchedEffect(Unit) {
@@ -5479,6 +5865,7 @@ fun IniciarInterfazFacturacion(
                                     }else{
                                         mostrarMensajeError("Por favor, agregue al menos una forma de pago para continuar.")
                                     }
+                                    agregarColaImpresion()
                                     iniciarMenuSeleccionarMedioPago = false
                                 },
                                 objetoAdaptardor = objetoAdaptardor,
@@ -5511,27 +5898,50 @@ fun IniciarInterfazFacturacion(
 
     if (iniciarMenuConfComoProforma) {
 
-        AlertDialog(
-            modifier = Modifier.background(Color.White),
-            containerColor = Color.White,
-            onDismissRequest = { },
-            title = {
-                Text(
-                    "Facturar como Proforma",
-                    fontFamily = fontAksharPrincipal,
-                    fontWeight = FontWeight.Medium,
-                    fontSize = obtenerEstiloDisplayMedium(),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    textAlign = TextAlign.Center,
-                    color = Color.Black
-                )
-            },
-            text = {
-                Box{
+        var isMenuVisible by remember { mutableStateOf(false) }
+
+        LaunchedEffect(Unit) {
+            delay(100)
+            isMenuVisible = true
+        }
+
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black.copy(alpha = 0.3f))
+                .clickable(enabled = false) {},
+            contentAlignment = Alignment.Center
+        ) {
+            AnimatedVisibility(
+                visible = isMenuVisible,
+                enter = fadeIn(animationSpec = tween(500)) + slideInVertically(initialOffsetY = { it }),
+                exit = fadeOut(animationSpec = tween(500)) + slideOutVertically(targetOffsetY = { it })
+            ) {
+                Surface(
+                    modifier = Modifier
+                        .wrapContentWidth()
+                        .wrapContentHeight()
+                        .padding(objetoAdaptardor.ajustarAltura(16))
+                        .align(Alignment.Center),
+                    shape = RoundedCornerShape(objetoAdaptardor.ajustarAltura(12)),
+                    color = Color.White,
+                    shadowElevation = 8.dp
+                ) {
                     Column(
-                        verticalArrangement = Arrangement.spacedBy(objetoAdaptardor.ajustarAltura(4))
+                        verticalArrangement = Arrangement.spacedBy(objetoAdaptardor.ajustarAltura(6)),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier.padding(objetoAdaptardor.ajustarAltura(16))
                     ) {
+                        Text(
+                            "Facturar como Proforma",
+                            fontFamily = fontAksharPrincipal,
+                            fontWeight = FontWeight.Medium,
+                            fontSize = obtenerEstiloDisplayMedium(),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            textAlign = TextAlign.Center,
+                            color = Color.Black
+                        )
                         TText(
                             text = "Ingrese un correo si desea recibir una copia de la proforma: ",
                             fontSize = obtenerEstiloTitleSmall(),
@@ -5553,34 +5963,135 @@ fun IniciarInterfazFacturacion(
                                 .wrapContentHeight(),
                             fontSize = obtenerEstiloBodyMedium()
                         )
+                        Row (
+                            horizontalArrangement = Arrangement.spacedBy(objetoAdaptardor.ajustarAncho(8))
+                        ) {
+                            BButton(
+                                text = "Procesar",
+                                onClick = {
+                                    tipoFormaProcesar = "proforma"
+                                    guardarProforma = true
+                                    iniciarMenuConfComoProforma = false
+                                },
+                                objetoAdaptardor = objetoAdaptardor,
+                                modifier = Modifier.weight(1f)
+                            )
+
+                            BButton(
+                                text = "Cancelar",
+                                onClick = {
+                                    correoProformaTemp =  ""
+                                    iniciarMenuProcesar = true
+                                    iniciarMenuConfComoProforma = false
+                                },
+                                objetoAdaptardor = objetoAdaptardor,
+                                modifier = Modifier.weight(1f),
+                                backgroundColor = Color.Red
+                            )
+                        }
                     }
                 }
-            },
-            confirmButton = {
-                BButton(
-                    text = "Procesar",
-                    onClick = {
-                        tipoFormaProcesar = "proforma"
-                        guardarProforma = true
-                        iniciarMenuConfComoProforma = false
-                    },
-                    objetoAdaptardor = objetoAdaptardor,
-                    modifier = Modifier.width(objetoAdaptardor.ajustarAncho(120))
-                )
-            },
-            dismissButton = {
-                BButton(
-                    text = "Cancelar",
-                    onClick = {
-                        iniciarMenuProcesar = true
-                        iniciarMenuConfComoProforma = false
-                    },
-                    objetoAdaptardor = objetoAdaptardor,
-                    modifier = Modifier.width(objetoAdaptardor.ajustarAncho(120)),
-                    backgroundColor = Color.Red
-                )
             }
-        )
+        }
+    }
+
+    if (iniciarMenuActuNombreProforma) {
+
+        var isMenuVisible by remember { mutableStateOf(false) }
+
+        LaunchedEffect(Unit) {
+            delay(100)
+            isMenuVisible = true
+        }
+
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black.copy(alpha = 0.3f))
+                .clickable(enabled = false) {},
+            contentAlignment = Alignment.Center
+        ) {
+            AnimatedVisibility(
+                visible = isMenuVisible,
+                enter = fadeIn(animationSpec = tween(500)) + slideInVertically(initialOffsetY = { it }),
+                exit = fadeOut(animationSpec = tween(500)) + slideOutVertically(targetOffsetY = { it })
+            ) {
+                Surface(
+                    modifier = Modifier
+                        .wrapContentWidth()
+                        .wrapContentHeight()
+                        .padding(objetoAdaptardor.ajustarAltura(16))
+                        .align(Alignment.Center),
+                    shape = RoundedCornerShape(objetoAdaptardor.ajustarAltura(12)),
+                    color = Color.White,
+                    shadowElevation = 8.dp
+                ) {
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(objetoAdaptardor.ajustarAltura(6)),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier.padding(objetoAdaptardor.ajustarAltura(16))
+                    ) {
+                        Text(
+                            "Actualizar Nombre Cliente",
+                            fontFamily = fontAksharPrincipal,
+                            fontWeight = FontWeight.Medium,
+                            fontSize = obtenerEstiloDisplayMedium(),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            textAlign = TextAlign.Center,
+                            color = Color.Black
+                        )
+
+                        TText(
+                            text = "Ingrese el nuevo nombre: ",
+                            fontSize = obtenerEstiloTitleSmall(),
+                            modifier = Modifier.fillMaxWidth(),
+                            textAlign = TextAlign.Center,
+                            maxLines = 4
+                        )
+                        BBasicTextField(
+                            value = nombreProformaTemp,
+                            onValueChange =  { nuevoValor ->
+                                nombreProformaTemp = nuevoValor
+                            },
+                            utilizarMedidas = false,
+                            placeholder = "Nombre del Cliente",
+                            icono = Icons.Filled.Person,
+                            objetoAdaptardor = objetoAdaptardor,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .wrapContentHeight(),
+                            fontSize = obtenerEstiloBodyMedium()
+                        )
+
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(objetoAdaptardor.ajustarAncho(8))
+                        ) {
+                            BButton(
+                                text = "Actualizar",
+                                onClick = {
+                                    actualizarNombreProforma = true
+                                    iniciarMenuActuNombreProforma = false
+                                },
+                                objetoAdaptardor = objetoAdaptardor,
+                                modifier = Modifier.weight(1f)
+                            )
+
+                            BButton(
+                                text = "Cancelar",
+                                onClick = {
+                                    iniciarMenuActuNombreProforma = false
+                                    nombreProformaTemp = ""
+                                },
+                                objetoAdaptardor = objetoAdaptardor,
+                                modifier = Modifier.weight(1f),
+                                backgroundColor = Color.Red
+                            )
+                        }
+                    }
+                }
+            }
+        }
     }
 
     if (iniciarPantallaEstadoImpresion) {
@@ -5633,7 +6144,7 @@ fun IniciarInterfazFacturacion(
                                             .padding(4.dp)
                                     )
                                     TText(
-                                        text = if(estadoProforma == "2") "Reimprimiendo..." else "Imprimiendo...",
+                                        text = if(estadoProformaInicial == "2") "Reimprimiendo..." else "Imprimiendo...",
                                         fontSize = obtenerEstiloTitleSmall(),
                                         modifier = Modifier.fillMaxWidth()
                                     )
@@ -5652,16 +6163,40 @@ fun IniciarInterfazFacturacion(
                                             .padding(4.dp)
                                     )
                                     TText(
-                                        text = if(exitoImpresion) if(estadoProforma=="2") "Reimpresión exitosa!" else "Impresión exitosa" else if(estadoProforma=="2") "Error en la Reimpresión!" else "Error en la impresión!",
+                                        text = if(exitoImpresion) if(estadoProformaInicial=="2") "Reimpresión exitosa!" else "Impresión exitosa" else if(estadoProformaInicial=="2") "Error en la Reimpresión!" else "Error en la impresión!",
                                         fontSize = obtenerEstiloTitleSmall(),
                                         modifier = Modifier.fillMaxWidth()
                                     )
                                 }
+                                AnimatedVisibility(
+                                    visible = exitoImpresion && listaImpresion.isNotEmpty(),
+                                    enter = fadeIn(animationSpec = tween(500)) + slideInVertically(initialOffsetY = { it }),
+                                    exit = fadeOut(animationSpec = tween(500)) + slideOutVertically(targetOffsetY = { it })
+                                ) {
+                                    Row(
+                                        horizontalArrangement = Arrangement.spacedBy(
+                                            objetoAdaptardor.ajustarAncho(8)
+                                        )
+                                    ) {
+                                        BButton(
+                                            text = "Imprimir Copia ${listaImpresion.first().clave}",
+                                            onClick = {
+                                                imprimir = true
+                                            },
+                                            textSize = obtenerEstiloBodyBig(),
+                                            objetoAdaptardor = objetoAdaptardor,
+                                            modifier = Modifier.weight(1f),
+                                            backgroundColor = Color(0xFFF44336)
+                                        )
+                                    }
+                                }
                             }
                         }
 
+
+
                         AnimatedVisibility(
-                            visible = !exitoImpresion &&!isImprimiendo,
+                            visible = !exitoImpresion && !isImprimiendo,
                             enter = fadeIn(animationSpec = tween(500)) + slideInVertically(initialOffsetY = { it }),
                             exit = fadeOut(animationSpec = tween(500)) + slideOutVertically(targetOffsetY = { it })
                         ) {
@@ -5690,7 +6225,7 @@ fun IniciarInterfazFacturacion(
                                     modifier = Modifier.weight(1f)
                                 )
                                 BButton(
-                                    text = "Impresora",
+                                    text = "Reconectar",
                                     onClick = {
                                         coroutineScope.launch {
                                             if(!gestorImpresora.validarConexion(context)) return@launch
@@ -5710,7 +6245,7 @@ fun IniciarInterfazFacturacion(
         }
     }
 
-    if (iniciarMenuOpcionesCliente){
+    if (iniciarMenuOpcionesCliente) {
         var isMenuVisible by remember { mutableStateOf(false) }
 
         LaunchedEffect(Unit) {
@@ -5799,6 +6334,17 @@ fun IniciarInterfazFacturacion(
                         )
 
                         BButton(
+                            text = "Actualizar Nombre",
+                            onClick = {
+                                iniciarMenuActuNombreProforma = true
+                                iniciarMenuOpcionesCliente = false
+                            },
+                            objetoAdaptardor = objetoAdaptardor,
+                            modifier = Modifier.fillMaxWidth(),
+                            textSize = obtenerEstiloBodyBig()
+                        )
+
+                        BButton(
                             text = "Cambiar a SN",
                             onClick = {
                                 clienteSeleccionado = ClienteFacturacion(
@@ -5834,7 +6380,7 @@ fun IniciarInterfazFacturacion(
         }
     }
 
-    if (iniciarMenuAgregaEditaCliente){
+    if (iniciarMenuAgregaEditaCliente) {
         var isMenuVisible by remember { mutableStateOf(false) }
 
         LaunchedEffect(Unit) {
@@ -5865,7 +6411,7 @@ fun IniciarInterfazFacturacion(
                     shadowElevation = 8.dp
                 ) {
                     Column(
-                        verticalArrangement = Arrangement.spacedBy(objetoAdaptardor.ajustarAltura(8)),
+                        verticalArrangement = Arrangement.spacedBy(objetoAdaptardor.ajustarAltura(6)),
                         horizontalAlignment = Alignment.CenterHorizontally,
                         modifier = Modifier.padding(objetoAdaptardor.ajustarAltura(16))
                     ) {
@@ -5933,7 +6479,11 @@ fun IniciarInterfazFacturacion(
                                                     .border(
                                                         1.dp,
                                                         color = Color.Gray,
-                                                        RoundedCornerShape(objetoAdaptardor.ajustarAltura(10))
+                                                        RoundedCornerShape(
+                                                            objetoAdaptardor.ajustarAltura(
+                                                                10
+                                                            )
+                                                        )
                                                     ),
                                                 fontSize = obtenerEstiloBodyMedium(),
                                                 mostrarLeadingIcon = false,
@@ -5975,7 +6525,11 @@ fun IniciarInterfazFacturacion(
                                                 .border(
                                                     1.dp,
                                                     color = Color.Gray,
-                                                    RoundedCornerShape(objetoAdaptardor.ajustarAltura(10))
+                                                    RoundedCornerShape(
+                                                        objetoAdaptardor.ajustarAltura(
+                                                            10
+                                                        )
+                                                    )
                                                 ),
                                             backgroundColor = Color.White,
                                             fontSize = obtenerEstiloBodyBig(),
@@ -6012,7 +6566,11 @@ fun IniciarInterfazFacturacion(
                                                     .border(
                                                         1.dp,
                                                         color = Color.Gray,
-                                                        RoundedCornerShape(objetoAdaptardor.ajustarAltura(10))
+                                                        RoundedCornerShape(
+                                                            objetoAdaptardor.ajustarAltura(
+                                                                10
+                                                            )
+                                                        )
                                                     ),
                                                 backgroundColor = Color.White,
                                                 fontSize = obtenerEstiloBodyBig(),
@@ -6027,7 +6585,7 @@ fun IniciarInterfazFacturacion(
                                             modifier = Modifier.weight(1f)
                                         ){
                                             TText(
-                                                text = "Telefono: ",
+                                                text = "Teléfono: ",
                                                 modifier = Modifier.fillMaxWidth(),
                                                 fontSize = obtenerEstiloBodySmall(),
                                                 textAlign = TextAlign.Start
@@ -6044,7 +6602,11 @@ fun IniciarInterfazFacturacion(
                                                     .border(
                                                         1.dp,
                                                         color = Color.Gray,
-                                                        RoundedCornerShape(objetoAdaptardor.ajustarAltura(10))
+                                                        RoundedCornerShape(
+                                                            objetoAdaptardor.ajustarAltura(
+                                                                10
+                                                            )
+                                                        )
                                                     ),
                                                 fontSize = obtenerEstiloBodyMedium(),
                                                 mostrarLeadingIcon = false,
@@ -6075,7 +6637,11 @@ fun IniciarInterfazFacturacion(
                                                 .border(
                                                     1.dp,
                                                     color = Color.Gray,
-                                                    RoundedCornerShape(objetoAdaptardor.ajustarAltura(10))
+                                                    RoundedCornerShape(
+                                                        objetoAdaptardor.ajustarAltura(
+                                                            10
+                                                        )
+                                                    )
                                                 ),
                                             backgroundColor = Color.White,
                                             fontSize = obtenerEstiloBodyBig(),
@@ -6107,7 +6673,11 @@ fun IniciarInterfazFacturacion(
                                                 .border(
                                                     1.dp,
                                                     color = Color.Gray,
-                                                    RoundedCornerShape(objetoAdaptardor.ajustarAltura(10))
+                                                    RoundedCornerShape(
+                                                        objetoAdaptardor.ajustarAltura(
+                                                            10
+                                                        )
+                                                    )
                                                 ),
                                             backgroundColor = Color.White,
                                             fontSize = obtenerEstiloBodyBig(),
@@ -6143,7 +6713,11 @@ fun IniciarInterfazFacturacion(
                                                     .border(
                                                         1.dp,
                                                         color = Color.Gray,
-                                                        RoundedCornerShape(objetoAdaptardor.ajustarAltura(10))
+                                                        RoundedCornerShape(
+                                                            objetoAdaptardor.ajustarAltura(
+                                                                10
+                                                            )
+                                                        )
                                                     ),
                                                 backgroundColor = Color.White,
                                                 fontSize = obtenerEstiloBodyBig(),
@@ -6175,7 +6749,11 @@ fun IniciarInterfazFacturacion(
                                                     .border(
                                                         1.dp,
                                                         color = Color.Gray,
-                                                        RoundedCornerShape(objetoAdaptardor.ajustarAltura(10))
+                                                        RoundedCornerShape(
+                                                            objetoAdaptardor.ajustarAltura(
+                                                                10
+                                                            )
+                                                        )
                                                     ),
                                                 fontSize = obtenerEstiloBodyMedium(),
                                                 mostrarLeadingIcon = false,
@@ -6213,7 +6791,11 @@ fun IniciarInterfazFacturacion(
                                                     .border(
                                                         1.dp,
                                                         color = Color.Gray,
-                                                        RoundedCornerShape(objetoAdaptardor.ajustarAltura(10))
+                                                        RoundedCornerShape(
+                                                            objetoAdaptardor.ajustarAltura(
+                                                                10
+                                                            )
+                                                        )
                                                     ),
                                                 backgroundColor = Color.White,
                                                 fontSize = obtenerEstiloBodyBig(),
@@ -6245,7 +6827,11 @@ fun IniciarInterfazFacturacion(
                                                     .border(
                                                         1.dp,
                                                         color = Color.Gray,
-                                                        RoundedCornerShape(objetoAdaptardor.ajustarAltura(10))
+                                                        RoundedCornerShape(
+                                                            objetoAdaptardor.ajustarAltura(
+                                                                10
+                                                            )
+                                                        )
                                                     ),
                                                 fontSize = obtenerEstiloBodyMedium(),
                                                 mostrarLeadingIcon = false,

@@ -105,8 +105,10 @@ import com.soportereal.invefacon.funciones_de_interfaces.gestorImpresora
 import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloBodyBig
 import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloBodySmall
 import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloHeadBig
+import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloLabelBig
 import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloLabelSmall
 import com.soportereal.invefacon.funciones_de_interfaces.obtenerParametroLocal
+import com.soportereal.invefacon.funciones_de_interfaces.validarVersionApp
 import com.soportereal.invefacon.interfaces.pantallas_principales.gestorEstadoPantallaCarga
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -182,6 +184,10 @@ fun IniciarInterfazInicioSesionCompact(
 
     LaunchedEffect(snackbarHostState) {
         snackbarHostState.currentSnackbarData?.dismiss()
+    }
+
+    LaunchedEffect (Unit) {
+        validarVersionApp(contexto)
     }
 
     ConstraintLayout (
@@ -887,7 +893,7 @@ fun IniciarInterfazInicioSesionCompact(
                     color = Color.White,
                     fontFamily = fontAksharPrincipal,
                     fontWeight = FontWeight.Light,
-                    fontSize = obtenerEstiloLabelSmall(),
+                    fontSize = obtenerEstiloLabelBig(),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     textAlign = TextAlign.Center,
@@ -899,7 +905,7 @@ fun IniciarInterfazInicioSesionCompact(
                     color = Color.White,
                     fontFamily = fontAksharPrincipal,
                     fontWeight = FontWeight.Light,
-                    fontSize = obtenerEstiloLabelSmall(),
+                    fontSize = obtenerEstiloLabelBig(),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     textAlign = TextAlign.Center,
@@ -907,13 +913,13 @@ fun IniciarInterfazInicioSesionCompact(
                 )
 
                 Text(
-                    text = "Version: $versionApp",
+                    text = "Versión: $versionApp",
                     color = Color.White,
                     fontFamily = fontAksharPrincipal,
                     fontWeight = FontWeight.Light,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
-                    fontSize = obtenerEstiloLabelSmall(),
+                    fontSize = obtenerEstiloLabelBig(),
                     textAlign = TextAlign.Center,
                     modifier = Modifier.width(objetoAdaptardor.ajustarAncho(142)).padding(end = 6.dp)
                 )

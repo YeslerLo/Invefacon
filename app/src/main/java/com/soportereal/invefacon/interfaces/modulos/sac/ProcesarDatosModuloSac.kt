@@ -12,6 +12,7 @@ class ProcesarDatosModuloSac(apiToken: String){
     suspend fun obtenerListaMesas(mesa: String="", salon: String): JSONObject?{
 
         val formBody = MultipartBody.Builder().setType(MultipartBody.FORM)
+            .addFormDataPart("isUltimaVersion","1")
             .addFormDataPart("mesa",mesa)
             .addFormDataPart("salon",salon)
             .build()

@@ -2,6 +2,8 @@ package com.soportereal.invefacon.interfaces.pantallas_principales
 
 
 import android.annotation.SuppressLint
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -24,7 +26,6 @@ import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -44,16 +45,16 @@ import androidx.navigation.compose.rememberNavController
 import com.google.accompanist.systemuicontroller.SystemUiController
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.soportereal.invefacon.R
+import com.soportereal.invefacon.funciones_de_interfaces.FuncionesParaAdaptarContenido
 import com.soportereal.invefacon.funciones_de_interfaces.NavHostPantallasMenuPrincipal
 import com.soportereal.invefacon.funciones_de_interfaces.RutasPantallasMenuPrincipal.PantallaAjustes
 import com.soportereal.invefacon.funciones_de_interfaces.RutasPantallasMenuPrincipal.PantallaInicio
 import com.soportereal.invefacon.funciones_de_interfaces.RutasPantallasMenuPrincipal.PantallaSalir
-import com.soportereal.invefacon.funciones_de_interfaces.FuncionesParaAdaptarContenido
 import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloBodySmall
 import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloLabelBig
-import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloLabelSmall
 
 
+@RequiresApi(Build.VERSION_CODES.S)
 @SuppressLint("SourceLockedOrientationActivity")
 @Composable
 fun IniciarInterfazMenuPrincipalCompact(
@@ -71,8 +72,6 @@ fun IniciarInterfazMenuPrincipalCompact(
     val dpFontPantalla= configuration.fontScale
     val objetoAdaptardor= FuncionesParaAdaptarContenido(dpAltoPantalla, dpAnchoPantalla, dpFontPantalla)
     val navControllerPantallasMenuPrincipal = rememberNavController()
-    val isCargandoPantallaMenuPrincipal by gestorEstadoPantallaCarga.isCargandoPantalla.collectAsState()
-    val mostrarRespuestaApi by estadoRespuestaApi.mostrarDatosRespuestaApi.collectAsState()
 
     Box(modifier = Modifier
         .statusBarsPadding()
@@ -118,7 +117,7 @@ fun IniciarInterfazMenuPrincipalCompact(
                     color = Color.White,
                     fontFamily = fontAksharPrincipal,
                     fontWeight = FontWeight.Light,
-                    fontSize = obtenerEstiloLabelSmall(),
+                    fontSize = obtenerEstiloLabelBig(),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     textAlign = TextAlign.Center,
@@ -130,7 +129,7 @@ fun IniciarInterfazMenuPrincipalCompact(
                     color = Color.White,
                     fontFamily = fontAksharPrincipal,
                     fontWeight = FontWeight.Light,
-                    fontSize = obtenerEstiloLabelSmall(),
+                    fontSize = obtenerEstiloLabelBig(),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     textAlign = TextAlign.Center,
@@ -138,21 +137,17 @@ fun IniciarInterfazMenuPrincipalCompact(
                 )
 
                 Text(
-                    text = "Version: $versionApp",
+                    text = "Versión: $versionApp",
                     color = Color.White,
                     fontFamily = fontAksharPrincipal,
                     fontWeight = FontWeight.Light,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
-                    fontSize = obtenerEstiloLabelSmall(),
+                    fontSize = obtenerEstiloLabelBig(),
                     textAlign = TextAlign.Center,
                     modifier = Modifier.width(objetoAdaptardor.ajustarAncho(142)).padding(end = 6.dp)
                 )
             }
-        }
-
-        if(isCargandoPantallaMenuPrincipal || mostrarRespuestaApi){
-            PantallaCarga(systemUiController)
         }
     }
 }
@@ -297,6 +292,7 @@ fun NavegacionInferior(navController: NavController) {
 
 
 
+@RequiresApi(Build.VERSION_CODES.S)
 @Preview(showBackground = true, widthDp = 384, heightDp = 812, fontScale = 1.15F)
 @Composable
 private fun Preview(){

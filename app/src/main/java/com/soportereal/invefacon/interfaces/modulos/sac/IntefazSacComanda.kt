@@ -1459,7 +1459,7 @@ fun InterfazSacComanda(
                 )
 
                 Text(
-                    text = "Version: $versionApp",
+                    text = "Versión: $versionApp",
                     color = Color.White,
                     fontFamily = fontAksharPrincipal,
                     fontWeight = FontWeight.Light,

@@ -33,10 +33,10 @@ class ProcesarDatosModuloFacturacion(apiToken: String)
         return objetoFuncionesHttpInvefacon.metodoPost(formBody = formBody, apiDirectorio = "facturacion/nuevaproforma.php")
     }
 
-    suspend fun abrirProforma(numero: String = ""):JSONObject?{
+    suspend fun abrirProforma(numero: String = ""):JSONObject? {
         val formBody = MultipartBody.Builder().setType(MultipartBody.FORM)
             .addFormDataPart("0","")
-            .addFormDataPart("0","")
+            .addFormDataPart("isUltimaVersion","1")
             .addFormDataPart("numerodocumento",numero)
             .build()
         return objetoFuncionesHttpInvefacon.metodoPost(formBody = formBody, apiDirectorio = "facturacion/AbrirProforma.php")
@@ -247,12 +247,27 @@ class ProcesarDatosModuloFacturacion(apiToken: String)
             .build()
         return objetoFuncionesHttpInvefacon.metodoPost(apiBody, "facturacion/ActualizaDetalleFacturaProforma.php")
     }
+
+    suspend fun guardarOrdenCompra(detalle: String, numero: String): JSONObject? {
+        val apiBody = MultipartBody.Builder().setType(MultipartBody.FORM)
+            .addFormDataPart("numero", numero)
+            .addFormDataPart("ordencompra", detalle)
+            .build()
+        return objetoFuncionesHttpInvefacon.metodoPost(apiBody, "facturacion/agregarordencompra.php")
+    }
+
+    suspend fun actualizarNombreProforma(nombre: String, numero: String): JSONObject? {
+        val apiBody = MultipartBody.Builder().setType(MultipartBody.FORM)
+            .addFormDataPart("numero", numero)
+            .addFormDataPart("nombre", nombre)
+            .build()
+        return objetoFuncionesHttpInvefacon.metodoPost(apiBody, "facturacion/ActualizarNombreProforma.php")
+    }
 }
 
 @RequiresApi(Build.VERSION_CODES.S)
 
-suspend fun imprimirFactura(factura: Factura, context: Context, nombreEmpresa : String) : Boolean{
-    val versionApp = R.string.app_version
+suspend fun imprimirFactura(factura: Factura, context: Context, nombreEmpresa : String, datosImpresion : ParClaveValor) : Boolean{
     var facturaTexto = ""
 
     try {
@@ -269,7 +284,7 @@ suspend fun imprimirFactura(factura: Factura, context: Context, nombreEmpresa : 
     facturaTexto += "\n"
     facturaTexto += addTextBig(factura.empresa.nombre, "C", context = context)
     facturaTexto += addText("IDENTIFICACION: "+factura.empresa.cedula, "C", context = context)
-    facturaTexto += addTextTall("FACTURA ELECTRONICA ${factura.descripcionMedioPago.uppercase(Locale.ROOT)}", "C", destacar = true, context = context)
+    facturaTexto += addTextTall("FACTURA ELECTRONICA ${factura.descripcionMedioPago.uppercase(Locale.ROOT)} ${if(datosImpresion.valor == "2") "COPIA ${datosImpresion.clave}" else if(datosImpresion.valor == "3") "REIMPRESION" else "ORIGINAL"}", "C", destacar = true, context = context)
     facturaTexto += addTextTall("DOC: ${factura.ventaMadre.Numero}", "C", context = context)
     facturaTexto += addText("CLAVE: ${factura.clave.substring(0, 25)}", "C", context = context)
     facturaTexto += addText("       ${factura.clave.substring(25, 50)}", "C", context = context)
@@ -284,12 +299,12 @@ suspend fun imprimirFactura(factura: Factura, context: Context, nombreEmpresa : 
     val listaIvas = mutableListOf<ParClaveValor>()
     for (i in 0 until factura.ventaHija.size) {
         val articulo = factura.ventaHija[i]
-        if (obtenerValorParametroEmpresa("15", "0") == "1") facturaTexto += addText("COD: #${articulo.ArticuloCodigo}", "L", context = context)
-        facturaTexto += addText("CABYS: ${articulo.ArticuloCabys}", "L", context = context)
-        facturaTexto += addText(articulo.nombreArticulo, "L", destacar = true, context = context)
+        if (obtenerValorParametroEmpresa("15", "0") == "1") facturaTexto += addText("COD: #${articulo.ArticuloCodigo}", "C", context = context)
+        if (obtenerValorParametroEmpresa("307", "0") == "1") facturaTexto += addText("CABYS: ${articulo.ArticuloCabys}", "C", context = context)
+        facturaTexto += addText(articulo.nombreArticulo, "C", destacar = true, context = context)
         facturaTexto += addText("CANT: ${articulo.ArticuloCantidad.toDouble()} [R]PREC: ${separacionDeMiles(isString = true, montoString = articulo.ArticuloVenta)}", "L", context = context)
-        facturaTexto += addText("SUB TOTAL: ${separacionDeMiles(isString = true, montoString = articulo.ArticuloVentaSubTotal1)}", "R", context = context)
-        facturaTexto += addText("IMP: ${articulo.ArticuloIvaPorcentage}% [R]DESC(${articulo.ArticuloDescuentoPorcentage}%): ${separacionDeMiles(isString = true, montoString = articulo.ArticuloDescuentoMonto)}", "L", context = context)
+        facturaTexto += addText("IMP: ${articulo.ArticuloIvaPorcentage}%  [R]SUBTOTAL: ${separacionDeMiles(isString = true, montoString = articulo.ArticuloVentaSubTotal1)}", "L", context = context)
+        facturaTexto += addText("DESC(${articulo.ArticuloDescuentoPorcentage}%): ${separacionDeMiles(isString = true, montoString = articulo.ArticuloDescuentoMonto)}", "R", context = context)
         facturaTexto += addText("TOTAL: ${separacionDeMiles(isString = true, montoString = articulo.ArticuloVentaGravado)}", "R", context = context, destacar = true)
         facturaTexto += agregarLinea(context = context)
         val ivaTemp = listaIvas.find { it.clave == articulo.ArticuloIvaPorcentage }
@@ -303,7 +318,7 @@ suspend fun imprimirFactura(factura: Factura, context: Context, nombreEmpresa : 
     if (obtenerValorParametroEmpresa("192", "0") == "1"){
         facturaTexto += "\n"
         facturaTexto += agregarDobleLinea(context = context, justification = "C")
-        facturaTexto += addText("SUB TOTAL: [R]${separacionDeMiles(isString = true, montoString = (factura.ventaMadre.TotalVenta.toDouble()+factura.ventaMadre.TotalDescuento.toDouble()).toString())}", "R", context = context)
+        facturaTexto += addText("SUBTOTAL: [R]${separacionDeMiles(isString = true, montoString = (factura.ventaMadre.TotalVenta.toDouble()+factura.ventaMadre.TotalDescuento.toDouble()).toString())}", "R", context = context)
         if (obtenerValorParametroEmpresa("26", "0") == "1") facturaTexto += addText("DESCUENTO: [R]${separacionDeMiles(isString = true, montoString = factura.ventaMadre.TotalDescuento)}", "R", context = context)
         facturaTexto += addText("MERC GRAVADA: [R]${ separacionDeMiles(isString = true, montoString = factura.ventaMadre.TotalMercGravado)}", "R", context = context)
         facturaTexto += addText("IVA: [R]${separacionDeMiles(isString = true, montoString = factura.ventaMadre.TotalIva)}", "R", context = context)
@@ -322,7 +337,7 @@ suspend fun imprimirFactura(factura: Factura, context: Context, nombreEmpresa : 
     facturaTexto += addText(factura.ventaMadre.MedioPagoDetalle.replace("\r", "").uppercase(Locale.ROOT), "C", context = context, conLiena = true)
     facturaTexto += addText(obtenerValorParametroEmpresa("137", "GRACIAS POR SU COMPRA!"), "C", context = context)
     facturaTexto += addText(factura.leyenda, "C", context = context)
-    facturaTexto += addText("A.$versionApp", "C", context = context, destacar = true)
+    facturaTexto += addText("INVEFACON ANDROID V.${context.getString(R.string.app_version)}", "C", context = context, destacar = true)
     return gestorImpresora.imprimir(text = facturaTexto, context)
 }
 

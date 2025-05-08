@@ -83,6 +83,7 @@ import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloBodyBig
 import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloHeadSmall
 import com.soportereal.invefacon.funciones_de_interfaces.tienePermiso
 import com.soportereal.invefacon.funciones_de_interfaces.validarExitoRestpuestaServidor
+import com.soportereal.invefacon.funciones_de_interfaces.validarVersionApp
 import com.soportereal.invefacon.interfaces.modulos.facturacion.ProcesarDatosModuloFacturacion
 import com.soportereal.invefacon.interfaces.pantallas_principales.estadoRespuestaApi
 import com.soportereal.invefacon.interfaces.pantallas_principales.gestorEstadoPantallaCarga
@@ -116,15 +117,22 @@ fun IniciarInterfazInicio(
     var iniciarPantallaModulo by remember { mutableStateOf(false) }
     var rutaPantallaModulo by remember { mutableStateOf("") }
     val contexto = LocalContext.current
+    var descargarPermisos by remember { mutableStateOf(true) }
     var iniciarMenuConfirmacionSalidaModulo by remember { mutableStateOf(false) }
     guardarParametroSiNoExiste(contexto, "isImpresionActiva$codUsuario$nombreEmpresa", "0")
     guardarParametroSiNoExiste(contexto, "cantidadCaracPorLineaImpre", "32")
+
+    LaunchedEffect (Unit) {
+        validarVersionApp(contexto)
+    }
 
     LaunchedEffect(Unit) {
         descargarImagenSiNoExiste(contexto,"https://invefacon.com/img/$nombreEmpresa/$nombreEmpresa.jpg", nombreArchivo = "$nombreEmpresa.jpg")
     }
 
-    LaunchedEffect (Unit) {
+    LaunchedEffect (descargarPermisos) {
+        if (!descargarPermisos) return@LaunchedEffect
+        gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(true)
         val result = objectoProcesadorDatosApi.obtenerPermisosUsuario(codUsuario)
         if (result == null) return@LaunchedEffect
         if (!validarExitoRestpuestaServidor(result)) return@LaunchedEffect estadoRespuestaApi.cambiarEstadoRespuestaApi(mostrarSoloRespuestaError = true, datosRespuesta = result)
@@ -133,6 +141,7 @@ fun IniciarInterfazInicio(
             ParClaveValor(clave = permiso.getString("Cod_Derecho"), valor = permiso.getString("Descripcion"))
         }
         gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
+        descargarPermisos = false
     }
 
     // Interceptar el botón de retroceso
@@ -163,7 +172,7 @@ fun IniciarInterfazInicio(
                     if (rutaPantalla != null && !tienePermiso(codPermiso)) return@Button mostrarMensajeError("NO POSEE EL PERMISO $codPermiso PARA ACCEDER AL MODULO ${text.uppercase(Locale.ROOT)}")
                     CoroutineScope(Dispatchers.IO).launch {
                         if (rutaPantalla==null) return@launch mostrarMensajeError("Actualmente el módulo de $text se encuentra en desarrollo...")
-                        gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
+                        if(listaPermisos.isEmpty()) descargarPermisos = true
                         rutaPantallaModulo=rutaPantalla
                         iniciarPantallaModulo=true
                     }

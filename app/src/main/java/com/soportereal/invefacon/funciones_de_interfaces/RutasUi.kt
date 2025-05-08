@@ -3,6 +3,8 @@ package com.soportereal.invefacon.funciones_de_interfaces
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.pm.ActivityInfo
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.slideInHorizontally
@@ -95,6 +97,7 @@ sealed class RutasPantallasMenuPrincipal(
 
 
 
+@RequiresApi(Build.VERSION_CODES.S)
 @SuppressLint("ContextCastToActivity")
 @Composable
 fun NavegacionPantallas(
@@ -458,9 +461,11 @@ fun NavegacionPantallas(
 
         }
         PantallaCarga(systemUiController)
+        DialogoActualizacion()
     }
 }
 
+@RequiresApi(Build.VERSION_CODES.S)
 @Composable
 fun NavHostPantallasMenuPrincipal(
     innerPadding: PaddingValues,
@@ -477,7 +482,6 @@ fun NavHostPantallasMenuPrincipal(
         startDestination = "Inicio",
         modifier = Modifier
             .fillMaxSize()
-            .padding(innerPadding)
     ) {
         // Navigacion pantalla Inicio
         navigation(

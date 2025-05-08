@@ -90,6 +90,7 @@ import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloBodySmall
 import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloDisplayBig
 import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloHeadMedium
 import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloHeadSmall
+import com.soportereal.invefacon.funciones_de_interfaces.validarVersionApp
 import com.soportereal.invefacon.interfaces.inicio_sesion.ocultarTeclado
 import com.soportereal.invefacon.interfaces.pantallas_principales.EstadoPantallaCarga
 import com.soportereal.invefacon.interfaces.pantallas_principales.gestorEstadoPantallaCarga
@@ -161,6 +162,14 @@ internal fun IniciarInterfazModuloClientes(
         if(regresarPantallaAnterior){
             navController .popBackStack()
         }
+    }
+
+    LaunchedEffect (Unit) {
+        validarVersionApp(contexto)
+    }
+
+    LaunchedEffect(Unit) {
+        gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
     }
 
     ConstraintLayout(
