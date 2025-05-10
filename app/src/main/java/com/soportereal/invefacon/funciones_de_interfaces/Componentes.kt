@@ -969,6 +969,7 @@ fun ButtonFecha(
 data class ParClaveValor(
     val clave : String = "",
     var valor: String = "",
+    var tipo: String = "", // ALMACENA EL TIPO PRECIO DE VENTA
     var venta : String = "", // MODULO FACTURACION EN EL CALCULO DE IVAS
     val existencia : Double = 0.00, // Para Bodegas modulo Facturacion
     val descripcion : String = "" // Descripcion de parametro empresa

@@ -794,8 +794,9 @@ fun IniciarInterfazFacturacion(
                             for (a in 1 until 11){
                                 listaPrecios.add(
                                     ParClaveValor(
-                                        clave = "$a",
-                                        valor = datosArticulo.getString("Precio$a")
+                                        clave = "$a - $simboloMoneda${separacionDeMiles(datosArticulo.getDouble("Precio$a"))}",
+                                        valor = datosArticulo.getString("Precio$a"),
+                                        tipo = "$a"
                                     )
                                 )
                             }
@@ -859,15 +860,13 @@ fun IniciarInterfazFacturacion(
                 delay(200)
                 val input = datosIngresadosBarraBusquedaArticulos.trim()
                 val coincidenciaExacta = listaArticulosFacturacion.find {
-                    it.codigo.equals(input, ignoreCase = true) ||
-                            it.descripcion.equals(input, ignoreCase = true)
+                    it.descripcion.equals(input, ignoreCase = true) || it.codigo.equals(input, ignoreCase = true)
                 }
                 listaArticulosEncontrados = if (coincidenciaExacta != null) {
                     listOf(coincidenciaExacta)
                 } else {
                     listaArticulosFacturacion.filter {
-                        it.codigo.contains(input, ignoreCase = true) ||
-                                it.descripcion.contains(input, ignoreCase = true)
+                        it.descripcion.contains(input, ignoreCase = true) || it.codigo.contains(input, ignoreCase = true)
                     }.take(50)
                 }
                 isCargandoArticulos = false
@@ -1704,7 +1703,7 @@ fun IniciarInterfazFacturacion(
     ) {
         if (!mostrarVentanaArticulo) return
         var bodegaSeleccionda by remember { mutableStateOf(bodega) }
-        var tipoPrecioSeleccionado by remember { mutableStateOf(articulo.listaPrecios.find { it.clave == precioVenta.trim() }?:ParClaveValor()) }
+        var tipoPrecioSeleccionado by remember { mutableStateOf(articulo.listaPrecios.find { it.tipo == precioVenta.trim() }?:ParClaveValor()) }
         var cantidadProducto by remember { mutableStateOf(if (articulo.articuloCantidad > 0) articulo.articuloCantidad.toString() else "1.0") }
         var cantidadProductoForApi by remember { mutableDoubleStateOf(0.0) }
         var precioUnitarioIva by remember { mutableStateOf("0.00") }
@@ -1806,7 +1805,7 @@ fun IniciarInterfazFacturacion(
                 "5" to "158"
             )
 
-            val codigoParametro = mapaPrecios[tipoPrecioSeleccionado.clave]
+            val codigoParametro = mapaPrecios[tipoPrecioSeleccionado.tipo]
 
             return codigoParametro?.let { validarParametro(it) } ?: true
         }
@@ -1821,7 +1820,7 @@ fun IniciarInterfazFacturacion(
             calcularTotales()
             val precioConDesc = precioProducto.ifEmpty {"0.00"}.toDouble() - montoDescuento.ifEmpty { "0.00" }.toDouble()
             if (precioConDesc < precioMinimoPermitido)  {
-                mostrarMensajeError("El $porcentajeDescuentoProducto% de descuento supera la utilidad mínima, el precio de venta minimo con o sin descuento es de: ${separacionDeMiles(precioMinimoPermitido)}. Por lo tanto, tanto el porcentaje como el monto de descuento se ajustarán a 0 para que pueda ingresar un descuento válido.")
+                mostrarMensajeError("El $porcentajeDescuentoProducto% de descuento supera la utilidad mínima, el precio de venta minimo con o sin descuento es de: $simboloMoneda${separacionDeMiles(precioMinimoPermitido)} $codMonedaProforma. Por lo tanto, tanto el porcentaje como el monto de descuento se ajustarán a 0 para que pueda ingresar un descuento válido.")
                 montoDescuento = ""
                 porcentajeDescuentoProducto = ""
                 calcularTotales()
@@ -2014,7 +2013,7 @@ fun IniciarInterfazFacturacion(
                                                 textPlaceholder = "Precio",
                                                 nuevoValor2 = {
                                                     if(!tienePermiso("005")) return@TextFieldMultifuncional mostrarMensajeError("No posee el permiso 005 para cambiar el precio de venta.")
-                                                    if (it.clave != "1" &&  !tienePermiso( if(it.clave=="10") "040" else "03${it.clave}" ) ) return@TextFieldMultifuncional mostrarMensajeError("No cuenta con el permiso ${if(it.clave=="10") "040" else "03${it.clave}"} para modificar el tipo de precio a ${it.clave}.")
+                                                    if (it.tipo != "1" &&  !tienePermiso( if(it.tipo=="10") "040" else "03${it.tipo}" ) ) return@TextFieldMultifuncional mostrarMensajeError("No cuenta con el permiso ${if(it.tipo=="10") "040" else "03${it.tipo}"} para modificar el tipo de precio a ${it.tipo}.")
                                                     if (obtenerValorParametroEmpresa("278", "0") == "1"){
                                                         porcentajeDescuentoProducto = ""
                                                     }// quitar descuento al cambiar el tipo de precio
@@ -2026,7 +2025,7 @@ fun IniciarInterfazFacturacion(
                                                     precioProducto = it.valor
                                                     calcularTotales()
                                                 },
-                                                valor = tipoPrecioSeleccionado.clave,
+                                                valor = tipoPrecioSeleccionado.tipo,
                                                 mostrarClave = true,
                                                 contieneOpciones = true,
                                                 usarOpciones4 = true,
@@ -2093,11 +2092,7 @@ fun IniciarInterfazFacturacion(
                                                 textPlaceholder = "0.00",
                                                 mostrarLabel = false,
                                                 permitirPuntosDedimales = articulo.fraccionamiento == 1,
-                                                soloPermitirValoresNumericos = true,
-                                                onFocus = {
-                                                    cantidadProducto = ""
-                                                    calcularTotales()
-                                                }
+                                                soloPermitirValoresNumericos = true
                                             )
                                         }
 
@@ -2139,15 +2134,7 @@ fun IniciarInterfazFacturacion(
                                                 mostrarLabel = false,
                                                 soloPermitirValoresNumericos = true,
                                                 darFormatoMiles = true,
-                                                permitirPuntosDedimales = true,
-                                                onFocus = {
-                                                    if(!tienePermiso("003")) return@TextFieldMultifuncional mostrarMensajeError("No posee el permiso 003 para actualizar el precio de venta.")
-                                                    if(!tienePermiso("024")) return@TextFieldMultifuncional mostrarMensajeError("No posee el permiso 024 para editar el precio de venta desde facturación.")
-                                                    precioProducto = ""
-                                                    precioUnitarioIva = ""
-                                                    porcentajeDescuentoProducto = ""
-                                                    calcularTotales()
-                                                }
+                                                permitirPuntosDedimales = true
                                             )
                                         }
                                     }
@@ -2185,18 +2172,8 @@ fun IniciarInterfazFacturacion(
                                         textPlaceholder = "0.00",
                                         mostrarLabel = false,
                                         darFormatoMiles = true,
-                                        soloPermitirValoresNumericos = true,
-                                        onFocus = {
-                                            if(!tienePermiso("003")) return@TextFieldMultifuncional mostrarMensajeError("No posee el permiso 003 para actualizar el precio de venta.")
-                                            if(!tienePermiso("024")) return@TextFieldMultifuncional mostrarMensajeError("No posee el permiso 024 para editar el precio de venta desde facturación.")
-                                            isCalculandoPrecioIva = true
-                                            precioUnitarioIva = ""
-                                            precioProducto = ""
-                                            porcentajeDescuentoProducto = ""
-                                            calcularTotales()
-                                        }
+                                        soloPermitirValoresNumericos = true
                                     )
-//                                        Spacer(modifier = Modifier.height(4.dp))
 
                                     // Descuento
                                     Row(
@@ -2217,11 +2194,11 @@ fun IniciarInterfazFacturacion(
                                                 textPlaceholder = "0.00",
                                                 nuevoValor = {
                                                     if (!tienePermiso("002")) return@TextFieldMultifuncional mostrarMensajeError("No cuenta con el permiso 002 para modificar el descuento de los artículos.")
-                                                    if(!esPrecioValidoConDescuento()) return@TextFieldMultifuncional mostrarMensajeError("No se puede aplicar un descuento a un artículo con precio ${tipoPrecioSeleccionado.clave}")
+                                                    if(!esPrecioValidoConDescuento()) return@TextFieldMultifuncional mostrarMensajeError("No se puede aplicar un descuento a un artículo con precio ${tipoPrecioSeleccionado.tipo}")
                                                     val porcentajeTemp = if(it.trim().isEmpty()) 0.00 else it.trim().toDouble()
                                                     val precioConDesc = precioProducto.ifEmpty { "0.00" }.toDouble() - (precioProducto.ifEmpty { "0.00" }.toDouble() * porcentajeTemp / 100)
-                                                    if ( !tienePermiso("023") && porcentajeTemp>=articulo.descuentoAdmitido) return@TextFieldMultifuncional mostrarMensajeError("No cuenta con el permiso 023 para aplicar Descuento ilimitado, el descuento máximo es de: ${articulo.descuentoAdmitido}%")
-                                                    if (porcentajeTemp > 0.00 && (precioConDesc < precioMinimoPermitido) ) return@TextFieldMultifuncional  if (porcentajeUtilidadMinima == 0.00) mostrarMensajeError("El descuento del $porcentajeTemp% supera el precio mínimo de venta, que es ${separacionDeMiles(precioMinimoPermitido)}, ya sea con o sin aplicar descuentos.") else mostrarMensajeError("El $porcentajeTemp% de descuento supera la utilidad mínima, el precio de venta minimo con o sin descuento es de: ${separacionDeMiles(precioMinimoPermitido)}")
+                                                    if ( !tienePermiso("023") && porcentajeTemp>articulo.descuentoAdmitido) return@TextFieldMultifuncional mostrarMensajeError("No cuenta con el permiso 023 para aplicar Descuento ilimitado, el descuento máximo es de: ${articulo.descuentoAdmitido}%")
+                                                    if (porcentajeTemp > 0.00 && (precioConDesc < precioMinimoPermitido) ) return@TextFieldMultifuncional  if (porcentajeUtilidadMinima == 0.00) mostrarMensajeError("El descuento del $porcentajeTemp% supera el precio mínimo de venta, que es $simboloMoneda ${separacionDeMiles(precioMinimoPermitido)} $codMonedaProforma, ya sea con o sin aplicar descuentos.") else mostrarMensajeError("El $porcentajeTemp% de descuento supera la utilidad mínima, el precio de venta minimo con o sin descuento es de: $simboloMoneda${separacionDeMiles(precioMinimoPermitido)} $codMonedaProforma")
                                                     porcentajeDescuentoProducto = it.trim()
                                                     calcularTotales()
                                                 },
@@ -2245,12 +2222,7 @@ fun IniciarInterfazFacturacion(
                                                 mostrarLabel = false,
                                                 soloPermitirValoresNumericos = true,
                                                 permitirPuntosDedimales = true,
-                                                cantidadLineas = 1,
-                                                onFocus = {
-                                                    if (!tienePermiso("002")) return@TextFieldMultifuncional mostrarMensajeError("No cuenta con el permiso 002 para modificar el descuento de los artículos.")
-                                                    porcentajeDescuentoProducto = ""
-                                                    calcularTotales()
-                                                }
+                                                cantidadLineas = 1
                                             )
                                         }
 
@@ -2267,11 +2239,11 @@ fun IniciarInterfazFacturacion(
                                                 valor = montoDescuento,
                                                 nuevoValor = {
                                                     if (!tienePermiso("002")) return@TextFieldMultifuncional mostrarMensajeError("No cuenta con el permiso 002 para modificar el descuento de los artículos.")
-                                                    if(!esPrecioValidoConDescuento()) return@TextFieldMultifuncional mostrarMensajeError("No se puede aplicar un descuento a un artículo con precio ${tipoPrecioSeleccionado.clave}")
+                                                    if(!esPrecioValidoConDescuento()) return@TextFieldMultifuncional mostrarMensajeError("No se puede aplicar un descuento a un artículo con precio ${tipoPrecioSeleccionado.tipo}")
                                                     val montoTemp = if(it.trim().isEmpty()) 0.00 else it.trim().toDouble()
-                                                    if ( !tienePermiso("023") && montoTemp>=articulo.descuentoAdmitido) return@TextFieldMultifuncional mostrarMensajeError("No cuenta con el permiso 023 para aplicar Descuento ilimitado, el descuento máximo es de: ${articulo.descuentoAdmitido}%")
+                                                    if ( !tienePermiso("023") && montoTemp>articulo.descuentoAdmitido) return@TextFieldMultifuncional mostrarMensajeError("No cuenta con el permiso 023 para aplicar Descuento ilimitado, el descuento máximo es de: ${articulo.descuentoAdmitido}%")
                                                     val precioConDesc = precioProducto.ifEmpty { "0.00" }.toDouble() - montoTemp
-                                                    if (montoTemp > 0.00 && (precioConDesc < precioMinimoPermitido) ) return@TextFieldMultifuncional  if (porcentajeUtilidadMinima == 0.00) mostrarMensajeError("El monto ${separacionDeMiles(montoTemp)} de descuento supera el precio mínimo de venta, que es ${separacionDeMiles(precioMinimoPermitido)}, ya sea con o sin aplicar descuentos.") else mostrarMensajeError("El monto ${separacionDeMiles(montoTemp)} de descuento supera la utilidad mínima, el precio de venta minimo con o sin descuento es de: ${separacionDeMiles(precioMinimoPermitido)}")
+                                                    if (montoTemp > 0.00 && (precioConDesc < precioMinimoPermitido) ) return@TextFieldMultifuncional  if (porcentajeUtilidadMinima == 0.00) mostrarMensajeError("El monto $simboloMoneda${separacionDeMiles(montoTemp)} $codMonedaProforma de descuento supera el precio mínimo de venta, que es $simboloMoneda${separacionDeMiles(precioMinimoPermitido)} $codMonedaProforma, ya sea con o sin aplicar descuentos.") else mostrarMensajeError("El monto $simboloMoneda${separacionDeMiles(montoTemp)} $codMonedaProforma de descuento supera la utilidad mínima, el precio de venta minimo con o sin descuento es de: $simboloMoneda${separacionDeMiles(precioMinimoPermitido)} $codMonedaProforma")
                                                     montoDescuento = it.trim()
                                                     esCambioPorMontoDescuento = true
                                                     calcularTotales()
@@ -2296,17 +2268,10 @@ fun IniciarInterfazFacturacion(
                                                 mostrarLabel = false,
                                                 soloPermitirValoresNumericos = true,
                                                 darFormatoMiles = true,
-                                                permitirPuntosDedimales = true,
-                                                onFocus = {
-                                                    if (!tienePermiso("002")) return@TextFieldMultifuncional mostrarMensajeError("No cuenta con el permiso 002 para modificar el descuento de los artículos.")
-                                                    montoDescuento = ""
-                                                    calcularTotales()
-                                                }
+                                                permitirPuntosDedimales = true
                                             )
                                         }
                                     }
-
-//                                        Spacer(modifier = Modifier.height(4.dp))
 
                                     TText(
                                         text = "Detalles adicionales: ",
@@ -2431,7 +2396,7 @@ fun IniciarInterfazFacturacion(
                                         )
 
                                         BButton(
-                                            text = if (isAgregar) "Agregar" else "Editar",
+                                            text = "Guardar",
                                             objetoAdaptardor = objetoAdaptardor,
                                             onClick = {
                                                 cantidadProducto = cantidadProducto.ifEmpty { "0.00" }
@@ -2445,7 +2410,7 @@ fun IniciarInterfazFacturacion(
                                                         articuloLine = articulo.articuloLineaId,
                                                         tipoDocumento = tipoDocumento,
                                                         articuloCodigo = articulo.codigo,
-                                                        articuloTipoPrecio = tipoPrecioSeleccionado.clave,
+                                                        articuloTipoPrecio = tipoPrecioSeleccionado.tipo,
                                                         articuloActividadEconomica = articulo.actividadEconomica,
                                                         articuloCantidad = cantidadProductoForApi,
                                                         articuloUnidadMedida = articulo.unidadMedida,
