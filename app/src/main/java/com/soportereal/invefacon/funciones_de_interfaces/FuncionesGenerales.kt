@@ -27,11 +27,10 @@ import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentWidth
@@ -54,6 +53,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
@@ -168,6 +168,19 @@ fun obtenerFechaHoy(): String{
     val mesActual = calendario.get(Calendar.MONTH)
     val diaActual = calendario.get(Calendar.DAY_OF_MONTH)
     return  String.format(Locale.ROOT, "%04d-%02d-%02d", anioActual, mesActual + 1, diaActual)
+}
+
+fun centrarTexto(texto: String,  context: Context): String{
+    val cantidadPorLinea = obtenerParametroLocal(context,"cantidadCaracPorLineaImpre").toInt()
+    val lienas = segmentarTextoConEspacios(texto = texto, largoLinea = cantidadPorLinea)
+    var textoRetornar = ""
+    for(i in lienas){
+        for (a in 0 until (cantidadPorLinea - i.length)/2){
+            textoRetornar += " "
+        }
+        textoRetornar += i+"\n"
+    }
+    return textoRetornar
 }
 
 val gestorImpresora = ImpresoraViewModel()
@@ -558,7 +571,6 @@ fun addTextTall(text: String, justification: String, destacar: Boolean = false, 
 
 }
 
-
 fun addText(text: String, justification: String, destacar: Boolean = false, context: Context, conLiena: Boolean = false) : String {
     val lienas = segmentarTextoConEspacios(texto = text, largoLinea = obtenerParametroLocal(context,"cantidadCaracPorLineaImpre").toInt())
     var textoRetornar = ""
@@ -807,7 +819,8 @@ fun DialogoActualizacion() {
                 Column(
                     modifier = Modifier
                         .padding(24.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Text(
                         text = "Actualización disponible",
@@ -816,15 +829,12 @@ fun DialogoActualizacion() {
                         fontWeight = FontWeight.Bold
                     )
 
-                    Spacer(modifier = Modifier.height(12.dp))
-
                     Text(
                         text = "La aplicación requiere la última versión para funcionar correctamente.",
                         style = MaterialTheme.typography.bodyMedium,
-                        color = Color.White
+                        color = Color.White,
+                        textAlign = TextAlign.Center
                     )
-
-                    Spacer(modifier = Modifier.height(24.dp))
 
                     Button(
                         onClick = {

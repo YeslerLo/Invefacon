@@ -69,6 +69,7 @@ import androidx.compose.material.icons.filled.LocalOffer
 import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material.icons.filled.Percent
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.PersonOutline
 import androidx.compose.material.icons.filled.PersonPin
 import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.PriceChange
@@ -213,6 +214,7 @@ fun IniciarInterfazFacturacion(
     val listaMediosPago = remember { mutableStateListOf<ParClaveValor>() }
     val listaImpresion = remember { mutableStateListOf<ParClaveValor>() }
     var listaArticulosProforma by remember {  mutableStateOf<List<ArticuloFacturacion>>(emptyList()) }
+    var nombreFactura by remember { mutableStateOf("") }
     var nombreCliente by remember { mutableStateOf("") }
     var descuentoCliente by remember { mutableStateOf("0.00") }
     var tipoPrecioCliente by remember { mutableStateOf("") }
@@ -292,6 +294,8 @@ fun IniciarInterfazFacturacion(
     var buscarProformas by remember { mutableStateOf(false) }
     var clonarProforma by remember { mutableStateOf(false) }
     var apiBusquedaProforma by remember { mutableStateOf<Job?>(null) }
+    var apiGuardarDetalle by remember { mutableStateOf<Job?>(null) }
+    var apiGuardarOrdenCompra by remember { mutableStateOf<Job?>(null) }
     val cortinaConsultaApiBusquedaProforma = CoroutineScope(Dispatchers.IO)
     var guardarProformaBorrador by remember { mutableStateOf(false) }
     var iniciarMenuOpcionesProforma by remember { mutableStateOf(false) }
@@ -582,14 +586,14 @@ fun IniciarInterfazFacturacion(
         validarVersionApp(context)
     }
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect (Unit) {
         if (valorImpresionActiva != "1") return@LaunchedEffect  Toast.makeText(context, "La impresión está inactiva.", Toast.LENGTH_SHORT).show()
         delay(1000)
         if (gestorImpresora.validarConexion(context)) return@LaunchedEffect
         gestorImpresora.reconectar(context)
     }
 
-    LaunchedEffect(actualizarDatosProforma, soloActualizarArticulos, soloActualizarDatosCliente) {
+    LaunchedEffect (actualizarDatosProforma, soloActualizarArticulos, soloActualizarDatosCliente) {
         if (actualizarDatosProforma || soloActualizarArticulos || soloActualizarDatosCliente){
             listaArticulosSeleccionados.clear()
             isCargandoDatos = (!soloActualizarArticulos  && !soloActualizarDatosCliente)
@@ -609,8 +613,9 @@ fun IniciarInterfazFacturacion(
                         //DATOS CLIENTE
                         val datosCliente = data.getJSONArray("cliente").getJSONObject(0)
                         clienteId= datosCliente.getString("ClienteID")
+                        nombreFactura = datosCliente.getString("ClienteNombre")
                         nombreCliente= datosCliente.getString("Nombre")
-                        nombreComercial = datosCliente.getString("ClienteNombre")
+                        nombreComercial = datosCliente.getString("clientenombrecomercial")
                         numeroCedula = datosCliente.getString("Cedula")
                         emailGeneral = datosCliente.getString("Email")
                         telefonos = datosCliente.getString("Telefonos")
@@ -745,7 +750,7 @@ fun IniciarInterfazFacturacion(
         }
     }
 
-    LaunchedEffect(actualizarDatosProforma) {
+    LaunchedEffect (actualizarDatosProforma) {
         if (!actualizarDatosProforma) return@LaunchedEffect
         listaMediosPago.clear()
         val result = objectoProcesadorDatosApi.obtenerMediosPago()
@@ -765,7 +770,7 @@ fun IniciarInterfazFacturacion(
         }
     }
 
-    LaunchedEffect(iniciarDescargaArticulos) {
+    LaunchedEffect (iniciarDescargaArticulos) {
         if (iniciarDescargaArticulos){
             listaArticulosFacturacion = emptyList()
             isCargandoDatos = true
@@ -846,7 +851,7 @@ fun IniciarInterfazFacturacion(
         }
     }
 
-    LaunchedEffect(datosIngresadosBarraBusquedaArticulos) {
+    LaunchedEffect (datosIngresadosBarraBusquedaArticulos) {
         if(datosIngresadosBarraBusquedaArticulos.isNotEmpty()){
             listaArticulosEncontrados = emptyList()
             apiConsultaBusquedaArticulos?.cancel()
@@ -871,7 +876,7 @@ fun IniciarInterfazFacturacion(
 
     }
 
-    LaunchedEffect(validacionCargaFinalizada) {
+    LaunchedEffect (validacionCargaFinalizada) {
         if (validacionCargaFinalizada == 2){
             actualizarDatosProforma= false
             isCargandoDatos= false
@@ -879,7 +884,7 @@ fun IniciarInterfazFacturacion(
         }
     }
 
-    LaunchedEffect(agregarEditarArticuloActual) {
+    LaunchedEffect (agregarEditarArticuloActual) {
         if (agregarEditarArticuloActual){
             gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(true)
             val result = objectoProcesadorDatosApi.agregarActualizarLinea(articuloLineaProforma)
@@ -897,7 +902,7 @@ fun IniciarInterfazFacturacion(
         agregarEditarArticuloActual = false
     }
 
-    LaunchedEffect(eliminarLinea) {
+    LaunchedEffect (eliminarLinea) {
         if (eliminarLinea){
             gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(true)
             val result = objectoProcesadorDatosApi.eliminarLineaProforma(numero = numeroProforma, lineaArticulo = lineaAcual)
@@ -913,7 +918,7 @@ fun IniciarInterfazFacturacion(
         eliminarLinea = false
     }
 
-    LaunchedEffect(datosIngresadosBarraBusquedaCliente) {
+    LaunchedEffect (datosIngresadosBarraBusquedaCliente) {
         if (datosIngresadosBarraBusquedaCliente.isNotEmpty()){
             isCargandoClientes = true
             listaClientesEncontrados = emptyList()
@@ -954,7 +959,7 @@ fun IniciarInterfazFacturacion(
         }
     }
 
-    LaunchedEffect(buscarProformas) {
+    LaunchedEffect (buscarProformas) {
         if (!buscarProformas) return@LaunchedEffect
         buscarProformas = false
         isCargandoProformas = true
@@ -994,7 +999,7 @@ fun IniciarInterfazFacturacion(
         }
     }
 
-    LaunchedEffect(cambiarClienteProforma) {
+    LaunchedEffect (cambiarClienteProforma) {
         if(cambiarClienteProforma){
             gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(true)
             val result = objectoProcesadorDatosApi.cambiarClienteProforma(
@@ -1013,7 +1018,7 @@ fun IniciarInterfazFacturacion(
         cambiarClienteProforma = false
     }
 
-    LaunchedEffect(guardarProformaBorrador) {
+    LaunchedEffect (guardarProformaBorrador) {
         if (!guardarProformaBorrador) return@LaunchedEffect
         gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(true)
         val result = objectoProcesadorDatosApi.guardarProformaBorrador(numeroProforma)
@@ -1028,7 +1033,7 @@ fun IniciarInterfazFacturacion(
         guardarProformaBorrador = false
     }
 
-    LaunchedEffect(clonarProforma) {
+    LaunchedEffect (clonarProforma) {
         if (!clonarProforma) return@LaunchedEffect
         gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(true)
         val result = objectoProcesadorDatosApi.clonarProforma(numeroProforma)
@@ -1045,7 +1050,7 @@ fun IniciarInterfazFacturacion(
 
     }
 
-    LaunchedEffect(exonerar) {
+    LaunchedEffect (exonerar) {
         if (!exonerar) return@LaunchedEffect
         gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(true)
         val result = objectoProcesadorDatosApi.exonerarProforma(numero = numeroProforma, codigoCliente = clienteId)
@@ -1059,7 +1064,7 @@ fun IniciarInterfazFacturacion(
         exonerar = false
     }
 
-    LaunchedEffect(quitarExoneracion) {
+    LaunchedEffect (quitarExoneracion) {
         if (!quitarExoneracion) return@LaunchedEffect
         gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(true)
         val result = objectoProcesadorDatosApi.quitarExoneracionProforma(numeroProforma)
@@ -1073,7 +1078,7 @@ fun IniciarInterfazFacturacion(
         quitarExoneracion = false
     }
 
-    LaunchedEffect(cambiarMoneda)  {
+    LaunchedEffect (cambiarMoneda)  {
         if(!cambiarMoneda) return@LaunchedEffect
         gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(true)
         val result = objectoProcesadorDatosApi.cambiarMonedaProforma(numero = numeroProforma, codigoMoneda = nuevoCodigoMoneda)
@@ -1087,7 +1092,7 @@ fun IniciarInterfazFacturacion(
         cambiarMoneda = false
     }
 
-    LaunchedEffect(aplicarDescuento) {
+    LaunchedEffect (aplicarDescuento) {
         if (!aplicarDescuento) return@LaunchedEffect
         gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(true)
         val lineas = JSONArray()
@@ -1111,7 +1116,7 @@ fun IniciarInterfazFacturacion(
 
     }
 
-    LaunchedEffect(agregarFormapago) {
+    LaunchedEffect (agregarFormapago) {
         if (!agregarFormapago) return@LaunchedEffect
         isFormaPagoAgregada = false
         gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(true)
@@ -1159,7 +1164,7 @@ fun IniciarInterfazFacturacion(
         agregarFormapago = false
     }
 
-    LaunchedEffect(guardarProforma) {
+    LaunchedEffect (guardarProforma) {
         if (!guardarProforma) return@LaunchedEffect
 
         gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(true)
@@ -1213,7 +1218,7 @@ fun IniciarInterfazFacturacion(
         }
     }
 
-    LaunchedEffect(imprimir) {
+    LaunchedEffect (imprimir) {
         if (!imprimir) return@LaunchedEffect
         isImprimiendo = true
         iniciarPantallaEstadoImpresion = true
@@ -1245,7 +1250,7 @@ fun IniciarInterfazFacturacion(
         imprimir = false
     }
 
-    LaunchedEffect(obtenerDatosFacturaEmitida) {
+    LaunchedEffect (obtenerDatosFacturaEmitida) {
         if (!obtenerDatosFacturaEmitida) return@LaunchedEffect
         isImprimiendo = true
         iniciarPantallaEstadoImpresion = true
@@ -1275,7 +1280,7 @@ fun IniciarInterfazFacturacion(
         obtenerDatosFacturaEmitida = false
     }
 
-    LaunchedEffect(agregarNuevoCliente) {
+    LaunchedEffect (agregarNuevoCliente) {
         if (!agregarNuevoCliente) return@LaunchedEffect
         gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(true)
         val result = objectoProcesadorDatosApiCliente.agregarCliente(datosCliente = clienteTemp)
@@ -1299,7 +1304,7 @@ fun IniciarInterfazFacturacion(
         agregarNuevoCliente = false
     }
 
-    LaunchedEffect(iniciarBusquedaClienteByCedula) {
+    LaunchedEffect (iniciarBusquedaClienteByCedula) {
         if(iniciarBusquedaClienteByCedula){
             if (clienteTemp.Cedula.length >=9){
                 gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(true)
@@ -1321,7 +1326,7 @@ fun IniciarInterfazFacturacion(
         iniciarBusquedaClienteByCedula = false
     }
 
-    LaunchedEffect(editarCliente) {
+    LaunchedEffect (editarCliente) {
         if(!editarCliente) return@LaunchedEffect
         gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(true)
         val result = objectoProcesadorDatosApiCliente.actualizarDatosClientes(clienteTemp, clienteTemp)
@@ -1431,10 +1436,9 @@ fun IniciarInterfazFacturacion(
                     shape = RoundedCornerShape(objetoAdaptardor.ajustarAltura(16))
                 )
                 .clickable {
+                    if (listaArticulosEncontrados.isEmpty()) datosIngresadosBarraBusquedaArticulos = ""
                     isAgregar = true
                     articuloActual = articulo
-                    listaArticulosEncontrados = emptyList()
-                    datosIngresadosBarraBusquedaArticulos = ""
                     iniciarMenuSeleccionarArticulo = false
                     iniciarMenuAgregaEditaArticulo = true
                 },
@@ -2938,11 +2942,11 @@ fun IniciarInterfazFacturacion(
                                     }
 
                                     BasicTexfiuldWithText(
-                                        textTitle = "Nombre Comercial:",
-                                        text = "Nombre Comercial",
-                                        variable = nombreComercial,
-                                        nuevoValor = {nombreComercial=it},
-                                        icon = Icons.Default.Person
+                                        textTitle = "Nombre de Factura:",
+                                        text = "Nombre de Factura",
+                                        variable = nombreFactura,
+                                        nuevoValor = {nombreFactura=it},
+                                        icon = Icons.Default.PersonOutline
                                     )
 
                                     AnimatedVisibility(
@@ -2955,8 +2959,16 @@ fun IniciarInterfazFacturacion(
                                             verticalArrangement = Arrangement.spacedBy(objetoAdaptardor.ajustarAltura(8))
                                         ) {
                                             BasicTexfiuldWithText(
-                                                textTitle = "Nombre del Jurídico:",
-                                                text = "Nombre del Jurídico",
+                                                textTitle = "Nombre Comercial:",
+                                                text = "Nombre Comercial",
+                                                variable = nombreComercial,
+                                                nuevoValor = {nombreComercial=it},
+                                                icon = Icons.Default.Person
+                                            )
+
+                                            BasicTexfiuldWithText(
+                                                textTitle = "Nombre Jurídico:",
+                                                text = "Nombre Jurídico",
                                                 variable = nombreCliente,
                                                 nuevoValor = {nombreCliente=it},
                                                 icon = Icons.Default.PersonPin
@@ -3706,7 +3718,8 @@ fun IniciarInterfazFacturacion(
                                         enable = estadoProforma != "2",
                                         cantidadLineas = 30,
                                         offFocus = {
-                                            coroutineScope.launch {
+                                            apiGuardarDetalle?.cancel()
+                                            apiGuardarDetalle = coroutineScope.launch {
                                                 val result = objectoProcesadorDatosApi.guardarDestalleFactura(detalleProforma, numeroProforma)
                                                 if (result!=null) estadoRespuestaApi.cambiarEstadoRespuestaApi(mostrarSoloRespuestaError = true, datosRespuesta = result)
                                             }
@@ -3746,6 +3759,7 @@ fun IniciarInterfazFacturacion(
                                     BBasicTextField(
                                         value = ordenCompra,
                                         onValueChange = {
+                                            if (ordenCompra.length>30) return@BBasicTextField mostrarMensajeError("La cantidad maxima de caracteres es de 30 para la orden ")
                                             ordenCompra= it
                                         },
                                         objetoAdaptardor = objetoAdaptardor,
@@ -3756,7 +3770,8 @@ fun IniciarInterfazFacturacion(
                                         enable = estadoProforma != "2",
                                         cantidadLineas = 30,
                                         offFocus = {
-                                            coroutineScope.launch {
+                                            apiGuardarOrdenCompra?.cancel()
+                                            apiGuardarOrdenCompra = coroutineScope.launch {
                                                 val result = objectoProcesadorDatosApi.guardarOrdenCompra(ordenCompra, numeroProforma)
                                                 if (result!=null) estadoRespuestaApi.cambiarEstadoRespuestaApi(mostrarSoloRespuestaError = true, datosRespuesta = result)
                                             }
@@ -4319,6 +4334,7 @@ fun IniciarInterfazFacturacion(
             ) {
                 
                 LaunchedEffect(Unit) {
+                    if (listaArticulosEncontrados.isNotEmpty()) return@LaunchedEffect
                     delay(100)
                     focusRequester.requestFocus()
                     mostrarTeclado(context)
@@ -4373,10 +4389,9 @@ fun IniciarInterfazFacturacion(
 
                             IconButton(
                                 onClick = {
+                                    if (listaArticulosEncontrados.isEmpty()) datosIngresadosBarraBusquedaArticulos = ""
                                     iniciarMenuSeleccionarArticulo = false
                                     isMenuVisible = false
-                                    listaArticulosEncontrados = emptyList()
-                                    datosIngresadosBarraBusquedaArticulos = ""
                                 },
                                 modifier = Modifier.weight(0.1f)
                             ) {
@@ -6032,11 +6047,11 @@ fun IniciarInterfazFacturacion(
                         modifier = Modifier.padding(objetoAdaptardor.ajustarAltura(16))
                     ) {
                         Text(
-                            "Actualizar Nombre Cliente",
+                            "Actualizar Nombre Cliente Factura",
                             fontFamily = fontAksharPrincipal,
                             fontWeight = FontWeight.Medium,
                             fontSize = obtenerEstiloDisplayMedium(),
-                            maxLines = 1,
+                            maxLines = 2,
                             overflow = TextOverflow.Ellipsis,
                             textAlign = TextAlign.Center,
                             color = Color.Black
@@ -6334,7 +6349,7 @@ fun IniciarInterfazFacturacion(
                         )
 
                         BButton(
-                            text = "Actualizar Nombre",
+                            text = "Actualizar Nombre Factura",
                             onClick = {
                                 iniciarMenuActuNombreProforma = true
                                 iniciarMenuOpcionesCliente = false

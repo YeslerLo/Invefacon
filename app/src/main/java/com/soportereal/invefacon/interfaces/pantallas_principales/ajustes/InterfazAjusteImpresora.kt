@@ -97,7 +97,7 @@ fun IniciarInterfazAjustesImpresora (
     navController: NavController,
     nombreEmpresa : String,
     codUsuario : String
-){
+) {
     val fontAksharPrincipal = FontFamily(Font(R.font.akshar_medium))
     val configuration = LocalConfiguration.current
     val dpAnchoPantalla = configuration.screenWidthDp
@@ -453,8 +453,13 @@ fun IniciarInterfazAjustesImpresora (
                                     icono = Icons.AutoMirrored.Filled.FormatAlignLeft,
                                     alto = 32,
                                     ancho = 100,
-                                    opciones = listOf(ParClaveValor("32","32"),
-                                        ParClaveValor("48","48")
+                                    opciones = listOf(
+                                        ParClaveValor("32","32"),
+                                        ParClaveValor("36","36"),
+                                        ParClaveValor("42","42"),
+                                        ParClaveValor("48","48"),
+                                        ParClaveValor("64","64"),
+                                        ParClaveValor("72","72")
                                     )
                                 )
                             }
