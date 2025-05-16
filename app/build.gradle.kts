@@ -1,6 +1,9 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
+    alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.devtools.ksp)
+    alias(libs.plugins.androidx.room)
 }
 
 android {
@@ -11,8 +14,8 @@ android {
         applicationId = "com.soportereal.invefacon"
         minSdk = 25
         targetSdk = 35
-        versionCode = 27
-        versionName = "1.1.9"
+        versionCode = 28
+        versionName = "1.2.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -47,6 +50,9 @@ android {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
     }
+    room {
+        schemaDirectory("$projectDir/schemas")
+    }
 }
 
 dependencies {
@@ -54,38 +60,45 @@ dependencies {
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
     implementation(platform(libs.androidx.compose.bom))
-    implementation(libs.androidx.ui)
+
+// Compose UI
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
-    implementation(libs.androidx.material3)
-    implementation(libs.androidx.constraintlayout)
-    implementation(libs.androidx.room.ktx)
-    testImplementation(libs.junit)
-    androidTestImplementation(libs.androidx.junit)
-    androidTestImplementation(libs.androidx.espresso.core)
+    debugImplementation(libs.androidx.ui.tooling)
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.ui.test.junit4)
-    debugImplementation(libs.androidx.ui.tooling)
-    debugImplementation(libs.androidx.ui.test.manifest)
-    implementation (libs.constraintlayout.compose)
-    implementation(libs.okhttp)
-    implementation(libs.okhttp.urlconnection)
-    implementation(libs.json)
-    implementation(libs.androidx.material.icons.extended)
+
+
+// Material 3 (solo este, ya que estás usando icons de compose.material3)
+    implementation(libs.androidx.material3)
+    implementation(libs.androidx.material.icons.extended) // si usas íconos extra
+
+// Accompanist (usa solo una versión estable)
+    implementation(libs.accompanist.systemuicontroller.v0312alpha)
+
+// Navegación
     implementation(libs.androidx.navigation.compose)
-    implementation (libs.accompanist.systemuicontroller.v0312alpha)
+
+// Layouts
+    implementation(libs.constraintlayout.compose)
+
+// Red y JSON
+    implementation(libs.okhttp)
+    implementation(libs.json)
+
+// Imágenes
     implementation(libs.coil.compose)
-    implementation (libs.androidx.material) // Use the latest stable version here
-    // Jetpack Compose Navigation
-    implementation (libs.androidx.navigation.compose.v260) // O la última versión estable
-    // Accompanist (si lo necesitas para otras animaciones o efectos)
-    implementation (libs.accompanist.navigation.animation) // O la versión más reciente
-    // Para usar las animaciones de transiciones
-    implementation (libs.androidx.animation)
-    implementation (libs.accompanist.navigation.animation.v0320)
-    implementation(libs.gson)
-    implementation(libs.material)
-    implementation ("com.github.DantSu:ESCPOS-ThermalPrinter-Android:3.3.0")
-    implementation ("com.github.bumptech.glide:glide:4.12.0")  // Asegúrate de usar la versión más reciente
-    annotationProcessor ("com.github.bumptech.glide:compiler:4.12.0")
+    implementation(libs.glide)
+    annotationProcessor(libs.compiler)
+
+// Impresión
+    implementation(libs.escpos.thermalprinter.android.v330)
+
+//// Test
+    testImplementation(libs.junit)
+
+// Romm para BD
+    implementation(libs.androidx.room.runtime)
+    ksp(libs.androidx.room.compiler)
+    implementation(libs.androidx.room.ktx)
 }

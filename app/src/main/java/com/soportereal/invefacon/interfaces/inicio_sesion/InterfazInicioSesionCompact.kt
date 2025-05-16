@@ -106,7 +106,6 @@ import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloBodyBig
 import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloBodySmall
 import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloHeadBig
 import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloLabelBig
-import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloLabelSmall
 import com.soportereal.invefacon.funciones_de_interfaces.obtenerParametroLocal
 import com.soportereal.invefacon.funciones_de_interfaces.validarVersionApp
 import com.soportereal.invefacon.interfaces.pantallas_principales.gestorEstadoPantallaCarga

@@ -131,6 +131,7 @@ import androidx.navigation.compose.rememberNavController
 import coil.compose.SubcomposeAsyncImage
 import com.google.accompanist.systemuicontroller.SystemUiController
 import com.soportereal.invefacon.R
+//import com.soportereal.invefacon.funciones_de_interfaces.AppDatabase
 import com.soportereal.invefacon.funciones_de_interfaces.BBasicTextField
 import com.soportereal.invefacon.funciones_de_interfaces.BButton
 import com.soportereal.invefacon.funciones_de_interfaces.ButtonFecha
@@ -370,6 +371,7 @@ fun IniciarInterfazFacturacion(
     var actualizarNombreProforma by remember { mutableStateOf(false) }
     var nombreProformaTemp by remember { mutableStateOf("") }
     var iniciarBusquedaClienteByCedula by remember { mutableStateOf(false) }
+//    val db = AppDatabase.getDatabase(context)
     val coroutineScope = rememberCoroutineScope()
     val transition = rememberInfiniteTransition(label = "shimmer")
     val shimmerTranslate by transition.animateFloat(
@@ -866,6 +868,7 @@ fun IniciarInterfazFacturacion(
                     listOf(coincidenciaExacta)
                 } else {
                     listaArticulosFacturacion.filter {
+                        (it.descripcion.contains(input, ignoreCase = true) && it.codigo.contains(input, ignoreCase = true)) ||
                         it.descripcion.contains(input, ignoreCase = true) || it.codigo.contains(input, ignoreCase = true)
                     }.take(50)
                 }
@@ -4432,6 +4435,7 @@ fun IniciarInterfazFacturacion(
                                 }
                             }
                         }
+
                         TText(
                             text = "Artículos encontrados: " + listaArticulosEncontrados.size.toString(),
                             fontSize = obtenerEstiloBodyBig(),

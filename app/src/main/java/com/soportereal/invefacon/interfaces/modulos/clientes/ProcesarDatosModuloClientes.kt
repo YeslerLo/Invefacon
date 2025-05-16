@@ -136,8 +136,6 @@ class ProcesarDatosModuloClientes(apiToken: String){
     }
 }
 
-
-
 data class Cliente(
     var Id_cliente: String = "",
     var Nombre: String = "",

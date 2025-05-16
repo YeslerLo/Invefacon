@@ -362,26 +362,37 @@ class ImpresoraViewModel : ViewModel() {
 
     @RequiresApi(Build.VERSION_CODES.S)
     suspend fun validarConexion(context: Context): Boolean {
-        ValidarPermisos(context)
-        if (!isPermisosOtorgados) return withContext(Dispatchers.Main) {
-            Toast.makeText(
-                context,
-                "El app no cuenta con permisos para imprimir.",
-                Toast.LENGTH_LONG
-            ).show()
-            false
+        // Validar permisos (suponiendo que modifica isPermisosOtorgados)
+        withContext(Dispatchers.Main) {
+            ValidarPermisos(context)
         }
-        return withContext(Dispatchers.Main) {
-            if (conexion?.isConnected == false){
+
+        if (!isPermisosOtorgados) {
+            withContext(Dispatchers.Main) {
+                Toast.makeText(
+                    context,
+                    "El app no cuenta con permisos para imprimir.",
+                    Toast.LENGTH_LONG
+                ).show()
+            }
+            return false
+        }
+
+        val conectado = conexion?.isConnected == true
+
+        if (!conectado) {
+            withContext(Dispatchers.Main) {
                 Toast.makeText(
                     context,
                     "No hay ninguna impresora conectada.",
                     Toast.LENGTH_LONG
                 ).show()
             }
-            conexion?.isConnected == true
         }
+
+        return conectado
     }
+
 
     @RequiresApi(Build.VERSION_CODES.S)
     fun conectar(context: Context, mac: String, name: String) {
@@ -868,6 +879,9 @@ class EstadoDialogActualizacion : ViewModel() {
 }
 
 val gestorDialogActualizacion = EstadoDialogActualizacion()
+
+
+
 
 
 

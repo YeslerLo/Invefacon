@@ -190,6 +190,7 @@ fun InterfazSacComanda(
     }
 
     LaunchedEffect(Unit) {
+        delay(200)
         estadoRespuestaApi.cambiarEstadoRespuestaApi()
         var result= objectoProcesadorDatosApi.obtenerListaFamilias()
         val listaFamilias = mutableListOf<FamiliaSac>()
@@ -265,9 +266,7 @@ fun InterfazSacComanda(
                         val datosGrupos = JSONArray(datosGruposStr)
 
                         val imp1 = datosArticulo.getDouble("imp1")
-                        var imp2 = if(valorPrmImp2=="0") 0.0 else 0.1
-
-                        imp2 = if (datosGrupos.length() == 0) imp2 else 0.0
+                        val imp2 = if(valorPrmImp2=="0") 0.0 else 0.1
 
                         val precioUnitario = BigDecimal(datosArticulo.getDouble("precioArticulo"))
                             .setScale(2, RoundingMode.DOWN)
@@ -300,9 +299,6 @@ fun InterfazSacComanda(
                                 val codigo = datosArticuloGrupo.getString("codigo")
                                 val nombreArticulo = datosArticuloGrupo.getString("nombreArticulo")
                                 val precio = datosArticuloGrupo.getDouble("precio")
-                                val impuestoServicioArticulosGrupo = BigDecimal(precio*imp2)
-                                    .setScale(2, RoundingMode.DOWN)
-                                    .toDouble()
                                 val imp13 = datosArticuloGrupo.getString("imp1")
                                 val isOpcional = if (cantidadArticulos==0) 1 else 0
 
@@ -310,7 +306,7 @@ fun InterfazSacComanda(
                                     codigo = codigo,
                                     nombre = nombreArticulo,
                                     nombreGrupo = nombreGrupo,
-                                    precio = precio+impuestoServicioArticulosGrupo,
+                                    precio = precio,
                                     imp1 = imp13,
                                     isOpcional = isOpcional
                                 )
@@ -899,7 +895,7 @@ fun InterfazSacComanda(
         Card(
             modifier = Modifier
                 .wrapContentHeight()
-                .width(objetoAdaptardor.ajustarAncho(450))
+                .width(objetoAdaptardor.ajustarAncho(590))
                 .padding(objetoAdaptardor.ajustarAltura(8))
                 .shadow(
                     elevation = objetoAdaptardor.ajustarAltura(7),
@@ -925,7 +921,7 @@ fun InterfazSacComanda(
                         textAlign = TextAlign.Start,
                         color = Color.White,
                         modifier = Modifier
-                            .width(objetoAdaptardor.ajustarAncho(300))
+                            .width(objetoAdaptardor.ajustarAncho(440))
                             .padding(objetoAdaptardor.ajustarAltura(8))
                     )
                     Text(
@@ -984,7 +980,7 @@ fun InterfazSacComanda(
                             ) {
                                 Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(16)))
                                 Text(
-                                    "\u20A1 "+String.format(Locale.US, "%,.2f", "${articulo.precio*articulo.cantidad}".replace(",", "").toDouble()),
+                                    "\u20A1 "+String.format(Locale.US, "%,.2f", "${articulo.precio}".replace(",", "").toDouble()),
                                     fontFamily = fontAksharPrincipal,
                                     fontWeight = FontWeight.Light,
                                     fontSize = obtenerEstiloLabelBig(),
@@ -992,7 +988,7 @@ fun InterfazSacComanda(
                                     textAlign = TextAlign.Start,
                                     color = Color.Black,
                                     modifier = Modifier
-                                        .width(objetoAdaptardor.ajustarAncho(100))
+                                        .width(objetoAdaptardor.ajustarAncho(120))
                                         .padding(6.dp)
                                 )
                                 IconButton(
@@ -1047,6 +1043,18 @@ fun InterfazSacComanda(
                                         modifier = Modifier.size(objetoAdaptardor.ajustarAncho(23))
                                     )
                                 }
+                                Text(
+                                    "\u20A1 "+String.format(Locale.US, "%,.2f", "${articulo.precio*articulo.cantidad}".replace(",", "").toDouble()),
+                                    fontFamily = fontAksharPrincipal,
+                                    fontWeight = FontWeight.Light,
+                                    fontSize = obtenerEstiloLabelBig(),
+                                    overflow = TextOverflow.Ellipsis,
+                                    textAlign = TextAlign.End,
+                                    color = Color.Black,
+                                    modifier = Modifier
+                                        .width(objetoAdaptardor.ajustarAncho(120))
+                                        .padding(6.dp)
+                                )
                                 Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(16)))
                             }
                         }
@@ -1793,7 +1801,7 @@ fun InterfazSacComanda(
         val cantidadArticulos by remember { mutableIntStateOf(1) }
         var anotacion by remember { mutableStateOf("") }
         val listaArticulosCombo = remember { mutableStateListOf<ArticuloSacGrupo>() }
-        precioTotalArticulo= 0.00
+        precioTotalArticulo= articuloActualSeleccionado.precio
         Box(
             modifier = Modifier
                 .fillMaxSize()
