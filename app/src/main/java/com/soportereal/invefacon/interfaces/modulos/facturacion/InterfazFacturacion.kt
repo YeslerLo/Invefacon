@@ -1,6 +1,6 @@
 package com.soportereal.invefacon.interfaces.modulos.facturacion
 
-import android.annotation.SuppressLint
+//import com.soportereal.invefacon.funciones_de_interfaces.AppDatabase
 import android.os.Build
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
@@ -30,15 +30,12 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
@@ -79,7 +76,6 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material.icons.filled.Straighten
 import androidx.compose.material.icons.filled.Warehouse
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
@@ -131,7 +127,6 @@ import androidx.navigation.compose.rememberNavController
 import coil.compose.SubcomposeAsyncImage
 import com.google.accompanist.systemuicontroller.SystemUiController
 import com.soportereal.invefacon.R
-//import com.soportereal.invefacon.funciones_de_interfaces.AppDatabase
 import com.soportereal.invefacon.funciones_de_interfaces.BBasicTextField
 import com.soportereal.invefacon.funciones_de_interfaces.BButton
 import com.soportereal.invefacon.funciones_de_interfaces.ButtonFecha
@@ -186,7 +181,6 @@ import java.math.BigDecimal
 import java.math.RoundingMode
 import java.util.concurrent.atomic.AtomicInteger
 
-@SuppressLint("NewApi")
 @RequiresApi(Build.VERSION_CODES.S)
 @Composable
 fun IniciarInterfazFacturacion(
@@ -1240,7 +1234,7 @@ fun IniciarInterfazFacturacion(
             imprimir = false
             return@LaunchedEffect
         }
-        listaImpresion.removeFirst()
+        listaImpresion.removeAt(0)
         if (listaImpresion.isNotEmpty()) {
             imprimir = false
             return@LaunchedEffect
