@@ -1,6 +1,5 @@
 package com.soportereal.invefacon.interfaces.modulos.facturacion
 
-//import com.soportereal.invefacon.funciones_de_interfaces.AppDatabase
 import android.os.Build
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
@@ -88,6 +87,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableDoubleStateOf
 import androidx.compose.runtime.mutableIntStateOf
@@ -122,20 +122,25 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.constraintlayout.compose.ConstraintLayout
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import coil.compose.SubcomposeAsyncImage
 import com.google.accompanist.systemuicontroller.SystemUiController
 import com.soportereal.invefacon.R
+import com.soportereal.invefacon.funciones_de_interfaces.ArticuloDb
 import com.soportereal.invefacon.funciones_de_interfaces.BBasicTextField
 import com.soportereal.invefacon.funciones_de_interfaces.BButton
 import com.soportereal.invefacon.funciones_de_interfaces.ButtonFecha
 import com.soportereal.invefacon.funciones_de_interfaces.FuncionesParaAdaptarContenido
+import com.soportereal.invefacon.funciones_de_interfaces.GestorTablaArticulos
 import com.soportereal.invefacon.funciones_de_interfaces.MenuConfirmacion
 import com.soportereal.invefacon.funciones_de_interfaces.ParClaveValor
 import com.soportereal.invefacon.funciones_de_interfaces.TText
 import com.soportereal.invefacon.funciones_de_interfaces.TextFieldMultifuncional
+import com.soportereal.invefacon.funciones_de_interfaces.actualizarParametro
 import com.soportereal.invefacon.funciones_de_interfaces.gestorImpresora
+import com.soportereal.invefacon.funciones_de_interfaces.guardarParametroSiNoExiste
 import com.soportereal.invefacon.funciones_de_interfaces.listaParametros
 import com.soportereal.invefacon.funciones_de_interfaces.listaPermisos
 import com.soportereal.invefacon.funciones_de_interfaces.mostrarMensajeError
@@ -154,6 +159,7 @@ import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloLabelBig
 import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloTitleBig
 import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloTitleMedium
 import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloTitleSmall
+import com.soportereal.invefacon.funciones_de_interfaces.obtenerFechaHoraActual
 import com.soportereal.invefacon.funciones_de_interfaces.obtenerFechaHoy
 import com.soportereal.invefacon.funciones_de_interfaces.obtenerParametroLocal
 import com.soportereal.invefacon.funciones_de_interfaces.obtenerValorParametroEmpresa
@@ -191,10 +197,11 @@ fun IniciarInterfazFacturacion(
     codUsuario: String,
     nombreUsuario: String
 ){
+    val context = LocalContext.current
+    val gestorTablaArticulos: GestorTablaArticulos = viewModel()
     systemUiController?.setStatusBarColor(Color(0xFF244BC0))
     systemUiController?.setNavigationBarColor(Color.Black)
     val fontAksharPrincipal = FontFamily(Font(R.font.akshar_medium))
-    val context = LocalContext.current
     val focusManager = LocalFocusManager.current
     val configuration = LocalConfiguration.current
     val dpAnchoPantalla = configuration.screenWidthDp
@@ -250,13 +257,10 @@ fun IniciarInterfazFacturacion(
     val cortinaConsultaApiProforma= CoroutineScope(Dispatchers.IO)
     var apiConsultaArticulos by remember { mutableStateOf<Job?>(null) }
     val cortinaConsultaApiArticulos= CoroutineScope(Dispatchers.IO)
-    var apiConsultaBusquedaArticulos by remember { mutableStateOf<Job?>(null) }
-    val cortinaConsultaApiBusquedaArticulos= CoroutineScope(Dispatchers.IO)
     var apiConsultaBusquedaClientes by remember { mutableStateOf<Job?>(null) }
     val cortinaConsultaApiBusquedaClientes= CoroutineScope(Dispatchers.IO)
     var errorCargarProforma by remember { mutableStateOf(false) }
     var simboloMoneda by remember { mutableStateOf("") }
-    var listaArticulosFacturacion by remember { mutableStateOf(emptyList<ArticuloFacturacion>()) }
     val listaIvas = remember { mutableStateListOf<ParClaveValor>() }
     var listaArticulosEncontrados by remember { mutableStateOf(emptyList<ArticuloFacturacion>()) }
     var listaClientesEncontrados by remember { mutableStateOf(emptyList<ClienteFacturacion>()) }
@@ -365,7 +369,7 @@ fun IniciarInterfazFacturacion(
     var actualizarNombreProforma by remember { mutableStateOf(false) }
     var nombreProformaTemp by remember { mutableStateOf("") }
     var iniciarBusquedaClienteByCedula by remember { mutableStateOf(false) }
-//    val db = AppDatabase.getDatabase(context)
+    val listaArticulos by gestorTablaArticulos.articulos.collectAsState()
     val coroutineScope = rememberCoroutineScope()
     val transition = rememberInfiniteTransition(label = "shimmer")
     val shimmerTranslate by transition.animateFloat(
@@ -574,8 +578,123 @@ fun IniciarInterfazFacturacion(
         return factura
     }
 
+    fun deserializarArticulo(datos : String) : ArticuloFacturacion {
+        val listaPrecios = mutableListOf<ParClaveValor>()
+        val listaBodegas = mutableListOf<ParClaveValor>()
+        val datosArticulo = JSONObject(datos)
+        for (a in 1 until 11){
+            listaPrecios.add(
+                ParClaveValor(
+                    clave = "$a - $simboloMoneda${separacionDeMiles(datosArticulo.getDouble("Precio$a")/tasaCambio)}",
+                    valor = (datosArticulo.getDouble("Precio$a")/tasaCambio).toString(),
+                    tipo = "$a"
+                )
+            )
+        }
+
+        val bodegasString = datosArticulo.getString("bodegas")
+        val datosBodegas = JSONArray(bodegasString)
+
+        for (e in 0 until datosBodegas.length()) {
+            val datoBodega = datosBodegas.getJSONObject(e)
+            val bodega = ParClaveValor(
+                clave = datoBodega.getString("Cod_Bodega"),
+                valor = datoBodega.getString("Descripcion"),
+                existencia = datoBodega.getDouble("Existencia")
+            )
+            listaBodegas.add(bodega)
+        }
+
+        val costoTemp = datosArticulo.getDouble("Costo")/tasaCambio
+        val articulo = ArticuloFacturacion(
+            codigo = datosArticulo.getString("Codigo"),
+            codBarra = datosArticulo.getString("Cod_Barra"),
+            descripcion = datosArticulo.getString("Descripcion"),
+            stock = datosArticulo.optDouble("Stock", 0.00),
+            costo = costoTemp,
+            fraccionamiento = datosArticulo.getInt("Fraccionamineto"),
+            descuentoFijo = datosArticulo.getDouble("Descuento_Fijo"),
+            codTarifaImpuesto = datosArticulo.getString("Cod_Tarifa_Impuesto"),
+            impuesto = datosArticulo.getDouble("Impuesto"),
+            Cod_Tarifa_Impuesto =  datosArticulo.getString("Cod_Tarifa_Impuesto"),
+            codEstado = datosArticulo.getString("Cod_Estado"),
+            codTipoMoneda = datosArticulo.getString("Cod_Tipo_Moneda"),
+            codNaturalezaArticulo = datosArticulo.getString("Cod_Naturaleza_Articulo"),
+            codCabys = datosArticulo.getString("Cod_Cabys"),
+            actividadEconomica = datosArticulo.getString("Actividad_Economica"),
+            unidadXMedida = datosArticulo.getDouble("Unidad_x_Medida"),
+            unidadMedida = datosArticulo.getString("Unidad_Medida"),
+            descuentoAdmitido = datosArticulo.getDouble("Descuento_Admitido"),
+            precio = datosArticulo.getDouble("Precio")/tasaCambio,
+            listaPrecios = listaPrecios,
+            listaBodegas = listaBodegas
+        )
+        return articulo
+    }
+
+    suspend fun filtrarBusquedaArticulos(){
+        if(datosIngresadosBarraBusquedaArticulos.isNotEmpty()){
+            listaArticulosEncontrados = emptyList()
+            gestorTablaArticulos.actualizarInputBusqueda(datosIngresadosBarraBusquedaArticulos.trim())
+            gestorTablaArticulos.modoExacto(true)
+            delay(250) // opcional si quieres cambiar a parcial después
+            if (listaArticulos.isEmpty()) {
+                gestorTablaArticulos.modoExacto(false)
+            }
+            delay(250)
+            val listaArticulosTemp = mutableListOf<ArticuloFacturacion>()
+            listaArticulos.forEach{ articuloTemp ->
+                listaArticulosTemp.add(deserializarArticulo(articuloTemp.datos))
+            }
+            listaArticulosEncontrados = listaArticulosTemp
+            isCargandoArticulos = false
+        }
+
+    }
+
+    suspend fun descargarArticulos(){
+        errorCargarProforma = false
+        apiConsultaArticulos?.cancel()
+        apiConsultaArticulos= cortinaConsultaApiArticulos.launch{
+            val result = objectoProcesadorDatosApi.obtenerArticulos(
+                tipoPrecio = "1",
+                moneda = "CRC",
+                ultimaActualizacion =  obtenerParametroLocal(context, "ultActuArtFac$nombreEmpresa")
+            )
+            if (result!=null){
+                if (validarExitoRestpuestaServidor(result)){
+                    val data = result.getJSONArray("data")
+                    val listaArticulosTemp = mutableListOf<ArticuloDb>()
+                    for(i in 0 until data.length()){
+                        val datosArticulo = data.getJSONObject(i)
+                        listaArticulosTemp.add(ArticuloDb(codigo = datosArticulo.getString("Codigo"), datos = datosArticulo.toString(), empresa = nombreEmpresa, description = datosArticulo.getString("Descripcion"), codigoBarra = datosArticulo.getString("Cod_Barra")))
+                        if (obtenerParametroLocal(context, "ultActuArtFac$nombreEmpresa") != ""){
+                            gestorTablaArticulos.eliminarArticulo(codigo = datosArticulo.getString("Codigo"), empresa =  nombreEmpresa)
+                        }
+                    }
+                    gestorTablaArticulos.insertarArticulos(listaArticulosTemp)
+                    actualizarParametro(context = context, clave = "ultActuArtFac$nombreEmpresa", nuevoValor = obtenerFechaHoraActual())
+                }else{
+                    errorCargarProforma = true
+                    actualizarDatosProforma = false
+                }
+            }
+            validacionCargaFinalizada++
+        }
+        if (datosIngresadosBarraBusquedaArticulos.isNotEmpty()){ // SE HACE PARA QUE SE ACTULICEN LOS ARTICULOS YA BUCADOS
+            filtrarBusquedaArticulos()
+        }
+        iniciarDescargaArticulos = false
+
+    }
+
     if (valorImpresionActiva == "1") {
         gestorImpresora.PedirPermisos(context)
+    }
+
+    LaunchedEffect(Unit) {
+        gestorTablaArticulos.cargarEmpresa(nombreEmpresa)
+        guardarParametroSiNoExiste(context, "ultActuArtFac$nombreEmpresa", "")
     }
 
     LaunchedEffect (Unit) {
@@ -592,6 +711,8 @@ fun IniciarInterfazFacturacion(
     LaunchedEffect (actualizarDatosProforma, soloActualizarArticulos, soloActualizarDatosCliente) {
         if (actualizarDatosProforma || soloActualizarArticulos || soloActualizarDatosCliente){
             listaArticulosSeleccionados.clear()
+            listaArticulosEncontrados = emptyList()
+            datosIngresadosBarraBusquedaArticulos = ""
             isCargandoDatos = (!soloActualizarArticulos  && !soloActualizarDatosCliente)
             expandedTotales = false
             expandedClientes = false
@@ -633,8 +754,8 @@ fun IniciarInterfazFacturacion(
                         estadoProformaInicial = estadoProforma
 
                         //Tipo Moneda
-                        val actualizarListaArticulos = codMonedaProforma != data.getString("monedaDocumento")
-                        validacionCargaFinalizada = if (actualizarListaArticulos) 0 else 1
+//                        val actualizarListaArticulos = codMonedaProforma != data.getString("monedaDocumento")
+//                        validacionCargaFinalizada = if (actualizarListaArticulos) 0 else 1
                         codMonedaProforma = data.getString("monedaDocumento")
                         tasaCambio = data.getDouble("tipoCambio")
                         tasaCambioDolar = data.getDouble("tipoCambioDolar")
@@ -642,7 +763,7 @@ fun IniciarInterfazFacturacion(
                         ordenCompra = data.getString("ordenCompra")
                         nuevoCodigoMoneda = codMonedaProforma
                         simboloMoneda =  if(codMonedaProforma == "CRC") "\u20A1 " else "\u0024 "
-                        iniciarDescargaArticulos = listaArticulosFacturacion.isEmpty() || actualizarListaArticulos
+                        iniciarDescargaArticulos = true
 
                         //Totales
                         val totales = data.getJSONArray("totales").getJSONObject(0)
@@ -715,7 +836,6 @@ fun IniciarInterfazFacturacion(
                                 )
                             )
                         }
-
                     }
                     else{
                         estadoRespuestaApi.cambiarEstadoRespuestaApi(mostrarSoloRespuestaError = true, datosRespuesta = result)
@@ -723,21 +843,6 @@ fun IniciarInterfazFacturacion(
                         errorCargarProforma = true
                         actualizarDatosProforma = false
                     }
-                }
-                val result2 = objectoProcesadorDatosApi.obtenerPermisosUsuario(codUsuario)
-                if (result2 == null) return@launch
-                if (!validarExitoRestpuestaServidor(result2)) return@launch estadoRespuestaApi.cambiarEstadoRespuestaApi(mostrarSoloRespuestaError = true, datosRespuesta = result2)
-                listaPermisos = (0 until result2.getJSONArray("data").length()).map { i ->
-                    val permiso = result2.getJSONArray("data").getJSONObject(i)
-                    ParClaveValor(clave = permiso.getString("Cod_Derecho"), valor = permiso.getString("Descripcion"))
-                }
-
-                val result3 = objectoProcesadorDatosApi.obtenerParemetrosEmpresa()
-                if (result3 == null) return@launch
-                if (!validarExitoRestpuestaServidor(result3)) return@launch estadoRespuestaApi.cambiarEstadoRespuestaApi(mostrarSoloRespuestaError = true, datosRespuesta = result3)
-                listaParametros = (0 until result3.getJSONObject("resultado").getJSONArray("data").length()).map { i ->
-                    val parametro = result3.getJSONObject("resultado").getJSONArray("data").getJSONObject(i)
-                    ParClaveValor(clave = parametro.getString("Parametro"), valor = parametro.getString("Valor"), descripcion = parametro.getString("Descripcion"))
                 }
                 validacionCargaFinalizada++
                 soloActualizarArticulos = false
@@ -766,110 +871,35 @@ fun IniciarInterfazFacturacion(
         }
     }
 
-    LaunchedEffect (iniciarDescargaArticulos) {
-        if (iniciarDescargaArticulos){
-            listaArticulosFacturacion = emptyList()
-            isCargandoDatos = true
-            errorCargarProforma = false
-            apiConsultaArticulos?.cancel()
-            apiConsultaArticulos= cortinaConsultaApiArticulos.launch{
-                val result = objectoProcesadorDatosApi.obtenerArticulos(
-                    tipoPrecio = tipoPrecioCliente,
-                    moneda = codMonedaCliente
-                )
-                if (result!=null){
-                    if (validarExitoRestpuestaServidor(result)){
-                        val data = result.getJSONArray("data")
-                        val listaArticulos = mutableListOf<ArticuloFacturacion>()
-                        for(i in 0 until data.length()){
-
-                            val listaPrecios = mutableListOf<ParClaveValor>()
-                            val listaBodegas = mutableListOf<ParClaveValor>()
-                            val datosArticulo = data.getJSONObject(i)
-
-                            for (a in 1 until 11){
-                                listaPrecios.add(
-                                    ParClaveValor(
-                                        clave = "$a - $simboloMoneda${separacionDeMiles(datosArticulo.getDouble("Precio$a"))}",
-                                        valor = datosArticulo.getString("Precio$a"),
-                                        tipo = "$a"
-                                    )
-                                )
-                            }
-
-                            val bodegasString = datosArticulo.getString("bodegas")
-                            val datosBodegas = JSONArray(bodegasString)
-
-                            for (e in 0 until datosBodegas.length()) {
-                                val datoBodega = datosBodegas.getJSONObject(e)
-                                val bodega = ParClaveValor(
-                                    clave = datoBodega.getString("Cod_Bodega"),
-                                    valor = datoBodega.getString("Descripcion"),
-                                    existencia = datoBodega.getDouble("Existencia")
-                                )
-                                listaBodegas.add(bodega)
-                            }
-
-                            val costoTemp = if(codMonedaProforma == "CRC") datosArticulo.getDouble("Costo") else datosArticulo.getDouble("Costo") / tasaCambioDolar
-                            val articulo = ArticuloFacturacion(
-                                codigo = datosArticulo.getString("Codigo"),
-                                codBarra = datosArticulo.getString("Cod_Barra"),
-                                descripcion = datosArticulo.getString("Descripcion"),
-                                stock = datosArticulo.optDouble("Stock", 0.00),
-                                costo = costoTemp,
-                                fraccionamiento = datosArticulo.getInt("Fraccionamineto"),
-                                descuentoFijo = datosArticulo.getDouble("Descuento_Fijo"),
-                                codTarifaImpuesto = datosArticulo.getString("Cod_Tarifa_Impuesto"),
-                                impuesto = datosArticulo.getDouble("Impuesto"),
-                                Cod_Tarifa_Impuesto =  datosArticulo.getString("Cod_Tarifa_Impuesto"),
-                                codEstado = datosArticulo.getString("Cod_Estado"),
-                                codTipoMoneda = datosArticulo.getString("Cod_Tipo_Moneda"),
-                                codNaturalezaArticulo = datosArticulo.getString("Cod_Naturaleza_Articulo"),
-                                codCabys = datosArticulo.getString("Cod_Cabys"),
-                                actividadEconomica = datosArticulo.getString("Actividad_Economica"),
-                                unidadXMedida = datosArticulo.getDouble("Unidad_x_Medida"),
-                                unidadMedida = datosArticulo.getString("Unidad_Medida"),
-                                descuentoAdmitido = datosArticulo.getDouble("Descuento_Admitido"),
-                                precio = datosArticulo.getDouble("Precio"),
-                                listaPrecios = listaPrecios,
-                                listaBodegas = listaBodegas
-                            )
-                            listaArticulos.add(articulo)
-                        }
-                        listaArticulosFacturacion = listaArticulos
-                    }else{
-                        errorCargarProforma = true
-                        actualizarDatosProforma = false
-                    }
-                }
-                validacionCargaFinalizada++
-            }
-            iniciarDescargaArticulos = false
+    LaunchedEffect (actualizarDatosProforma) {
+        if (!actualizarDatosProforma) return@LaunchedEffect
+        val result2 = objectoProcesadorDatosApi.obtenerPermisosUsuario(codUsuario)
+        if (result2 == null) return@LaunchedEffect
+        if (!validarExitoRestpuestaServidor(result2)) return@LaunchedEffect estadoRespuestaApi.cambiarEstadoRespuestaApi(mostrarSoloRespuestaError = true, datosRespuesta = result2)
+        listaPermisos = (0 until result2.getJSONArray("data").length()).map { i ->
+            val permiso = result2.getJSONArray("data").getJSONObject(i)
+            ParClaveValor(clave = permiso.getString("Cod_Derecho"), valor = permiso.getString("Descripcion"))
         }
     }
 
-    LaunchedEffect (datosIngresadosBarraBusquedaArticulos) {
-        if(datosIngresadosBarraBusquedaArticulos.isNotEmpty()){
-            listaArticulosEncontrados = emptyList()
-            apiConsultaBusquedaArticulos?.cancel()
-            apiConsultaBusquedaArticulos= cortinaConsultaApiBusquedaArticulos.launch{
-                delay(200)
-                val input = datosIngresadosBarraBusquedaArticulos.trim()
-                val coincidenciaExacta = listaArticulosFacturacion.find {
-                    it.descripcion.equals(input, ignoreCase = true) || it.codigo.equals(input, ignoreCase = true)
-                }
-                listaArticulosEncontrados = if (coincidenciaExacta != null) {
-                    listOf(coincidenciaExacta)
-                } else {
-                    listaArticulosFacturacion.filter {
-                        (it.descripcion.contains(input, ignoreCase = true) && it.codigo.contains(input, ignoreCase = true)) ||
-                        it.descripcion.contains(input, ignoreCase = true) || it.codigo.contains(input, ignoreCase = true)
-                    }.take(50)
-                }
-                isCargandoArticulos = false
-            }
+    LaunchedEffect (actualizarDatosProforma) {
+        if (!actualizarDatosProforma) return@LaunchedEffect
+        val result3 = objectoProcesadorDatosApi.obtenerParemetrosEmpresa()
+        if (result3 == null) return@LaunchedEffect
+        if (!validarExitoRestpuestaServidor(result3)) return@LaunchedEffect estadoRespuestaApi.cambiarEstadoRespuestaApi(mostrarSoloRespuestaError = true, datosRespuesta = result3)
+        listaParametros = (0 until result3.getJSONObject("resultado").getJSONArray("data").length()).map { i ->
+            val parametro = result3.getJSONObject("resultado").getJSONArray("data").getJSONObject(i)
+            ParClaveValor(clave = parametro.getString("Parametro"), valor = parametro.getString("Valor"), descripcion = parametro.getString("Descripcion"))
         }
+    }
 
+    LaunchedEffect (iniciarDescargaArticulos) {
+        if (!iniciarDescargaArticulos) return@LaunchedEffect
+        descargarArticulos()
+    }
+
+    LaunchedEffect (datosIngresadosBarraBusquedaArticulos) {
+        filtrarBusquedaArticulos()
     }
 
     LaunchedEffect (validacionCargaFinalizada) {
@@ -1417,11 +1447,12 @@ fun IniciarInterfazFacturacion(
     fun BxContenedorArticulosFacturacion(
         articulo : ArticuloFacturacion
     ) {
-        val valorString = articulo.listaPrecios.find { it.clave == tipoPrecioCliente }?.valor
+        val valorString = articulo.listaPrecios.find { it.tipo == tipoPrecioCliente }?.valor
         val precioArticuloDouble = valorString?.toDoubleOrNull() ?: articulo.precio
         val precioArticulo = BigDecimal.valueOf(precioArticuloDouble)
         val impuestoFactor = BigDecimal.ONE + BigDecimal.valueOf(articulo.impuesto).divide(BigDecimal(100))
         val precioIva = precioArticulo.multiply(impuestoFactor)
+        var expandedBodegas by remember { mutableStateOf(false) }
 
         Card(
             modifier = Modifier
@@ -1432,11 +1463,22 @@ fun IniciarInterfazFacturacion(
                     shape = RoundedCornerShape(objetoAdaptardor.ajustarAltura(16))
                 )
                 .clickable {
-                    if (listaArticulosEncontrados.isEmpty()) datosIngresadosBarraBusquedaArticulos = ""
                     isAgregar = true
-                    articuloActual = articulo
-                    iniciarMenuSeleccionarArticulo = false
-                    iniciarMenuAgregaEditaArticulo = true
+                    coroutineScope.launch {
+                        iniciarMenuSeleccionarArticulo = false
+                        gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(true)
+                        descargarArticulos()
+                        delay(300)
+                        val articuloTemp = gestorTablaArticulos.obetenerDatosArticulo(articulo.codigo)
+                        gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
+                        delay(300)
+                        if (articuloTemp == null) return@launch mostrarMensajeError(
+                            "No se logró encontrar las bodegas y los precios de este artículo actualice y vuelva a intentar."
+                        )
+                        articuloActual =  deserializarArticulo(articuloTemp?.datos?:"")
+                        iniciarMenuAgregaEditaArticulo = true
+
+                    }
                 },
             shape = RoundedCornerShape(objetoAdaptardor.ajustarAltura(16)),
             colors = CardDefaults.cardColors(containerColor =Color(0xFF31BF59))
@@ -1502,10 +1544,65 @@ fun IniciarInterfazFacturacion(
                     TText(
                         text = simboloMoneda + separacionDeMiles(montoString = precioIva.toString(), isString = true) + " $codMonedaProforma",
                         modifier = Modifier
-                            .padding(start = objetoAdaptardor.ajustarAncho(8), bottom = objetoAdaptardor.ajustarAltura(8)),
+                            .padding(start = objetoAdaptardor.ajustarAncho(8)),
                         fontSize = obtenerEstiloBodyMedium(),
                         color = Color(0xFF5E5E5E)
                     )
+                    if (articulo.listaBodegas.isNotEmpty()){
+                        if (obtenerValorParametroEmpresa(codParametro = "1", valorAuxiliar = "0") == "1"){
+                            val primeraBodega = articulo.listaBodegas.first()
+                            TText(
+                                text = "#${primeraBodega.clave} | ${primeraBodega.valor} | Exis: ${separacionDeMiles(primeraBodega.existencia)}",
+                                fontSize = obtenerEstiloBodySmall(),
+                                maxLines = 2,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(start = objetoAdaptardor.ajustarAncho(8), end = objetoAdaptardor.ajustarAncho(8)),
+                                color = if (primeraBodega.existencia.toInt() <= 0 ) Color.Red else Color.DarkGray,
+                                textAlign = TextAlign.Start
+                            )
+                            if (obtenerValorParametroEmpresa(codParametro = "53", valorAuxiliar = "0") == "1"){
+                                AnimatedVisibility(
+                                    visible = expandedBodegas,
+                                    enter = expandVertically(animationSpec = tween(300)) + fadeIn(),
+                                    exit = shrinkVertically(animationSpec = tween(300)) + fadeOut()
+                                ) {
+                                    Column(
+                                        horizontalAlignment = Alignment.CenterHorizontally
+                                    ) {
+                                        articulo.listaBodegas.forEach {
+                                            if (it.clave != primeraBodega.clave){
+                                                TText(
+                                                    text = "#${it.clave} | ${it.valor} | Exis: ${separacionDeMiles(it.existencia)}",
+                                                    fontSize = obtenerEstiloBodySmall(),
+                                                    maxLines = 2,
+                                                    modifier = Modifier
+                                                        .fillMaxWidth()
+                                                        .padding(start = objetoAdaptardor.ajustarAncho(8), end = objetoAdaptardor.ajustarAncho(8)),
+                                                    color =  if (it.existencia.toInt() <= 0 ) Color.Red else Color.DarkGray,
+                                                    textAlign = TextAlign.Start
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+                                if (articulo.listaBodegas.size > 1){
+                                    BButton(
+                                        text =  if (expandedBodegas) "Mostrar menos Bodegas" else "Mostrar más Bodegas",
+                                        onClick = {expandedBodegas = !expandedBodegas},
+                                        contenteColor = Color(0xFF244BC0),
+                                        backgroundColor = Color.White,
+                                        conSombra = false,
+                                        textSize = obtenerEstiloBodySmall(),
+                                        objetoAdaptardor = objetoAdaptardor,
+                                        modifier = Modifier
+                                            .padding(start = objetoAdaptardor.ajustarAncho(4), end = objetoAdaptardor.ajustarAncho(8))
+                                    )
+                                }
+                            }
+                        }
+                    }
+                    Spacer(modifier =Modifier.height(objetoAdaptardor.ajustarAltura(8)))
                 }
             }
         }
@@ -3225,7 +3322,13 @@ fun IniciarInterfazFacturacion(
                                             text = "Agregar",
                                             onClick = {
                                                 if (validarEstadoProforma()) return@BButton
-                                                iniciarMenuSeleccionarArticulo = true
+                                                coroutineScope.launch {
+                                                    gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(true)
+                                                    descargarArticulos()
+                                                    iniciarMenuSeleccionarArticulo = true
+                                                    gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
+                                                }
+
                                             },
                                             modifier = Modifier
                                                 .weight(1f),
@@ -3366,36 +3469,41 @@ fun IniciarInterfazFacturacion(
                                                     modifier = Modifier
                                                         .fillMaxWidth()
                                                         .clickable {
-                                                            if (validarEstadoProforma()) return@clickable
-
-                                                            val articuloTemp =
-                                                                listaArticulosFacturacion.find { it.codigo == articulo.codigo }
-                                                            if (articuloTemp == null) return@clickable mostrarMensajeError(
-                                                                "No se logró encontrar las bodegas y los precios de este artículo actualice y vuelva a intentar."
-                                                            )
-
-                                                            val listaBodegas =
-                                                                articuloTemp.listaBodegas
-                                                            val listaPrecios =
-                                                                articuloTemp.listaPrecios
-                                                            articulo.listaBodegas = listaBodegas
-                                                            articulo.listaPrecios = listaPrecios
-                                                            articulo.descuentoAdmitido =
-                                                                articuloTemp.descuentoAdmitido
-                                                            articulo.unidadXMedida =
-                                                                articuloTemp.unidadXMedida
-                                                            articulo.actividadEconomica =
-                                                                articuloTemp.actividadEconomica
-                                                            articulo.Cod_Tarifa_Impuesto =
-                                                                articuloTemp.codTarifaImpuesto
-                                                            articulo.unidadMedida =
-                                                                articuloTemp.unidadMedida
-                                                            articulo.costo = articuloTemp.costo
-                                                            articulo.fraccionamiento =
-                                                                articuloTemp.fraccionamiento
-                                                            articuloActual = articulo
-                                                            isAgregar = false
-                                                            iniciarMenuAgregaEditaArticulo = true
+                                                            coroutineScope.launch {
+                                                                if (validarEstadoProforma()) return@launch
+                                                                gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(true)
+                                                                descargarArticulos()
+                                                                delay(300)
+                                                                val articuloTemp1 = gestorTablaArticulos.obetenerDatosArticulo(articulo.codigo)
+                                                                gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
+                                                                delay(300)
+                                                                if (articuloTemp1 == null) return@launch mostrarMensajeError(
+                                                                    "No se logró encontrar las bodegas y los precios de este artículo actualice y vuelva a intentar."
+                                                                )
+                                                                val articuloTemp = deserializarArticulo(articuloTemp1.datos)
+                                                                val listaBodegas =
+                                                                    articuloTemp.listaBodegas
+                                                                val listaPrecios =
+                                                                    articuloTemp.listaPrecios
+                                                                articulo.listaBodegas = listaBodegas
+                                                                articulo.listaPrecios = listaPrecios
+                                                                articulo.descuentoAdmitido =
+                                                                    articuloTemp.descuentoAdmitido
+                                                                articulo.unidadXMedida =
+                                                                    articuloTemp.unidadXMedida
+                                                                articulo.actividadEconomica =
+                                                                    articuloTemp.actividadEconomica
+                                                                articulo.Cod_Tarifa_Impuesto =
+                                                                    articuloTemp.codTarifaImpuesto
+                                                                articulo.unidadMedida =
+                                                                    articuloTemp.unidadMedida
+                                                                articulo.costo = articuloTemp.costo
+                                                                articulo.fraccionamiento =
+                                                                    articuloTemp.fraccionamiento
+                                                                articuloActual = articulo
+                                                                isAgregar = false
+                                                                iniciarMenuAgregaEditaArticulo = true
+                                                            }
                                                         }
                                                         .padding(
                                                             vertical = objetoAdaptardor.ajustarAltura(
@@ -4273,7 +4381,7 @@ fun IniciarInterfazFacturacion(
         precioVenta = articuloActual.codPrecioVenta.ifEmpty { tipoPrecioCliente }
     )
 
-    if (iniciarMenuSeleccionarArticulo) {
+    if (iniciarMenuSeleccionarArticulo && !iniciarDescargaArticulos) {
         var isMenuVisible by remember { mutableStateOf(false) }
         val focusRequester = remember { FocusRequester() }
 
@@ -4336,7 +4444,6 @@ fun IniciarInterfazFacturacion(
                                         isCargandoArticulos = true
                                         datosIngresadosBarraBusquedaArticulos = it
                                         if (it.isEmpty()){
-                                            apiConsultaBusquedaArticulos?.cancel()
                                             isCargandoArticulos = false
                                             listaArticulosEncontrados = emptyList()
                                         }

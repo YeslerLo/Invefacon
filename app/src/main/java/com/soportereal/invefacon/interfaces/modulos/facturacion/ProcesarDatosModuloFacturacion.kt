@@ -85,12 +85,13 @@ class ProcesarDatosModuloFacturacion(apiToken: String)
         )
     }
 
-    suspend fun obtenerArticulos(busquedaMixta: String = "", tipoPrecio: String, moneda: String, codigoBarra : String = ""):JSONObject?{
+    suspend fun obtenerArticulos(busquedaMixta: String = "", tipoPrecio: String, moneda: String, codigoBarra : String = "", ultimaActualizacion: String):JSONObject?{
         val formBody = MultipartBody.Builder().setType(MultipartBody.FORM)
             .addFormDataPart("tipoPrecio",tipoPrecio)
             .addFormDataPart("moneda",moneda)
             .addFormDataPart("busquedaMixta",busquedaMixta)
             .addFormDataPart("codigobarra",codigoBarra)
+            .addFormDataPart("ultimaActualizacion",ultimaActualizacion)
             .build()
         return objetoFuncionesHttpInvefacon.metodoPost(formBody = formBody, apiDirectorio = "facturacion/articulosfacturar.php")
     }

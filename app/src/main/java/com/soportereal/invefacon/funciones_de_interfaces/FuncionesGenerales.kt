@@ -80,7 +80,11 @@ import java.io.File
 import java.io.FileOutputStream
 import java.io.InputStream
 import java.net.URL
+import java.text.SimpleDateFormat
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 import java.util.Calendar
+import java.util.Date
 import java.util.Locale
 import java.util.regex.Pattern
 
@@ -182,6 +186,12 @@ fun centrarTexto(texto: String,  context: Context): String{
     }
     return textoRetornar
 }
+
+fun obtenerFechaHoraActual(): String {
+    val formato = SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS", Locale.getDefault())
+    return formato.format(Date())
+}
+
 
 val gestorImpresora = ImpresoraViewModel()
 
@@ -393,7 +403,6 @@ class ImpresoraViewModel : ViewModel() {
         return conectado
     }
 
-
     @RequiresApi(Build.VERSION_CODES.S)
     fun conectar(context: Context, mac: String, name: String) {
         ValidarPermisos(context)
@@ -475,8 +484,10 @@ class ImpresoraViewModel : ViewModel() {
                 } else {
                     ""
                 }
-            }catch (e:Exception){
-                Toast.makeText(context, "Error en impresión de Logo", Toast.LENGTH_SHORT).show()
+            }catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(context, "Error en impresión de Logo", Toast.LENGTH_SHORT).show()
+                }
             }
             textoPrueba += "[C]<font size='big'>Prueba</font>\n" +
                     "[C]<font size='tall'>Calibrar</font>\n"+
