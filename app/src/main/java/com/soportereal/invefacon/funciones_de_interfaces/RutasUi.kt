@@ -61,6 +61,7 @@ sealed class RutasPatallas(val ruta: String){
     data object Clientes : RutasPatallas("mod/Clientes")
     data object Sac : RutasPatallas("mod/Sac")
     data object Facturacion : RutasPatallas("mod/Facturacion")
+    data object Proformas : RutasPatallas("mod/Proformas")
 
     // Clientes
     data object ClientesInfo : RutasPatallas("Clientes/Info")

@@ -711,8 +711,6 @@ fun IniciarInterfazFacturacion(
     LaunchedEffect (actualizarDatosProforma, soloActualizarArticulos, soloActualizarDatosCliente) {
         if (actualizarDatosProforma || soloActualizarArticulos || soloActualizarDatosCliente){
             listaArticulosSeleccionados.clear()
-            listaArticulosEncontrados = emptyList()
-            datosIngresadosBarraBusquedaArticulos = ""
             isCargandoDatos = (!soloActualizarArticulos  && !soloActualizarDatosCliente)
             expandedTotales = false
             expandedClientes = false
@@ -1221,7 +1219,8 @@ fun IniciarInterfazFacturacion(
                 return@LaunchedEffect
             }
             datosFacturaEmitida = Factura()
-            delay(6000)
+
+//            delay(6000)
 
             result = objectoProcesadorDatosApi.obtenerFactura(consecutivoFactura)
 
@@ -3325,6 +3324,7 @@ fun IniciarInterfazFacturacion(
                                                 coroutineScope.launch {
                                                     gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(true)
                                                     descargarArticulos()
+                                                    delay(250)
                                                     iniciarMenuSeleccionarArticulo = true
                                                     gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
                                                 }

@@ -136,6 +136,7 @@ class GestorTablaArticulos(application: Application) : AndroidViewModel(applicat
     fun modoExacto(buscarExacto: Boolean) {
         _modoExacto.value = buscarExacto
     }
+
     fun eliminarArticulo(codigo: String, empresa: String) {
         viewModelScope.launch {
             articuloDao.eliminarArticulo(codigo, empresa)
@@ -147,6 +148,7 @@ class GestorTablaArticulos(application: Application) : AndroidViewModel(applicat
             articuloDao.insertarArticulos(lista)
         }
     }
+
     suspend fun obetenerDatosArticulo(codigo: String): ArticuloDb? {
         return articuloDao.obtenerArticulo(_empresa.value, codigo)
     }

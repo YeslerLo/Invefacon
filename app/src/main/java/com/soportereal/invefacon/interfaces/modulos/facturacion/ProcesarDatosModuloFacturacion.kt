@@ -294,19 +294,18 @@ suspend fun imprimirFactura(factura: Factura, context: Context, nombreEmpresa : 
     if (factura.cliente.Cedula.isNotEmpty())facturaTexto += addText("CEDULA: ${factura.cliente.Cedula}", "L", context = context)
     facturaTexto += addText("NOMBRE: ${factura.cliente.Nombre}", "L", context = context)
     if (factura.cliente.EmailFactura.isNotEmpty()) facturaTexto += addText("EMAIL: ${factura.cliente.EmailFactura}", "L", context = context)
-    facturaTexto += "\n"
     facturaTexto += addTextTall("DETALLE FACTURA", "C", context = context)
     facturaTexto += agregarDobleLinea(context = context, justification = "C")
+    facturaTexto += addText(if (obtenerValorParametroEmpresa("307", "0") == "1") "CABYS" else "", "L", context = context, destacar = true)
+    facturaTexto += addText("CANTIDAD ${if (obtenerValorParametroEmpresa("15", "0") == "1") "#CODIGO" else ""} DESCRIPCION", "L", context = context, destacar = true)
+    facturaTexto += addText("P/U / IMP(%) / DES(%) / TOTAL.GRAV", "R", context = context)
+    facturaTexto += agregarLinea(context = context)
     val listaIvas = mutableListOf<ParClaveValor>()
     for (i in 0 until factura.ventaHija.size) {
         val articulo = factura.ventaHija[i]
-        if (obtenerValorParametroEmpresa("15", "0") == "1") facturaTexto += addText("COD: #${articulo.ArticuloCodigo}", "C", context = context)
-        if (obtenerValorParametroEmpresa("307", "0") == "1") facturaTexto += addText("CABYS: ${articulo.ArticuloCabys}", "C", context = context)
-        facturaTexto += addText(articulo.nombreArticulo, "C", destacar = true, context = context)
-        facturaTexto += addText("CANT: ${articulo.ArticuloCantidad.toDouble()} [R]PREC: ${separacionDeMiles(isString = true, montoString = articulo.ArticuloVenta)}", "L", context = context)
-        facturaTexto += addText("IMP: ${articulo.ArticuloIvaPorcentage}%  [R]SUBTOTAL: ${separacionDeMiles(isString = true, montoString = articulo.ArticuloVentaSubTotal1)}", "L", context = context)
-        facturaTexto += addText("DESC(${articulo.ArticuloDescuentoPorcentage}%): ${separacionDeMiles(isString = true, montoString = articulo.ArticuloDescuentoMonto)}", "R", context = context)
-        facturaTexto += addText("TOTAL: ${separacionDeMiles(isString = true, montoString = articulo.ArticuloVentaGravado)}", "R", context = context, destacar = true)
+        facturaTexto += addText(if (obtenerValorParametroEmpresa("307", "0") == "1")  articulo.ArticuloCabys else "", "L", context = context)
+        facturaTexto += addText("${articulo.ArticuloCantidad.toDouble()} ${if (obtenerValorParametroEmpresa("15", "0") == "1") "#${articulo.ArticuloCodigo} " else ""}"+articulo.nombreArticulo, "L", destacar = true, context = context)
+        facturaTexto += addText("${separacionDeMiles(isString = true, montoString = articulo.ArticuloVenta)} / ${articulo.ArticuloIvaPorcentage}% / ${articulo.ArticuloDescuentoPorcentage}% / ${separacionDeMiles(isString = true, montoString = articulo.ArticuloVentaGravado)}", "R", context = context)
         facturaTexto += agregarLinea(context = context)
         val ivaTemp = listaIvas.find { it.clave == articulo.ArticuloIvaPorcentage }
         if ( ivaTemp != null){
@@ -317,7 +316,6 @@ suspend fun imprimirFactura(factura: Factura, context: Context, nombreEmpresa : 
         }
     }
     if (obtenerValorParametroEmpresa("192", "0") == "1"){
-        facturaTexto += "\n"
         facturaTexto += agregarDobleLinea(context = context, justification = "C")
         facturaTexto += addText("SUBTOTAL: [R]${separacionDeMiles(isString = true, montoString = (factura.ventaMadre.TotalVenta.toDouble()+factura.ventaMadre.TotalDescuento.toDouble()).toString())}", "R", context = context)
         if (obtenerValorParametroEmpresa("26", "0") == "1") facturaTexto += addText("DESCUENTO: [R]${separacionDeMiles(isString = true, montoString = factura.ventaMadre.TotalDescuento)}", "R", context = context)
