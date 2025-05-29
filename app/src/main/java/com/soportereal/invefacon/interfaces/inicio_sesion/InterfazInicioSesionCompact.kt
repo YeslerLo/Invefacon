@@ -16,14 +16,18 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -96,7 +100,6 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.toSize
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.navigation.NavController
-import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.soportereal.invefacon.R
 import com.soportereal.invefacon.funciones_de_interfaces.FuncionesParaAdaptarContenido
 import com.soportereal.invefacon.funciones_de_interfaces.RutasPatallas
@@ -118,16 +121,14 @@ import java.util.regex.Pattern
 
 
 @RequiresApi(Build.VERSION_CODES.S)
-@SuppressLint("SourceLockedOrientationActivity", "ContextCastToActivity")
+@SuppressLint("SourceLockedOrientationActivity", "ContextCastToActivity",
+    "ConfigurationScreenWidthHeight"
+)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun IniciarInterfazInicioSesionCompact(
     navController: NavController?
 ){
-
-    val systemUiController = rememberSystemUiController()
-    systemUiController.setStatusBarColor(Color(0xFF244BC0))
-    systemUiController.setNavigationBarColor(Color.Black)
     var clientePassword by remember { mutableStateOf("") }
     var clienteEmpresaSeleccionada by remember { mutableStateOf("") }
     val fontAksharPrincipal = FontFamily(Font(R.font.akshar_medium))
@@ -189,506 +190,626 @@ fun IniciarInterfazInicioSesionCompact(
         validarVersionApp(contexto)
     }
 
-    ConstraintLayout (
+    Box(
         modifier = Modifier
             .fillMaxSize()
             .background(Color.White)
-            .statusBarsPadding()
-            .navigationBarsPadding()
     ) {
-        //Referencias para ajustar componetes en la Interfaz
-        val (bxCirculoSuperiorAzulInterfaz, crdContenedoraComponetesEntradaDatos, bxContenedorLogo,
-            txBienvenido, snhtMensajesSuperiores,bxInferior)= createRefs()
-
-        // Box Circular Superior azul con degradado
-        Canvas(
+        // Fondo para la status bar
+        Spacer(
             modifier = Modifier
-                .width(objetoAdaptardor.ajustarAncho(650))
-                .height(objetoAdaptardor.ajustarAltura(650))
-                .constrainAs(bxCirculoSuperiorAzulInterfaz) {
-                    top.linkTo(parent.top, margin = objetoAdaptardor.ajustarAltura(-300))
-                    start.linkTo(parent.start, margin = 0.dp)
-                }
-        ) {
-            val colorAzulDegradado = Brush.linearGradient(
-                colors = listOf(Color(0xFF244BC0), Color(0xFF244BC0)), // Colores del degradado
-                start = Offset(1000f, 500f), // Punto inicial del degradado
-                end = Offset(500f, 500f) // Punto final del degradado
-            )
-            drawCircle(
-                radius = size.minDimension,
-                brush = colorAzulDegradado
-            )
-        }
-
-        //Box Contenedor del Logo
-        Box(
-            modifier = Modifier
-                .height(objetoAdaptardor.ajustarAltura(130))
-                .width(objetoAdaptardor.ajustarAncho(115))
-                .constrainAs(bxContenedorLogo) {
-                    top.linkTo(parent.top, margin = objetoAdaptardor.ajustarAltura(37))
-                    start.linkTo(parent.start, margin = objetoAdaptardor.ajustarAncho(134))
-                }
-        ) {
-            // Logo Invefacon
-            Image(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .align(Alignment.Center),
-                painter = painterResource(id = R.drawable.logo_invenfacon),
-                contentDescription = "Descripción de la imagen",
-                contentScale = ContentScale.Fit
-            )
-        }
-
-        //Texto Binevenido
-        Text(
-            modifier = Modifier
-                .wrapContentSize()
                 .fillMaxWidth()
-                .constrainAs(txBienvenido) {
-                    top.linkTo(parent.top, margin = objetoAdaptardor.ajustarAltura(177))
-                },
-            fontFamily = fontAksharPrincipal,
-            fontWeight = FontWeight.Bold,
-            color = Color.White,
-            fontSize = when {
-                configuration.screenWidthDp < 360 -> 50.sp
-                configuration.screenWidthDp in 360..599 -> 53.sp
-                configuration.screenWidthDp in 600..839 -> 56.sp
-                else ->60.sp
-            },
-            text = "¡Bienvenido!",
-            textAlign = TextAlign.Center,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis
+                .height(WindowInsets.statusBars.asPaddingValues().calculateTopPadding())
+                .background(Color(0xFF244BC0))
+                .align(Alignment.TopCenter)
         )
 
-        //Card contenedora de componetes de entrada de datos
-        Card(
+        // Tu layout principal
+        ConstraintLayout (
             modifier = Modifier
-                .height(objetoAdaptardor.ajustarAltura(475))
-                .width(objetoAdaptardor.ajustarAncho(339))
-                .shadow(
-                    elevation = objetoAdaptardor.ajustarAltura(7),
-                    shape = RoundedCornerShape(objetoAdaptardor.ajustarAltura(20))
-                )
-                .constrainAs(crdContenedoraComponetesEntradaDatos) {
-                    top.linkTo(parent.top, margin = objetoAdaptardor.ajustarAltura(247))
-                    start.linkTo(parent.start, margin = objetoAdaptardor.ajustarAncho(22))
-                },
-            shape = RoundedCornerShape(objetoAdaptardor.ajustarAltura(20)),
-            colors = CardDefaults.cardColors(containerColor = Color.White)
+                .fillMaxSize()
+                .background(Color.White)
+                .statusBarsPadding()
+                .navigationBarsPadding()
         ) {
+            //Referencias para ajustar componetes en la Interfaz
+            val (bxCirculoSuperiorAzulInterfaz, crdContenedoraComponetesEntradaDatos, bxContenedorLogo,
+                txBienvenido, snhtMensajesSuperiores)= createRefs()
 
-            //Box contenedor de componentes de entrada de datos, su funcion es centrar los componetes dentro del Card
+            // Box Circular Superior azul con degradado
+            Canvas(
+                modifier = Modifier
+                    .width(objetoAdaptardor.ajustarAncho(650))
+                    .height(objetoAdaptardor.ajustarAltura(650))
+                    .constrainAs(bxCirculoSuperiorAzulInterfaz) {
+                        top.linkTo(parent.top, margin = objetoAdaptardor.ajustarAltura(-300))
+                        start.linkTo(parent.start, margin = 0.dp)
+                    }
+            ) {
+                val colorAzulDegradado = Brush.linearGradient(
+                    colors = listOf(Color(0xFF244BC0), Color(0xFF244BC0)), // Colores del degradado
+                    start = Offset(1000f, 500f), // Punto inicial del degradado
+                    end = Offset(500f, 500f) // Punto final del degradado
+                )
+                drawCircle(
+                    radius = size.minDimension,
+                    brush = colorAzulDegradado
+                )
+            }
+
+            //Box Contenedor del Logo
             Box(
-                modifier =Modifier
-                    .fillMaxSize(),
-                contentAlignment = Alignment.TopCenter //Alinea los compoentes que esten detro del Box
-            ){
-                // Columna para alinear los componetes que esten dentro de ella de forma vertical
-                // Contiene los componetentes para obtener el correo y las contraseñas y mostrar las empresas
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
-                ) {
+                modifier = Modifier
+                    .height(objetoAdaptardor.ajustarAltura(130))
+                    .width(objetoAdaptardor.ajustarAncho(115))
+                    .constrainAs(bxContenedorLogo) {
+                        top.linkTo(parent.top, margin = objetoAdaptardor.ajustarAltura(37))
+                        start.linkTo(parent.start, margin = objetoAdaptardor.ajustarAncho(134))
+                    }
+            ) {
+                // Logo Invefacon
+                Image(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .align(Alignment.Center),
+                    painter = painterResource(id = R.drawable.logo_invenfacon),
+                    contentDescription = "Descripción de la imagen",
+                    contentScale = ContentScale.Fit
+                )
+            }
 
-                    // Spacer para para mantener un margen en la parte parte superior
-                    Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(8)))
+            //Texto Binevenido
+            Text(
+                modifier = Modifier
+                    .wrapContentSize()
+                    .fillMaxWidth()
+                    .constrainAs(txBienvenido) {
+                        top.linkTo(parent.top, margin = objetoAdaptardor.ajustarAltura(177))
+                    },
+                fontFamily = fontAksharPrincipal,
+                fontWeight = FontWeight.Bold,
+                color = Color.White,
+                fontSize = when {
+                    configuration.screenWidthDp < 360 -> 50.sp
+                    configuration.screenWidthDp in 360..599 -> 53.sp
+                    configuration.screenWidthDp in 600..839 -> 56.sp
+                    else ->60.sp
+                },
+                text = "¡Bienvenido!",
+                textAlign = TextAlign.Center,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
 
-                    // Texto Inicio Sesion
-                    Text(
-                        text = "Inicio Sesión",
-                        fontSize = when {
-                            configuration.screenWidthDp < 360 -> 45.sp
-                            configuration.screenWidthDp in 360..599 -> 48.sp
-                            configuration.screenWidthDp in 600..839 -> 51.sp
-                            else ->55.sp
-                        },
-                        fontFamily = fontAksharPrincipal,
-                        fontWeight = FontWeight.Bold,
-                        color = Color(0xFF5B5B5B),
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
+            //Card contenedora de componetes de entrada de datos
+            Card(
+                modifier = Modifier
+                    .height(objetoAdaptardor.ajustarAltura(475))
+                    .width(objetoAdaptardor.ajustarAncho(339))
+                    .shadow(
+                        elevation = objetoAdaptardor.ajustarAltura(7),
+                        shape = RoundedCornerShape(objetoAdaptardor.ajustarAltura(20))
                     )
+                    .constrainAs(crdContenedoraComponetesEntradaDatos) {
+                        top.linkTo(parent.top, margin = objetoAdaptardor.ajustarAltura(247))
+                        start.linkTo(parent.start, margin = objetoAdaptardor.ajustarAncho(22))
+                    },
+                shape = RoundedCornerShape(objetoAdaptardor.ajustarAltura(20)),
+                colors = CardDefaults.cardColors(containerColor = Color.White)
+            ) {
 
-                    LaunchedEffect(usuarioCorreoEmpresa) {
-                        usuarioCorreoEmpresa= usuarioCorreoEmpresa.replace(" ", "")
-                        arrayEmpresasDisponibles.clear()
-                        clienteEmpresaSeleccionada=""
-                        existenCorreos= true
-                        apiConsultaActual?.cancel()
-                        isCorreoIngresadoValido= objetoValidadorCorreo.matcher(usuarioCorreoEmpresa).matches()
-                        //Si el correo ingresado es valido ingresa la if
-                        if(isCorreoIngresadoValido){
-                            //Se pone null para iniciar el circulo de carga
-                            existenCorreos=null
-                            apiConsultaActual= cortinaConsultaApi.launch{
-                                val resultApi= objetoProcesamientoDatosApi.obtenerNombresEmpresasPorCorreo(usuarioCorreoEmpresa) // Datos retornados del API
+                //Box contenedor de componentes de entrada de datos, su funcion es centrar los componetes dentro del Card
+                Box(
+                    modifier =Modifier
+                        .fillMaxSize(),
+                    contentAlignment = Alignment.TopCenter //Alinea los compoentes que esten detro del Box
+                ){
+                    // Columna para alinear los componetes que esten dentro de ella de forma vertical
+                    // Contiene los componetentes para obtener el correo y las contraseñas y mostrar las empresas
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
 
-                                //Si la respuesta del api es null es porque no hay conexion a Internet o hubo problemas con la conexion al servidor
-                                if(resultApi==null){
-                                    existenCorreos=null
-                                }else if(resultApi.getString("status")=="error"){
-                                    if (resultApi.getString("code")=="401"){
-                                        if (!snackbarVisible) {
-                                            errorResultadoApi=true
-                                            coroutineScope.launch {
-                                                snackbarVisible=true
-                                                snackbarHostState.showSnackbar(
-                                                    message = "Error: ${resultApi.getString("data")}"
-                                                )
-                                                snackbarHostState.currentSnackbarData?.dismiss()
-                                                snackbarVisible=false
+                        // Spacer para para mantener un margen en la parte parte superior
+                        Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(8)))
+
+                        // Texto Inicio Sesion
+                        Text(
+                            text = "Inicio Sesión",
+                            fontSize = when {
+                                configuration.screenWidthDp < 360 -> 45.sp
+                                configuration.screenWidthDp in 360..599 -> 48.sp
+                                configuration.screenWidthDp in 600..839 -> 51.sp
+                                else ->55.sp
+                            },
+                            fontFamily = fontAksharPrincipal,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF5B5B5B),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+
+                        LaunchedEffect(usuarioCorreoEmpresa) {
+                            usuarioCorreoEmpresa= usuarioCorreoEmpresa.replace(" ", "")
+                            arrayEmpresasDisponibles.clear()
+                            clienteEmpresaSeleccionada=""
+                            existenCorreos= true
+                            apiConsultaActual?.cancel()
+                            isCorreoIngresadoValido= objetoValidadorCorreo.matcher(usuarioCorreoEmpresa).matches()
+                            //Si el correo ingresado es valido ingresa la if
+                            if(isCorreoIngresadoValido){
+                                //Se pone null para iniciar el circulo de carga
+                                existenCorreos=null
+                                apiConsultaActual= cortinaConsultaApi.launch{
+                                    val resultApi= objetoProcesamientoDatosApi.obtenerNombresEmpresasPorCorreo(usuarioCorreoEmpresa) // Datos retornados del API
+
+                                    //Si la respuesta del api es null es porque no hay conexion a Internet o hubo problemas con la conexion al servidor
+                                    if(resultApi==null){
+                                        existenCorreos=null
+                                    }else if(resultApi.getString("status")=="error"){
+                                        if (resultApi.getString("code")=="401"){
+                                            if (!snackbarVisible) {
+                                                errorResultadoApi=true
+                                                coroutineScope.launch {
+                                                    snackbarVisible=true
+                                                    snackbarHostState.showSnackbar(
+                                                        message = "Error: ${resultApi.getString("data")}"
+                                                    )
+                                                    snackbarHostState.currentSnackbarData?.dismiss()
+                                                    snackbarVisible=false
+                                                }
                                             }
                                         }
+                                        existenCorreos=false
                                     }
-                                    existenCorreos=false
-                                }
-                                else if(resultApi.getString("status")=="ok"){
-                                    val arrayEmpresas= resultApi.getJSONArray("data")
-                                    for (i in 0 until arrayEmpresas.length()) {
-                                        val empresa = arrayEmpresas.getJSONObject(i).getString("empresa") // O el campo correspondiente
-                                        arrayEmpresasDisponibles.add(empresa)
+                                    else if(resultApi.getString("status")=="ok"){
+                                        val arrayEmpresas= resultApi.getJSONArray("data")
+                                        for (i in 0 until arrayEmpresas.length()) {
+                                            val empresa = arrayEmpresas.getJSONObject(i).getString("empresa") // O el campo correspondiente
+                                            arrayEmpresasDisponibles.add(empresa)
+                                        }
+                                        scrollState.scrollTo(0)
+                                        ocultarTeclado(contexto)
+                                        existenCorreos=true
                                     }
-                                    scrollState.scrollTo(0)
-                                    ocultarTeclado(contexto)
-                                    existenCorreos=true
                                 }
-                            }
 
+                            }
                         }
-                    }
 
-                    // Input Correo Cliente
-                    OutlinedTextField(
-                        value = usuarioCorreoEmpresa,
-                        onValueChange =  {
-                            usuarioCorreoEmpresa = it
-                        },
-                        enabled = isBtIniciarSesionActivo.value,
-                        label = {
-                            Text("Correo",
-                                fontFamily = fontAksharPrincipal,
-                                fontWeight = FontWeight.Light,
-                                color = if (existenCorreos==null || existenCorreos==true) Color(0xFF5B5B5B) else Color.Red,
-                                fontSize = obtenerEstiloBodyBig(),
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                        },
-                        leadingIcon = {
-                            Icon(
-                                Icons.Default.Email,
-                                contentDescription = "Email Icon",
-                                tint = if (existenCorreos==null || existenCorreos==true) Color.DarkGray else Color.Red)
-                        },
-                        shape = RoundedCornerShape(objetoAdaptardor.ajustarAltura(16)),
-                        textStyle = TextStyle(
-                            fontFamily = fontAksharPrincipal,
-                            fontWeight = FontWeight.Light,
-                            fontSize = obtenerEstiloBodyBig()
-                        ),
-                        trailingIcon = {
-                            if (existenCorreos==false) {
+                        // Input Correo Cliente
+                        OutlinedTextField(
+                            value = usuarioCorreoEmpresa,
+                            onValueChange =  {
+                                usuarioCorreoEmpresa = it
+                            },
+                            enabled = isBtIniciarSesionActivo.value,
+                            label = {
+                                Text("Correo",
+                                    fontFamily = fontAksharPrincipal,
+                                    fontWeight = FontWeight.Light,
+                                    color = if (existenCorreos==null || existenCorreos==true) Color(0xFF5B5B5B) else Color.Red,
+                                    fontSize = obtenerEstiloBodyBig(),
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            },
+                            leadingIcon = {
                                 Icon(
-                                    imageVector = Icons.Default.Error,
-                                    contentDescription = "Correo inválido",
-                                    tint = Color.Red
-                                )
-                            }
-                        },
-                        placeholder = {
-                            Text(
-                                "Ingrese su correo",
+                                    Icons.Default.Email,
+                                    contentDescription = "Email Icon",
+                                    tint = if (existenCorreos==null || existenCorreos==true) Color.DarkGray else Color.Red)
+                            },
+                            shape = RoundedCornerShape(objetoAdaptardor.ajustarAltura(16)),
+                            textStyle = TextStyle(
                                 fontFamily = fontAksharPrincipal,
                                 fontWeight = FontWeight.Light,
-                                fontSize = obtenerEstiloBodyBig(),
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-
-                            )
-                        },
-                        modifier = Modifier
-                            .width(objetoAdaptardor.ajustarAncho(300))
-                            .height(objetoAdaptardor.ajustarAltura(70)),
-                        singleLine = true,
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedTextColor = Color.DarkGray,
-                            unfocusedTextColor = Color.DarkGray,
-                            focusedPlaceholderColor = Color.DarkGray,
-                            unfocusedPlaceholderColor = Color.DarkGray,
-                            focusedBorderColor = if (existenCorreos==null || existenCorreos==true) Color(0xFF5B5B5B) else Color.Red,
-                            unfocusedBorderColor = if (existenCorreos==null || existenCorreos==true) Color(0xFF5B5B5B) else Color.Red,
-                            cursorColor = Color.DarkGray
-                        )
-                    )//Fin Input Correo Cliente
-
-
-                    //Spacer seperador de componente
-                    Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(20)))
-
-                    //Segun es el estado de la variable se va a mostrar un componente
-                    // Su funcion es mostrar el estado de busqueda de correos como cargando, correo no econtrado y los resulatados en caso de que el correo este asociado a una empresa
-                    when(existenCorreos){
-                        null ->{
-                            Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
-                                CircularProgressIndicator(
-                                    strokeWidth = objetoAdaptardor.ajustarAltura(4),
-                                    color = Color(0xFF244BC0)
-                                )
-                                Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(4)))
+                                fontSize = obtenerEstiloBodyBig()
+                            ),
+                            trailingIcon = {
+                                if (existenCorreos==false) {
+                                    Icon(
+                                        imageVector = Icons.Default.Error,
+                                        contentDescription = "Correo inválido",
+                                        tint = Color.Red
+                                    )
+                                }
+                            },
+                            placeholder = {
                                 Text(
-                                    "Buscando empresas asociadas al correo...",
+                                    "Ingrese su correo",
+                                    fontFamily = fontAksharPrincipal,
+                                    fontWeight = FontWeight.Light,
+                                    fontSize = obtenerEstiloBodyBig(),
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+
+                                )
+                            },
+                            modifier = Modifier
+                                .width(objetoAdaptardor.ajustarAncho(300))
+                                .height(objetoAdaptardor.ajustarAltura(70)),
+                            singleLine = true,
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedTextColor = Color.DarkGray,
+                                unfocusedTextColor = Color.DarkGray,
+                                focusedPlaceholderColor = Color.DarkGray,
+                                unfocusedPlaceholderColor = Color.DarkGray,
+                                focusedBorderColor = if (existenCorreos==null || existenCorreos==true) Color(0xFF5B5B5B) else Color.Red,
+                                unfocusedBorderColor = if (existenCorreos==null || existenCorreos==true) Color(0xFF5B5B5B) else Color.Red,
+                                cursorColor = Color.DarkGray
+                            )
+                        )//Fin Input Correo Cliente
+
+
+                        //Spacer seperador de componente
+                        Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(20)))
+
+                        //Segun es el estado de la variable se va a mostrar un componente
+                        // Su funcion es mostrar el estado de busqueda de correos como cargando, correo no econtrado y los resulatados en caso de que el correo este asociado a una empresa
+                        when(existenCorreos){
+                            null ->{
+                                Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
+                                    CircularProgressIndicator(
+                                        strokeWidth = objetoAdaptardor.ajustarAltura(4),
+                                        color = Color(0xFF244BC0)
+                                    )
+                                    Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(4)))
+                                    Text(
+                                        "Buscando empresas asociadas al correo...",
+                                        fontFamily = fontAksharPrincipal,
+                                        fontWeight = FontWeight.Light,
+                                        fontSize = obtenerEstiloBodyBig(),
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
+                                }
+
+                            }// Mostrar Circulo de carga
+                            false->{
+                                val txtEstadoBusquedaCorreo="No se encontró ninguna empresa asociada a $usuarioCorreoEmpresa"
+                                Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center){
+                                    Text(
+                                        text = txtEstadoBusquedaCorreo,
+                                        color = Color.Red,
+                                        fontFamily = fontAksharPrincipal,
+                                        fontWeight = FontWeight.Medium,
+                                        textAlign = TextAlign.Center,
+                                        fontSize = obtenerEstiloBodyBig(),
+                                        maxLines = 2,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
+                                }
+                            }// Mostrar Mensaje Correo no encontrado
+                            else->{
+                                var numeroPaginaDdm by remember { mutableIntStateOf(0) }
+                                val cantidadEmpresasPorPagina = 50
+                                val totalPaginas = (arrayEmpresasDisponibles.size + cantidadEmpresasPorPagina - 1) / cantidadEmpresasPorPagina
+                                val nombresEmpresasPaginaActual =
+                                    arrayEmpresasDisponibles.drop(numeroPaginaDdm * cantidadEmpresasPorPagina)
+                                        .take(cantidadEmpresasPorPagina)
+
+                                ExposedDropdownMenuBox(
+                                    expanded = expandirDdmOpcionesEmpresas,
+                                    onExpandedChange = { if (isBtIniciarSesionActivo.value) {expandirDdmOpcionesEmpresas = !expandirDdmOpcionesEmpresas} }
+                                ) {
+                                    OutlinedTextField(
+                                        value = clienteEmpresaSeleccionada,
+                                        readOnly = true,
+                                        enabled = isBtIniciarSesionActivo.value,
+                                        onValueChange = { clienteEmpresaSeleccionada = it },
+                                        leadingIcon = {
+                                            Icon(
+                                                Icons.Default.Home,
+                                                contentDescription = "Email Icon",
+                                                tint = Color.DarkGray
+                                            )
+                                        },
+                                        trailingIcon = {
+                                            Icon(
+                                                imageVector = iconoDdmOpcionesEmpresasFlechasLaterales,
+                                                contentDescription = " "
+                                            )
+                                        },
+                                        textStyle = TextStyle(
+                                            fontFamily = fontAksharPrincipal,
+                                            fontWeight = FontWeight.Light,
+                                            color = Color.DarkGray,
+                                            fontSize = obtenerEstiloBodyBig()
+                                        ),
+                                        shape = RoundedCornerShape(
+                                            objetoAdaptardor.ajustarAltura(
+                                                16
+                                            )
+                                        ),
+                                        placeholder = {
+                                            var estadoSeleccionEmpresa = "Seleccione su Empresa"
+                                            if (arrayEmpresasDisponibles.isEmpty()) {
+                                                estadoSeleccionEmpresa = "Ingrese un correo válido"
+
+                                            }
+                                            Text(
+                                                estadoSeleccionEmpresa,
+                                                fontFamily = fontAksharPrincipal,
+                                                fontWeight = FontWeight.Light,
+                                                color = Color.DarkGray,
+                                                fontSize = obtenerEstiloBodyBig(),
+                                                maxLines = 1,
+                                                overflow = TextOverflow.Ellipsis
+                                            )
+                                        },
+                                        modifier = Modifier
+                                            .width(objetoAdaptardor.ajustarAncho(300))
+                                            .height(objetoAdaptardor.ajustarAltura(70))
+                                            .onGloballyPositioned { coordinates ->
+                                                textFieldOpcionesEmpresasMedida =
+                                                    coordinates.size.toSize()
+                                            }
+                                            .menuAnchor(),
+                                        label = {
+                                            Text(
+                                                "Empresa",
+                                                color = Color.DarkGray,
+                                                fontFamily = fontAksharPrincipal,
+                                                fontWeight = FontWeight.Light,
+                                                fontSize = obtenerEstiloBodyBig()
+                                            )
+                                        },
+                                        colors = OutlinedTextFieldDefaults.colors(
+                                            focusedTextColor = Color(0xFF5B5B5B),
+                                            unfocusedTextColor = Color(0xFF5B5B5B),
+                                            focusedPlaceholderColor = Color(0xFF5B5B5B),
+                                            unfocusedPlaceholderColor = Color(0xFF5B5B5B),
+                                            focusedBorderColor = Color(0xFF5B5B5B),
+                                            unfocusedBorderColor = Color(0xFF5B5B5B),
+                                            cursorColor = Color.DarkGray
+                                        )
+                                    )
+
+
+                                    ExposedDropdownMenu(
+                                        expanded = expandirDdmOpcionesEmpresas,
+                                        onDismissRequest = { expandirDdmOpcionesEmpresas = false },
+                                        modifier = Modifier
+                                            .width(with(LocalDensity.current) { textFieldOpcionesEmpresasMedida.width.toDp() })
+                                            .background(Color.White),
+                                        scrollState = scrollState
+                                    ) {
+                                        nombresEmpresasPaginaActual.forEach { label ->
+                                            DropdownMenuItem(
+                                                onClick = {
+                                                    clienteEmpresaSeleccionada = label
+                                                    expandirDdmOpcionesEmpresas = false
+                                                },
+                                                text = {
+                                                    Text(
+                                                        text = label,
+                                                        fontFamily = fontAksharPrincipal,
+                                                        fontWeight = FontWeight.Medium,
+                                                        fontSize = obtenerEstiloBodyBig(),
+                                                        maxLines = 1,
+                                                        overflow = TextOverflow.Ellipsis
+                                                    )
+                                                },
+                                                modifier = Modifier
+                                                    .background(Color.White),
+                                                enabled = isBtIniciarSesionActivo.value
+                                            )
+                                        }
+                                        if (numeroPaginaDdm < totalPaginas - 1) {
+                                            DropdownMenuItem(
+                                                onClick = { numeroPaginaDdm++ },
+                                                text = {
+                                                    Text(
+                                                        "Mostrar más",
+                                                        fontFamily = fontAksharPrincipal,
+                                                        fontWeight = FontWeight.Medium,
+                                                        color = Color(0xFF31B927),
+                                                        fontSize = obtenerEstiloBodyBig(),
+                                                        maxLines = 1,
+                                                        overflow = TextOverflow.Ellipsis
+                                                    )
+                                                },
+                                                modifier = Modifier
+                                                    .background(Color.White),
+                                                enabled = isBtIniciarSesionActivo.value
+                                            )
+                                        }
+
+                                        if (numeroPaginaDdm > 0) {
+                                            DropdownMenuItem(
+                                                onClick = { numeroPaginaDdm-- },
+                                                text = {
+                                                    Text(
+                                                        text = "Mostrar anteriores",
+                                                        fontFamily = fontAksharPrincipal,
+                                                        fontWeight = FontWeight.Medium,
+                                                        color = Color.Red,
+                                                        fontSize = obtenerEstiloBodyBig(),
+                                                        maxLines = 1,
+                                                        overflow = TextOverflow.Ellipsis
+                                                    )
+                                                },
+                                                modifier = Modifier
+                                                    .background(Color.White),
+                                                enabled = isBtIniciarSesionActivo.value
+                                            )
+                                        }
+                                    }
+                                }
+                            }// Mostrar Lista desplegable de las empresas encontradas con base al correo
+                        }
+
+                        //Spacer seperador de componente
+                        Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(20)))
+
+                        // Input Contraseña Cliente
+                        OutlinedTextField(
+                            value = clientePassword,
+                            onValueChange = { newText -> clientePassword = newText },
+                            label = {
+                                Text(
+                                    "Contraseña",
+                                    color = Color.DarkGray,
                                     fontFamily = fontAksharPrincipal,
                                     fontWeight = FontWeight.Light,
                                     fontSize = obtenerEstiloBodyBig(),
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis
                                 )
-                            }
-
-                        }// Mostrar Circulo de carga
-                        false->{
-                            val txtEstadoBusquedaCorreo="No se encontró ninguna empresa asociada a $usuarioCorreoEmpresa"
-                            Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center){
+                            },
+                            leadingIcon = { Icon(Icons.Default.Lock, contentDescription = "Email Icon", tint = Color.DarkGray) },
+                            placeholder = {
                                 Text(
-                                    text = txtEstadoBusquedaCorreo,
-                                    color = Color.Red,
+                                    "Ingrese su contraseña",
                                     fontFamily = fontAksharPrincipal,
-                                    fontWeight = FontWeight.Medium,
-                                    textAlign = TextAlign.Center,
+                                    fontWeight = FontWeight.Light,
                                     fontSize = obtenerEstiloBodyBig(),
-                                    maxLines = 2,
+                                    maxLines = 1,
                                     overflow = TextOverflow.Ellipsis
                                 )
-                            }
-                        }// Mostrar Mensaje Correo no encontrado
-                        else->{
-                            var numeroPaginaDdm by remember { mutableIntStateOf(0) }
-                            val cantidadEmpresasPorPagina = 50
-                            val totalPaginas = (arrayEmpresasDisponibles.size + cantidadEmpresasPorPagina - 1) / cantidadEmpresasPorPagina
-                            val nombresEmpresasPaginaActual =
-                                arrayEmpresasDisponibles.drop(numeroPaginaDdm * cantidadEmpresasPorPagina)
-                                    .take(cantidadEmpresasPorPagina)
+                            },
+                            modifier = Modifier
+                                .width(objetoAdaptardor.ajustarAncho(300))
+                                .height(objetoAdaptardor.ajustarAltura(70)),
+                            visualTransformation = if (mostrarPasswordOtxf) VisualTransformation.None else PasswordVisualTransformation(),
+                            trailingIcon = {
+                                val image = if (mostrarPasswordOtxf)
+                                    Icons.Filled.Visibility
+                                else Icons.Filled.VisibilityOff
 
-                            ExposedDropdownMenuBox(
-                                expanded = expandirDdmOpcionesEmpresas,
-                                onExpandedChange = { if (isBtIniciarSesionActivo.value) {expandirDdmOpcionesEmpresas = !expandirDdmOpcionesEmpresas} }
-                            ) {
-                                OutlinedTextField(
-                                    value = clienteEmpresaSeleccionada,
-                                    readOnly = true,
-                                    enabled = isBtIniciarSesionActivo.value,
-                                    onValueChange = { clienteEmpresaSeleccionada = it },
-                                    leadingIcon = {
-                                        Icon(
-                                            Icons.Default.Home,
-                                            contentDescription = "Email Icon",
-                                            tint = Color.DarkGray
-                                        )
-                                    },
-                                    trailingIcon = {
-                                        Icon(
-                                            imageVector = iconoDdmOpcionesEmpresasFlechasLaterales,
-                                            contentDescription = " "
-                                        )
-                                    },
-                                    textStyle = TextStyle(
-                                        fontFamily = fontAksharPrincipal,
-                                        fontWeight = FontWeight.Light,
-                                        color = Color.DarkGray,
-                                        fontSize = obtenerEstiloBodyBig()
-                                    ),
-                                    shape = RoundedCornerShape(
-                                        objetoAdaptardor.ajustarAltura(
-                                            16
-                                        )
-                                    ),
-                                    placeholder = {
-                                        var estadoSeleccionEmpresa = "Seleccione su Empresa"
-                                        if (arrayEmpresasDisponibles.isEmpty()) {
-                                            estadoSeleccionEmpresa = "Ingrese un correo válido"
-
+                                IconButton(onClick = { mostrarPasswordOtxf = !mostrarPasswordOtxf }) {
+                                    Icon(imageVector = image, contentDescription = "Mostrar/Ocultar contraseña", tint = Color.DarkGray)
+                                }
+                            },
+                            enabled = isBtIniciarSesionActivo.value,
+                            singleLine = true,
+                            textStyle = TextStyle(
+                                fontFamily = fontAksharPrincipal,
+                                fontWeight = FontWeight.Light,
+                                color = Color.DarkGray,
+                                fontSize = obtenerEstiloBodyBig()
+                            ),
+                            shape = RoundedCornerShape(objetoAdaptardor.ajustarAltura(16)),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedTextColor = Color(0xFF5B5B5B), // Color del texto cuando está enfocado
+                                unfocusedTextColor = Color(0xFF5B5B5B),
+                                focusedPlaceholderColor =  Color(0xFF5B5B5B),
+                                unfocusedPlaceholderColor = Color(0xFF5B5B5B),
+                                focusedBorderColor =  Color(0xFF5B5B5B),
+                                unfocusedBorderColor = Color(0xFF5B5B5B)
+                            ),
+                            keyboardOptions = KeyboardOptions.Default.copy(
+                                imeAction = ImeAction.Go
+                            ),
+                            keyboardActions = KeyboardActions(
+                                onGo = {
+                                    apiConsultaActual?.cancel()
+                                    errorResultadoApi=null
+                                    if (clienteEmpresaSeleccionada.isEmpty()){
+                                        errorResultadoApi=true
+                                        if (!snackbarVisible) {
+                                            coroutineScope.launch {
+                                                snackbarVisible=true
+                                                snackbarHostState.showSnackbar(
+                                                    message = "Error: seleccione una empresa"
+                                                )
+                                                snackbarHostState.currentSnackbarData?.dismiss()
+                                                snackbarVisible=false
+                                            }
                                         }
-                                        Text(
-                                            estadoSeleccionEmpresa,
-                                            fontFamily = fontAksharPrincipal,
-                                            fontWeight = FontWeight.Light,
-                                            color = Color.DarkGray,
-                                            fontSize = obtenerEstiloBodyBig(),
-                                            maxLines = 1,
-                                            overflow = TextOverflow.Ellipsis
-                                        )
-                                    },
-                                    modifier = Modifier
-                                        .width(objetoAdaptardor.ajustarAncho(300))
-                                        .height(objetoAdaptardor.ajustarAltura(70))
-                                        .onGloballyPositioned { coordinates ->
-                                            textFieldOpcionesEmpresasMedida =
-                                                coordinates.size.toSize()
+                                    }
+                                    else if(clientePassword.length< 4){
+                                        errorResultadoApi=true
+                                        if (!snackbarVisible) {
+                                            coroutineScope.launch {
+                                                snackbarVisible=true
+                                                snackbarHostState.showSnackbar(
+                                                    message = "Error: Ingrese una contraseña correcta."
+                                                )
+                                                snackbarHostState.currentSnackbarData?.dismiss()
+                                                snackbarVisible=false
+                                            }
                                         }
-                                        .menuAnchor(),
-                                    label = {
-                                        Text(
-                                            "Empresa",
-                                            color = Color.DarkGray,
-                                            fontFamily = fontAksharPrincipal,
-                                            fontWeight = FontWeight.Light,
-                                            fontSize = obtenerEstiloBodyBig()
-                                        )
-                                    },
-                                    colors = OutlinedTextFieldDefaults.colors(
-                                        focusedTextColor = Color(0xFF5B5B5B),
-                                        unfocusedTextColor = Color(0xFF5B5B5B),
-                                        focusedPlaceholderColor = Color(0xFF5B5B5B),
-                                        unfocusedPlaceholderColor = Color(0xFF5B5B5B),
-                                        focusedBorderColor = Color(0xFF5B5B5B),
-                                        unfocusedBorderColor = Color(0xFF5B5B5B),
-                                        cursorColor = Color.DarkGray
-                                    )
-                                )
-
-
-                                ExposedDropdownMenu(
-                                    expanded = expandirDdmOpcionesEmpresas,
-                                    onDismissRequest = { expandirDdmOpcionesEmpresas = false },
-                                    modifier = Modifier
-                                        .width(with(LocalDensity.current) { textFieldOpcionesEmpresasMedida.width.toDp() })
-                                        .background(Color.White),
-                                    scrollState = scrollState
-                                ) {
-                                    nombresEmpresasPaginaActual.forEach { label ->
-                                        DropdownMenuItem(
-                                            onClick = {
-                                                clienteEmpresaSeleccionada = label
-                                                expandirDdmOpcionesEmpresas = false
-                                            },
-                                            text = {
-                                                Text(
-                                                    text = label,
-                                                    fontFamily = fontAksharPrincipal,
-                                                    fontWeight = FontWeight.Medium,
-                                                    fontSize = obtenerEstiloBodyBig(),
-                                                    maxLines = 1,
-                                                    overflow = TextOverflow.Ellipsis
-                                                )
-                                            },
-                                            modifier = Modifier
-                                                .background(Color.White),
-                                            enabled = isBtIniciarSesionActivo.value
-                                        )
+                                    }else{
+                                        isBtIniciarSesionActivo.value= false
                                     }
-                                    if (numeroPaginaDdm < totalPaginas - 1) {
-                                        DropdownMenuItem(
-                                            onClick = { numeroPaginaDdm++ },
-                                            text = {
-                                                Text(
-                                                    "Mostrar más",
-                                                    fontFamily = fontAksharPrincipal,
-                                                    fontWeight = FontWeight.Medium,
-                                                    color = Color(0xFF31B927),
-                                                    fontSize = obtenerEstiloBodyBig(),
-                                                    maxLines = 1,
-                                                    overflow = TextOverflow.Ellipsis
-                                                )
-                                            },
-                                            modifier = Modifier
-                                                .background(Color.White),
-                                            enabled = isBtIniciarSesionActivo.value
-                                        )
-                                    }
+                                }
+                            )
+                        )
 
-                                    if (numeroPaginaDdm > 0) {
-                                        DropdownMenuItem(
-                                            onClick = { numeroPaginaDdm-- },
-                                            text = {
-                                                Text(
-                                                    text = "Mostrar anteriores",
-                                                    fontFamily = fontAksharPrincipal,
-                                                    fontWeight = FontWeight.Medium,
-                                                    color = Color.Red,
-                                                    fontSize = obtenerEstiloBodyBig(),
-                                                    maxLines = 1,
-                                                    overflow = TextOverflow.Ellipsis
+                        if (!isBtIniciarSesionActivo.value){
+                            LaunchedEffect(isBtIniciarSesionActivo) {
+                                apiConsultaActual= cortinaConsultaApi.launch{
+                                    val result= objetoProcesamientoDatosApi.validarInicioSesion(usuarioCorreoEmpresa, clienteEmpresaSeleccionada, clientePassword)
+                                    if(result==null){
+                                        if (!snackbarVisible) {
+                                            errorResultadoApi=true
+                                            coroutineScope.launch {
+                                                snackbarVisible=true
+                                                snackbarHostState.showSnackbar(
+                                                    message = "Error: revise su conexion a Internet"
                                                 )
-                                            },
-                                            modifier = Modifier
-                                                .background(Color.White),
-                                            enabled = isBtIniciarSesionActivo.value
-                                        )
+                                                snackbarHostState.currentSnackbarData?.dismiss()
+                                                snackbarVisible=false
+                                                isBtIniciarSesionActivo.value= true
+                                            }
+                                        }
+                                    }else if (result.getString("status")=="error"){
+                                        errorResultadoApi=true
+                                        isBtIniciarSesionActivo.value= true
+                                        if (!snackbarVisible) {
+                                            coroutineScope.launch {
+                                                snackbarVisible=true
+                                                snackbarHostState.showSnackbar(
+                                                    message = "Error: ${result.getString("data")}"
+                                                )
+                                                snackbarHostState.currentSnackbarData?.dismiss()
+                                                snackbarVisible=false
+                                            }
+                                        }
+                                    }else if (result.getString("status")=="ok"){
+                                        coroutineScope.cancel()
+                                        val datos= result.getJSONObject("data")
+                                        nombreUsuario= datos.getString("Nombre")
+                                        nombreEmpresa= datos.getString("Empresa")
+                                        apiToken= datos.getString("Token")
+                                        codUsuario= datos.getString("Codigo")
+                                        isInicioSesionAprobado=true
+
                                     }
                                 }
                             }
-                        }// Mostrar Lista desplegable de las empresas encontradas con base al correo
-                    }
+                        }
 
-                    //Spacer seperador de componente
-                    Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(20)))
-
-                    // Input Contraseña Cliente
-                    OutlinedTextField(
-                        value = clientePassword,
-                        onValueChange = { newText -> clientePassword = newText },
-                        label = {
-                            Text(
-                                "Contraseña",
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Spacer(modifier = Modifier.width(16.dp))
+                            Checkbox(
+                                checked = guardarDatosSesion,
+                                onCheckedChange = { guardarDatosSesion = it },
+                                colors = CheckboxDefaults.colors(
+                                    checkedColor = Color(0xFF244BC0),
+                                    uncheckedColor = Color.DarkGray,
+                                    checkmarkColor = Color.White
+                                )
+                            )
+                            Text("Iniciar sesión automáticamente",
+                                fontFamily =  fontAksharPrincipal,
+                                fontWeight = FontWeight.Light,
                                 color = Color.DarkGray,
-                                fontFamily = fontAksharPrincipal,
-                                fontWeight = FontWeight.Light,
-                                fontSize = obtenerEstiloBodyBig(),
+                                fontSize = obtenerEstiloBodySmall(),
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis
                             )
-                        },
-                        leadingIcon = { Icon(Icons.Default.Lock, contentDescription = "Email Icon", tint = Color.DarkGray) },
-                        placeholder = {
-                            Text(
-                                "Ingrese su contraseña",
-                                fontFamily = fontAksharPrincipal,
-                                fontWeight = FontWeight.Light,
-                                fontSize = obtenerEstiloBodyBig(),
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                        },
-                        modifier = Modifier
-                            .width(objetoAdaptardor.ajustarAncho(300))
-                            .height(objetoAdaptardor.ajustarAltura(70)),
-                        visualTransformation = if (mostrarPasswordOtxf) VisualTransformation.None else PasswordVisualTransformation(),
-                        trailingIcon = {
-                            val image = if (mostrarPasswordOtxf)
-                                Icons.Filled.Visibility
-                            else Icons.Filled.VisibilityOff
+                        }
 
-                            IconButton(onClick = { mostrarPasswordOtxf = !mostrarPasswordOtxf }) {
-                                Icon(imageVector = image, contentDescription = "Mostrar/Ocultar contraseña", tint = Color.DarkGray)
-                            }
-                        },
-                        enabled = isBtIniciarSesionActivo.value,
-                        singleLine = true,
-                        textStyle = TextStyle(
-                            fontFamily = fontAksharPrincipal,
-                            fontWeight = FontWeight.Light,
-                            color = Color.DarkGray,
-                            fontSize = obtenerEstiloBodyBig()
-                        ),
-                        shape = RoundedCornerShape(objetoAdaptardor.ajustarAltura(16)),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedTextColor = Color(0xFF5B5B5B), // Color del texto cuando está enfocado
-                            unfocusedTextColor = Color(0xFF5B5B5B),
-                            focusedPlaceholderColor =  Color(0xFF5B5B5B),
-                            unfocusedPlaceholderColor = Color(0xFF5B5B5B),
-                            focusedBorderColor =  Color(0xFF5B5B5B),
-                            unfocusedBorderColor = Color(0xFF5B5B5B)
-                        ),
-                        keyboardOptions = KeyboardOptions.Default.copy(
-                            imeAction = ImeAction.Go
-                        ),
-                        keyboardActions = KeyboardActions(
-                            onGo = {
+                        //Boton Iniciar Sesion
+                        Button(
+                            onClick = {
                                 apiConsultaActual?.cancel()
                                 errorResultadoApi=null
                                 if (clienteEmpresaSeleccionada.isEmpty()){
@@ -719,166 +840,116 @@ fun IniciarInterfazInicioSesionCompact(
                                 }else{
                                     isBtIniciarSesionActivo.value= false
                                 }
+                            },
+                            enabled = isBtIniciarSesionActivo.value,
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color(0xFF244BC0), // Color de fondo del botón
+                                contentColor = Color.White,
+                                disabledContainerColor = Color(0xFF244BC0),
+                                disabledContentColor = Color.White
+                            ), // Color del texto del botón
+                            shape = RoundedCornerShape(objetoAdaptardor.ajustarAltura(12)),
+                            elevation = ButtonDefaults.buttonElevation(defaultElevation = 5.dp),
+                            border = BorderStroke(width = objetoAdaptardor.ajustarAncho(2), brush = SolidColor(Color(0xFF244BC0))),
+                            modifier = Modifier
+                                .width(objetoAdaptardor.ajustarAncho(200))
+                                .height(objetoAdaptardor.ajustarAltura(50))
+                        ){
+                            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center){
+                                Text(
+                                    "Iniciar Sesión",
+                                    fontFamily = fontAksharPrincipal,
+                                    fontWeight = FontWeight.Medium,
+                                    fontSize = obtenerEstiloHeadBig(),
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    textAlign = TextAlign.Center
+                                )
                             }
-                        )
-                    )
-
-                    if (!isBtIniciarSesionActivo.value){
-                        LaunchedEffect(isBtIniciarSesionActivo) {
-                            apiConsultaActual= cortinaConsultaApi.launch{
-                                val result= objetoProcesamientoDatosApi.validarInicioSesion(usuarioCorreoEmpresa, clienteEmpresaSeleccionada, clientePassword)
-                                if(result==null){
-                                    if (!snackbarVisible) {
-                                        errorResultadoApi=true
-                                        coroutineScope.launch {
-                                            snackbarVisible=true
-                                            snackbarHostState.showSnackbar(
-                                                message = "Error: revise su conexion a Internet"
-                                            )
-                                            snackbarHostState.currentSnackbarData?.dismiss()
-                                            snackbarVisible=false
-                                            isBtIniciarSesionActivo.value= true
-                                        }
-                                    }
-                                }else if (result.getString("status")=="error"){
-                                    errorResultadoApi=true
-                                    isBtIniciarSesionActivo.value= true
-                                    if (!snackbarVisible) {
-                                        coroutineScope.launch {
-                                            snackbarVisible=true
-                                            snackbarHostState.showSnackbar(
-                                                message = "Error: ${result.getString("data")}"
-                                            )
-                                            snackbarHostState.currentSnackbarData?.dismiss()
-                                            snackbarVisible=false
-                                        }
-                                    }
-                                }else if (result.getString("status")=="ok"){
-                                    coroutineScope.cancel()
-                                    val datos= result.getJSONObject("data")
-                                    nombreUsuario= datos.getString("Nombre")
-                                    nombreEmpresa= datos.getString("Empresa")
-                                    apiToken= datos.getString("Token")
-                                    codUsuario= datos.getString("Codigo")
-                                    isInicioSesionAprobado=true
-
-                                }
-                            }
+                            // Texto Boton
                         }
-                    }
 
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Spacer(modifier = Modifier.width(16.dp))
-                        Checkbox(
-                            checked = guardarDatosSesion,
-                            onCheckedChange = { guardarDatosSesion = it },
-                            colors = CheckboxDefaults.colors(
-                                checkedColor = Color(0xFF244BC0),
-                                uncheckedColor = Color.DarkGray,
-                                checkmarkColor = Color.White
-                            )
-                        )
-                        Text("Iniciar sesión automáticamente",
+                        // Spacer separador de componente
+                        Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(15)))
+
+                        // Texto Inferior
+                        Text("¿Olvidaste tu contraseña?",
                             fontFamily =  fontAksharPrincipal,
                             fontWeight = FontWeight.Light,
-                            color = Color.DarkGray,
+                            color = Color(0xFF244BC0),
                             fontSize = obtenerEstiloBodySmall(),
                             maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.height(objetoAdaptardor.ajustarAltura(35))
                         )
                     }
+                }
+            }
 
-                    //Boton Iniciar Sesion
-                    Button(
-                        onClick = {
-                            apiConsultaActual?.cancel()
-                            errorResultadoApi=null
-                            if (clienteEmpresaSeleccionada.isEmpty()){
-                                errorResultadoApi=true
-                                if (!snackbarVisible) {
-                                    coroutineScope.launch {
-                                        snackbarVisible=true
-                                        snackbarHostState.showSnackbar(
-                                            message = "Error: seleccione una empresa"
-                                        )
-                                        snackbarHostState.currentSnackbarData?.dismiss()
-                                        snackbarVisible=false
-                                    }
-                                }
-                            }
-                            else if(clientePassword.length< 4){
-                                errorResultadoApi=true
-                                if (!snackbarVisible) {
-                                    coroutineScope.launch {
-                                        snackbarVisible=true
-                                        snackbarHostState.showSnackbar(
-                                            message = "Error: Ingrese una contraseña correcta."
-                                        )
-                                        snackbarHostState.currentSnackbarData?.dismiss()
-                                        snackbarVisible=false
-                                    }
-                                }
-                            }else{
-                                isBtIniciarSesionActivo.value= false
-                            }
-                        },
-                        enabled = isBtIniciarSesionActivo.value,
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFF244BC0), // Color de fondo del botón
-                            contentColor = Color.White,
-                            disabledContainerColor = Color(0xFF244BC0),
-                            disabledContentColor = Color.White
-                        ), // Color del texto del botón
-                        shape = RoundedCornerShape(objetoAdaptardor.ajustarAltura(12)),
-                        elevation = ButtonDefaults.buttonElevation(defaultElevation = 5.dp),
-                        border = BorderStroke(width = objetoAdaptardor.ajustarAncho(2), brush = SolidColor(Color(0xFF244BC0))),
-                        modifier = Modifier
-                            .width(objetoAdaptardor.ajustarAncho(200))
-                            .height(objetoAdaptardor.ajustarAltura(50))
-                    ){
-                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center){
+
+            // Snackbar inferior para mostrar mensajes emergentes para el usuario como:
+            // - Problemas de Red
+            // - Contraseñas Incorrectas
+            // - Correos incorrectos o no encontrados
+            SnackbarHost(
+                hostState = snackbarHostState,
+                snackbar = { snackbarData ->
+                    Snackbar(
+                        containerColor = Color.White, // Color de fondo del Snackbar
+                        contentColor = Color.DarkGray // Color del texto del Snackbar
+
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(objetoAdaptardor.ajustarAltura(8)),// Añadir algo de padding para espaciado
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = iconoSnht,
+                                contentDescription = "Icono de error",
+                                tint = colorIconoSnht, // Cambiar el color del ícono si deseas
+                                modifier = Modifier
+                                    .padding(end = objetoAdaptardor.ajustarAncho(8))
+                                    .size(objetoAdaptardor.ajustarAltura(35)) // Espacio entre ícono y texto
+                            )
                             Text(
-                                "Iniciar Sesión",
-                                fontFamily = fontAksharPrincipal,
-                                fontWeight = FontWeight.Medium,
-                                fontSize = obtenerEstiloHeadBig(),
+                                text = snackbarData.visuals.message,
+                                style = TextStyle(
+                                    color = Color.Black,
+                                    fontSize = obtenerEstiloBodyBig(),
+                                    fontWeight = FontWeight.Light,
+                                    fontFamily = fontAksharPrincipal
+                                ),
                                 maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                                textAlign = TextAlign.Center
+                                overflow = TextOverflow.Ellipsis
                             )
                         }
-                        // Texto Boton
                     }
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .constrainAs(snhtMensajesSuperiores) {
+                        top.linkTo(parent.top, margin = objetoAdaptardor.ajustarAltura(24))
+                        start.linkTo(parent.start)
+                    }
+            )
 
-                    // Spacer separador de componente
-                    Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(15)))
 
-                    // Texto Inferior
-                    Text("¿Olvidaste tu contraseña?",
-                        fontFamily =  fontAksharPrincipal,
-                        fontWeight = FontWeight.Light,
-                        color = Color(0xFF244BC0),
-                        fontSize = obtenerEstiloBodySmall(),
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.height(objetoAdaptardor.ajustarAltura(35))
-                    )
-                }
+            if (errorResultadoApi==null){
+                gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(true)
+            }
+            else{
+                gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
             }
         }
 
+        // Fondo para la navigation bar
         Box(
             modifier = Modifier
-                .fillMaxWidth()
                 .background(Color(0xFF000000))
-                .height(objetoAdaptardor.ajustarAltura(25))
-                .constrainAs(bxInferior) {
-                    start.linkTo(parent.start)
-                    bottom.linkTo(parent.bottom)
-                }, contentAlignment = Alignment.TopCenter
+                .fillMaxWidth()
+                .wrapContentHeight()
+                .background(Color.Black)
+                .align(Alignment.BottomCenter), contentAlignment = Alignment.Center
         ) {
             val versionApp = stringResource(R.string.app_version)
 
@@ -887,6 +958,7 @@ fun IniciarInterfazInicioSesionCompact(
                 horizontalArrangement = Arrangement.Center
 
             ){
+                Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(5)))
                 Text(
                     text = "",
                     color = Color.White,
@@ -896,7 +968,9 @@ fun IniciarInterfazInicioSesionCompact(
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     textAlign = TextAlign.Center,
-                    modifier = Modifier.width(objetoAdaptardor.ajustarAncho(142)).padding(start = 6.dp)
+                    modifier = Modifier
+                        .width(objetoAdaptardor.ajustarAncho(154))
+                        .padding(start = 4.dp)
                 )
 
                 Text(
@@ -920,65 +994,16 @@ fun IniciarInterfazInicioSesionCompact(
                     overflow = TextOverflow.Ellipsis,
                     fontSize = obtenerEstiloLabelBig(),
                     textAlign = TextAlign.Center,
-                    modifier = Modifier.width(objetoAdaptardor.ajustarAncho(142)).padding(end = 6.dp)
+                    modifier = Modifier
+                        .width(objetoAdaptardor.ajustarAncho(130))
+                        .padding(end = 6.dp)
                 )
+                Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(30)))
             }
         }
-
-        // Snackbar inferior para mostrar mensajes emergentes para el usuario como:
-        // - Problemas de Red
-        // - Contraseñas Incorrectas
-        // - Correos incorrectos o no encontrados
-        SnackbarHost(
-            hostState = snackbarHostState,
-            snackbar = { snackbarData ->
-                Snackbar(
-                    containerColor = Color.White, // Color de fondo del Snackbar
-                    contentColor = Color.DarkGray // Color del texto del Snackbar
-
-                ) {
-                    Row(
-                        modifier = Modifier.padding(objetoAdaptardor.ajustarAltura(8)),// Añadir algo de padding para espaciado
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            imageVector = iconoSnht,
-                            contentDescription = "Icono de error",
-                            tint = colorIconoSnht, // Cambiar el color del ícono si deseas
-                            modifier = Modifier
-                                .padding(end = objetoAdaptardor.ajustarAncho(8))
-                                .size(objetoAdaptardor.ajustarAltura(35)) // Espacio entre ícono y texto
-                        )
-                        Text(
-                            text = snackbarData.visuals.message,
-                            style = TextStyle(
-                                color = Color.Black,
-                                fontSize = obtenerEstiloBodyBig(),
-                                fontWeight = FontWeight.Light,
-                                fontFamily = fontAksharPrincipal
-                            ),
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                    }
-                }
-            },
-            modifier = Modifier
-                .fillMaxWidth()
-                .constrainAs(snhtMensajesSuperiores) {
-                    top.linkTo(parent.top, margin = objetoAdaptardor.ajustarAltura(24))
-                    start.linkTo(parent.start)
-                }
-        )
-
-
-        if (errorResultadoApi==null){
-            gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(true)
-        }
-        else{
-            gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
-        }
     }
+
+
 
 }
 

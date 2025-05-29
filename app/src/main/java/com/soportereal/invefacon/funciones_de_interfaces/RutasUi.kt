@@ -10,9 +10,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.Home
@@ -28,8 +26,6 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import androidx.navigation.navigation
-import com.google.accompanist.systemuicontroller.SystemUiController
-import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.soportereal.invefacon.funciones_de_interfaces.RutasPantallasMenuPrincipal.PantallaAjustes
 import com.soportereal.invefacon.funciones_de_interfaces.RutasPantallasMenuPrincipal.PantallaInicio
 import com.soportereal.invefacon.funciones_de_interfaces.RutasPantallasMenuPrincipal.PantallaSalir
@@ -40,12 +36,12 @@ import com.soportereal.invefacon.interfaces.modulos.clientes.IniciarInterfazModu
 import com.soportereal.invefacon.interfaces.modulos.facturacion.IniciarInterfazFacturacion
 import com.soportereal.invefacon.interfaces.modulos.sac.InterfazModuloSac
 import com.soportereal.invefacon.interfaces.modulos.sac.InterfazSacComanda
-import com.soportereal.invefacon.interfaces.pantallas_principales.ajustes.IniciarInterfazAjustes
-import com.soportereal.invefacon.interfaces.pantallas_principales.inicio.IniciarInterfazInicio
 import com.soportereal.invefacon.interfaces.pantallas_principales.IniciarInterfazMenuPrincipalCompact
-import com.soportereal.invefacon.interfaces.pantallas_principales.salir.IniciarInterfazSalir
 import com.soportereal.invefacon.interfaces.pantallas_principales.PantallaCarga
+import com.soportereal.invefacon.interfaces.pantallas_principales.ajustes.IniciarInterfazAjustes
 import com.soportereal.invefacon.interfaces.pantallas_principales.ajustes.IniciarInterfazAjustesImpresora
+import com.soportereal.invefacon.interfaces.pantallas_principales.inicio.IniciarInterfazInicio
+import com.soportereal.invefacon.interfaces.pantallas_principales.salir.IniciarInterfazSalir
 
 
 sealed class RutasPatallas(val ruta: String){
@@ -104,7 +100,6 @@ sealed class RutasPantallasMenuPrincipal(
 fun NavegacionPantallas(
     navcontroller: NavHostController
 ){
-    val systemUiController = rememberSystemUiController()
     val contexto = LocalContext.current
     guardarParametroSiNoExiste(contexto, "ultimoCorreo", "")
     guardarParametroSiNoExiste(contexto, "token", "0")
@@ -182,7 +177,6 @@ fun NavegacionPantallas(
                         nombreEmpresa = nombreEmpresa,
                         nombreUsuario = nombreUsuario,
                         navControllerPrincipal = navcontroller,
-                        systemUiController = systemUiController,
                         codUsuario = codUsuario
                     )
                 }
@@ -195,7 +189,6 @@ fun NavegacionPantallas(
                         nombreEmpresa = obtenerParametroLocal(contexto, "nombreEmpresa"),
                         nombreUsuario = obtenerParametroLocal(contexto, "nombreUsuario"),
                         navControllerPrincipal = navcontroller,
-                        systemUiController = systemUiController,
                         codUsuario = obtenerParametroLocal(contexto, "codUsuario")
                     )
                 }
@@ -221,8 +214,10 @@ fun NavegacionPantallas(
                     val token= requireNotNull(backstackEntry.arguments?.getString("token"))
                     IniciarInterfazModuloClientes(
                         token = token,
-                        systemUiController = systemUiController,
-                        navController = navcontroller
+                        navController = navcontroller,
+                        nombreEmpresa = obtenerParametroLocal(contexto, "nombreEmpresa"),
+                        nombreUsuario = obtenerParametroLocal(contexto, "nombreUsuario"),
+                        codUsuario = obtenerParametroLocal(contexto, "codUsuario")
                     )
                 }
 
@@ -250,7 +245,10 @@ fun NavegacionPantallas(
                     IniciarInterfazInformacionCliente(
                         codigoCliente = codigoCliente,
                         navControllerPantallasModuloClientes = navcontroller,
-                        token = token
+                        token = token,
+                        nombreEmpresa = obtenerParametroLocal(contexto, "nombreEmpresa"),
+                        nombreUsuario = obtenerParametroLocal(contexto, "nombreUsuario"),
+                        codUsuario = obtenerParametroLocal(contexto, "codUsuario")
                     )
                 }
 
@@ -272,7 +270,10 @@ fun NavegacionPantallas(
                     val token= requireNotNull(backstackEntry.arguments?.getString("token"))
                     IniciarInterfazAgregarCliente(
                         navController = navcontroller,
-                        token = token
+                        token = token,
+                        nombreEmpresa = obtenerParametroLocal(contexto, "nombreEmpresa"),
+                        nombreUsuario = obtenerParametroLocal(contexto, "nombreUsuario"),
+                        codUsuario = obtenerParametroLocal(contexto, "codUsuario")
                     )
                 }
             }
@@ -315,7 +316,6 @@ fun NavegacionPantallas(
 
                     InterfazModuloSac(
                         token = token,
-                        systemUiController = systemUiController,
                         navController = navcontroller,
                         nombreEmpresa = nombreEmpresa,
                         codUsuario = codUsuario,
@@ -384,7 +384,6 @@ fun NavegacionPantallas(
                     val activity = LocalContext.current as Activity
                     activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
                     InterfazSacComanda(
-                        systemUiController = systemUiController,
                         navControllerPantallasModuloSac = navcontroller,
                         token = token,
                         nombreMesa= nombreMesa,
@@ -451,7 +450,6 @@ fun NavegacionPantallas(
 
                     IniciarInterfazFacturacion(
                         token = token,
-                        systemUiController = systemUiController,
                         navController = navcontroller,
                         nombreEmpresa = nombreEmpresa,
                         codUsuario = codUsuario,
@@ -461,7 +459,7 @@ fun NavegacionPantallas(
             }
 
         }
-        PantallaCarga(systemUiController)
+        PantallaCarga()
         DialogoActualizacion()
     }
 }
@@ -469,13 +467,11 @@ fun NavegacionPantallas(
 @RequiresApi(Build.VERSION_CODES.S)
 @Composable
 fun NavHostPantallasMenuPrincipal(
-    innerPadding: PaddingValues,
     token: String,
     nombreUsuario: String,
     nombreEmpresa: String,
     navControllerPrincipal: NavController,
     navControllerPantallasMenuPrincipal: NavHostController,
-    systemUiController: SystemUiController,
     codUsuario: String
 ){
     NavHost(
@@ -502,7 +498,6 @@ fun NavHostPantallasMenuPrincipal(
                     nombreUsuario = nombreUsuario,
                     nombreEmpresa = nombreEmpresa,
                     navControllerPrincipal = navControllerPrincipal,
-                    systemUiController= systemUiController,
                     codUsuario = codUsuario
                 )
             }

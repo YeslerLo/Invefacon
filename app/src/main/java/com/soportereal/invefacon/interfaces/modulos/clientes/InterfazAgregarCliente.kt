@@ -1,19 +1,24 @@
 package com.soportereal.invefacon.interfaces.modulos.clientes
 
+import android.annotation.SuppressLint
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
@@ -48,6 +53,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
@@ -55,29 +61,30 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.navigation.NavController
-import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.soportereal.invefacon.R
 import com.soportereal.invefacon.funciones_de_interfaces.TextFieldMultifuncional
 import com.soportereal.invefacon.funciones_de_interfaces.FuncionesParaAdaptarContenido
 import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloBodyBig
 import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloDisplayBig
 import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloDisplaySmall
-import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloHeadMedium
+import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloLabelBig
 import com.soportereal.invefacon.interfaces.pantallas_principales.estadoRespuestaApi
 import com.soportereal.invefacon.interfaces.pantallas_principales.gestorEstadoPantallaCarga
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
+@SuppressLint("ConfigurationScreenWidthHeight")
 @Composable
 fun IniciarInterfazAgregarCliente(
     navController: NavController?,
-    token: String
+    token: String,
+    nombreEmpresa: String,
+    nombreUsuario: String,
+    codUsuario  : String
 ){
-    val systemUiController = rememberSystemUiController()
-    systemUiController.setStatusBarColor(Color(0xFF244BC0))
-    systemUiController.setNavigationBarColor(Color.Black)
     val fontAksharPrincipal = FontFamily(Font(R.font.akshar_medium))
     val configuration = LocalConfiguration.current
     val dpAnchoPantalla = configuration.screenWidthDp
@@ -327,7 +334,7 @@ fun IniciarInterfazAgregarCliente(
                 opcionesAgentesVentas = opcionesAgentesVentasClienteActivos,
                 opcionesTipoIndetificacionCliente = opcionesTipoIndentificacionCliente
             )
-            if (ValidarCamposObligatoriosClientes(datosCliente)){
+            if (validarCamposObligatoriosClientes(datosCliente)){
                 gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(true)
                 val result= objectoProcesadorDatosApi.agregarCliente(datosCliente = datosCliente)
                 if (result != null) {
@@ -339,405 +346,482 @@ fun IniciarInterfazAgregarCliente(
         guardarCliente=false
     }
 
-    ConstraintLayout(
+    Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFFFFFFF))
-            .statusBarsPadding()
-            .navigationBarsPadding()
+            .background(Color.White)
     ) {
-        val (bxSuperior, bxContenedorLzColum,snhtMensajesSuperiores,flechaRegresar)= createRefs()
-        //Box superior Informacion Cliente
-        Box(
+        // Fondo para la status bar
+        Spacer(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(objetoAdaptardor.ajustarAltura(70))
+                .height(WindowInsets.statusBars.asPaddingValues().calculateTopPadding())
                 .background(Color(0xFF244BC0))
-                .constrainAs(bxSuperior) {
-                    top.linkTo(parent.top)
-                    start.linkTo(parent.start)
-                },
-            contentAlignment = Alignment.BottomCenter
-        ){
-            Row (horizontalArrangement = Arrangement.Start,
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.padding(bottom = objetoAdaptardor.ajustarAltura(6))
-            ){
-                Icon(
-                    imageVector = Icons.Filled.PersonAdd,
-                    contentDescription ="Icono Clientes",
-                    tint = Color.White,
-                    modifier = Modifier.size(objetoAdaptardor.ajustarAltura(45))
-                )
-                Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(8)))
-                Text(
-                    "Agregar Cliente",
-                    fontFamily = fontAksharPrincipal,
-                    fontWeight =    FontWeight.SemiBold,
-                    fontSize = obtenerEstiloDisplayBig(),
-                    color = Color.White,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    textAlign = TextAlign.Center
-                )
-            }
-        }
-        IconButton(
-            onClick = {regresarPantallaAnterior=true},
-            modifier = Modifier.constrainAs(flechaRegresar){
-                start.linkTo(parent.start)
-                top.linkTo(parent.top,margin = objetoAdaptardor.ajustarAltura(16))
-            }
-        ) {
-            Icon(
-                imageVector = Icons.Filled.ArrowBackIosNew,
-                contentDescription = "Flecha atras",
-                tint = Color.White,
-                modifier = Modifier.size(objetoAdaptardor.ajustarAltura(25))
-            )
-        }
-        //Box contenedor Lazy Column
-        Box(
+                .align(Alignment.TopCenter)
+        )
+
+        // Tu layout principal
+        ConstraintLayout(
             modifier = Modifier
-                .fillMaxWidth()
-                .height(objetoAdaptardor.ajustarAltura(722))
+                .fillMaxSize()
+                .statusBarsPadding()
+                .navigationBarsPadding()
                 .background(Color.White)
-                .constrainAs(bxContenedorLzColum){
+        ) {
+            val (bxSuperior, bxContenedorLzColum,snhtMensajesSuperiores,flechaRegresar)= createRefs()
+            //Box superior Informacion Cliente
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(objetoAdaptardor.ajustarAltura(70))
+                    .background(Color(0xFF244BC0))
+                    .constrainAs(bxSuperior) {
+                        top.linkTo(parent.top)
+                        start.linkTo(parent.start)
+                    },
+                contentAlignment = Alignment.BottomCenter
+            ){
+                Row (horizontalArrangement = Arrangement.Start,
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.padding(bottom = objetoAdaptardor.ajustarAltura(6))
+                ){
+                    Icon(
+                        imageVector = Icons.Filled.PersonAdd,
+                        contentDescription ="Icono Clientes",
+                        tint = Color.White,
+                        modifier = Modifier.size(objetoAdaptardor.ajustarAltura(45))
+                    )
+                    Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(8)))
+                    Text(
+                        "Agregar Cliente",
+                        fontFamily = fontAksharPrincipal,
+                        fontWeight =    FontWeight.SemiBold,
+                        fontSize = obtenerEstiloDisplayBig(),
+                        color = Color.White,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        textAlign = TextAlign.Center
+                    )
+                }
+            }
+            IconButton(
+                onClick = {regresarPantallaAnterior=true},
+                modifier = Modifier.constrainAs(flechaRegresar){
                     start.linkTo(parent.start)
-                    top.linkTo(bxSuperior.bottom)
-                },
-            contentAlignment = Alignment.TopCenter
-        ){
-            LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                verticalArrangement = Arrangement.spacedBy(objetoAdaptardor.ajustarAltura(12)),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                state = lazyState
+                    top.linkTo(parent.top,margin = objetoAdaptardor.ajustarAltura(16))
+                }
             ) {
-                item { Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(4))) }
-                item {
-                    Column {
+                Icon(
+                    imageVector = Icons.Filled.ArrowBackIosNew,
+                    contentDescription = "Flecha atras",
+                    tint = Color.White,
+                    modifier = Modifier.size(objetoAdaptardor.ajustarAltura(25))
+                )
+            }
+            //Box contenedor Lazy Column
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(objetoAdaptardor.ajustarAltura(722))
+                    .background(Color.White)
+                    .constrainAs(bxContenedorLzColum){
+                        start.linkTo(parent.start)
+                        top.linkTo(bxSuperior.bottom)
+                    },
+                contentAlignment = Alignment.TopCenter
+            ){
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    verticalArrangement = Arrangement.spacedBy(objetoAdaptardor.ajustarAltura(12)),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    state = lazyState
+                ) {
+                    item { Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(4))) }
+                    item {
+                        Column {
 
-                        AgregarContenedorDatosClientes(
-                            objetoAdaptardor = objetoAdaptardor,
-                            titulo = "Datos del cliente",
-                            fontAksharPrincipal = fontAksharPrincipal,
-                            icono = Icons.Filled.AccountCircle
-                        ) {
-                            TextFieldMultifuncional(
-                                label = "Nombre comercial",
-                                valor = nombreComercial,
-                                nuevoValor = {nombreComercial= it},
-                                textPlaceholder = "Ejemplo: Ferreteria"
-                            )
-                            TextFieldMultifuncional(
-                                label = "Nombre jurídico",
-                                valor = nombreJuridico,
-                                nuevoValor = {nombreJuridico= it},
-                                textPlaceholder = "Ejemplo: Ferreteria S.A"
-                            )
-                            TextFieldMultifuncional(
-                                label = "Tipo cédula",
-                                valor = opcionesTipoIndentificacionCliente[tipoCedula]?: "00",
-                                nuevoValor = {
-                                    tipoCedula= it
-                                    codigoTipoIdentificacionClienteSeleccionada=it
-                                },
-                                contieneOpciones = true,
-                                opciones = opcionesTipoIndentificacionCliente
-                            )
-                            TextFieldMultifuncional(
-                                label = "Cédula",
-                                valor = cedulaCliente,
-                                nuevoValor = {cedulaCliente= it},
-                                soloPermitirValoresNumericos = true,
-                                cantidadLineas = 1,
-                                textPlaceholder = "Ejemplo: 1111111111"
-                            )
-                            TextFieldMultifuncional(
-                                label = "Fecha nacimiento",
-                                valor = fechaNacimiento,
-                                nuevoValor = {fechaNacimiento= it},
-                                isUltimo = true,
-                                contieneOpciones = true,
-                                isSeleccionarFecha = true
-                            )
-                        }
-
-                        Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(22)))
-
-                        AgregarContenedorDatosClientes(
-                            objetoAdaptardor = objetoAdaptardor,
-                            fontAksharPrincipal = fontAksharPrincipal,
-                            titulo = "Información de contacto",
-                            icono = Icons.Filled.Phone
-                        ){
-                            TextFieldMultifuncional(
-                                label = "Teléfonos",
-                                valor = telefono,
-                                nuevoValor = {telefono= it},
-                                soloPermitirValoresNumericos = true,
-                                permitirComas = true,
-                                cantidadLineas = 1,
-                                textPlaceholder = "Ejemplo: 88888888,8888888"
-                            )
-                            TextFieldMultifuncional(
-                                label = "Email general",
-                                valor = emailGeneral,
-                                nuevoValor = {emailGeneral= it},
-                                cantidadLineas = 1,
-                                textPlaceholder = "Ejemplo: emailgeneral@gmail.com"
-                            )
-                            TextFieldMultifuncional(
-                                label = "Email factura",
-                                valor = emailFactura,
-                                nuevoValor = {emailFactura= it},
-                                cantidadLineas = 1,
-                                textPlaceholder = "Ejemplo: emailfactura@gmail.com"
-                            )
-                            TextFieldMultifuncional(
-                                label = "Email cobros",
-                                valor = emailCobros,
-                                nuevoValor = {emailCobros= it},
-                                cantidadLineas = 1,
-                                textPlaceholder = "Ejemplo: emailcobros@gmail.com"
-                            )
-                            TextFieldMultifuncional(
-                                label = "Contacto",
-                                valor = contacto,
-                                nuevoValor = {contacto= it},
-                                textPlaceholder = "Ejemplo: Carlos Vega"
-                            )
-                            TextFieldMultifuncional(
-                                label = "Dirección",
-                                valor = direccion,
-                                nuevoValor = {direccion= it},
-                                isUltimo = true,
-                                textPlaceholder = "Ejemplo: La Uruca 200 metros este"
-                            )
-                        }
-
-                        Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(22)))
-
-                        AgregarContenedorDatosClientes(
-                            objetoAdaptardor = objetoAdaptardor,
-                            fontAksharPrincipal = fontAksharPrincipal,
-                            titulo = "Información financiera",
-                            icono = Icons.Filled.MonetizationOn
-                        ){
-                            TextFieldMultifuncional(
-                                label = "Monto de crédito",
-                                valor = creditoMonto,
-                                nuevoValor = {creditoMonto= it},
-                                darFormatoMiles = true,
-                                soloPermitirValoresNumericos = true,
-                                permitirPuntosDedimales = true,
-                                cantidadLineas = 1,
-                                textPlaceholder = "Ejemplo: 1000000.10 (100,000.10)"
-                            )
-
-                            TextFieldMultifuncional(
-                                label = "Plazo de crédito",
-                                valor = creditoPlazo,
-                                nuevoValor = {creditoPlazo= it},
-                                soloPermitirValoresNumericos = true,
-                                cantidadLineas = 1,
-                                textPlaceholder = "Ejemplo: 15"
-                            )
-
-                            TextFieldMultifuncional(
-                                label = "Día de cobro",
-                                valor = diaCobro,
-                                nuevoValor = {diaCobro= it},
-                                soloPermitirValoresNumericos = true,
-                                cantidadLineas = 1,
-                                textPlaceholder = "Ejemplo: 15"
-                            )
-
-                            TextFieldMultifuncional(
-                                label = "Tipo de cliente",
-                                valor = opcionesTipoCliente[clienteTipo]?:"Seleccione un Tipo de cliente",
-                                nuevoValor = {
-                                    clienteTipo= it
-                                    codigoTipoClienteSeleccionado=it
-                                },
-                                contieneOpciones = true,
-                                opciones = opcionesTipoCliente
-                            )
-
-                            TextFieldMultifuncional(
-                                label = "Moneda",
-                                valor = opcionesTipoMoneda[monedaCliente]?:"CRC",
-                                nuevoValor = {
-                                    monedaCliente= it
-                                    tipoMonedaSeleccionada= it
-                                },
-                                contieneOpciones = true,
-                                opciones = opcionesTipoMoneda
-                            )
-
-                            TextFieldMultifuncional(
-                                label = "Descuento",
-                                valor = descuentoCliente,
-                                nuevoValor = {descuentoCliente= it},
-                                soloPermitirValoresNumericos = true,
-                                permitirPuntosDedimales = true,
-                                cantidadLineas = 1,
-                                textPlaceholder = "Ejemplo: 13.12 o 13"
-                            )
-
-                            TextFieldMultifuncional(
-                                label = "Monto de contrato",
-                                valor = montoContrato,
-                                nuevoValor = {montoContrato= it},
-                                darFormatoMiles = true,
-                                soloPermitirValoresNumericos = true,
-                                permitirPuntosDedimales = true,
-                                cantidadLineas = 1,
-                                textPlaceholder = "Ejemplo: 1000000.10 (100,000.10)"
-                            )
-
-                            TextFieldMultifuncional(
-                                label = "Detalle de contrato",
-                                valor = detalleContrato,
-                                nuevoValor = {detalleContrato= it},
-                                isUltimo = true,
-                                textPlaceholder = "Ejemplo: Ferreteria"
-                            )
-                        }
-
-                        Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(22)))
-
-                        AgregarContenedorDatosClientes(
-                            objetoAdaptardor = objetoAdaptardor,
-                            fontAksharPrincipal = fontAksharPrincipal,
-                            titulo = "Información de ventas",
-                            icono = Icons.Default.Assessment
-                        ){
-                            TextFieldMultifuncional(
-                                label = "Agente de ventas",
-                                valor = opcionesAgentesVentasClienteActivos[agenteVentas]?:"Seleccione un Agente de ventas",
-                                nuevoValor = {
-                                    agenteVentas= it
-                                    codigoAgenteVentasSeleccionado=it
-                                },
-                                contieneOpciones = true,
-                                opciones = opcionesAgentesVentasClienteActivos
-                            )
-                            TextFieldMultifuncional(
-                                label = "Tipo de precio",
-                                valor = opcionesTipoPrecioCliente[tipoPrecio]?:"Seleccione un Tipo de precio",
-                                nuevoValor = {tipoPrecio= it},
-                                contieneOpciones = true,
-                                opciones = opcionesTipoPrecioCliente
-                            )
-                            TextFieldMultifuncional(
-                                label = "Tiene crédito",
-                                valor = opcionesLogicasCliente[tieneCredito]?:"0",
-                                nuevoValor = {
-                                    tieneCredito= it
-                                    opciontieneCreditoSeleccionada=it
-                                },
-                                contieneOpciones = true,
-                                opciones = opcionesLogicasCliente
-                            )
-                            TextFieldMultifuncional(
-                                label = "Exento",
-                                valor = opcionesLogicasCliente[exento]?:"0",
-                                nuevoValor = {
-                                    exento= it
-                                    opcionExentoSeleccionada=it
-                                },
-                                contieneOpciones = true,
-                                opciones = opcionesLogicasCliente,
-                                isUltimo = true
-                            )
-                        }
-
-                        Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(22)))
-
-                        //Box Contenerdor boton guardar
-                        Box(
-                            modifier = Modifier
-                                .width(objetoAdaptardor.ajustarAncho(360))
-                                .background(Color.Transparent)
-                                .height(objetoAdaptardor.ajustarAltura(50)),
-                            contentAlignment = Alignment.Center
-                        ){
-                            Button(modifier = Modifier
-                                .height(objetoAdaptardor.ajustarAltura(45)),
-                                onClick = {
-                                    guardarCliente=true
-                                },
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = Color.Transparent, // Color de fondo del botón
-                                    contentColor = Color(0xFF244BC0)
+                            AgregarContenedorDatosClientes(
+                                objetoAdaptardor = objetoAdaptardor,
+                                titulo = "Datos del cliente",
+                                fontAksharPrincipal = fontAksharPrincipal,
+                                icono = Icons.Filled.AccountCircle
+                            ) {
+                                TextFieldMultifuncional(
+                                    label = "Nombre comercial",
+                                    valor = nombreComercial,
+                                    nuevoValor = {nombreComercial= it},
+                                    textPlaceholder = "Ejemplo: Ferreteria"
                                 )
-                            ){
-                                Row {
-                                    Text(
-                                        text = "Guardar",
-                                        maxLines = 1,
-                                        fontFamily = fontAksharPrincipal,
-                                        fontWeight = FontWeight.SemiBold,
-                                        fontSize = obtenerEstiloDisplaySmall()
-                                    )
-                                }
+                                TextFieldMultifuncional(
+                                    label = "Nombre jurídico",
+                                    valor = nombreJuridico,
+                                    nuevoValor = {nombreJuridico= it},
+                                    textPlaceholder = "Ejemplo: Ferreteria S.A"
+                                )
+                                TextFieldMultifuncional(
+                                    label = "Tipo cédula",
+                                    valor = opcionesTipoIndentificacionCliente[tipoCedula]?: "00",
+                                    nuevoValor = {
+                                        tipoCedula= it
+                                        codigoTipoIdentificacionClienteSeleccionada=it
+                                    },
+                                    contieneOpciones = true,
+                                    opciones = opcionesTipoIndentificacionCliente
+                                )
+                                TextFieldMultifuncional(
+                                    label = "Cédula",
+                                    valor = cedulaCliente,
+                                    nuevoValor = {cedulaCliente= it},
+                                    soloPermitirValoresNumericos = true,
+                                    cantidadLineas = 1,
+                                    textPlaceholder = "Ejemplo: 1111111111"
+                                )
+                                TextFieldMultifuncional(
+                                    label = "Fecha nacimiento",
+                                    valor = fechaNacimiento,
+                                    nuevoValor = {fechaNacimiento= it},
+                                    isUltimo = true,
+                                    contieneOpciones = true,
+                                    isSeleccionarFecha = true
+                                )
+                            }
 
+                            Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(22)))
+
+                            AgregarContenedorDatosClientes(
+                                objetoAdaptardor = objetoAdaptardor,
+                                fontAksharPrincipal = fontAksharPrincipal,
+                                titulo = "Información de contacto",
+                                icono = Icons.Filled.Phone
+                            ){
+                                TextFieldMultifuncional(
+                                    label = "Teléfonos",
+                                    valor = telefono,
+                                    nuevoValor = {telefono= it},
+                                    soloPermitirValoresNumericos = true,
+                                    permitirComas = true,
+                                    cantidadLineas = 1,
+                                    textPlaceholder = "Ejemplo: 88888888,8888888"
+                                )
+                                TextFieldMultifuncional(
+                                    label = "Email general",
+                                    valor = emailGeneral,
+                                    nuevoValor = {emailGeneral= it},
+                                    cantidadLineas = 1,
+                                    textPlaceholder = "Ejemplo: emailgeneral@gmail.com"
+                                )
+                                TextFieldMultifuncional(
+                                    label = "Email factura",
+                                    valor = emailFactura,
+                                    nuevoValor = {emailFactura= it},
+                                    cantidadLineas = 1,
+                                    textPlaceholder = "Ejemplo: emailfactura@gmail.com"
+                                )
+                                TextFieldMultifuncional(
+                                    label = "Email cobros",
+                                    valor = emailCobros,
+                                    nuevoValor = {emailCobros= it},
+                                    cantidadLineas = 1,
+                                    textPlaceholder = "Ejemplo: emailcobros@gmail.com"
+                                )
+                                TextFieldMultifuncional(
+                                    label = "Contacto",
+                                    valor = contacto,
+                                    nuevoValor = {contacto= it},
+                                    textPlaceholder = "Ejemplo: Carlos Vega"
+                                )
+                                TextFieldMultifuncional(
+                                    label = "Dirección",
+                                    valor = direccion,
+                                    nuevoValor = {direccion= it},
+                                    isUltimo = true,
+                                    textPlaceholder = "Ejemplo: La Uruca 200 metros este"
+                                )
+                            }
+
+                            Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(22)))
+
+                            AgregarContenedorDatosClientes(
+                                objetoAdaptardor = objetoAdaptardor,
+                                fontAksharPrincipal = fontAksharPrincipal,
+                                titulo = "Información financiera",
+                                icono = Icons.Filled.MonetizationOn
+                            ){
+                                TextFieldMultifuncional(
+                                    label = "Monto de crédito",
+                                    valor = creditoMonto,
+                                    nuevoValor = {creditoMonto= it},
+                                    darFormatoMiles = true,
+                                    soloPermitirValoresNumericos = true,
+                                    permitirPuntosDedimales = true,
+                                    cantidadLineas = 1,
+                                    textPlaceholder = "Ejemplo: 1000000.10 (100,000.10)"
+                                )
+
+                                TextFieldMultifuncional(
+                                    label = "Plazo de crédito",
+                                    valor = creditoPlazo,
+                                    nuevoValor = {creditoPlazo= it},
+                                    soloPermitirValoresNumericos = true,
+                                    cantidadLineas = 1,
+                                    textPlaceholder = "Ejemplo: 15"
+                                )
+
+                                TextFieldMultifuncional(
+                                    label = "Día de cobro",
+                                    valor = diaCobro,
+                                    nuevoValor = {diaCobro= it},
+                                    soloPermitirValoresNumericos = true,
+                                    cantidadLineas = 1,
+                                    textPlaceholder = "Ejemplo: 15"
+                                )
+
+                                TextFieldMultifuncional(
+                                    label = "Tipo de cliente",
+                                    valor = opcionesTipoCliente[clienteTipo]?:"Seleccione un Tipo de cliente",
+                                    nuevoValor = {
+                                        clienteTipo= it
+                                        codigoTipoClienteSeleccionado=it
+                                    },
+                                    contieneOpciones = true,
+                                    opciones = opcionesTipoCliente
+                                )
+
+                                TextFieldMultifuncional(
+                                    label = "Moneda",
+                                    valor = opcionesTipoMoneda[monedaCliente]?:"CRC",
+                                    nuevoValor = {
+                                        monedaCliente= it
+                                        tipoMonedaSeleccionada= it
+                                    },
+                                    contieneOpciones = true,
+                                    opciones = opcionesTipoMoneda
+                                )
+
+                                TextFieldMultifuncional(
+                                    label = "Descuento",
+                                    valor = descuentoCliente,
+                                    nuevoValor = {descuentoCliente= it},
+                                    soloPermitirValoresNumericos = true,
+                                    permitirPuntosDedimales = true,
+                                    cantidadLineas = 1,
+                                    textPlaceholder = "Ejemplo: 13.12 o 13"
+                                )
+
+                                TextFieldMultifuncional(
+                                    label = "Monto de contrato",
+                                    valor = montoContrato,
+                                    nuevoValor = {montoContrato= it},
+                                    darFormatoMiles = true,
+                                    soloPermitirValoresNumericos = true,
+                                    permitirPuntosDedimales = true,
+                                    cantidadLineas = 1,
+                                    textPlaceholder = "Ejemplo: 1000000.10 (100,000.10)"
+                                )
+
+                                TextFieldMultifuncional(
+                                    label = "Detalle de contrato",
+                                    valor = detalleContrato,
+                                    nuevoValor = {detalleContrato= it},
+                                    isUltimo = true,
+                                    textPlaceholder = "Ejemplo: Ferreteria"
+                                )
+                            }
+
+                            Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(22)))
+
+                            AgregarContenedorDatosClientes(
+                                objetoAdaptardor = objetoAdaptardor,
+                                fontAksharPrincipal = fontAksharPrincipal,
+                                titulo = "Información de ventas",
+                                icono = Icons.Default.Assessment
+                            ){
+                                TextFieldMultifuncional(
+                                    label = "Agente de ventas",
+                                    valor = opcionesAgentesVentasClienteActivos[agenteVentas]?:"Seleccione un Agente de ventas",
+                                    nuevoValor = {
+                                        agenteVentas= it
+                                        codigoAgenteVentasSeleccionado=it
+                                    },
+                                    contieneOpciones = true,
+                                    opciones = opcionesAgentesVentasClienteActivos
+                                )
+                                TextFieldMultifuncional(
+                                    label = "Tipo de precio",
+                                    valor = opcionesTipoPrecioCliente[tipoPrecio]?:"Seleccione un Tipo de precio",
+                                    nuevoValor = {tipoPrecio= it},
+                                    contieneOpciones = true,
+                                    opciones = opcionesTipoPrecioCliente
+                                )
+                                TextFieldMultifuncional(
+                                    label = "Tiene crédito",
+                                    valor = opcionesLogicasCliente[tieneCredito]?:"0",
+                                    nuevoValor = {
+                                        tieneCredito= it
+                                        opciontieneCreditoSeleccionada=it
+                                    },
+                                    contieneOpciones = true,
+                                    opciones = opcionesLogicasCliente
+                                )
+                                TextFieldMultifuncional(
+                                    label = "Exento",
+                                    valor = opcionesLogicasCliente[exento]?:"0",
+                                    nuevoValor = {
+                                        exento= it
+                                        opcionExentoSeleccionada=it
+                                    },
+                                    contieneOpciones = true,
+                                    opciones = opcionesLogicasCliente,
+                                    isUltimo = true
+                                )
+                            }
+
+                            Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(22)))
+
+                            //Box Contenerdor boton guardar
+                            Box(
+                                modifier = Modifier
+                                    .width(objetoAdaptardor.ajustarAncho(360))
+                                    .background(Color.Transparent)
+                                    .height(objetoAdaptardor.ajustarAltura(50)),
+                                contentAlignment = Alignment.Center
+                            ){
+                                Button(modifier = Modifier
+                                    .height(objetoAdaptardor.ajustarAltura(45)),
+                                    onClick = {
+                                        guardarCliente=true
+                                    },
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = Color.Transparent, // Color de fondo del botón
+                                        contentColor = Color(0xFF244BC0)
+                                    )
+                                ){
+                                    Row {
+                                        Text(
+                                            text = "Guardar",
+                                            maxLines = 1,
+                                            fontFamily = fontAksharPrincipal,
+                                            fontWeight = FontWeight.SemiBold,
+                                            fontSize = obtenerEstiloDisplaySmall()
+                                        )
+                                    }
+
+                                }
                             }
                         }
                     }
                 }
+
             }
+            // Snackbar inferior para mostrar mensajes emergentes para el usuario como:
+            // - Problemas de Red
+            // - Contraseñas Incorrectas
+            // - Correos incorrectos o no encontrados
+            SnackbarHost(
+                hostState = snackbarHostState,
+                snackbar = { snackbarData ->
+                    Snackbar(
+                        containerColor = Color.White, // Color de fondo del Snackbar
+                        contentColor = Color.DarkGray // Color del texto del Snackbar
 
-        }
-        // Snackbar inferior para mostrar mensajes emergentes para el usuario como:
-        // - Problemas de Red
-        // - Contraseñas Incorrectas
-        // - Correos incorrectos o no encontrados
-        SnackbarHost(
-            hostState = snackbarHostState,
-            snackbar = { snackbarData ->
-                Snackbar(
-                    containerColor = Color.White, // Color de fondo del Snackbar
-                    contentColor = Color.DarkGray // Color del texto del Snackbar
-
-                ) {
-                    Row(
-                        modifier = Modifier.padding(objetoAdaptardor.ajustarAltura(8)),// Añadir algo de padding para espaciado
-                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(
-                            imageVector = iconoSnht,
-                            contentDescription = "Icono de error",
-                            tint = colorIconoSnht, // Cambiar el color del ícono si deseas
-                            modifier = Modifier.padding(end = objetoAdaptardor.ajustarAncho(8)).size(objetoAdaptardor.ajustarAltura(35)) // Espacio entre ícono y texto
-                        )
-                        Text(
-                            text = snackbarData.visuals.message,
-                            style = TextStyle(
-                                color = Color.Black,
-                                fontSize = obtenerEstiloBodyBig(),
-                                fontWeight = FontWeight.Light,
-                                fontFamily = fontAksharPrincipal
+                        Row(
+                            modifier = Modifier.padding(objetoAdaptardor.ajustarAltura(8)),// Añadir algo de padding para espaciado
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = iconoSnht,
+                                contentDescription = "Icono de error",
+                                tint = colorIconoSnht, // Cambiar el color del ícono si deseas
+                                modifier = Modifier.padding(end = objetoAdaptardor.ajustarAncho(8)).size(objetoAdaptardor.ajustarAltura(35)) // Espacio entre ícono y texto
                             )
-                        )
+                            Text(
+                                text = snackbarData.visuals.message,
+                                style = TextStyle(
+                                    color = Color.Black,
+                                    fontSize = obtenerEstiloBodyBig(),
+                                    fontWeight = FontWeight.Light,
+                                    fontFamily = fontAksharPrincipal
+                                )
+                            )
+                        }
                     }
-                }
-            },
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .constrainAs(snhtMensajesSuperiores) {
+                        top.linkTo(bxSuperior.bottom, margin = objetoAdaptardor.ajustarAltura(12))
+                        start.linkTo(parent.start)
+                    }
+            )
+        }
+
+        // Fondo para la navigation bar
+        Box(
             modifier = Modifier
+                .background(Color(0xFF000000))
                 .fillMaxWidth()
-                .constrainAs(snhtMensajesSuperiores) {
-                    top.linkTo(bxSuperior.bottom, margin = objetoAdaptardor.ajustarAltura(12))
-                    start.linkTo(parent.start)
-                }
-        )
+                .wrapContentHeight()
+                .background(Color.Black)
+                .align(Alignment.BottomCenter), contentAlignment = Alignment.Center
+        ) {
+            val versionApp = stringResource(R.string.app_version)
+
+            Row(
+                verticalAlignment = Alignment.Top,
+                horizontalArrangement = Arrangement.Center
+
+            ){
+                Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(5)))
+                Text(
+                    text = "",
+                    color = Color.White,
+                    fontFamily = fontAksharPrincipal,
+                    fontWeight = FontWeight.Light,
+                    fontSize = obtenerEstiloLabelBig(),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier
+                        .width(objetoAdaptardor.ajustarAncho(154))
+                        .padding(start = 4.dp)
+                )
+
+                Text(
+                    text = "Invefacon ©2025",
+                    color = Color.White,
+                    fontFamily = fontAksharPrincipal,
+                    fontWeight = FontWeight.Light,
+                    fontSize = obtenerEstiloLabelBig(),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.width(objetoAdaptardor.ajustarAncho(100))
+                )
+
+                Text(
+                    text = "Versión: $versionApp",
+                    color = Color.White,
+                    fontFamily = fontAksharPrincipal,
+                    fontWeight = FontWeight.Light,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    fontSize = obtenerEstiloLabelBig(),
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier
+                        .width(objetoAdaptardor.ajustarAncho(130))
+                        .padding(end = 6.dp)
+                )
+                Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(30)))
+            }
+        }
     }
+
 
 }
 
 @Composable
 @Preview(showBackground = true)
 private fun Preview(){
-    IniciarInterfazAgregarCliente(null, "")
+    IniciarInterfazAgregarCliente(null, "", "","","")
 }

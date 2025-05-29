@@ -14,7 +14,7 @@ android {
         applicationId = "com.soportereal.invefacon"
         minSdk = 25
         targetSdk = 35
-        versionCode = 33
+        versionCode = 34
         versionName = "1.2.3"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"

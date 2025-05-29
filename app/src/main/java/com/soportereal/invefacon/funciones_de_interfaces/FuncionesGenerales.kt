@@ -497,6 +497,8 @@ class ImpresoraViewModel : ViewModel() {
                     "[C]36 Caracteres\n" +
                     "[L]-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_\n" +
                     "[C]40 Caracteres\n" +
+                    "[L]-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_\n" +
+                    "[C]42 Caracteres\n" +
                     "[L]-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_\n" +
                     "[C]44 Caracteres\n" +
                     "[L]-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_\n" +
@@ -725,7 +727,7 @@ fun obtenerValorParametroEmpresa(codParametro: String, valorAuxiliar : String): 
     return if(parametro !=null){
         parametro.valor
     }else{
-        mostrarMensajeError("EL PARAMETRO $codParametro NO SE LOGRO ECONTRAR")
+        mostrarMensajeError("EL PARAMETRO $codParametro NO SE LOGRO ENCONTRAR")
         valorAuxiliar
     }
 }

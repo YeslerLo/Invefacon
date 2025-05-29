@@ -1,5 +1,6 @@
 package com.soportereal.invefacon.interfaces.pantallas_principales
 
+import android.annotation.SuppressLint
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
@@ -49,20 +50,12 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.ViewModel
-import com.google.accompanist.systemuicontroller.SystemUiController
 import com.soportereal.invefacon.R
 import com.soportereal.invefacon.funciones_de_interfaces.FuncionesParaAdaptarContenido
-import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloBodyBig
-import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloDisplayMedium
-import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloDisplaySmall
 import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloHeadSmall
-import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloLabelBig
 import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloTitleBig
 import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloTitleMedium
 import kotlinx.coroutines.delay
@@ -71,11 +64,9 @@ import kotlinx.coroutines.flow.StateFlow
 import org.json.JSONObject
 
 
+@SuppressLint("ConfigurationScreenWidthHeight")
 @Composable
-fun PantallaCarga(
-    systemUiController: SystemUiController
-) {
-    val aksharFont = FontFamily(Font(R.font.akshar_medium))
+fun PantallaCarga() {
     val configuration = LocalConfiguration.current
     val dpAnchoPantalla = configuration.screenWidthDp
     val dpAltoPantalla = configuration.screenHeightDp
@@ -86,7 +77,6 @@ fun PantallaCarga(
     val mostrarSoloRespuestaError by estadoRespuestaApi.mostrarSoloRespuestaError.collectAsState()
     val datosRespuestaApi by estadoRespuestaApi.datosRespuestaApi.collectAsState()
     val isCargandoPantallaMenuPrincipal by gestorEstadoPantallaCarga.isCargandoPantalla.collectAsState()
-    val showDialog = remember { mutableStateOf(mostrarRespuestaApi) }
     var exitoRespuestaApi by remember { mutableStateOf(false) }
 
     // Animación de las barras
@@ -122,8 +112,7 @@ fun PantallaCarga(
                         activeHeight = 60.dp,
                         inactiveHeight = 20.dp,
                         activeColor = Color(36, 75, 192),
-                        inactiveColor = Color(36, 75, 192).copy(alpha = 0.3f),
-                        systemUiController = systemUiController
+                        inactiveColor = Color(36, 75, 192).copy(alpha = 0.3f)
                     )
                 }
             }
@@ -232,10 +221,8 @@ fun BarItem(
     activeHeight: androidx.compose.ui.unit.Dp,
     inactiveHeight: androidx.compose.ui.unit.Dp,
     activeColor: Color,
-    inactiveColor: Color,
-    systemUiController: SystemUiController
+    inactiveColor: Color
 ) {
-    systemUiController.setStatusBarColor(Color(0xFF244BC0))
     val height by animateDpAsState(
         targetValue = if (isActive) activeHeight else inactiveHeight,
         animationSpec = tween(durationMillis = 500, easing = LinearEasing), label = ""

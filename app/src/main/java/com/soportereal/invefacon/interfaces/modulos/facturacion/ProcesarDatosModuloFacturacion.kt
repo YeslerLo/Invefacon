@@ -298,7 +298,7 @@ suspend fun imprimirFactura(factura: Factura, context: Context, nombreEmpresa : 
     facturaTexto += agregarDobleLinea(context = context, justification = "C")
     facturaTexto += addText(if (obtenerValorParametroEmpresa("307", "0") == "1") "CABYS" else "", "L", context = context, destacar = true)
     facturaTexto += addText("CANTIDAD ${if (obtenerValorParametroEmpresa("15", "0") == "1") "#CODIGO" else ""} DESCRIPCION", "L", context = context, destacar = true)
-    facturaTexto += addText("P/U / IMP(%) / DES(%) / TOTAL.GRAV", "R", context = context)
+    facturaTexto += addText("P/U / IMP(%) / DES(%) / T.GRAV", "R", context = context)
     facturaTexto += agregarLinea(context = context)
     val listaIvas = mutableListOf<ParClaveValor>()
     for (i in 0 until factura.ventaHija.size) {
@@ -426,7 +426,8 @@ data class ClienteFacturacion(
     val telefono : String = "",
     val correo : String = "",
     val codMoneda : String = "",
-    val tipoPrecio : String = ""
+    val tipoPrecio : String = "",
+    val estado : String = ""
 )
 
 data class Proforma(

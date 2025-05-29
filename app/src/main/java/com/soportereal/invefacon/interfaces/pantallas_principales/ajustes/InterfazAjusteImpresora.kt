@@ -91,7 +91,7 @@ import com.soportereal.invefacon.interfaces.pantallas_principales.gestorEstadoPa
 
 
 @RequiresApi(Build.VERSION_CODES.S)
-@SuppressLint("MissingPermission")
+@SuppressLint("MissingPermission", "ConfigurationScreenWidthHeight")
 @Composable
 fun IniciarInterfazAjustesImpresora (
     navController: NavController,

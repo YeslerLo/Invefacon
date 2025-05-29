@@ -59,28 +59,25 @@ import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.text.toUpperCase
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import coil.compose.SubcomposeAsyncImage
-import com.google.accompanist.systemuicontroller.SystemUiController
-import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.soportereal.invefacon.R
+import com.soportereal.invefacon.funciones_de_interfaces.FuncionesParaAdaptarContenido
 import com.soportereal.invefacon.funciones_de_interfaces.MenuConfirmacion
+import com.soportereal.invefacon.funciones_de_interfaces.ParClaveValor
 import com.soportereal.invefacon.funciones_de_interfaces.RutasPatallas
 import com.soportereal.invefacon.funciones_de_interfaces.actualizarParametro
 import com.soportereal.invefacon.funciones_de_interfaces.descargarImagenSiNoExiste
 import com.soportereal.invefacon.funciones_de_interfaces.guardarParametroSiNoExiste
-import com.soportereal.invefacon.funciones_de_interfaces.obtenerParametroLocal
-import com.soportereal.invefacon.funciones_de_interfaces.FuncionesParaAdaptarContenido
-import com.soportereal.invefacon.funciones_de_interfaces.ParClaveValor
 import com.soportereal.invefacon.funciones_de_interfaces.listaPermisos
 import com.soportereal.invefacon.funciones_de_interfaces.mostrarMensajeError
 import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloBodyBig
 import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloHeadSmall
+import com.soportereal.invefacon.funciones_de_interfaces.obtenerParametroLocal
 import com.soportereal.invefacon.funciones_de_interfaces.tienePermiso
 import com.soportereal.invefacon.funciones_de_interfaces.validarExitoRestpuestaServidor
 import com.soportereal.invefacon.funciones_de_interfaces.validarVersionApp
@@ -93,20 +90,19 @@ import kotlinx.coroutines.launch
 import java.util.Locale
 
 
-@SuppressLint("SourceLockedOrientationActivity", "ContextCastToActivity")
+@SuppressLint("SourceLockedOrientationActivity", "ContextCastToActivity",
+    "ConfigurationScreenWidthHeight"
+)
 @Composable
 fun IniciarInterfazInicio(
     token: String,
     nombreEmpresa: String,
     nombreUsuario: String,
     navControllerPrincipal: NavController,
-    systemUiController: SystemUiController,
     codUsuario: String
 ){
     val activity = LocalContext.current as Activity
     activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
-    systemUiController.setStatusBarColor(Color(0xFF244BC0))
-    systemUiController.setNavigationBarColor(Color.Black)
     val aksharFont = FontFamily(Font(R.font.akshar_medium))
     val configuration = LocalConfiguration.current
     val dpAnchoPantalla = configuration.screenWidthDp
@@ -154,6 +150,7 @@ fun IniciarInterfazInicio(
             navControllerPrincipal.navigate(rutaPantallaModulo)
         }
     }
+
 
     ConstraintLayout(
         modifier = Modifier
@@ -287,6 +284,7 @@ fun IniciarInterfazInicio(
         Box(modifier = Modifier
             .fillMaxWidth()
             .height(objetoAdaptardor.ajustarAltura(640))
+            .padding(bottom = objetoAdaptardor.ajustarAltura(8))
             .constrainAs(bxContenedorBtModulos){
                 top.linkTo(bxSuperior.bottom)
             },
@@ -299,7 +297,7 @@ fun IniciarInterfazInicio(
                             .height(objetoAdaptardor.ajustarAltura(640)),
                         verticalArrangement = Arrangement.spacedBy(objetoAdaptardor.ajustarAltura(12))
                     ) {
-                        item { Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(8))) }
+                        item { Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(3))) }
                         item { btOpcionesModulos("Facturación", Icons.Default.Description, RutasPatallas.Facturacion.ruta+"/$token"+"/$nombreEmpresa"+"/$codUsuario"+"/$nombreUsuario", "001") }
                         item { btOpcionesModulos("Ventas", Icons.AutoMirrored.Filled.ShowChart, null) }
                         item { btOpcionesModulos("Inventario", Icons.Default.Inventory, null) }
@@ -315,7 +313,7 @@ fun IniciarInterfazInicio(
                         modifier = Modifier.height(objetoAdaptardor.ajustarAltura(640)),
                         verticalArrangement = Arrangement.spacedBy(objetoAdaptardor.ajustarAltura(12))
                     ) {
-                        item { Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(8))) }
+                        item { Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(3))) }
                         item { btOpcionesModulos("Proformas", Icons.Default.Receipt, null) }
                         item { btOpcionesModulos("Clientes", Icons.Default.People, RutasPatallas.Clientes.ruta+"/$token", "310") }
                         item { btOpcionesModulos("SAC", Icons.Default.RestaurantMenu, RutasPatallas.Sac.ruta+"/$token"+"/$nombreEmpresa"+"/$codUsuario/$nombreUsuario","700") }
@@ -356,8 +354,7 @@ fun IniciarInterfazInicio(
 @Preview(showBackground = true)
 @Composable
 private fun Preview(){
-    val systemUiController = rememberSystemUiController()
     val na = rememberNavController()
-    IniciarInterfazInicio("","" ,"", na, systemUiController, "")
+    IniciarInterfazInicio("","" ,"", na, "")
 }
 

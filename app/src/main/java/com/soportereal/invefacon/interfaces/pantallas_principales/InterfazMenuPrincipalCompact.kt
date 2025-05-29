@@ -9,14 +9,18 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -42,8 +46,6 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import com.google.accompanist.systemuicontroller.SystemUiController
-import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.soportereal.invefacon.R
 import com.soportereal.invefacon.funciones_de_interfaces.FuncionesParaAdaptarContenido
 import com.soportereal.invefacon.funciones_de_interfaces.NavHostPantallasMenuPrincipal
@@ -55,14 +57,13 @@ import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloLabelBig
 
 
 @RequiresApi(Build.VERSION_CODES.S)
-@SuppressLint("SourceLockedOrientationActivity")
+@SuppressLint("SourceLockedOrientationActivity", "ConfigurationScreenWidthHeight")
 @Composable
 fun IniciarInterfazMenuPrincipalCompact(
     token: String,
     nombreEmpresa: String,
     nombreUsuario: String,
     navControllerPrincipal: NavController,
-    systemUiController: SystemUiController,
     codUsuario: String
 ) {
     val fontAksharPrincipal = FontFamily(Font(R.font.akshar_medium))
@@ -73,36 +74,51 @@ fun IniciarInterfazMenuPrincipalCompact(
     val objetoAdaptardor= FuncionesParaAdaptarContenido(dpAltoPantalla, dpAnchoPantalla, dpFontPantalla)
     val navControllerPantallasMenuPrincipal = rememberNavController()
 
-    Box(modifier = Modifier
-        .statusBarsPadding()
-        .navigationBarsPadding()
-        .fillMaxSize(),
-        contentAlignment = Alignment.BottomCenter
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.White)
     ) {
-        Column {
+
+        Spacer(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(WindowInsets.statusBars.asPaddingValues().calculateTopPadding())
+                .background(Color(0xFF244BC0)) // Azul o el color que quieras
+                .align(Alignment.TopCenter)
+        )
+
+
+        // CONTENIDO PRINCIPAL CON SCAFFOLD
+        Column(modifier = Modifier.fillMaxSize()) {
             Scaffold(
                 bottomBar = {
                     NavegacionInferior(navControllerPantallasMenuPrincipal)
                 },
-                modifier = Modifier.padding(bottom = objetoAdaptardor.ajustarAltura(20))
-            ) { innerPadding ->
-                    NavHostPantallasMenuPrincipal(
-                        innerPadding = innerPadding,
-                        token = token,
-                        navControllerPrincipal = navControllerPrincipal,
-                        navControllerPantallasMenuPrincipal= navControllerPantallasMenuPrincipal,
-                        nombreEmpresa = nombreEmpresa,
-                        nombreUsuario = nombreUsuario,
-                        systemUiController= systemUiController,
-                        codUsuario = codUsuario
-                    )
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(bottom = objetoAdaptardor.ajustarAltura(20))
+                    .statusBarsPadding() // Pone margen superior correctamente dentro del scaffold
+            ) { p ->
+                println(p)
+                NavHostPantallasMenuPrincipal(
+                    token = token,
+                    navControllerPrincipal = navControllerPrincipal,
+                    navControllerPantallasMenuPrincipal = navControllerPantallasMenuPrincipal,
+                    nombreEmpresa = nombreEmpresa,
+                    nombreUsuario = nombreUsuario,
+                    codUsuario = codUsuario
+                )
             }
         }
+
+        // BARRA NEGRA INFERIOR CON TEXTO
         Box(
             modifier = Modifier
                 .fillMaxWidth()
+                .wrapContentHeight()
                 .background(Color(0xFF000000))
-                .height(objetoAdaptardor.ajustarAltura(25)),
+                .align(Alignment.BottomCenter),
             contentAlignment = Alignment.TopCenter
         ) {
             val versionApp = stringResource(R.string.app_version)
@@ -110,8 +126,8 @@ fun IniciarInterfazMenuPrincipalCompact(
             Row(
                 verticalAlignment = Alignment.Top,
                 horizontalArrangement = Arrangement.Center
-
-            ){
+            ) {
+                Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(5)))
                 Text(
                     text = "",
                     color = Color.White,
@@ -121,7 +137,9 @@ fun IniciarInterfazMenuPrincipalCompact(
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     textAlign = TextAlign.Center,
-                    modifier = Modifier.width(objetoAdaptardor.ajustarAncho(142)).padding(start = 6.dp)
+                    modifier = Modifier
+                        .width(objetoAdaptardor.ajustarAncho(142))
+                        .padding(start = 6.dp)
                 )
 
                 Text(
@@ -145,11 +163,15 @@ fun IniciarInterfazMenuPrincipalCompact(
                     overflow = TextOverflow.Ellipsis,
                     fontSize = obtenerEstiloLabelBig(),
                     textAlign = TextAlign.Center,
-                    modifier = Modifier.width(objetoAdaptardor.ajustarAncho(142)).padding(end = 6.dp)
+                    modifier = Modifier
+                        .width(objetoAdaptardor.ajustarAncho(142))
+                        .padding(end = 6.dp)
                 )
+                Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(30)))
             }
         }
     }
+
 }
 
 @Composable
@@ -158,6 +180,7 @@ fun rutaActiva(navController: NavController): String?{
     return rutaEntrada?.destination?.route
 }
 
+@SuppressLint("ConfigurationScreenWidthHeight")
 @Composable
 fun NavegacionInferior(navController: NavController) {
     val aksharFont = FontFamily(Font(R.font.akshar_medium))
@@ -296,7 +319,6 @@ fun NavegacionInferior(navController: NavController) {
 @Preview(showBackground = true, widthDp = 384, heightDp = 812, fontScale = 1.15F)
 @Composable
 private fun Preview(){
-    val systemUiController = rememberSystemUiController()
     val na = rememberNavController()
-    IniciarInterfazMenuPrincipalCompact("", "demo", "YESLER LORIO", na,systemUiController,"")
+    IniciarInterfazMenuPrincipalCompact("", "demo", "YESLER LORIO", na,"")
 }

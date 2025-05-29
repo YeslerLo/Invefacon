@@ -1,5 +1,6 @@
 package com.soportereal.invefacon.interfaces.pantallas_principales.salir
 
+import android.annotation.SuppressLint
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -38,11 +39,11 @@ import com.soportereal.invefacon.funciones_de_interfaces.actualizarParametro
 import com.soportereal.invefacon.funciones_de_interfaces.obtenerParametroLocal
 import com.soportereal.invefacon.funciones_de_interfaces.FuncionesParaAdaptarContenido
 import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloDisplayBig
-import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloDisplaySmall
 import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloHeadBig
 import com.soportereal.invefacon.interfaces.pantallas_principales.gestorEstadoPantallaCarga
 
 
+@SuppressLint("ConfigurationScreenWidthHeight")
 @Composable
 fun IniciarInterfazSalir(navControllerPrincipal: NavController){
 

@@ -96,7 +96,7 @@ package com.soportereal.invefacon.interfaces.modulos.sac
  import androidx.navigation.NavController
  import androidx.navigation.compose.rememberNavController
  import coil.compose.SubcomposeAsyncImage
- import com.google.accompanist.systemuicontroller.SystemUiController
+ import com.google.accompanist.systemuicontroller.rememberSystemUiController
  import com.soportereal.invefacon.R
  import com.soportereal.invefacon.funciones_de_interfaces.BBasicTextField
  import com.soportereal.invefacon.funciones_de_interfaces.BButton
@@ -121,7 +121,6 @@ package com.soportereal.invefacon.interfaces.modulos.sac
  import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloLabelSmall
  import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloTitleBig
  import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloTitleSmall
- import com.soportereal.invefacon.funciones_de_interfaces.validacionCedula
  import com.soportereal.invefacon.funciones_de_interfaces.validarCorreo
  import com.soportereal.invefacon.funciones_de_interfaces.validarVersionApp
  import com.soportereal.invefacon.interfaces.pantallas_principales.estadoRespuestaApi
@@ -140,14 +139,14 @@ package com.soportereal.invefacon.interfaces.modulos.sac
 @Composable
 fun InterfazModuloSac(
     token: String,
-    systemUiController: SystemUiController?,
     navController: NavController,
     nombreEmpresa: String,
     codUsuario: String,
     nombreUsuario : String
 ){
-    systemUiController?.setStatusBarColor(Color(0xFF244BC0))
-    systemUiController?.setNavigationBarColor(Color.Black)
+    val systemUiController = rememberSystemUiController()
+    systemUiController.setStatusBarColor(Color(0xFF244BC0))
+    systemUiController.setNavigationBarColor(Color.Black)
     val fontAksharPrincipal = FontFamily(Font(R.font.akshar_medium))
     val configuration = LocalConfiguration.current
     val dpAnchoPantalla = configuration.screenWidthDp
@@ -3580,5 +3579,5 @@ fun BxContenerdorCliente(
 @Preview(widthDp = 964, heightDp = 523)
 private fun Preview(){
     val nav = rememberNavController()
-    InterfazModuloSac("eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJDb2RpZ28iOiIwMDA0MyIsIk5vbWJyZSI6IlJPQkVSVE8gQURNSU4iLCJFbWFpbCI6InJyZXllc0Bzb3BvcnRlcmVhbC5jb20iLCJQdWVydG8iOiI4MDEiLCJFbXByZXNhIjoiWkdWdGIzSmxjM1E9IiwiU2VydmVySXAiOiJNVGt5TGpFMk9DNDNMak13IiwidGltZSI6IjIwMjUwMzEwMDIwMzA0In0.7kfmdiMMKZ30R7mSvuIT0iNod_naX8DBDPguf9KC_H4", null, nav, "demorest","00050", "YESLER LORIO")
+    InterfazModuloSac("eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJDb2RpZ28iOiIwMDA0MyIsIk5vbWJyZSI6IlJPQkVSVE8gQURNSU4iLCJFbWFpbCI6InJyZXllc0Bzb3BvcnRlcmVhbC5jb20iLCJQdWVydG8iOiI4MDEiLCJFbXByZXNhIjoiWkdWdGIzSmxjM1E9IiwiU2VydmVySXAiOiJNVGt5TGpFMk9DNDNMak13IiwidGltZSI6IjIwMjUwMzEwMDIwMzA0In0.7kfmdiMMKZ30R7mSvuIT0iNod_naX8DBDPguf9KC_H4", nav, "demorest","00050", "YESLER LORIO")
 }

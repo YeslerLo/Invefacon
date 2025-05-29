@@ -90,16 +90,15 @@ import androidx.compose.ui.unit.dp
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.navigation.NavController
 import coil.compose.SubcomposeAsyncImage
-import com.google.accompanist.systemuicontroller.SystemUiController
+import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.soportereal.invefacon.R
 import com.soportereal.invefacon.funciones_de_interfaces.BBasicTextField
 import com.soportereal.invefacon.funciones_de_interfaces.BButton
+import com.soportereal.invefacon.funciones_de_interfaces.FuncionesParaAdaptarContenido
 import com.soportereal.invefacon.funciones_de_interfaces.RutasPatallas
 import com.soportereal.invefacon.funciones_de_interfaces.TextFieldMultifuncional
 import com.soportereal.invefacon.funciones_de_interfaces.mostrarMensajeError
 import com.soportereal.invefacon.funciones_de_interfaces.mostrarMensajeExito
-import com.soportereal.invefacon.funciones_de_interfaces.obtenerParametroLocal
-import com.soportereal.invefacon.funciones_de_interfaces.FuncionesParaAdaptarContenido
 import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloBodyBig
 import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloBodyMedium
 import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloBodySmall
@@ -107,6 +106,7 @@ import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloLabelBig
 import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloLabelSmall
 import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloTitleBig
 import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloTitleSmall
+import com.soportereal.invefacon.funciones_de_interfaces.obtenerParametroLocal
 import com.soportereal.invefacon.interfaces.pantallas_principales.estadoRespuestaApi
 import com.soportereal.invefacon.interfaces.pantallas_principales.gestorEstadoPantallaCarga
 import kotlinx.coroutines.delay
@@ -122,7 +122,6 @@ import java.util.Locale
  @SuppressLint("MutableCollectionMutableState")
 @Composable
 fun InterfazSacComanda(
-    systemUiController: SystemUiController?,
     token: String,
     navControllerPantallasModuloSac: NavController?,
     nombreMesa: String,
@@ -134,8 +133,9 @@ fun InterfazSacComanda(
     subCuentaInicial: String,
     nombreUsuario: String
 ){
-    systemUiController?.setStatusBarColor(Color(0xFF244BC0))
-    systemUiController?.setNavigationBarColor(Color.Black)
+     val systemUiController = rememberSystemUiController()
+    systemUiController.setStatusBarColor(Color(0xFF244BC0))
+    systemUiController.setNavigationBarColor(Color.Black)
     val fontAksharPrincipal = FontFamily(Font(R.font.akshar_medium))
     val configuration = LocalConfiguration.current
     val dpAnchoPantalla = configuration.screenWidthDp
@@ -2070,5 +2070,5 @@ internal fun AgregarBxContenerdorMontosCuenta(
 @Composable
 @Preview(widthDp = 964, heightDp = 523, showBackground = true)
 private fun Preview(){
-    InterfazSacComanda(null, "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJDb2RpZ28iOiIwMDA0MyIsIk5vbWJyZSI6IlJPQkVSVE8gQURNSU4iLCJFbWFpbCI6InJyZXllc0Bzb3BvcnRlcmVhbC5jb20iLCJQdWVydG8iOiI4MDEiLCJFbXByZXNhIjoiWkdWdGIzSmxjM1E9IiwiU2VydmVySXAiOiJNVGt5TGpFMk9DNDNMak13IiwidGltZSI6IjIwMjUwMzEwMDIwMzA0In0.7kfmdiMMKZ30R7mSvuIT0iNod_naX8DBDPguf9KC_H4", null, "", "", "", "","", "","","")
+    InterfazSacComanda("eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJDb2RpZ28iOiIwMDA0MyIsIk5vbWJyZSI6IlJPQkVSVE8gQURNSU4iLCJFbWFpbCI6InJyZXllc0Bzb3BvcnRlcmVhbC5jb20iLCJQdWVydG8iOiI4MDEiLCJFbXByZXNhIjoiWkdWdGIzSmxjM1E9IiwiU2VydmVySXAiOiJNVGt5TGpFMk9DNDNMak13IiwidGltZSI6IjIwMjUwMzEwMDIwMzA0In0.7kfmdiMMKZ30R7mSvuIT0iNod_naX8DBDPguf9KC_H4",null, "", "", "", "","", "","","")
 }
