@@ -313,6 +313,7 @@ fun IniciarInterfazDetalleFactura(
         if (!obtenerDatosFacturaEmitida) return@LaunchedEffect
         isImprimiendo = true
         iniciarPantallaEstadoImpresion = true
+        delay(1000)
         if (!gestorImpresora.validarConexion(context)){
             exitoImpresion = false
             isImprimiendo = false
