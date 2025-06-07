@@ -475,7 +475,9 @@ internal fun IniciarInterfazModuloClientes(
                             )
                         }
                     }
-                    item { Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(4))) }
+                    item {
+                        Box(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(60)))
+                    }
 
                 }
             }

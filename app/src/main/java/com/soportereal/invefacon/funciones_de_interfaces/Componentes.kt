@@ -8,6 +8,7 @@ import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
+import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -37,23 +38,29 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.SnapshotStateMap
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
@@ -76,11 +83,37 @@ import androidx.compose.ui.window.DialogProperties
 import com.soportereal.invefacon.R
 import com.soportereal.invefacon.interfaces.inicio_sesion.ocultarTeclado
 import com.soportereal.invefacon.interfaces.pantallas_principales.estadoRespuestaApi
+import kotlinx.coroutines.delay
 import org.json.JSONObject
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
 import java.util.Locale
+
+
+@Composable
+internal fun TText(
+    text: String,
+    modifier: Modifier = Modifier,
+    fontSize: TextUnit = obtenerEstiloBodySmall(),
+    color: Color = Color.Black,
+    textAlign: TextAlign = TextAlign.Start,
+    maxLines: Int = 1,
+    fontFamily: FontFamily = FontFamily(Font(R.font.akshar_medium)),
+    fontWeight: FontWeight? = FontWeight.SemiBold
+){
+    Text(
+        text = text,
+        fontFamily = fontFamily,
+        fontWeight = fontWeight,
+        fontSize = fontSize,
+        color = color,
+        maxLines = maxLines,
+        textAlign = textAlign,
+        modifier = Modifier.then(modifier),
+        overflow = TextOverflow.Ellipsis
+    )
+}
 
 @Composable
 internal fun BBasicTextField(
@@ -111,13 +144,15 @@ internal fun BBasicTextField(
     opciones: List<ParClaveValor> = emptyList(),
     enable: Boolean = true,
     onFocus : () -> Unit = {},
-    offFocus : () -> Unit = {}
+    offFocus : () -> Unit = {},
+    iconsSize : Int = 30
 ) {
     var tieneFoco by remember { mutableStateOf(false) }
     var expanded by remember { mutableStateOf(false) }
     val focusManager = LocalFocusManager.current
     val contexto = LocalContext.current
     val iconoDdmOpcionesFlechasLaterales = if (expanded) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown
+    val coroutineScope = rememberCoroutineScope()
 
     Box(
         contentAlignment = Alignment.Center
@@ -185,7 +220,7 @@ internal fun BBasicTextField(
                                         imageVector = icono,
                                         contentDescription = "Icono Buscar",
                                         tint = iconTint,
-                                        modifier = Modifier.size(objetoAdaptardor.ajustarAltura(30))
+                                        modifier = Modifier.size(objetoAdaptardor.ajustarAltura(iconsSize))
                                     )
                                     Spacer(modifier = Modifier.width(8.dp))
                                 }
@@ -212,14 +247,14 @@ internal fun BBasicTextField(
                                         contentDescription = "Trailing Icon",
                                         tint = iconTint,
                                         modifier = Modifier
-                                            .size(objetoAdaptardor.ajustarAltura(30))
+                                            .size(objetoAdaptardor.ajustarAltura(iconsSize))
                                             .clickable { onTrailingIconClick(true) }
                                     )
                                 }else{
                                     IconButton(
                                         onClick = {expanded = !expanded},
                                         modifier = Modifier
-                                            .size(objetoAdaptardor.ajustarAltura(22))
+                                            .size(objetoAdaptardor.ajustarAltura(iconsSize))
                                             .padding(0.dp)
                                     ) {
                                         Icon(
@@ -227,7 +262,7 @@ internal fun BBasicTextField(
                                             contentDescription = "Icono flechas",
                                             tint = Color.Black,
                                             modifier = Modifier
-                                                .size(objetoAdaptardor.ajustarAltura(22))
+                                                .size(objetoAdaptardor.ajustarAltura(iconsSize))
                                                 .padding(0.dp)
                                         )
                                     }
@@ -262,50 +297,109 @@ internal fun BBasicTextField(
                     )
                     .then(modifier)
             )
+        }
+    }
 
-            AnimatedVisibility(
-                visible = expanded,
-                enter = expandVertically(animationSpec = tween(300)) + fadeIn(),
-                exit = shrinkVertically(animationSpec = tween(300)) + fadeOut()
-            ) {
-                DropdownMenu(
-                    expanded = expanded,
-                    onDismissRequest = { expanded = false },
-                    modifier = Modifier
-                        .background(Color.White)
-                        .heightIn(max = objetoAdaptardor.ajustarAltura(700))
-                        .widthIn(
-                            max = objetoAdaptardor.ajustarAncho(350),
-                            min = objetoAdaptardor.ajustarAncho(100)
-                        )
+    if (expanded) {
+        DropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false },
+            modifier = Modifier
+                .background(Color.White)
+                .heightIn(max = objetoAdaptardor.ajustarAltura(400))
+                .widthIn(
+                    max = objetoAdaptardor.ajustarAncho(350),
+                    min = objetoAdaptardor.ajustarAncho(100)
+                )
+        ) {
+            val ultimo = opciones.size-1
+            opciones.forEachIndexed { index, opcion ->
+                var isOpcionVisible by remember { mutableStateOf(false) }
+                LaunchedEffect(isOpcionVisible) {
+                    delay(index * 15L) // Retrasa cada artículo en 100ms según su índice
+                    isOpcionVisible = true
+                }
+
+                AnimatedVisibility(
+                    visible = isOpcionVisible,
+                    enter = fadeIn(animationSpec = tween(15)) + slideInVertically(initialOffsetY = { it })
                 ) {
-                    opciones.forEach { contenido->
-                        DropdownMenuItem(
-                            onClick = {
-                                onValueChange(contenido.clave)
-                                expanded = false // Cierra el menú después de seleccionar
-                            },
-                            text = {
-                                Text(
-                                    if (mostrarClave) contenido.clave else contenido.valor,
-                                    fontFamily = FontFamily(Font(R.font.akshar_medium)),
-                                    fontWeight = FontWeight.Medium,
-                                    fontSize = fontSize,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis,
-                                    textAlign = TextAlign.Center,
-                                    color = Color.Black
+                    Column(
+                        horizontalAlignment = Alignment.Start,
+                        modifier = Modifier.clickable {
+                            onValueChange(opcion.clave)
+                            expanded = false
+                        }
+                    ) {
+                        Row {
+                            Checkbox(
+                                checked = value == opcion.valor,
+                                onCheckedChange = { valor ->
+                                    onValueChange(opcion.clave)
+                                    expanded = false
+                                },
+                                modifier = Modifier
+                                    .scale(0.7f),
+                                colors = CheckboxDefaults.colors(
+                                    checkedColor = Color(0xFF244BC0),
+                                    uncheckedColor = Color.Gray,
+                                    checkmarkColor = Color.White
                                 )
-                            },
-                            modifier = Modifier.background(Color.White)
-                        )
-
+                            )
+                            BButton(
+                                text = if (mostrarClave) opcion.clave else opcion.valor,
+                                onClick = {
+                                    onValueChange(opcion.clave)
+                                    expanded = false
+                                },
+                                contenteColor = Color.Black,
+                                backgroundColor = Color(0xFFFFFFFF),
+                                conSombra = false,
+                                textSize = obtenerEstiloTitleSmall(),
+                                objetoAdaptardor = objetoAdaptardor
+                            )
+                        }
+                        if(ultimo != index) HorizontalDivider(thickness = 1.dp, color = Color.Black)
                     }
                 }
             }
         }
     }
 
+//        DropdownMenu(
+//            expanded = expanded,
+//            onDismissRequest = { expanded = false },
+//            modifier = Modifier
+//                .background(Color.White)
+//                .heightIn(max = objetoAdaptardor.ajustarAltura(700))
+//                .widthIn(
+//                    max = objetoAdaptardor.ajustarAncho(350),
+//                    min = objetoAdaptardor.ajustarAncho(100)
+//                )
+//        ) {
+//            opciones.forEach { contenido->
+//                DropdownMenuItem(
+//                    onClick = {
+//                        onValueChange(contenido.clave)
+//                        expanded = false // Cierra el menú después de seleccionar
+//                    },
+//                    text = {
+//                        Text(
+//                            if (mostrarClave) contenido.clave else contenido.valor,
+//                            fontFamily = FontFamily(Font(R.font.akshar_medium)),
+//                            fontWeight = FontWeight.Medium,
+//                            fontSize = fontSize,
+//                            maxLines = 1,
+//                            overflow = TextOverflow.Ellipsis,
+//                            textAlign = TextAlign.Center,
+//                            color = Color.Black
+//                        )
+//                    },
+//                    modifier = Modifier.background(Color.White)
+//                )
+//
+//            }
+//        }
 
 }
 
@@ -322,7 +416,8 @@ internal fun BButton(
     conSombra : Boolean = true,
     objetoAdaptardor: FuncionesParaAdaptarContenido,
     mostrarIcono : Boolean = false,
-    icono: ImageVector = Icons.Default.AddCircle
+    icono: ImageVector = Icons.Default.AddCircle,
+    textAlign: TextAlign = TextAlign.Center
 ){
     Button(
         modifier = Modifier.then(modifier),
@@ -359,7 +454,7 @@ internal fun BButton(
                     fontSize = textSize,
                     maxLines = maxLines,
                     overflow = TextOverflow.Ellipsis,
-                    textAlign = TextAlign.Center
+                    textAlign = textAlign
                 )
             }
         }
@@ -367,29 +462,7 @@ internal fun BButton(
     }
 }
 
-@Composable
-internal fun TText(
-    text: String,
-    modifier: Modifier = Modifier,
-    fontSize: TextUnit = obtenerEstiloBodySmall(),
-    color: Color = Color.Black,
-    textAlign: TextAlign = TextAlign.Start,
-    maxLines: Int = 1,
-    fontFamily: FontFamily = FontFamily(Font(R.font.akshar_medium)),
-    fontWeight: FontWeight? = FontWeight.SemiBold
-){
-    Text(
-        text = text,
-        fontFamily = fontFamily,
-        fontWeight = fontWeight,
-        fontSize = fontSize,
-        color = color,
-        maxLines = maxLines,
-        textAlign = textAlign,
-        modifier = Modifier.then(modifier),
-        overflow = TextOverflow.Ellipsis
-    )
-}
+
 
 @Composable
 internal fun TextFieldMultifuncional(
@@ -875,6 +948,7 @@ fun ButtonFecha(
     var mostrarCalendario by remember { mutableStateOf(false) }
     // Fecha actual para inicializar el DatePicker
     val contexto = LocalContext.current
+    val focusManager = LocalFocusManager.current
     val calendario = Calendar.getInstance()
     val anioActual = calendario.get(Calendar.YEAR)
     val mesActual = calendario.get(Calendar.MONTH)
@@ -934,6 +1008,7 @@ fun ButtonFecha(
                 mesActual,
                 diaActual
             ).show()
+            focusManager.clearFocus()
         },
         contentPadding = PaddingValues(
             start = objetoAdaptardor.ajustarAncho(6),

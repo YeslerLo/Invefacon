@@ -843,6 +843,9 @@ fun IniciarInterfazInformacionCliente(
                                 }
                             }
                         }
+                        item {
+                            Box(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(60)))
+                        }
                     }
                 }
             }

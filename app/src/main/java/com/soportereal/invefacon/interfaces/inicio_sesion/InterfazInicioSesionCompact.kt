@@ -116,6 +116,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.util.regex.Pattern
 
@@ -341,6 +342,7 @@ fun IniciarInterfazInicioSesionCompact(
                             if(isCorreoIngresadoValido){
                                 //Se pone null para iniciar el circulo de carga
                                 existenCorreos=null
+                                delay(500)
                                 apiConsultaActual= cortinaConsultaApi.launch{
                                     val resultApi= objetoProcesamientoDatosApi.obtenerNombresEmpresasPorCorreo(usuarioCorreoEmpresa) // Datos retornados del API
 
@@ -348,19 +350,7 @@ fun IniciarInterfazInicioSesionCompact(
                                     if(resultApi==null){
                                         existenCorreos=null
                                     }else if(resultApi.getString("status")=="error"){
-                                        if (resultApi.getString("code")=="401"){
-                                            if (!snackbarVisible) {
-                                                errorResultadoApi=true
-                                                coroutineScope.launch {
-                                                    snackbarVisible=true
-                                                    snackbarHostState.showSnackbar(
-                                                        message = "Error: ${resultApi.getString("data")}"
-                                                    )
-                                                    snackbarHostState.currentSnackbarData?.dismiss()
-                                                    snackbarVisible=false
-                                                }
-                                            }
-                                        }
+                                        errorResultadoApi=true
                                         existenCorreos=false
                                     }
                                     else if(resultApi.getString("status")=="ok"){

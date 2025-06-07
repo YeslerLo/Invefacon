@@ -710,6 +710,9 @@ fun IniciarInterfazAgregarCliente(
                             }
                         }
                     }
+                    item {
+                        Box(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(50)))
+                    }
                 }
 
             }

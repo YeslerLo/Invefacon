@@ -328,7 +328,7 @@ suspend fun imprimirFactura(factura: Factura, context: Context, nombreEmpresa : 
     facturaTexto += addText("IVA%  /  VENTA  /  IVA", "C", context = context, conLiena = true)
     if (obtenerValorParametroEmpresa("47", "0") == "1"){
         for(iva in listaIvas){
-            facturaTexto += addText("${iva.clave}% / ${iva.venta} / ${iva.valor}", "C", context = context)
+            facturaTexto += addText("${iva.clave}% / ${separacionDeMiles(montoString = iva.venta, isString = true)} / ${separacionDeMiles(montoString = iva.valor, isString = true)}", "C", context = context)
         }
     }
     facturaTexto += "\n"

@@ -56,48 +56,49 @@ android {
 }
 
 dependencies {
+    implementation(libs.material3)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
     implementation(platform(libs.androidx.compose.bom))
 
-// Compose UI
+    // Compose UI
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
+    implementation(libs.androidx.material3.android)
     debugImplementation(libs.androidx.ui.tooling)
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.ui.test.junit4)
 
-
-// Material 3 (solo este, ya que estás usando icons de compose.material3)
+    // Material 3
     implementation(libs.androidx.material3)
-    implementation(libs.androidx.material.icons.extended) // si usas íconos extra
+    implementation(libs.androidx.material.icons.extended)
 
-// Accompanist (usa solo una versión estable)
-    implementation(libs.accompanist.systemuicontroller.v0312alpha)
+    // Accompanist (usa el alias corregido)
+    implementation(libs.accompanist.systemuicontroller)
 
-// Navegación
+    // Navegación
     implementation(libs.androidx.navigation.compose)
 
-// Layouts
+    // Layouts
     implementation(libs.constraintlayout.compose)
 
-// Red y JSON
+    // Red y JSON
     implementation(libs.okhttp)
     implementation(libs.json)
 
-// Imágenes
+    // Imágenes
     implementation(libs.coil.compose)
     implementation(libs.glide)
-    annotationProcessor(libs.compiler)
+    ksp(libs.glide.compiler) // Cambiado de annotationProcessor a kapt
 
-// Impresión
+    // Impresión
     implementation(libs.escpos.thermalprinter.android.v330)
 
-//// Test
+    // Test
     testImplementation(libs.junit)
 
-// Romm para BD
+    // Room para BD
     implementation(libs.androidx.room.runtime)
     ksp(libs.androidx.room.compiler)
     implementation(libs.androidx.room.ktx)

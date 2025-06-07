@@ -143,6 +143,7 @@ import com.soportereal.invefacon.funciones_de_interfaces.ParClaveValor
 import com.soportereal.invefacon.funciones_de_interfaces.TText
 import com.soportereal.invefacon.funciones_de_interfaces.TextFieldMultifuncional
 import com.soportereal.invefacon.funciones_de_interfaces.actualizarParametro
+import com.soportereal.invefacon.funciones_de_interfaces.deserializarFacturaHecha
 import com.soportereal.invefacon.funciones_de_interfaces.gestorImpresora
 import com.soportereal.invefacon.funciones_de_interfaces.guardarParametroSiNoExiste
 import com.soportereal.invefacon.funciones_de_interfaces.listaParametros
@@ -443,145 +444,6 @@ fun IniciarInterfazFacturacion(
         guardarProforma = true
     }
 
-    fun deserializarFacturaHecha(resultadoFactura: JSONObject): Factura{
-
-        val ventaMadreJson = resultadoFactura.getJSONObject("ventaMadre")
-        val ventaMadre = VentaMadre(
-            Id = ventaMadreJson.getString("Id"),
-            Numero = ventaMadreJson.getString("Numero"),
-            TipoDocumento = ventaMadreJson.getString("TipoDocumento"),
-            Referencia = ventaMadreJson.getString("Referencia"),
-            Estado = ventaMadreJson.getString("Estado"),
-            Fecha = ventaMadreJson.getString("Fecha"),
-            MonedaCodigo = ventaMadreJson.getString("MonedaCodigo"),
-            MonedaTipoCambio = ventaMadreJson.getString("MonedaTipoCambio"),
-            ClienteID = ventaMadreJson.getString("ClienteID"),
-            ClienteNombre = ventaMadreJson.getString("ClienteNombre"),
-            UsuarioCodigo = ventaMadreJson.getString("UsuarioCodigo"),
-            AgenteCodigo = ventaMadreJson.getString("AgenteCodigo"),
-            RefereridoCodigo = ventaMadreJson.getString("RefereridoCodigo"),
-            Oficina = ventaMadreJson.getString("Oficina"),
-            CajaNumero = ventaMadreJson.getString("CajaNumero"),
-            FormaPagoCodigo = ventaMadreJson.getString("FormaPagoCodigo"),
-            MedioPagoCodigo = ventaMadreJson.getString("MedioPagoCodigo"),
-            MedioPagoDetalle = ventaMadreJson.getString("MedioPagoDetalle"),
-            ModEntregaCodigo = ventaMadreJson.getString("ModEntregaCodigo"),
-            DetallePide = ventaMadreJson.getString("DetallePide"),
-            Detalle = ventaMadreJson.getString("Detalle"),
-            TotalCosto = ventaMadreJson.getString("TotalCosto"),
-            TotalVenta = ventaMadreJson.getString("TotalVenta"),
-            TotalDescuento = ventaMadreJson.getString("TotalDescuento"),
-            TotalMercGravado = ventaMadreJson.getString("TotalMercGravado"),
-            TotalMercExonerado = ventaMadreJson.getString("TotalMercExonerado"),
-            TotalMercExento = ventaMadreJson.getString("TotalMercExento"),
-            TotalServGravado = ventaMadreJson.getString("TotalServGravado"),
-            TotalServExonerado = ventaMadreJson.getString("TotalServExonerado"),
-            TotalServExento = ventaMadreJson.getString("TotalServExento"),
-            TotalImpuestoServicio = ventaMadreJson.getString("TotalImpuestoServicio"),
-            TotalIva = ventaMadreJson.getString("TotalIva"),
-            TotalIvaDevuelto = ventaMadreJson.getString("TotalIvaDevuelto"),
-            Total = ventaMadreJson.getString("Total")
-        )
-
-        val ventaHijaJsonArray = resultadoFactura.getJSONArray("ventaHija")
-        val ventaHija = (0 until ventaHijaJsonArray.length()).map { i ->
-            val item = ventaHijaJsonArray.getJSONObject(i)
-            VentaHija(
-                ArticuloLineaId = item.getString("ArticuloLineaId"),
-                Numero = item.getString("Numero"),
-                TipoDocumento = item.getString("TipoDocumento"),
-                ArticuloCodigo = item.getString("ArticuloCodigo"),
-                ArticuloCabys = item.getString("ArticuloCabys"),
-                ArticuloActividadEconomica = item.getString("ArticuloActividadEconomica"),
-                ArticuloCantidad = item.getString("ArticuloCantidad"),
-                ArticuloUnidadMedida = item.getString("ArticuloUnidadMedida"),
-                ArticuloSerie = item.getString("ArticuloSerie"),
-                ArticuloTipoPrecio = item.getString("ArticuloTipoPrecio"),
-                ArticuloBodegaCodigo = item.getString("ArticuloBodegaCodigo"),
-                ArticuloCosto = item.getString("ArticuloCosto"),
-                ArticuloVenta = item.getString("ArticuloVenta"),
-                ArticuloVentaSubTotal1 = item.getString("ArticuloVentaSubTotal1"),
-                ArticuloDescuentoPorcentage = item.getString("ArticuloDescuentoPorcentage"),
-                ArticuloDescuentoMonto = item.getString("ArticuloDescuentoMonto"),
-                ArticuloVentaSubTotal2 = item.getString("ArticuloVentaSubTotal2"),
-                ArticuloOtrosCargos = item.getString("ArticuloOtrosCargos"),
-                ArticuloVentaSubTotal3 = item.getString("ArticuloVentaSubTotal3"),
-                ArticuloIvaPorcentage = item.getString("ArticuloIvaPorcentage"),
-                ArticuloIvaTarifa = item.getString("ArticuloIvaTarifa"),
-                ArticuloIvaExonerado = item.getString("ArticuloIvaExonerado"),
-                ArticuloIvaMonto = item.getString("ArticuloIvaMonto"),
-                ArticuloIvaDevuelto = item.getString("ArticuloIvaDevuelto"),
-                ArticuloVentaGravado = item.getString("ArticuloVentaGravado"),
-                ArticuloVentaExonerado = item.getString("ArticuloVentaExonerado"),
-                ArticuloVentaExento = item.getString("ArticuloVentaExento"),
-                ArticuloVentaTotal = item.getString("ArticuloVentaTotal"),
-                nombreArticulo = item.getString("nombreArticulo")
-            )
-        }
-
-        val empresaJson = resultadoFactura.getJSONObject("empresa")
-        val empresa = Empresa(
-            nombre = empresaJson.getString("nombre"),
-            cedula = empresaJson.getString("cedula"),
-            telefono = empresaJson.getString("telefono"),
-            direccion = empresaJson.getString("direccion"),
-            correo = empresaJson.getString("correo")
-        )
-
-        val clienteJson = resultadoFactura.getJSONObject("cliente")
-        val cliente = Cliente(
-            Id_Cliente = clienteJson.getString("Id_Cliente"),
-            Nombre = clienteJson.getString("Nombre"),
-            Telefonos = clienteJson.getString("Telefonos"),
-            Direccion = clienteJson.getString("Direccion"),
-            Fecha = clienteJson.getString("Fecha"),
-            TipoPrecioVenta = clienteJson.getString("TipoPrecioVenta"),
-            Cod_Tipo_Cliente = clienteJson.getString("Cod_Tipo_Cliente"),
-            Email = clienteJson.getString("Email"),
-            DiaCobro = clienteJson.getString("DiaCobro"),
-            Contacto = clienteJson.getString("Contacto"),
-            Exento = clienteJson.getString("Exento"),
-            AgenteVentas = clienteJson.getString("AgenteVentas"),
-            Cod_Estado = clienteJson.getString("Cod_Estado"),
-            UltimaVenta = clienteJson.getString("UltimaVenta"),
-            Cod_Zona = clienteJson.getString("Cod_Zona"),
-            DetalleContrato = clienteJson.getString("DetalleContrato"),
-            MontoContrato = clienteJson.getString("MontoContrato"),
-            NoForzarCredito = clienteJson.getString("NoForzarCredito"),
-            Descuento = clienteJson.getString("Descuento"),
-            DivisionTerritorial = clienteJson.getString("DivisionTerritorial"),
-            MontoCredito = clienteJson.getString("MontoCredito"),
-            plazo = clienteJson.getString("plazo"),
-            TieneCredito = clienteJson.getString("TieneCredito"),
-            Cedula = clienteJson.getString("Cedula"),
-            FechaNacimiento = clienteJson.getString("FechaNacimiento"),
-            Cod_Moneda = clienteJson.getString("Cod_Moneda"),
-            FechaVencimiento = clienteJson.getString("FechaVencimiento"),
-            TipoIdentificacion = clienteJson.getString("TipoIdentificacion"),
-            ClienteNombreComercial = clienteJson.getString("ClienteNombreComercial"),
-            EmailFactura = clienteJson.getString("EmailFactura"),
-            EmailCobro = clienteJson.getString("EmailCobro"),
-            PorcentajeInteres = clienteJson.getString("PorcentajeInteres")
-        )
-
-        val clave = resultadoFactura.getString("clave")
-        val leyenda = resultadoFactura.getString("leyenda")
-
-        val factura = Factura(
-            ventaMadre = ventaMadre,
-            ventaHija = ventaHija,
-            empresa = empresa,
-            cliente = cliente,
-            clave = clave,
-            leyenda = leyenda,
-            descrpcionFormaPago = resultadoFactura.getString("descrpcionFormaPago"),
-            descripcionMedioPago = resultadoFactura.getString("descripcionMedioPago"),
-            nombreAgente = resultadoFactura.getString("nombreAgente")
-        )
-
-        return factura
-    }
-
     fun deserializarArticulo(datos : String) : ArticuloFacturacion {
         val listaPrecios = mutableListOf<ParClaveValor>()
         val listaBodegas = mutableListOf<ParClaveValor>()
@@ -639,7 +501,7 @@ fun IniciarInterfazFacturacion(
     suspend fun filtrarBusquedaArticulos(){
         if(datosIngresadosBarraBusquedaArticulos.isNotEmpty()){
             listaArticulosEncontrados = emptyList()
-            gestorTablaArticulos.actualizarInputBusqueda(datosIngresadosBarraBusquedaArticulos.trim())
+            gestorTablaArticulos.actualizarInputBusqueda(datosIngresadosBarraBusquedaArticulos)
             gestorTablaArticulos.modoExacto(true)
             delay(250) // opcional si quieres cambiar a parcial después
             if (listaArticulos.isEmpty()) {
@@ -930,6 +792,7 @@ fun IniciarInterfazFacturacion(
             val result = objectoProcesadorDatosApi.agregarActualizarLinea(articuloLineaProforma)
             if (result != null){
                 if (validarExitoRestpuestaServidor(result)){
+                    iniciarMenuSeleccionarArticulo = isAgregar
                     iniciarMenuAgregaEditaArticulo = false
                     gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
                     soloActualizarArticulos = true
@@ -1419,7 +1282,7 @@ fun IniciarInterfazFacturacion(
 
     // Interceptar el botón de retroceso
     BackHandler {
-        if (iniciarMenuAgregaEditaArticulo ||
+        if (
             iniciarMenuSeleccionarProforma ||
             iniciarMenuSeleccionarCliente ||
             iniciarMenuSeleccionarArticulo ||
@@ -1450,10 +1313,14 @@ fun IniciarInterfazFacturacion(
             iniciarMenuOpcionesProforma = false
             iniciarMenuSeleccionarProforma = false
             iniciarMenuSeleccionarCliente = false
-            iniciarMenuAgregaEditaArticulo = false
             iniciarMenuSeleccionarArticulo = false
-        }else{
+        }else if(!iniciarMenuAgregaEditaArticulo){
             iniciarMenuConfirmacionSalidaModulo = true
+        }
+
+        if (iniciarMenuAgregaEditaArticulo){
+            iniciarMenuAgregaEditaArticulo= false
+            iniciarMenuSeleccionarArticulo = isAgregar
         }
     }
 
@@ -2216,7 +2083,11 @@ fun IniciarInterfazFacturacion(
                                                 textPlaceholder = "0.00",
                                                 mostrarLabel = false,
                                                 permitirPuntosDedimales = articulo.fraccionamiento == 1,
-                                                soloPermitirValoresNumericos = true
+                                                soloPermitirValoresNumericos = true,
+                                                onFocus = {
+                                                    cantidadProducto = ""
+                                                    calcularTotales()
+                                                }
                                             )
                                         }
 
@@ -2636,7 +2507,7 @@ fun IniciarInterfazFacturacion(
                 .navigationBarsPadding()
                 .background(Color.White)
         ) {
-            val (bxSuperior,flechaRegresar, lzColumPrincipal, iconoActualizar) = createRefs()
+            val (bxSuperior, lzColumPrincipal) = createRefs()
 
             Box(
                 modifier = Modifier
@@ -2653,10 +2524,17 @@ fun IniciarInterfazFacturacion(
                 Row(
                     horizontalArrangement = Arrangement.Start,
                     verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.padding(bottom = objetoAdaptardor.ajustarAltura(6))
+                    modifier = Modifier
+                        .padding(bottom = objetoAdaptardor.ajustarAltura(6))
+                        .pointerInput(Unit) {
+                            detectTapGestures(onTap = {
+                                focusManager.clearFocus()
+                            })
+                        }
                 ) {
                     IconButton(
                         onClick = {
+                            focusManager.clearFocus()
                             navController.popBackStack()
                         }
                     ) {
@@ -2984,12 +2862,12 @@ fun IniciarInterfazFacturacion(
                                             horizontalArrangement = Arrangement.spacedBy(objetoAdaptardor.ajustarAncho(4)),
                                             modifier = Modifier.fillMaxWidth()
                                         ) {
-                                            Icon(
-                                                imageVector = Icons.Default.CalendarMonth,
-                                                contentDescription = "ICONO DE CLIENTE"
-                                            )
+                                                Icon(
+                                                    imageVector = Icons.Default.CalendarMonth,
+                                                    contentDescription = "ICONO DE CLIENTE"
+                                                )
                                             TText(
-                                                text = "Fecha: "+fechaProforma,
+                                                text = "Fecha: $fechaProforma",
                                                 fontSize = obtenerEstiloTitleSmall()
                                             )
                                         }
@@ -4435,7 +4313,6 @@ fun IniciarInterfazFacturacion(
 
     }
 
-
     MenuAgregaEditaArticulo(
         mostrarVentanaArticulo = iniciarMenuAgregaEditaArticulo,
         onDismiss = { iniciarMenuAgregaEditaArticulo = false },
@@ -4463,7 +4340,7 @@ fun IniciarInterfazFacturacion(
         val focusRequester = remember { FocusRequester() }
 
         LaunchedEffect(Unit) {
-            delay(100)
+            delay(100 )
             isMenuVisible = true
         }
 
@@ -4476,8 +4353,8 @@ fun IniciarInterfazFacturacion(
         ) {
             AnimatedVisibility(
                 visible = isMenuVisible,
-                enter = fadeIn(animationSpec = tween(500)) + slideInVertically(initialOffsetY = { it }),
-                exit = fadeOut(animationSpec = tween(500)) + slideOutVertically(targetOffsetY = { it })
+                enter = fadeIn(animationSpec = tween(300)) + slideInVertically(initialOffsetY = { it }),
+                exit = fadeOut(animationSpec = tween(300)) + slideOutVertically(targetOffsetY = { it })
             ) {
                 
                 LaunchedEffect(Unit) {
@@ -6355,7 +6232,7 @@ fun IniciarInterfazFacturacion(
                                             .padding(4.dp)
                                     )
                                     TText(
-                                        text = if(exitoImpresion) if(estadoProformaInicial=="2") "Reimpresión exitosa!" else "Impresión exitosa" else if(estadoProformaInicial=="2") "Error en la Reimpresión!" else "Error en la impresión!",
+                                        text = if(exitoImpresion) "Reimpresión exitosa!" else "Error en la Reimpresión!",
                                         fontSize = obtenerEstiloTitleSmall(),
                                         modifier = Modifier.fillMaxWidth()
                                     )
@@ -6420,8 +6297,6 @@ fun IniciarInterfazFacturacion(
                                     text = "Reconectar",
                                     onClick = {
                                         coroutineScope.launch {
-                                            if(!gestorImpresora.validarConexion(context)) return@launch
-                                            gestorImpresora.deconectar(context)
                                             gestorImpresora.reconectar(context)
                                         }
                                     },

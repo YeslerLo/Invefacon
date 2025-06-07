@@ -299,7 +299,8 @@ fun IniciarInterfazInicio(
                     ) {
                         item { Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(3))) }
                         item { btOpcionesModulos("Facturación", Icons.Default.Description, RutasPatallas.Facturacion.ruta+"/$token"+"/$nombreEmpresa"+"/$codUsuario"+"/$nombreUsuario", "001") }
-                        item { btOpcionesModulos("Ventas", Icons.AutoMirrored.Filled.ShowChart, null) }
+//                        item { btOpcionesModulos("Ventas", Icons.AutoMirrored.Filled.ShowChart, RutasPatallas.Ventas.ruta+"/$token"+"/$nombreEmpresa"+"/$codUsuario"+"/$nombreUsuario", "105") }
+                        item { btOpcionesModulos("Ventas", Icons.AutoMirrored.Filled.ShowChart, RutasPatallas.Ventas.ruta+"/$token"+"/$nombreEmpresa"+"/$codUsuario"+"/$nombreUsuario", "105") }
                         item { btOpcionesModulos("Inventario", Icons.Default.Inventory, null) }
                         item { btOpcionesModulos("CxC", Icons.Default.CreditCard, null) }
                         item { btOpcionesModulos("Proveedores", Icons.Filled.LocalShipping, null) }

@@ -67,6 +67,11 @@ import com.dantsu.escposprinter.connection.bluetooth.BluetoothPrintersConnection
 import com.dantsu.escposprinter.exceptions.EscPosConnectionException
 import com.dantsu.escposprinter.textparser.PrinterTextParserImg
 import com.soportereal.invefacon.R
+import com.soportereal.invefacon.interfaces.modulos.facturacion.Cliente
+import com.soportereal.invefacon.interfaces.modulos.facturacion.Empresa
+import com.soportereal.invefacon.interfaces.modulos.facturacion.Factura
+import com.soportereal.invefacon.interfaces.modulos.facturacion.VentaHija
+import com.soportereal.invefacon.interfaces.modulos.facturacion.VentaMadre
 import com.soportereal.invefacon.interfaces.pantallas_principales.estadoRespuestaApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -81,8 +86,6 @@ import java.io.FileOutputStream
 import java.io.InputStream
 import java.net.URL
 import java.text.SimpleDateFormat
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
 import java.util.Calendar
 import java.util.Date
 import java.util.Locale
@@ -174,6 +177,14 @@ fun obtenerFechaHoy(): String{
     return  String.format(Locale.ROOT, "%04d-%02d-%02d", anioActual, mesActual + 1, diaActual)
 }
 
+fun formatearFechaTexto(fecha: String): String {
+    val formatoEntrada = SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS", Locale.getDefault())
+    val fechaDate = formatoEntrada.parse(fecha)
+
+    val formatoSalida = SimpleDateFormat("d MMM yyyy h:mm a", Locale("es", "ES"))
+    return formatoSalida.format(fechaDate ?: Date()).replace("AM", "a. m.").replace("PM", "p. m.")
+}
+
 fun centrarTexto(texto: String,  context: Context): String{
     val cantidadPorLinea = obtenerParametroLocal(context,"cantidadCaracPorLineaImpre").toInt()
     val lienas = segmentarTextoConEspacios(texto = texto, largoLinea = cantidadPorLinea)
@@ -190,6 +201,145 @@ fun centrarTexto(texto: String,  context: Context): String{
 fun obtenerFechaHoraActual(): String {
     val formato = SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS", Locale.getDefault())
     return formato.format(Date())
+}
+
+fun deserializarFacturaHecha(resultadoFactura: JSONObject): Factura {
+
+    val ventaMadreJson = resultadoFactura.getJSONObject("ventaMadre")
+    val ventaMadre = VentaMadre(
+        Id = ventaMadreJson.getString("Id"),
+        Numero = ventaMadreJson.getString("Numero"),
+        TipoDocumento = ventaMadreJson.getString("TipoDocumento"),
+        Referencia = ventaMadreJson.getString("Referencia"),
+        Estado = ventaMadreJson.getString("Estado"),
+        Fecha = ventaMadreJson.getString("Fecha"),
+        MonedaCodigo = ventaMadreJson.getString("MonedaCodigo"),
+        MonedaTipoCambio = ventaMadreJson.getString("MonedaTipoCambio"),
+        ClienteID = ventaMadreJson.getString("ClienteID"),
+        ClienteNombre = ventaMadreJson.getString("ClienteNombre"),
+        UsuarioCodigo = ventaMadreJson.getString("UsuarioCodigo"),
+        AgenteCodigo = ventaMadreJson.getString("AgenteCodigo"),
+        RefereridoCodigo = ventaMadreJson.getString("RefereridoCodigo"),
+        Oficina = ventaMadreJson.getString("Oficina"),
+        CajaNumero = ventaMadreJson.getString("CajaNumero"),
+        FormaPagoCodigo = ventaMadreJson.getString("FormaPagoCodigo"),
+        MedioPagoCodigo = ventaMadreJson.getString("MedioPagoCodigo"),
+        MedioPagoDetalle = ventaMadreJson.getString("MedioPagoDetalle"),
+        ModEntregaCodigo = ventaMadreJson.getString("ModEntregaCodigo"),
+        DetallePide = ventaMadreJson.getString("DetallePide"),
+        Detalle = ventaMadreJson.getString("Detalle"),
+        TotalCosto = ventaMadreJson.getString("TotalCosto"),
+        TotalVenta = ventaMadreJson.getString("TotalVenta"),
+        TotalDescuento = ventaMadreJson.getString("TotalDescuento"),
+        TotalMercGravado = ventaMadreJson.getString("TotalMercGravado"),
+        TotalMercExonerado = ventaMadreJson.getString("TotalMercExonerado"),
+        TotalMercExento = ventaMadreJson.getString("TotalMercExento"),
+        TotalServGravado = ventaMadreJson.getString("TotalServGravado"),
+        TotalServExonerado = ventaMadreJson.getString("TotalServExonerado"),
+        TotalServExento = ventaMadreJson.getString("TotalServExento"),
+        TotalImpuestoServicio = ventaMadreJson.getString("TotalImpuestoServicio"),
+        TotalIva = ventaMadreJson.getString("TotalIva"),
+        TotalIvaDevuelto = ventaMadreJson.getString("TotalIvaDevuelto"),
+        Total = ventaMadreJson.getString("Total")
+    )
+
+    val ventaHijaJsonArray = resultadoFactura.getJSONArray("ventaHija")
+    val ventaHija = (0 until ventaHijaJsonArray.length()).map { i ->
+        val item = ventaHijaJsonArray.getJSONObject(i)
+        VentaHija(
+            ArticuloLineaId = item.getString("ArticuloLineaId"),
+            Numero = item.getString("Numero"),
+            TipoDocumento = item.getString("TipoDocumento"),
+            ArticuloCodigo = item.getString("ArticuloCodigo"),
+            ArticuloCabys = item.getString("ArticuloCabys"),
+            ArticuloActividadEconomica = item.getString("ArticuloActividadEconomica"),
+            ArticuloCantidad = item.getString("ArticuloCantidad"),
+            ArticuloUnidadMedida = item.getString("ArticuloUnidadMedida"),
+            ArticuloSerie = item.getString("ArticuloSerie"),
+            ArticuloTipoPrecio = item.getString("ArticuloTipoPrecio"),
+            ArticuloBodegaCodigo = item.getString("ArticuloBodegaCodigo"),
+            ArticuloCosto = item.getString("ArticuloCosto"),
+            ArticuloVenta = item.getString("ArticuloVenta"),
+            ArticuloVentaSubTotal1 = item.getString("ArticuloVentaSubTotal1"),
+            ArticuloDescuentoPorcentage = item.getString("ArticuloDescuentoPorcentage"),
+            ArticuloDescuentoMonto = item.getString("ArticuloDescuentoMonto"),
+            ArticuloVentaSubTotal2 = item.getString("ArticuloVentaSubTotal2"),
+            ArticuloOtrosCargos = item.getString("ArticuloOtrosCargos"),
+            ArticuloVentaSubTotal3 = item.getString("ArticuloVentaSubTotal3"),
+            ArticuloIvaPorcentage = item.getString("ArticuloIvaPorcentage"),
+            ArticuloIvaTarifa = item.getString("ArticuloIvaTarifa"),
+            ArticuloIvaExonerado = item.getString("ArticuloIvaExonerado"),
+            ArticuloIvaMonto = item.getString("ArticuloIvaMonto"),
+            ArticuloIvaDevuelto = item.getString("ArticuloIvaDevuelto"),
+            ArticuloVentaGravado = item.getString("ArticuloVentaGravado"),
+            ArticuloVentaExonerado = item.getString("ArticuloVentaExonerado"),
+            ArticuloVentaExento = item.getString("ArticuloVentaExento"),
+            ArticuloVentaTotal = item.getString("ArticuloVentaTotal"),
+            nombreArticulo = item.getString("nombreArticulo")
+        )
+    }
+
+    val empresaJson = resultadoFactura.getJSONObject("empresa")
+    val empresa = Empresa(
+        nombre = empresaJson.getString("nombre"),
+        cedula = empresaJson.getString("cedula"),
+        telefono = empresaJson.getString("telefono"),
+        direccion = empresaJson.getString("direccion"),
+        correo = empresaJson.getString("correo")
+    )
+
+    val clienteJson = resultadoFactura.getJSONObject("cliente")
+    val cliente = Cliente(
+        Id_Cliente = clienteJson.getString("Id_Cliente"),
+        Nombre = clienteJson.getString("Nombre"),
+        Telefonos = clienteJson.getString("Telefonos"),
+        Direccion = clienteJson.getString("Direccion"),
+        Fecha = clienteJson.getString("Fecha"),
+        TipoPrecioVenta = clienteJson.getString("TipoPrecioVenta"),
+        Cod_Tipo_Cliente = clienteJson.getString("Cod_Tipo_Cliente"),
+        Email = clienteJson.getString("Email"),
+        DiaCobro = clienteJson.getString("DiaCobro"),
+        Contacto = clienteJson.getString("Contacto"),
+        Exento = clienteJson.getString("Exento"),
+        AgenteVentas = clienteJson.getString("AgenteVentas"),
+        Cod_Estado = clienteJson.getString("Cod_Estado"),
+        UltimaVenta = clienteJson.getString("UltimaVenta"),
+        Cod_Zona = clienteJson.getString("Cod_Zona"),
+        DetalleContrato = clienteJson.getString("DetalleContrato"),
+        MontoContrato = clienteJson.getString("MontoContrato"),
+        NoForzarCredito = clienteJson.getString("NoForzarCredito"),
+        Descuento = clienteJson.getString("Descuento"),
+        DivisionTerritorial = clienteJson.getString("DivisionTerritorial"),
+        MontoCredito = clienteJson.getString("MontoCredito"),
+        plazo = clienteJson.getString("plazo"),
+        TieneCredito = clienteJson.getString("TieneCredito"),
+        Cedula = clienteJson.getString("Cedula"),
+        FechaNacimiento = clienteJson.getString("FechaNacimiento"),
+        Cod_Moneda = clienteJson.getString("Cod_Moneda"),
+        FechaVencimiento = clienteJson.getString("FechaVencimiento"),
+        TipoIdentificacion = clienteJson.getString("TipoIdentificacion"),
+        ClienteNombreComercial = clienteJson.getString("ClienteNombreComercial"),
+        EmailFactura = clienteJson.getString("EmailFactura"),
+        EmailCobro = clienteJson.getString("EmailCobro"),
+        PorcentajeInteres = clienteJson.getString("PorcentajeInteres")
+    )
+
+    val clave = resultadoFactura.getString("clave")
+    val leyenda = resultadoFactura.getString("leyenda")
+
+    val factura = Factura(
+        ventaMadre = ventaMadre,
+        ventaHija = ventaHija,
+        empresa = empresa,
+        cliente = cliente,
+        clave = clave,
+        leyenda = leyenda,
+        descrpcionFormaPago = resultadoFactura.getString("descrpcionFormaPago"),
+        descripcionMedioPago = resultadoFactura.getString("descripcionMedioPago"),
+        nombreAgente = resultadoFactura.getString("nombreAgente")
+    )
+
+    return factura
 }
 
 
@@ -526,7 +676,7 @@ class ImpresoraViewModel : ViewModel() {
             delay(1000)
             if (lastDeviceAddress == "0") {
                 if (listaImpresoras.isEmpty()) return@launch
-                val primerImpresora = listaImpresoras.first()
+                val primerImpresora = BluetoothPrintersConnections().list?.first() ?: return@launch
                 conexion = primerImpresora
                 dispositivoActual = primerImpresora
                 conectar(context, primerImpresora.device.address, primerImpresora.device.name)
