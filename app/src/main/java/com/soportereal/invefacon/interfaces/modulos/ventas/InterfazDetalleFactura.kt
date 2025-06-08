@@ -97,6 +97,7 @@ import com.soportereal.invefacon.funciones_de_interfaces.TText
 import com.soportereal.invefacon.funciones_de_interfaces.deserializarFacturaHecha
 import com.soportereal.invefacon.funciones_de_interfaces.formatearFechaTexto
 import com.soportereal.invefacon.funciones_de_interfaces.gestorImpresora
+import com.soportereal.invefacon.funciones_de_interfaces.listaParametros
 import com.soportereal.invefacon.funciones_de_interfaces.mostrarMensajeError
 import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloBodyBig
 import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloBodyMedium
@@ -176,7 +177,7 @@ fun IniciarInterfazDetalleFactura(
     var imprimir by remember { mutableStateOf(false) }
     val context = LocalContext.current
     var datosFacturaEmitida by remember { mutableStateOf(Factura()) }
-    val listaImpresion = remember { mutableStateListOf( ParClaveValor("0","3")) }
+    val listaImpresion = remember { mutableStateListOf<ParClaveValor>() }
     val coroutineScope = rememberCoroutineScope()
     val valorImpresionActiva by remember { mutableStateOf( obtenerParametroLocal(context, "isImpresionActiva$codUsuario$nombreEmpresa")) }
 
@@ -303,7 +304,7 @@ fun IniciarInterfazDetalleFactura(
                 TotalIvaDevuelto = obj.getDouble("TotalIvaDevuelto"),
                 Total = obj.getDouble("Total")
             )
-        delay(1000)
+        delay(500)
         gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
         isCargando = false
 
@@ -349,6 +350,7 @@ fun IniciarInterfazDetalleFactura(
             imprimir = false
             return@LaunchedEffect
         }
+        listaImpresion.add(ParClaveValor("0", "3"))
         exitoImpresion = imprimirFactura(datosFacturaEmitida, context, nombreEmpresa, listaImpresion.first())
         delay(3500)
         isImprimiendo = false

@@ -294,6 +294,8 @@ suspend fun imprimirFactura(factura: Factura, context: Context, nombreEmpresa : 
     if (factura.cliente.Cedula.isNotEmpty())facturaTexto += addText("CEDULA: ${factura.cliente.Cedula}", "L", context = context)
     facturaTexto += addText("NOMBRE: ${factura.cliente.Nombre}", "L", context = context)
     if (factura.cliente.EmailFactura.isNotEmpty()) facturaTexto += addText("EMAIL: ${factura.cliente.EmailFactura}", "L", context = context)
+    if (factura.cliente.Telefonos.isNotEmpty()) facturaTexto += addText("TELEFONO: ${factura.cliente.Telefonos}", "L", context = context)
+    if (factura.cliente.Direccion.isNotEmpty()) facturaTexto += addText("DIRECCION: ${factura.cliente.Direccion}", "L", context = context)
     facturaTexto += addTextTall("DETALLE FACTURA", "C", context = context)
     facturaTexto += agregarDobleLinea(context = context, justification = "C")
     facturaTexto += addText(if (obtenerValorParametroEmpresa("307", "0") == "1") "CABYS" else "", "L", context = context, destacar = true)
@@ -324,9 +326,9 @@ suspend fun imprimirFactura(factura: Factura, context: Context, nombreEmpresa : 
         facturaTexto += agregarLinea(ajustarATexto = true, text = "  ${factura.ventaMadre.MonedaCodigo} TOTAL ${factura.ventaMadre.Total}", justification = "R", context = context)
         facturaTexto += addTextTall("  ${factura.ventaMadre.MonedaCodigo} TOTAL ${separacionDeMiles(isString = true, montoString = factura.ventaMadre.Total)}", "R", destacar = true, context = context)
     }
-    if (obtenerValorParametroEmpresa("47", "0") == "1") facturaTexto += addText("***RESUMEN IVA***", "C", context = context)
-    facturaTexto += addText("IVA%  /  VENTA  /  IVA", "C", context = context, conLiena = true)
     if (obtenerValorParametroEmpresa("47", "0") == "1"){
+        facturaTexto += addText("***RESUMEN IVA***", "C", context = context)
+        facturaTexto += addText("IVA%  /  VENTA  /  IVA", "C", context = context, conLiena = true)
         for(iva in listaIvas){
             facturaTexto += addText("${iva.clave}% / ${separacionDeMiles(montoString = iva.venta, isString = true)} / ${separacionDeMiles(montoString = iva.valor, isString = true)}", "C", context = context)
         }

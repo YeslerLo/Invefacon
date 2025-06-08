@@ -73,6 +73,7 @@ import com.soportereal.invefacon.funciones_de_interfaces.RutasPatallas
 import com.soportereal.invefacon.funciones_de_interfaces.actualizarParametro
 import com.soportereal.invefacon.funciones_de_interfaces.descargarImagenSiNoExiste
 import com.soportereal.invefacon.funciones_de_interfaces.guardarParametroSiNoExiste
+import com.soportereal.invefacon.funciones_de_interfaces.listaParametros
 import com.soportereal.invefacon.funciones_de_interfaces.listaPermisos
 import com.soportereal.invefacon.funciones_de_interfaces.mostrarMensajeError
 import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloBodyBig
@@ -129,12 +130,22 @@ fun IniciarInterfazInicio(
     LaunchedEffect (descargarPermisos) {
         if (!descargarPermisos) return@LaunchedEffect
         if (listaPermisos.isEmpty()) gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(true)
-        val result = objectoProcesadorDatosApi.obtenerPermisosUsuario(codUsuario)
+        var result = objectoProcesadorDatosApi.obtenerPermisosUsuario(codUsuario)
         if (result == null) return@LaunchedEffect
         if (!validarExitoRestpuestaServidor(result)) return@LaunchedEffect estadoRespuestaApi.cambiarEstadoRespuestaApi(mostrarSoloRespuestaError = true, datosRespuesta = result)
         listaPermisos = (0 until result.getJSONArray("data").length()).map { i ->
-            val permiso = result.getJSONArray("data").getJSONObject(i)
+            val permiso = result!!.getJSONArray("data").getJSONObject(i)
             ParClaveValor(clave = permiso.getString("Cod_Derecho"), valor = permiso.getString("Descripcion"))
+        }
+        result = objectoProcesadorDatosApi.obtenerParemetrosEmpresa()
+        if (result == null) return@LaunchedEffect
+        if (!validarExitoRestpuestaServidor(result)) {
+            estadoRespuestaApi.cambiarEstadoRespuestaApi(mostrarSoloRespuestaError = true, datosRespuesta = result)
+            return@LaunchedEffect
+        }
+        listaParametros = (0 until result.getJSONObject("resultado").getJSONArray("data").length()).map { i ->
+            val parametro = result.getJSONObject("resultado").getJSONArray("data").getJSONObject(i)
+            ParClaveValor(clave = parametro.getString("Parametro"), valor = parametro.getString("Valor"), descripcion = parametro.getString("Descripcion"))
         }
         gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
         descargarPermisos = false

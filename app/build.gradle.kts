@@ -14,8 +14,8 @@ android {
         applicationId = "com.soportereal.invefacon"
         minSdk = 25
         targetSdk = 35
-        versionCode = 34
-        versionName = "1.2.3"
+        versionCode = 35
+        versionName = "1.2.4"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
