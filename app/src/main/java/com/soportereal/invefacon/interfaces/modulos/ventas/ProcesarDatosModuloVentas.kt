@@ -1,6 +1,14 @@
 package com.soportereal.invefacon.interfaces.modulos.ventas
 
+import android.content.Context
 import com.soportereal.invefacon.funciones_de_interfaces.FuncionesHttp
+import com.soportereal.invefacon.funciones_de_interfaces.conectarSocket
+import com.soportereal.invefacon.funciones_de_interfaces.generarConsultaSocket
+import com.soportereal.invefacon.funciones_de_interfaces.mostrarMensajeError
+import com.soportereal.invefacon.funciones_de_interfaces.validarRespuestaSocket
+import com.soportereal.invefacon.interfaces.pantallas_principales.gestorEstadoPantallaCarga
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import okhttp3.MultipartBody
 import org.json.JSONObject
 
@@ -55,6 +63,41 @@ class ProcesarDatosModuloVentas(apiToken: String) {
         return objetoFuncionesHttpInvefacon.metodoPost(
             formBody = formBody,
             apiDirectorio = "varios/tipoformapago.php"
+        )
+    }
+
+    suspend fun aplicarNotaCreditoCompleta(context : Context, numeroDocumento: String, onErrorOrFin: (Boolean) -> Unit){
+        val caracter = '\u00DF'
+        // Generar mensajes
+        val mensajeSocket = generarConsultaSocket(
+            context = context,
+            proceso = "MODSEGU000",
+            subProceso = "MODSEGU009",
+            cuerpo = "00362${caracter}MOD${caracter}DEMOFERRE${caracter}VENTAS${caracter}11.72 10-06-2025${caracter}",
+            agregarBd = false,
+            generarIdProceso = false
+        ) + generarConsultaSocket(
+            context = context,
+            proceso = "MODVENT000",
+            subProceso = "MODVENT079",
+            cuerpo = "00006${caracter}$numeroDocumento${caracter}venta${caracter}${caracter}"
+        )
+        gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(true)
+        conectarSocket(
+            context = context,
+            mensaje = mensajeSocket,
+            alRecibirMensaje = { msg ->
+                withContext(Dispatchers.Main) {
+                    validarRespuestaSocket(datos = msg, onFin = {onErrorOrFin(false)})
+                }
+            },
+            onError = { errorMsg ->
+                withContext(Dispatchers.Main) {
+                    mostrarMensajeError(errorMsg)
+                    gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
+                    onErrorOrFin(false)
+                }
+            }
         )
     }
 

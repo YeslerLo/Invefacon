@@ -56,6 +56,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -88,6 +89,7 @@ import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloDisplayBig
 import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloTitleBig
 import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloTitleSmall
 import com.soportereal.invefacon.interfaces.pantallas_principales.gestorEstadoPantallaCarga
+import kotlinx.coroutines.launch
 
 
 @RequiresApi(Build.VERSION_CODES.S)
@@ -108,6 +110,7 @@ fun IniciarInterfazAjustesImpresora (
     var iniciarMenuParametrosImpresora by remember { mutableStateOf(false) }
     var valorImpresionActiva by remember { mutableStateOf( obtenerParametroLocal(context, "isImpresionActiva$codUsuario$nombreEmpresa")) }
     gestorImpresora.PedirPermisos(context)
+    val coroutineScope = rememberCoroutineScope()
 
 
     ConstraintLayout(
@@ -445,8 +448,9 @@ fun IniciarInterfazAjustesImpresora (
                                         actualizarParametro(context, "cantidadCaracPorLineaImpre", it)
                                         caracteresPorLinea = obtenerParametroLocal(context, "cantidadCaracPorLineaImpre")
                                         if (valorImpresionActiva == "1"){
-                                            gestorImpresora.deconectar(context)
-                                            gestorImpresora.reconectar(context)
+                                            coroutineScope.launch {
+                                                gestorImpresora.reconectar(context)
+                                            }
                                         }
                                     },
                                     objetoAdaptardor = objetoAdaptardor,

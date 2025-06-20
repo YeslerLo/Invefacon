@@ -365,42 +365,6 @@ internal fun BBasicTextField(
             }
         }
     }
-
-//        DropdownMenu(
-//            expanded = expanded,
-//            onDismissRequest = { expanded = false },
-//            modifier = Modifier
-//                .background(Color.White)
-//                .heightIn(max = objetoAdaptardor.ajustarAltura(700))
-//                .widthIn(
-//                    max = objetoAdaptardor.ajustarAncho(350),
-//                    min = objetoAdaptardor.ajustarAncho(100)
-//                )
-//        ) {
-//            opciones.forEach { contenido->
-//                DropdownMenuItem(
-//                    onClick = {
-//                        onValueChange(contenido.clave)
-//                        expanded = false // Cierra el menú después de seleccionar
-//                    },
-//                    text = {
-//                        Text(
-//                            if (mostrarClave) contenido.clave else contenido.valor,
-//                            fontFamily = FontFamily(Font(R.font.akshar_medium)),
-//                            fontWeight = FontWeight.Medium,
-//                            fontSize = fontSize,
-//                            maxLines = 1,
-//                            overflow = TextOverflow.Ellipsis,
-//                            textAlign = TextAlign.Center,
-//                            color = Color.Black
-//                        )
-//                    },
-//                    modifier = Modifier.background(Color.White)
-//                )
-//
-//            }
-//        }
-
 }
 
 @Composable
@@ -865,7 +829,7 @@ fun MenuConfirmacion(
                     fontWeight = FontWeight.Medium,
                     color = Color.Black,
                     fontSize = obtenerEstiloTitleMedium(),
-                    maxLines = 1,
+                    maxLines = 2,
                     overflow = TextOverflow.Ellipsis
                 )
             },

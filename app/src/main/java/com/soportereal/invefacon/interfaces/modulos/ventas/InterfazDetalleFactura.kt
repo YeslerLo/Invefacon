@@ -1,6 +1,7 @@
 package com.soportereal.invefacon.interfaces.modulos.ventas
 
 import android.os.Build
+import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.annotation.RequiresApi
 import androidx.compose.animation.AnimatedVisibility
@@ -35,6 +36,7 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -92,12 +94,12 @@ import coil.compose.SubcomposeAsyncImage
 import com.soportereal.invefacon.R
 import com.soportereal.invefacon.funciones_de_interfaces.BButton
 import com.soportereal.invefacon.funciones_de_interfaces.FuncionesParaAdaptarContenido
+import com.soportereal.invefacon.funciones_de_interfaces.MenuConfirmacion
 import com.soportereal.invefacon.funciones_de_interfaces.ParClaveValor
 import com.soportereal.invefacon.funciones_de_interfaces.TText
 import com.soportereal.invefacon.funciones_de_interfaces.deserializarFacturaHecha
 import com.soportereal.invefacon.funciones_de_interfaces.formatearFechaTexto
 import com.soportereal.invefacon.funciones_de_interfaces.gestorImpresora
-import com.soportereal.invefacon.funciones_de_interfaces.listaParametros
 import com.soportereal.invefacon.funciones_de_interfaces.mostrarMensajeError
 import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloBodyBig
 import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloBodyMedium
@@ -114,8 +116,12 @@ import com.soportereal.invefacon.interfaces.modulos.facturacion.ProcesarDatosMod
 import com.soportereal.invefacon.interfaces.modulos.facturacion.imprimirFactura
 import com.soportereal.invefacon.interfaces.pantallas_principales.estadoRespuestaApi
 import com.soportereal.invefacon.interfaces.pantallas_principales.gestorEstadoPantallaCarga
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 
 @RequiresApi(Build.VERSION_CODES.S)
@@ -180,6 +186,10 @@ fun IniciarInterfazDetalleFactura(
     val listaImpresion = remember { mutableStateListOf<ParClaveValor>() }
     val coroutineScope = rememberCoroutineScope()
     val valorImpresionActiva by remember { mutableStateOf( obtenerParametroLocal(context, "isImpresionActiva$codUsuario$nombreEmpresa")) }
+    var socketJob by remember { mutableStateOf<Job?>(null) }
+    val cortinaSocket= CoroutineScope(Dispatchers.IO)
+    var iniciarMenuConfNotCredComple by remember { mutableStateOf(false) }
+    var iniciarMenuOpciones by remember { mutableStateOf(false) }
 
     if (valorImpresionActiva == "1") {
         gestorImpresora.PedirPermisos(context)
@@ -344,14 +354,25 @@ fun IniciarInterfazDetalleFactura(
         if (!imprimir) return@LaunchedEffect
         isImprimiendo = true
         iniciarPantallaEstadoImpresion = true
-        if (!gestorImpresora.validarConexion(context)){
-            exitoImpresion = false
-            isImprimiendo = false
-            imprimir = false
-            return@LaunchedEffect
+        val isConectado = gestorImpresora.validarConexion(context)
+        delay(1000)
+        if (!isConectado){
+            gestorImpresora.reconectar(context)
+            withContext(Dispatchers.Main) {
+                Toast.makeText(context, "Reconectando impresora...", Toast.LENGTH_SHORT).show()
+            }
+            delay(12000)
+            val isConectada = gestorImpresora.validarConexion(context)
+            delay(1000)
+            if (!isConectada){
+                exitoImpresion = false
+                isImprimiendo = false
+                imprimir = false
+                return@LaunchedEffect
+            }
         }
         listaImpresion.add(ParClaveValor("0", "3"))
-        exitoImpresion = imprimirFactura(datosFacturaEmitida, context, nombreEmpresa, listaImpresion.first())
+        exitoImpresion = imprimirFactura(datosFacturaEmitida, context, nombreEmpresa, listaImpresion.first(),"#$codUsuario $nombreUsuario")
         delay(3500)
         isImprimiendo = false
         if (!exitoImpresion){
@@ -634,6 +655,7 @@ fun IniciarInterfazDetalleFactura(
         HorizontalDivider(thickness = 5.dp, color = Color.LightGray)
     }
 
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -746,9 +768,40 @@ fun IniciarInterfazDetalleFactura(
                             alignment = Alignment.CenterVertically
                         )
                     ) {
+                        Row {
+                            BButton(
+                                text = "Re-Enviar XML",
+                                onClick = {
+                                    return@BButton mostrarMensajeError("Esta opción está en desarrollo...")
+                                },
+                                objetoAdaptardor = objetoAdaptardor,
+                                modifier = Modifier.weight(1f).padding(horizontal = objetoAdaptardor.ajustarAncho(8)),
+                                textSize = obtenerEstiloBodyBig()
+                            )
+                            BButton(
+                                text = "Opciones",
+                                onClick = {
+                                    return@BButton mostrarMensajeError("Esta opción está en desarrollo...")
+
+                                },
+                                objetoAdaptardor = objetoAdaptardor,
+                                modifier = Modifier.weight(1f).padding(horizontal = objetoAdaptardor.ajustarAncho(8)),
+                                textSize = obtenerEstiloBodyBig()
+                            )
+                            BButton(
+                                text = "Refrescar",
+                                onClick = {
+                                    return@BButton mostrarMensajeError("Esta opción está en desarrollo...")
+                                },
+                                objetoAdaptardor = objetoAdaptardor,
+                                modifier = Modifier.weight(1f).padding(horizontal = objetoAdaptardor.ajustarAncho(8)),
+                                textSize = obtenerEstiloBodyBig()
+                            )
+                        }
+
                         Card(
                             modifier = Modifier
-                                .padding(horizontal = objetoAdaptardor.ajustarAltura(8))
+                                .padding(horizontal = objetoAdaptardor.ajustarAncho(8))
                                 .shadow(
                                     elevation = objetoAdaptardor.ajustarAltura(7),
                                     shape = RoundedCornerShape(objetoAdaptardor.ajustarAltura(20))
@@ -1336,6 +1389,140 @@ fun IniciarInterfazDetalleFactura(
             }
         }
     }
+
+    if (iniciarMenuOpciones) {
+        var isMenuVisible by remember { mutableStateOf(false) }
+
+        LaunchedEffect(Unit) {
+            delay(100)
+            isMenuVisible = true
+        }
+
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black.copy(alpha = 0.3f))
+                .clickable(enabled = false) {},
+            contentAlignment = Alignment.Center
+        ) {
+            AnimatedVisibility(
+                visible = isMenuVisible,
+                enter = fadeIn(animationSpec = tween(500)) + slideInVertically(initialOffsetY = { it }),
+                exit = fadeOut(animationSpec = tween(500)) + slideOutVertically(targetOffsetY = { it })
+            ) {
+                Surface(
+                    modifier = Modifier
+                        .wrapContentWidth()
+                        .wrapContentHeight()
+                        .padding(objetoAdaptardor.ajustarAltura(16))
+                        .align(Alignment.Center),
+                    shape = RoundedCornerShape(objetoAdaptardor.ajustarAltura(12)),
+                    color = Color.White,
+                    shadowElevation = 8.dp
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .padding(16.dp)
+                            .width(objetoAdaptardor.ajustarAncho(220))
+                            .wrapContentHeight(),
+                        verticalArrangement = Arrangement.spacedBy(objetoAdaptardor.ajustarAltura(8))
+                    ) {
+                        TText(
+                            text = "Opciones",
+                            fontSize = obtenerEstiloHeadSmall(),
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        BButton(
+                            text = "Nota de Crédito Manual",
+                            onClick = {
+                            },
+                            textSize = obtenerEstiloBodyBig(),
+                            modifier = Modifier.fillMaxWidth(),
+                            objetoAdaptardor = objetoAdaptardor
+                        )
+                        BButton(
+                            text = "Nota de Crédito Completa",
+                            onClick = {
+                                iniciarMenuOpciones = false
+                                iniciarMenuConfNotCredComple = true
+                            },
+                            textSize = obtenerEstiloBodyBig(),
+                            modifier = Modifier.fillMaxWidth(),
+                            objetoAdaptardor = objetoAdaptardor
+                        )
+                        BButton(
+                            text = "Nota de Crédito Financiera",
+                            onClick = {
+
+                            },
+                            textSize = obtenerEstiloBodyBig(),
+                            modifier = Modifier.fillMaxWidth(),
+                            objetoAdaptardor = objetoAdaptardor
+                        )
+                        BButton(
+                            text = "Nota de Débito Manual",
+                            onClick = {
+                            },
+                            textSize = obtenerEstiloBodyBig(),
+                            modifier = Modifier.fillMaxWidth(),
+                            objetoAdaptardor = objetoAdaptardor
+                        )
+                        BButton(
+                            text = "Nota de Débito Completa",
+                            onClick = {
+                            },
+                            textSize = obtenerEstiloBodyBig(),
+                            modifier = Modifier.fillMaxWidth(),
+                            objetoAdaptardor = objetoAdaptardor
+                        )
+                        BButton(
+                            text = "Nota de Débito Finaciera",
+                            onClick = {
+                            },
+                            textSize = obtenerEstiloBodyBig(),
+                            modifier = Modifier.fillMaxWidth(),
+                            objetoAdaptardor = objetoAdaptardor
+                        )
+                        BButton(
+                            text = "Salir",
+                            onClick = {
+                                iniciarMenuOpciones = false
+                            },
+                            textSize = obtenerEstiloBodyBig(),
+                            modifier = Modifier.fillMaxWidth(),
+                            objetoAdaptardor = objetoAdaptardor,
+                            backgroundColor = Color.Red
+                        )
+                    }
+
+                }
+            }
+        }
+    }
+
+    MenuConfirmacion(
+        txBtAceptar = "Aplicar",
+        txBtDenegar = "Cancelar",
+        onAceptar = {
+            iniciarMenuConfNotCredComple = false
+            socketJob = cortinaSocket.launch {
+                objectoProcesadorDatosApi.aplicarNotaCreditoCompleta(
+                    context = context,
+                    numeroDocumento = detallesDocumento.numero,
+                    onErrorOrFin = {
+                        socketJob?.cancel()
+                    }
+                )
+            }
+        },
+        onDenegar = {
+            iniciarMenuConfNotCredComple = false
+        },
+        mostrarMenu = iniciarMenuConfNotCredComple,
+        titulo = "Nota de Crédito Automática Completa",
+        subTitulo = "¿Desea aplicar una Nota de Crédito Automática Completa a esta Factura?"
+    )
 }
 
 

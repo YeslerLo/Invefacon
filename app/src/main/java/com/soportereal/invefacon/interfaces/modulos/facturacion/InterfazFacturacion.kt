@@ -186,6 +186,7 @@ import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.json.JSONArray
 import org.json.JSONObject
 import java.math.BigDecimal
@@ -376,6 +377,7 @@ fun IniciarInterfazFacturacion(
     var iniciarBusquedaClienteByCedula by remember { mutableStateOf(false) }
     val listaArticulos by gestorTablaArticulos.articulos.collectAsState()
     val coroutineScope = rememberCoroutineScope()
+    val coroutineScopeAgreEditArt = rememberCoroutineScope()
     val transition = rememberInfiniteTransition(label = "shimmer")
     val shimmerTranslate by transition.animateFloat(
         initialValue = -800f,
@@ -397,28 +399,21 @@ fun IniciarInterfazFacturacion(
         end = Offset(shimmerTranslate + 800f, 0f)
     )
 
-    fun agregarColaImpresion(isContado : Boolean = true, isReimpresion : Boolean = false){
-        if (isContado){
-            val cantidadCopiasImpresion = if (isReimpresion) 0 else obtenerValorParametroEmpresa("99", "0").toInt()
-            listaImpresion.addAll((0..cantidadCopiasImpresion).map {
-                if (isReimpresion){
-                    ParClaveValor(it.toString(),"3")
-                } else if (it==0){
-                    ParClaveValor(it.toString(),"1")
-                }else{
-                    ParClaveValor(it.toString(),"2")
-                }
-            })
-            return
-        }
-        val cantidadCopiasImpresion = obtenerValorParametroEmpresa("98", "0").toInt()
-        listaImpresion.addAll((0..cantidadCopiasImpresion).map {
-            if (it==0){
-                ParClaveValor(it.toString(),"1")
-            }else{
-                ParClaveValor(it.toString(),"2")
+    fun agregarColaImpresion(isContado: Boolean = true, isReimpresion: Boolean = false, isProforma: Boolean = false) {
+        val parametroEmpresa = if (isContado) "99" else "98"
+        val cantidadCopias = if (isReimpresion || isProforma) 0 else obtenerValorParametroEmpresa(parametroEmpresa, "0").toInt()
+
+        val items = (0..cantidadCopias).map { index ->
+            val valor = when {
+                isProforma -> "4"
+                isReimpresion -> "3"
+                index == 0 -> "1"
+                else -> "2"
             }
-        })
+            ParClaveValor(index.toString(), valor)
+        }
+
+        listaImpresion.addAll(items)
     }
 
     fun pagarCompleto(){
@@ -442,6 +437,21 @@ fun IniciarInterfazFacturacion(
         tipoPago = "credito"
         agregarColaImpresion(false)
         guardarProforma = true
+    }
+
+    suspend fun AgregaEditaArticulo(articulo :  ArticuloLineaProforma){
+        gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(true)
+        val result = objectoProcesadorDatosApi.agregarActualizarLinea(articulo)
+        if (result != null){
+            if (validarExitoRestpuestaServidor(result)){
+                iniciarMenuAgregaEditaArticulo = false
+                gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
+                soloActualizarArticulos = true
+            }else{
+                estadoRespuestaApi.cambiarEstadoRespuestaApi(mostrarSoloRespuestaError = true, datosRespuesta = result)
+                gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
+            }
+        }
     }
 
     fun deserializarArticulo(datos : String) : ArticuloFacturacion {
@@ -568,13 +578,6 @@ fun IniciarInterfazFacturacion(
         validarVersionApp(context)
     }
 
-    LaunchedEffect (Unit) {
-        if (valorImpresionActiva != "1") return@LaunchedEffect  Toast.makeText(context, "La impresión está inactiva.", Toast.LENGTH_SHORT).show()
-        delay(1000)
-        if (gestorImpresora.validarConexion(context)) return@LaunchedEffect
-        gestorImpresora.reconectar(context)
-    }
-
     LaunchedEffect (actualizarDatosProforma, soloActualizarArticulos, soloActualizarDatosCliente) {
         if (actualizarDatosProforma || soloActualizarArticulos || soloActualizarDatosCliente){
             listaArticulosSeleccionados.clear()
@@ -631,7 +634,7 @@ fun IniciarInterfazFacturacion(
                         ordenCompra = data.getString("ordenCompra")
                         nuevoCodigoMoneda = codMonedaProforma
                         simboloMoneda =  if(codMonedaProforma == "CRC") "\u20A1 " else "\u0024 "
-                        iniciarDescargaArticulos = true
+                        iniciarDescargaArticulos = !iniciarMenuSeleccionarArticulo // SI EL MENU ESTA ABIERTO NO DESCRAGAN LOS ARTICULOS
 
                         //Totales
                         val totales = data.getJSONArray("totales").getJSONObject(0)
@@ -784,25 +787,6 @@ fun IniciarInterfazFacturacion(
             isCargandoDatos= false
             validacionCargaFinalizada = 0
         }
-    }
-
-    LaunchedEffect (agregarEditarArticuloActual) {
-        if (agregarEditarArticuloActual){
-            gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(true)
-            val result = objectoProcesadorDatosApi.agregarActualizarLinea(articuloLineaProforma)
-            if (result != null){
-                if (validarExitoRestpuestaServidor(result)){
-                    iniciarMenuSeleccionarArticulo = isAgregar
-                    iniciarMenuAgregaEditaArticulo = false
-                    gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
-                    soloActualizarArticulos = true
-                }else{
-                    estadoRespuestaApi.cambiarEstadoRespuestaApi(mostrarSoloRespuestaError = true, datosRespuesta = result)
-                    gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
-                }
-            }
-        }
-        agregarEditarArticuloActual = false
     }
 
     LaunchedEffect (eliminarLinea) {
@@ -1075,9 +1059,7 @@ fun IniciarInterfazFacturacion(
 
     LaunchedEffect (guardarProforma) {
         if (!guardarProforma) return@LaunchedEffect
-
         gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(true)
-
         try {
             var result = objectoProcesadorDatosApi.guardarProforma(
                 numero = numeroProforma,
@@ -1097,16 +1079,13 @@ fun IniciarInterfazFacturacion(
             val data = result.getJSONObject("data")
             consecutivoFactura = data.getString("consecutivo")
 
-            if(tipoFormaProcesar == "proforma" || valorImpresionActiva != "1"){
-                if (tipoFormaProcesar == "proforma") mostrarMensajeExito("La Proforma se ha emitido exitosamente con el consecutivo: $consecutivoFactura") else mostrarMensajeExito("La factura se ha emitido exitosamente con el consecutivo: $consecutivoFactura")
+            if(valorImpresionActiva == "0" || listaImpresion.isEmpty()){
+                if (tipoFormaProcesar == "proforma") mostrarMensajeExito("La Proforma se ha emitido exitosamente con el consecutivo: $consecutivoFactura") else mostrarMensajeExito("La factura se ha emitido exitosamente!")
                 numeroProforma = ""
                 actualizarDatosProforma = true
                 return@LaunchedEffect
             }
             datosFacturaEmitida = Factura()
-
-//            delay(6000)
-
             result = objectoProcesadorDatosApi.obtenerFactura(consecutivoFactura)
 
             if (result == null) return@LaunchedEffect
@@ -1132,15 +1111,25 @@ fun IniciarInterfazFacturacion(
         if (!imprimir) return@LaunchedEffect
         isImprimiendo = true
         iniciarPantallaEstadoImpresion = true
+        val isConectado = gestorImpresora.validarConexion(context)
         delay(1000)
-        if (!gestorImpresora.validarConexion(context)){
-            exitoImpresion = false
-            isImprimiendo = false
-            estadoProforma = "2"
-            imprimir = false
-            return@LaunchedEffect
+        if (!isConectado){
+            gestorImpresora.reconectar(context)
+            withContext(Dispatchers.Main) {
+                Toast.makeText(context, "Reconectando impresora...", Toast.LENGTH_SHORT).show()
+            }
+            delay(12000)
+            val isConectada = gestorImpresora.validarConexion(context)
+            delay(1000)
+            if (!isConectada){
+                exitoImpresion = false
+                isImprimiendo = false
+                estadoProforma = "2"
+                imprimir = false
+                return@LaunchedEffect
+            }
         }
-        exitoImpresion = imprimirFactura(datosFacturaEmitida, context, nombreEmpresa, listaImpresion.first())
+        exitoImpresion = imprimirFactura(datosFacturaEmitida, context, nombreEmpresa, listaImpresion.first(), "#$codUsuario $nombreUsuario")
         delay(3500)
         isImprimiendo = false
         if (!exitoImpresion){
@@ -1280,6 +1269,11 @@ fun IniciarInterfazFacturacion(
         actualizarNombreProforma = false
     }
 
+    LaunchedEffect(Unit) {
+        if (valorImpresionActiva != "1") return@LaunchedEffect  Toast.makeText(context, "La impresión está inactiva.", Toast.LENGTH_SHORT).show()
+        gestorImpresora.reconectar(context)
+    }
+
     // Interceptar el botón de retroceso
     BackHandler {
         if (
@@ -1341,6 +1335,7 @@ fun IniciarInterfazFacturacion(
         val impuestoFactor = BigDecimal.ONE + BigDecimal.valueOf(articulo.impuesto).divide(BigDecimal(100))
         val precioIva = precioArticulo.multiply(impuestoFactor)
         var expandedBodegas by remember { mutableStateOf(false) }
+        val focusRequester = remember { FocusRequester() }
 
         Card(
             modifier = Modifier
@@ -1350,10 +1345,14 @@ fun IniciarInterfazFacturacion(
                     elevation = objetoAdaptardor.ajustarAltura(7),
                     shape = RoundedCornerShape(objetoAdaptardor.ajustarAltura(16))
                 )
+                .pointerInput(Unit) {
+                    detectTapGestures(onTap = {
+                        focusManager.clearFocus()
+                    })
+                }
                 .clickable {
                     isAgregar = true
                     coroutineScope.launch {
-                        iniciarMenuSeleccionarArticulo = false
                         gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(true)
                         descargarArticulos()
                         delay(300)
@@ -4313,28 +4312,6 @@ fun IniciarInterfazFacturacion(
 
     }
 
-    MenuAgregaEditaArticulo(
-        mostrarVentanaArticulo = iniciarMenuAgregaEditaArticulo,
-        onDismiss = { iniciarMenuAgregaEditaArticulo = false },
-        opcionesPresentacion = if(articuloActual.unidadXMedida>1) listOf("Caja", "Unidad") else listOf("Unidad"),
-        objetoAdaptardor = objetoAdaptardor,
-        articulo = articuloActual,
-        codigoMoneda = codMonedaProforma,
-        descuentoCliente = when {
-            articuloActual.articuloDescuentoPorcentaje > 0 -> articuloActual.articuloDescuentoPorcentaje.toString() // SI EL ARTICULO YA POSEE UN DESCUENTO SE TOMA ESE
-            descuentoCliente.toDouble() > articuloActual.descuentoAdmitido -> articuloActual.descuentoAdmitido.toString() // SI EL DESCUENTO DEL CLIENTE ES MAYOR AL ADMTIDO SE TOMA EL MAXIMNO ADMITIDO
-            descuentoCliente.toDouble() > 0.00-> descuentoCliente // SE TOMA EL DESCUENTO DEL CLIENTE YA QUE NO SOBREPASA EL ADMITIDO
-            else -> articuloActual.descuentoFijo.toString() // SE TOMA EL DESCUENTO FIJO SI NINGUNA CONDICIONAL SE CUMPLE
-        },
-        isAgregar = isAgregar,
-        agregaEditaArticulo = {
-            articuloLineaProforma = it
-            agregarEditarArticuloActual = true
-        },
-        bodega = if (articuloActual.articuloBodegaCodigo.isEmpty()) articuloActual.listaBodegas.first() else articuloActual.listaBodegas.find { it.clave == articuloActual.articuloBodegaCodigo } ?: ParClaveValor(),
-        precioVenta = articuloActual.codPrecioVenta.ifEmpty { tipoPrecioCliente }
-    )
-
     if (iniciarMenuSeleccionarArticulo && !iniciarDescargaArticulos) {
         var isMenuVisible by remember { mutableStateOf(false) }
         val focusRequester = remember { FocusRequester() }
@@ -4356,7 +4333,7 @@ fun IniciarInterfazFacturacion(
                 enter = fadeIn(animationSpec = tween(300)) + slideInVertically(initialOffsetY = { it }),
                 exit = fadeOut(animationSpec = tween(300)) + slideOutVertically(targetOffsetY = { it })
             ) {
-                
+
                 LaunchedEffect(Unit) {
                     if (listaArticulosEncontrados.isNotEmpty()) return@LaunchedEffect
                     delay(100)
@@ -4429,6 +4406,11 @@ fun IniciarInterfazFacturacion(
 
                         LazyColumn(
                             modifier = Modifier
+                                .pointerInput(Unit) {
+                                    detectTapGestures(onTap = {
+                                        focusManager.clearFocus()
+                                    })
+                                }
                                 .height(objetoAdaptardor.ajustarAltura(400)),
                             verticalArrangement = Arrangement.Top,
                             horizontalAlignment = Alignment.CenterHorizontally
@@ -4503,6 +4485,29 @@ fun IniciarInterfazFacturacion(
             }
         }
     }
+
+    MenuAgregaEditaArticulo(
+        mostrarVentanaArticulo = iniciarMenuAgregaEditaArticulo,
+        onDismiss = { iniciarMenuAgregaEditaArticulo = false },
+        opcionesPresentacion = if(articuloActual.unidadXMedida>1) listOf("Caja", "Unidad") else listOf("Unidad"),
+        objetoAdaptardor = objetoAdaptardor,
+        articulo = articuloActual,
+        codigoMoneda = codMonedaProforma,
+        descuentoCliente = when {
+            articuloActual.articuloDescuentoPorcentaje > 0 -> articuloActual.articuloDescuentoPorcentaje.toString() // SI EL ARTICULO YA POSEE UN DESCUENTO SE TOMA ESE
+            descuentoCliente.toDouble() > articuloActual.descuentoAdmitido -> articuloActual.descuentoAdmitido.toString() // SI EL DESCUENTO DEL CLIENTE ES MAYOR AL ADMTIDO SE TOMA EL MAXIMNO ADMITIDO
+            descuentoCliente.toDouble() > 0.00-> descuentoCliente // SE TOMA EL DESCUENTO DEL CLIENTE YA QUE NO SOBREPASA EL ADMITIDO
+            else -> articuloActual.descuentoFijo.toString() // SE TOMA EL DESCUENTO FIJO SI NINGUNA CONDICIONAL SE CUMPLE
+        },
+        isAgregar = isAgregar,
+        agregaEditaArticulo = {
+            coroutineScopeAgreEditArt.launch {
+                AgregaEditaArticulo(it)
+            }
+        },
+        bodega = if (articuloActual.articuloBodegaCodigo.isEmpty()) articuloActual.listaBodegas.first() else articuloActual.listaBodegas.find { it.clave == articuloActual.articuloBodegaCodigo } ?: ParClaveValor(),
+        precioVenta = articuloActual.codPrecioVenta.ifEmpty { tipoPrecioCliente }
+    )
 
     if (iniciarMenuSeleccionarCliente) {
         var isMenuVisible by remember { mutableStateOf(false) }
@@ -6045,6 +6050,20 @@ fun IniciarInterfazFacturacion(
                             )
 
                             BButton(
+                                text = "Proce/Impri",
+                                onClick = {
+                                    agregarColaImpresion(isProforma = true)
+                                    tipoFormaProcesar = "proforma"
+                                    guardarProforma = true
+                                    iniciarMenuConfComoProforma = false
+                                },
+                                objetoAdaptardor = objetoAdaptardor,
+                                modifier = Modifier.weight(1f),
+                                backgroundColor = Color(0xFFFF5722),
+                                textSize = obtenerEstiloBodyBig()
+                            )
+
+                            BButton(
                                 text = "Cancelar",
                                 onClick = {
                                     correoProformaTemp =  ""
@@ -6055,7 +6074,8 @@ fun IniciarInterfazFacturacion(
                                 },
                                 objetoAdaptardor = objetoAdaptardor,
                                 modifier = Modifier.weight(1f),
-                                backgroundColor = Color.Red
+                                backgroundColor = Color.Red,
+                                textSize = obtenerEstiloBodyBig()
                             )
                         }
                     }

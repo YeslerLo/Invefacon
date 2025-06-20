@@ -266,7 +266,7 @@ fun deserializarFacturaHecha(resultadoFactura: JSONObject): Factura {
             ArticuloVentaSubTotal2 = item.getString("ArticuloVentaSubTotal2"),
             ArticuloOtrosCargos = item.getString("ArticuloOtrosCargos"),
             ArticuloVentaSubTotal3 = item.getString("ArticuloVentaSubTotal3"),
-            ArticuloIvaPorcentage = item.getString("ArticuloIvaPorcentage"),
+            ArticuloIvaPorcentage = item.getInt("ArticuloIvaPorcentage"),
             ArticuloIvaTarifa = item.getString("ArticuloIvaTarifa"),
             ArticuloIvaExonerado = item.getString("ArticuloIvaExonerado"),
             ArticuloIvaMonto = item.getString("ArticuloIvaMonto"),
@@ -342,7 +342,6 @@ fun deserializarFacturaHecha(resultadoFactura: JSONObject): Factura {
     return factura
 }
 
-
 val gestorImpresora = ImpresoraViewModel()
 
 class ImpresoraViewModel : ViewModel() {
@@ -402,65 +401,25 @@ class ImpresoraViewModel : ViewModel() {
         }
     }
 
+    suspend fun estaImpresoraConectadaRealmente(): Boolean {
+        return withContext(Dispatchers.IO) {
+            try {
+                if (impresora == null) return@withContext false
+                // Enviar comando de estado ESC/POS (DLE EOT 1 o 4 dependiendo de la impresora)
+                impresora?.printFormattedText("",0)
+                true
+            } catch (e: Exception) {
+                false
+            }
+        }
+    }
+
     @RequiresApi(Build.VERSION_CODES.S)
     fun ValidarPermisos(context: Context){
         isPermisosOtorgados = ContextCompat.checkSelfPermission(
             context,
             Manifest.permission.BLUETOOTH_CONNECT
         ) == PackageManager.PERMISSION_GRANTED
-    }
-
-    @RequiresApi(Build.VERSION_CODES.S)
-    fun buscar2(context: Context) {
-        ValidarPermisos(context)
-        viewModelScope.launch(Dispatchers.IO) {
-            withContext(Dispatchers.Main) {
-                if (!isPermisosOtorgados) return@withContext Toast.makeText(
-                    context,
-                    "Active el permiso de Dispositivos cercanos en Permisos de la App.",
-                    Toast.LENGTH_LONG
-                ).show()
-            }
-            if (!isPermisosOtorgados) return@launch
-
-            val bluetoothManager = context.getSystemService(Context.BLUETOOTH_SERVICE) as? BluetoothManager
-            bluetoothAdapter = bluetoothManager?.adapter
-            if (bluetoothAdapter == null) {
-                withContext(Dispatchers.Main) {
-                    Toast.makeText(context, "Bluetooth no disponible", Toast.LENGTH_SHORT).show()
-                }
-                return@launch
-            }
-
-            if (!bluetoothAdapter!!.isEnabled) {
-                withContext(Dispatchers.Main) {
-                    Toast.makeText(context, "Por favor, activa Bluetooth", Toast.LENGTH_SHORT).show()
-                }
-                return@launch
-            }
-
-            withContext(Dispatchers.Main) {
-                Toast.makeText(context, "Buscando impresoras...", Toast.LENGTH_SHORT).show()
-            }
-
-            val impresoras = BluetoothPrintersConnections().list
-            listaImpresoras = impresoras?.toList() ?: emptyList()
-            delay(1000)
-            if (listaImpresoras.isEmpty()) {
-                withContext(Dispatchers.Main) {
-                    Toast.makeText(context, "No se encontraron impresoras disponibles.", Toast.LENGTH_SHORT).show()
-                }
-                return@launch
-            }
-
-            withContext(Dispatchers.Main) {
-                if (listaImpresoras.size==1) return@withContext Toast.makeText(context, "Se encontró ${listaImpresoras.size} impresora", Toast.LENGTH_SHORT).show()
-
-                Toast.makeText(context, "Se encontraron ${listaImpresoras.size} impresoras", Toast.LENGTH_SHORT).show()
-            }
-
-
-        }
     }
 
     @SuppressLint("MissingPermission")
@@ -497,10 +456,6 @@ class ImpresoraViewModel : ViewModel() {
                 return@launch
             }
 
-            withContext(Dispatchers.Main) {
-                Toast.makeText(context, "Buscando dispositivos Bluetooth...", Toast.LENGTH_SHORT).show()
-            }
-
             val dispositivosEmparejados = bluetoothAdapter.bondedDevices?.toList() ?: emptyList()
 
             if (dispositivosEmparejados.isEmpty()) {
@@ -514,18 +469,17 @@ class ImpresoraViewModel : ViewModel() {
             }
             listaImpresoras = conexionesBluetooth
 
+            if (listaImpresoras.isNotEmpty()) return@launch
+
             withContext(Dispatchers.Main) {
-                Toast.makeText(context, "Se encontraron ${listaImpresoras.size} dispositivos.", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, "No se encontraron dispositivos...", Toast.LENGTH_SHORT).show()
             }
         }
     }
 
     @RequiresApi(Build.VERSION_CODES.S)
     suspend fun validarConexion(context: Context): Boolean {
-        // Validar permisos (suponiendo que modifica isPermisosOtorgados)
-        withContext(Dispatchers.Main) {
-            ValidarPermisos(context)
-        }
+        ValidarPermisos(context)
 
         if (!isPermisosOtorgados) {
             withContext(Dispatchers.Main) {
@@ -538,17 +492,7 @@ class ImpresoraViewModel : ViewModel() {
             return false
         }
 
-        val conectado = conexion?.isConnected == true
-
-        if (!conectado) {
-            withContext(Dispatchers.Main) {
-                Toast.makeText(
-                    context,
-                    "No hay ninguna impresora conectada.",
-                    Toast.LENGTH_LONG
-                ).show()
-            }
-        }
+        val conectado = estaImpresoraConectadaRealmente()
 
         return conectado
     }
@@ -559,9 +503,6 @@ class ImpresoraViewModel : ViewModel() {
         if (!isPermisosOtorgados) return
         viewModelScope.launch(Dispatchers.IO) {
             if (conexion != null) {
-                withContext(Dispatchers.Main) {
-                    Toast.makeText(context, "Conectando impresora...", Toast.LENGTH_SHORT).show()
-                }
                 try {
                     cantidadCaracPorLinea = obtenerParametroLocal(context,"cantidadCaracPorLineaImpre").toInt()
                     // Crear la instancia de la impresora con los parámetros configurados
@@ -635,9 +576,7 @@ class ImpresoraViewModel : ViewModel() {
                     ""
                 }
             }catch (e: Exception) {
-                withContext(Dispatchers.Main) {
-                    Toast.makeText(context, "Error en impresión de Logo", Toast.LENGTH_SHORT).show()
-                }
+                println("NO SE IMPRIMIO EL LOGO")
             }
             textoPrueba += "[C]<font size='big'>Prueba</font>\n" +
                     "[C]<font size='tall'>Calibrar</font>\n"+
@@ -670,23 +609,31 @@ class ImpresoraViewModel : ViewModel() {
     @RequiresApi(Build.VERSION_CODES.S)
     fun reconectar(context: Context) {
         viewModelScope.launch(Dispatchers.IO) {
+            if (!isPermisosOtorgados) return@launch
+            val isConectado = estaImpresoraConectadaRealmente()
+            if (isConectado) return@launch
             val lastDeviceAddress = obtenerParametroLocal(context, "macImpresora")
             buscar(context)
-            if (!isPermisosOtorgados) return@launch
             delay(1000)
-            if (lastDeviceAddress == "0") {
-                if (listaImpresoras.isEmpty()) return@launch
-                val primerImpresora = BluetoothPrintersConnections().list?.first() ?: return@launch
-                conexion = primerImpresora
-                dispositivoActual = primerImpresora
-                conectar(context, primerImpresora.device.address, primerImpresora.device.name)
-                return@launch
-            }
-
             if (ActivityCompat.checkSelfPermission(context, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
                 withContext(Dispatchers.Main) {
                     Toast.makeText(context, "Permiso Bluetooth denegado", Toast.LENGTH_SHORT).show()
                 }
+                return@launch
+            }
+
+            if (lastDeviceAddress == "0") {
+                if (listaImpresoras.isEmpty()) return@launch
+                val primerImpresora = BluetoothPrintersConnections().list?.first()
+                if (primerImpresora == null){
+                    withContext(Dispatchers.Main) {
+                        Toast.makeText(context, "No se encontraron impresoras...", Toast.LENGTH_SHORT).show()
+                    }
+                    return@launch
+                }
+                conexion = primerImpresora
+                dispositivoActual = primerImpresora
+                conectar(context, primerImpresora.device.address, primerImpresora.device.name)
                 return@launch
             }
 
@@ -696,10 +643,6 @@ class ImpresoraViewModel : ViewModel() {
                 conexion = ultimaImpresora
                 dispositivoActual = ultimaImpresora
                 conectar(context, ultimaImpresora.device.address, ultimaImpresora.device.name)
-            } else {
-                withContext(Dispatchers.Main) {
-                    Toast.makeText(context, "No se encontró el último dispositivo guardado", Toast.LENGTH_SHORT).show()
-                }
             }
         }
     }
@@ -711,7 +654,9 @@ class ImpresoraViewModel : ViewModel() {
         if (!isPermisosOtorgados) return
         viewModelScope.launch(Dispatchers.IO) {
             impresora?.disconnectPrinter()
+            impresora = null
             isConectada = false
+            actualizarParametro(context, "macImpresora", "0")
             withContext(Dispatchers.Main) {
                 Toast.makeText(context, "Impresora desconectada", Toast.LENGTH_SHORT).show()
             }
