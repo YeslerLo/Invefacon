@@ -273,8 +273,6 @@ fun IniciarInterfazFacturacion(
     var datosIngresadosBarraBusquedaArticulos by remember { mutableStateOf("") }
     var isCargandoClientes by remember { mutableStateOf(false) }
     var isCargandoArticulos by remember { mutableStateOf(false) }
-    var agregarEditarArticuloActual by remember { mutableStateOf(false) }
-    var articuloLineaProforma by remember { mutableStateOf(ArticuloLineaProforma()) }
     var isAgregar by remember { mutableStateOf(false) }
     var articuloActual by remember { mutableStateOf(ArticuloFacturacion()) }
     var validacionCargaFinalizada by remember { mutableIntStateOf(0) } // si es '2' las dos peticiones al api ya finalizaron
@@ -377,7 +375,7 @@ fun IniciarInterfazFacturacion(
     var iniciarBusquedaClienteByCedula by remember { mutableStateOf(false) }
     val listaArticulos by gestorTablaArticulos.articulos.collectAsState()
     val coroutineScope = rememberCoroutineScope()
-    val coroutineScopeAgreEditArt = rememberCoroutineScope()
+    val coroutineScopeSecundaria = rememberCoroutineScope()
     val transition = rememberInfiniteTransition(label = "shimmer")
     val shimmerTranslate by transition.animateFloat(
         initialValue = -800f,
@@ -439,21 +437,6 @@ fun IniciarInterfazFacturacion(
         guardarProforma = true
     }
 
-    suspend fun AgregaEditaArticulo(articulo :  ArticuloLineaProforma){
-        gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(true)
-        val result = objectoProcesadorDatosApi.agregarActualizarLinea(articulo)
-        if (result != null){
-            if (validarExitoRestpuestaServidor(result)){
-                iniciarMenuAgregaEditaArticulo = false
-                gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
-                soloActualizarArticulos = true
-            }else{
-                estadoRespuestaApi.cambiarEstadoRespuestaApi(mostrarSoloRespuestaError = true, datosRespuesta = result)
-                gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
-            }
-        }
-    }
-
     fun deserializarArticulo(datos : String) : ArticuloFacturacion {
         val listaPrecios = mutableListOf<ParClaveValor>()
         val listaBodegas = mutableListOf<ParClaveValor>()
@@ -506,6 +489,21 @@ fun IniciarInterfazFacturacion(
             listaBodegas = listaBodegas
         )
         return articulo
+    }
+
+    suspend fun agregaEditaArticulo(articulo :  ArticuloLineaProforma){
+        gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(true)
+        val result = objectoProcesadorDatosApi.agregarActualizarLinea(articulo)
+        if (result != null){
+            if (validarExitoRestpuestaServidor(result)){
+                iniciarMenuAgregaEditaArticulo = false
+                gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
+                soloActualizarArticulos = true
+            }else{
+                estadoRespuestaApi.cambiarEstadoRespuestaApi(mostrarSoloRespuestaError = true, datosRespuesta = result)
+                gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
+            }
+        }
     }
 
     suspend fun filtrarBusquedaArticulos(){
@@ -563,6 +561,21 @@ fun IniciarInterfazFacturacion(
         }
         iniciarDescargaArticulos = false
 
+    }
+
+    suspend fun cambiarTipoPrecio(tipoPrecio: String, lienas: String){
+        gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(true)
+        val result = objectoProcesadorDatosApi.cambiarTipoPrecio(
+            numero =  numeroProforma,
+            tipoPrecio = tipoPrecio,
+            lineas = lienas,
+            monedaFactura = codMonedaProforma
+        )
+        if (result == null) return
+        estadoRespuestaApi.cambiarEstadoRespuestaApi(mostrarRespuesta = true, datosRespuesta = result)
+        gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
+        if(!validarExitoRestpuestaServidor(result)) return
+        soloActualizarArticulos = true
     }
 
     if (valorImpresionActiva == "1") {
@@ -1119,9 +1132,9 @@ fun IniciarInterfazFacturacion(
                 Toast.makeText(context, "Reconectando impresora...", Toast.LENGTH_SHORT).show()
             }
             delay(12000)
-            val isConectada = gestorImpresora.validarConexion(context)
+            val isReconectada = gestorImpresora.validarConexion(context)
             delay(1000)
-            if (!isConectada){
+            if (!isReconectada){
                 exitoImpresion = false
                 isImprimiendo = false
                 estadoProforma = "2"
@@ -1153,13 +1166,23 @@ fun IniciarInterfazFacturacion(
         if (!obtenerDatosFacturaEmitida) return@LaunchedEffect
         isImprimiendo = true
         iniciarPantallaEstadoImpresion = true
+        val isConetado = gestorImpresora.validarConexion(context)
         delay(1000)
-        if (!gestorImpresora.validarConexion(context)){
-            exitoImpresion = false
-            isImprimiendo = false
-            imprimir = false
-            obtenerDatosFacturaEmitida = false
-            return@LaunchedEffect
+        if (!isConetado){
+            gestorImpresora.reconectar(context)
+            withContext(Dispatchers.Main) {
+                Toast.makeText(context, "Reconectando impresora...", Toast.LENGTH_SHORT).show()
+            }
+            delay(12000)
+            val isReconectada = gestorImpresora.validarConexion(context)
+            if (!isReconectada){
+                exitoImpresion = false
+                isImprimiendo = false
+                imprimir = false
+                obtenerDatosFacturaEmitida = false
+                return@LaunchedEffect
+            }
+
         }
         val result = objectoProcesadorDatosApi.obtenerFactura(consecutivoFactura)
 
@@ -1329,13 +1352,13 @@ fun IniciarInterfazFacturacion(
     fun BxContenedorArticulosFacturacion(
         articulo : ArticuloFacturacion
     ) {
-        val valorString = articulo.listaPrecios.find { it.tipo == tipoPrecioCliente }?.valor
+        val tipoPrecio = if(obtenerValorParametroEmpresa("57", "0") == "1") obtenerParametroLocal(context, "precioVenta$nombreEmpresa", valorPorDefecto = "1") else tipoPrecioCliente
+        val valorString = articulo.listaPrecios.find { it.tipo == tipoPrecio }?.valor
         val precioArticuloDouble = valorString?.toDoubleOrNull() ?: articulo.precio
         val precioArticulo = BigDecimal.valueOf(precioArticuloDouble)
         val impuestoFactor = BigDecimal.ONE + BigDecimal.valueOf(articulo.impuesto).divide(BigDecimal(100))
         val precioIva = precioArticulo.multiply(impuestoFactor)
         var expandedBodegas by remember { mutableStateOf(false) }
-        val focusRequester = remember { FocusRequester() }
 
         Card(
             modifier = Modifier
@@ -1818,6 +1841,7 @@ fun IniciarInterfazFacturacion(
         }
 
         LaunchedEffect(Unit) {
+            focusManager.clearFocus()
             delay(100)
             isMenuVisible = true
         }
@@ -2494,7 +2518,11 @@ fun IniciarInterfazFacturacion(
         Spacer(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(WindowInsets.statusBars.asPaddingValues().calculateTopPadding())
+                .height(
+                    WindowInsets.statusBars
+                        .asPaddingValues()
+                        .calculateTopPadding()
+                )
                 .background(Color(0xFF244BC0))
                 .align(Alignment.TopCenter)
         )
@@ -2641,7 +2669,11 @@ fun IniciarInterfazFacturacion(
                                         .height(objetoAdaptardor.ajustarAltura(35))
                                         .background(
                                             brush,
-                                            shape = RoundedCornerShape(objetoAdaptardor.ajustarAltura(4))
+                                            shape = RoundedCornerShape(
+                                                objetoAdaptardor.ajustarAltura(
+                                                    4
+                                                )
+                                            )
                                         )
                                 )
                             }
@@ -3310,7 +3342,11 @@ fun IniciarInterfazFacturacion(
                                                     Box(
                                                         modifier = Modifier
                                                             .weight(1f)
-                                                            .height(objetoAdaptardor.ajustarAltura(30))
+                                                            .height(
+                                                                objetoAdaptardor.ajustarAltura(
+                                                                    30
+                                                                )
+                                                            )
                                                             .background(
                                                                 brush,
                                                                 shape = RoundedCornerShape(
@@ -3318,13 +3354,19 @@ fun IniciarInterfazFacturacion(
                                                                 )
                                                             )
                                                             .padding(
-                                                                top = objetoAdaptardor.ajustarAncho(8)
+                                                                top = objetoAdaptardor.ajustarAncho(
+                                                                    8
+                                                                )
                                                             )
                                                     )
                                                     Box(
                                                         modifier = Modifier
                                                             .weight(0.5f)
-                                                            .height(objetoAdaptardor.ajustarAltura(30))
+                                                            .height(
+                                                                objetoAdaptardor.ajustarAltura(
+                                                                    30
+                                                                )
+                                                            )
                                                             .background(
                                                                 brush,
                                                                 shape = RoundedCornerShape(
@@ -3332,13 +3374,19 @@ fun IniciarInterfazFacturacion(
                                                                 )
                                                             )
                                                             .padding(
-                                                                top = objetoAdaptardor.ajustarAncho(8)
+                                                                top = objetoAdaptardor.ajustarAncho(
+                                                                    8
+                                                                )
                                                             )
                                                     )
                                                     Box(
                                                         modifier = Modifier
                                                             .weight(1f)
-                                                            .height(objetoAdaptardor.ajustarAltura(30))
+                                                            .height(
+                                                                objetoAdaptardor.ajustarAltura(
+                                                                    30
+                                                                )
+                                                            )
                                                             .background(
                                                                 brush,
                                                                 shape = RoundedCornerShape(
@@ -3346,13 +3394,19 @@ fun IniciarInterfazFacturacion(
                                                                 )
                                                             )
                                                             .padding(
-                                                                top = objetoAdaptardor.ajustarAncho(8)
+                                                                top = objetoAdaptardor.ajustarAncho(
+                                                                    8
+                                                                )
                                                             )
                                                     )
                                                     Box(
                                                         modifier = Modifier
                                                             .weight(0.5f)
-                                                            .height(objetoAdaptardor.ajustarAltura(30))
+                                                            .height(
+                                                                objetoAdaptardor.ajustarAltura(
+                                                                    30
+                                                                )
+                                                            )
                                                             .background(
                                                                 brush,
                                                                 shape = RoundedCornerShape(
@@ -3360,13 +3414,19 @@ fun IniciarInterfazFacturacion(
                                                                 )
                                                             )
                                                             .padding(
-                                                                top = objetoAdaptardor.ajustarAncho(8)
+                                                                top = objetoAdaptardor.ajustarAncho(
+                                                                    8
+                                                                )
                                                             )
                                                     )
                                                     Box(
                                                         modifier = Modifier
                                                             .weight(1.25f)
-                                                            .height(objetoAdaptardor.ajustarAltura(30))
+                                                            .height(
+                                                                objetoAdaptardor.ajustarAltura(
+                                                                    30
+                                                                )
+                                                            )
                                                             .background(
                                                                 brush,
                                                                 shape = RoundedCornerShape(
@@ -3374,7 +3434,9 @@ fun IniciarInterfazFacturacion(
                                                                 )
                                                             )
                                                             .padding(
-                                                                top = objetoAdaptardor.ajustarAncho(8)
+                                                                top = objetoAdaptardor.ajustarAncho(
+                                                                    8
+                                                                )
                                                             )
                                                     )
                                                 }
@@ -3423,8 +3485,10 @@ fun IniciarInterfazFacturacion(
                                                                         articuloTemp.listaBodegas
                                                                     val listaPrecios =
                                                                         articuloTemp.listaPrecios
-                                                                    articulo.listaBodegas = listaBodegas
-                                                                    articulo.listaPrecios = listaPrecios
+                                                                    articulo.listaBodegas =
+                                                                        listaBodegas
+                                                                    articulo.listaPrecios =
+                                                                        listaPrecios
                                                                     articulo.descuentoAdmitido =
                                                                         articuloTemp.descuentoAdmitido
                                                                     articulo.unidadXMedida =
@@ -3435,7 +3499,8 @@ fun IniciarInterfazFacturacion(
                                                                         articuloTemp.codTarifaImpuesto
                                                                     articulo.unidadMedida =
                                                                         articuloTemp.unidadMedida
-                                                                    articulo.costo = articuloTemp.costo
+                                                                    articulo.costo =
+                                                                        articuloTemp.costo
                                                                     articulo.fraccionamiento =
                                                                         articuloTemp.fraccionamiento
                                                                     articuloActual = articulo
@@ -4206,7 +4271,11 @@ fun IniciarInterfazFacturacion(
                                         .height(objetoAdaptardor.ajustarAltura(35))
                                         .background(
                                             brush,
-                                            shape = RoundedCornerShape(objetoAdaptardor.ajustarAltura(4))
+                                            shape = RoundedCornerShape(
+                                                objetoAdaptardor.ajustarAltura(
+                                                    4
+                                                )
+                                            )
                                         )
                                 )
                             }
@@ -4501,14 +4570,24 @@ fun IniciarInterfazFacturacion(
         },
         isAgregar = isAgregar,
         agregaEditaArticulo = {
-            coroutineScopeAgreEditArt.launch {
-                AgregaEditaArticulo(it)
+            coroutineScopeSecundaria.launch {
+                agregaEditaArticulo(it)
             }
         },
-        bodega = if (articuloActual.articuloBodegaCodigo.isEmpty()) articuloActual.listaBodegas.first() else articuloActual.listaBodegas.find { it.clave == articuloActual.articuloBodegaCodigo } ?: ParClaveValor(),
-        precioVenta = articuloActual.codPrecioVenta.ifEmpty { tipoPrecioCliente }
+        bodega = when{
+            articuloActual.articuloBodegaCodigo.isEmpty()-> {
+                articuloActual.listaBodegas.find { it.clave == obtenerParametroLocal(context, "bodega$nombreEmpresa") } ?: articuloActual.listaBodegas.first()
+            } // SI EL ARTICULO NO TIENE CODIGO DE BODEGA SE TOMA EL CODIGO DE BODEGA QUE SE CONFIGURON EN LA ESTACION EN CASO DE QUE NO EXISTA SE TOMA LA PRIMER BODEGA
+            else -> {articuloActual.listaBodegas.find { it.clave == articuloActual.articuloBodegaCodigo } ?: ParClaveValor()} // SI EL ARTICULO YA POSEE BODEGA SE TOMA ESA
+        },
+        precioVenta = when{
+            articuloActual.codPrecioVenta.isEmpty() && obtenerValorParametroEmpresa("57", "0") == "1" -> {
+                obtenerParametroLocal(context, "precioVenta$nombreEmpresa", valorPorDefecto = "1")
+            } // SI EL ARTICULO NO POSEE PRECIO DE VENTA Y EL PARAEMTRO 57 ESTA ACTIVO SE TOMA EL PRECIO DE VENTA DE LA ESTACION
+            articuloActual.codPrecioVenta.isEmpty() -> tipoPrecioCliente // SI EL ARTICULO NO POSEE PRECIO DE VENTA SE TOAM EL DEL CLIENTE
+            else -> articuloActual.codPrecioVenta // SI EL ARTICULO TIENE PRECIO DE VENTA SE ASUME ESE
+        }
     )
-
     if (iniciarMenuSeleccionarCliente) {
         var isMenuVisible by remember { mutableStateOf(false) }
         val focusRequester = remember { FocusRequester() }
@@ -4989,11 +5068,9 @@ fun IniciarInterfazFacturacion(
                         BButton(
                             text = "Cambiar Tipo de Precio",
                             onClick = {
-                                return@BButton mostrarMensajeError("Esta opción está en desarrollo...")
-//                                if(!tienePermiso("005")) return@BButton mostrarMensajeError("No posee el permiso 005 para cambiar el tipo precio de venta.")
-//                                nuevoTipoPrecio = tipoPrecio
-//                                iniciarMenuCambiarPrecio = true
-//                                iniciarMenuOpcionesProforma = false
+                                if(!tienePermiso("005")) return@BButton mostrarMensajeError("No posee el permiso 005 para cambiar el tipo precio de venta.")
+                                iniciarMenuCambiarPrecio = true
+                                iniciarMenuOpcionesProforma = false
                             },
                             textSize = obtenerEstiloBodyBig(),
                             modifier = Modifier.fillMaxWidth(),
@@ -5168,6 +5245,7 @@ fun IniciarInterfazFacturacion(
         }
 
         LaunchedEffect(Unit) {
+            nuevoTipoPrecio = tipoPrecioCliente
             delay(100)
             isMenuVisible = true
         }
@@ -5210,58 +5288,53 @@ fun IniciarInterfazFacturacion(
                             verticalAlignment = Alignment.CenterVertically
                         ){
                             Box(
-                                modifier = Modifier.weight(1.2f)
+                                modifier = Modifier.weight(1f)
                             ){
                                 if (iniciarMenuAplicarDescuento){
-                                    TextFieldMultifuncional(
-                                        label = "Desc (%)",
-                                        textPlaceholder = "0.00",
-                                        nuevoValor = {nuevoPorcentajeDescuento= it},
-                                        valor = nuevoPorcentajeDescuento,
-                                        usarModifierForSize = true,
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .border(
-                                                2.dp,
-                                                color = Color.Gray,
-                                                RoundedCornerShape(objetoAdaptardor.ajustarAltura(12))
-                                            ),
-                                        isUltimo = true,
-                                        tomarAnchoMaximo = false,
-                                        fontSize = obtenerEstiloBodyBig(),
-                                        cantidadLineas = 2,
-                                        mostrarPlaceholder = true,
-                                        soloPermitirValoresNumericos = true,
-                                        permitirPuntosDedimales = true
-                                    )
+                                    Column{
+                                        TText(
+                                            text = "Descuento: ",
+                                            modifier = Modifier.fillMaxWidth(),
+                                            fontSize = obtenerEstiloBodySmall(),
+                                            textAlign = TextAlign.Start
+                                        )
+                                        BBasicTextField(
+                                            value = nuevoPorcentajeDescuento,
+                                            onValueChange = {
+                                                nuevoPorcentajeDescuento = it
+                                            },
+                                            objetoAdaptardor = objetoAdaptardor,
+                                            utilizarMedidas = false,
+                                            modifier = Modifier.fillMaxWidth(),
+                                            fontSize = obtenerEstiloBodyBig(),
+                                            placeholder = "Descuento...",
+                                            icono = Icons.Filled.Percent,
+                                            soloPermitirValoresNumericos = true
+                                        )
+                                    }
                                 }
                                 else{
-                                    TextFieldMultifuncional(
-                                        label = "Precio:",
-                                        textPlaceholder = "",
-                                        nuevoValor2 = {
-                                            if (iniciarMenuAplicarDescuento) return@TextFieldMultifuncional
-                                            nuevoTipoPrecio = it.clave
-                                        },
-                                        valor = nuevoTipoPrecio,
-                                        mostrarClave = true,
-                                        contieneOpciones = true,
-                                        usarOpciones4 = true,
-                                        opciones4 = listaPrecios,
-                                        usarModifierForSize = true,
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .border(
-                                                2.dp,
-                                                color = Color.Gray,
-                                                RoundedCornerShape(objetoAdaptardor.ajustarAltura(12))
-                                            ),
-                                        isUltimo = true,
-                                        tomarAnchoMaximo = false,
-                                        fontSize = obtenerEstiloBodyBig(),
-                                        cantidadLineas = 2,
-                                        mostrarPlaceholder = true
-                                    )
+                                    Column{
+                                        TText(
+                                            text = "Tipo de Precio: ",
+                                            modifier = Modifier.fillMaxWidth(),
+                                            fontSize = obtenerEstiloBodySmall(),
+                                            textAlign = TextAlign.Start
+                                        )
+                                        BBasicTextField(
+                                            value = nuevoTipoPrecio,
+                                            onValueChange = {
+                                               nuevoTipoPrecio = it
+                                            },
+                                            opciones = listaPrecios,
+                                            objetoAdaptardor = objetoAdaptardor,
+                                            utilizarMedidas = false,
+                                            modifier = Modifier.fillMaxWidth(),
+                                            fontSize = obtenerEstiloBodyBig(),
+                                            placeholder = "Tipo de Precio",
+                                            icono = Icons.Filled.LocalOffer
+                                        )
+                                    }
                                 }
                             }
 
@@ -5478,7 +5551,23 @@ fun IniciarInterfazFacturacion(
                                 text = if(iniciarMenuAplicarDescuento) "Aplicar" else "Cambiar",
                                 onClick = {
                                     if (listaArticulosSeleccionados.isEmpty()) return@BButton mostrarMensajeError("Seleccione Artículos para continuar.")
-                                    if (iniciarMenuAplicarDescuento) aplicarDescuento = true else mostrarMensajeError("Esta opción está en desarrollo...")
+                                    if (iniciarMenuAplicarDescuento) {
+                                        aplicarDescuento = true
+                                    } else {
+                                        var lienasTemp = "["
+                                        listaArticulosSeleccionados.forEachIndexed { index, articuloFacturacion ->
+                                            lienasTemp+= articuloFacturacion.articuloLineaId
+                                            if (index != listaArticulosSeleccionados.size-1) lienasTemp+=","
+                                        }
+                                        lienasTemp+="]"
+                                        coroutineScopeSecundaria.launch {
+                                            cambiarTipoPrecio(
+                                                tipoPrecio = nuevoTipoPrecio,
+                                                lienas = lienasTemp
+                                            )
+                                        }
+                                    }
+                                    listaArticulosSeleccionados.clear()
                                     iniciarMenuAplicarDescuento = false
                                     iniciarMenuCambiarPrecio = false
                                 },

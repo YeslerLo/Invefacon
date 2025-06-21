@@ -69,7 +69,9 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -77,6 +79,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
@@ -994,6 +997,55 @@ fun ButtonFecha(
             )
         }
     }
+
+}
+
+@Composable
+fun TTextTitCuer(
+    titulo: String,
+    contenido: String,
+    fontSize: TextUnit = obtenerEstiloBodyBig(),
+    color: Color = Color.Black, saltoLinea: Boolean = false,
+    textAlign: TextAlign = TextAlign.Start,
+    isCargando : Boolean = false
+) {
+    Text(
+        buildAnnotatedString {
+            withStyle(
+                style = SpanStyle(
+                    fontFamily = FontFamily(Font(R.font.akshar_medium)),
+                    fontSize = fontSize,
+                    color = color
+                )
+            ) {
+                append(titulo)
+                append(" ")
+                if (saltoLinea){
+                    append("\n")
+                }
+            }
+
+            withStyle(
+                style = SpanStyle(
+                    fontSize = fontSize,
+                    fontFamily = FontFamily(Font(R.font.akshar_regular)),
+                    fontWeight = FontWeight.Normal,
+                    color = color
+                )
+            ) {
+                AnimatedVisibility(
+                    visible = (!isCargando),
+                    enter = expandVertically(animationSpec = tween(300)) + fadeIn(),
+                    exit = shrinkVertically(animationSpec = tween(300)) + fadeOut()
+                ){
+                    append(contenido)
+                }
+
+            }
+        },
+        textAlign = textAlign,
+        maxLines = 10
+    )
 
 }
 

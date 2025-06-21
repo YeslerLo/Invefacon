@@ -97,6 +97,7 @@ import com.soportereal.invefacon.funciones_de_interfaces.FuncionesParaAdaptarCon
 import com.soportereal.invefacon.funciones_de_interfaces.MenuConfirmacion
 import com.soportereal.invefacon.funciones_de_interfaces.ParClaveValor
 import com.soportereal.invefacon.funciones_de_interfaces.TText
+import com.soportereal.invefacon.funciones_de_interfaces.TTextTitCuer
 import com.soportereal.invefacon.funciones_de_interfaces.deserializarFacturaHecha
 import com.soportereal.invefacon.funciones_de_interfaces.formatearFechaTexto
 import com.soportereal.invefacon.funciones_de_interfaces.gestorImpresora
@@ -406,54 +407,6 @@ fun IniciarInterfazDetalleFactura(
     }
 
     @Composable
-    fun AddText(
-        titulo: String,
-        contenido: String,
-        fontSize: TextUnit = obtenerEstiloBodyBig(),
-        color: Color = Color.Black, saltoLinea: Boolean = false,
-        textAlign: TextAlign = TextAlign.Start
-    ) {
-        Text(
-            buildAnnotatedString {
-                withStyle(
-                    style = SpanStyle(
-                        fontFamily = fontAksharPrincipal,
-                        fontSize = fontSize,
-                        color = color
-                    )
-                ) {
-                    append(titulo)
-                    append(" ")
-                    if (saltoLinea){
-                        append("\n")
-                    }
-                }
-
-                withStyle(
-                    style = SpanStyle(
-                        fontSize = fontSize,
-                        fontFamily = FontFamily(Font(R.font.akshar_regular)),
-                        fontWeight = FontWeight.Normal,
-                        color = color
-                    )
-                ) {
-                    AnimatedVisibility(
-                        visible = (!isCargando),
-                        enter = expandVertically(animationSpec = tween(300)) + fadeIn(),
-                        exit = shrinkVertically(animationSpec = tween(300)) + fadeOut()
-                    ){
-                        append(contenido)
-                    }
-
-                }
-            },
-            textAlign = textAlign,
-            maxLines = 10
-        )
-
-    }
-
-    @Composable
     fun AddTextTotal(titulo: String, contenido: String){
         Row {
             TText(
@@ -582,19 +535,19 @@ fun IniciarInterfazDetalleFactura(
                 ) {
                     Column {
                         Row{
-                            AddText("Cantidad:", articulo.ArticuloCantidad.toString(), fontSize = obtenerEstiloBodySmall(), saltoLinea = true, textAlign = TextAlign.Center)
+                            TTextTitCuer("Cantidad:", articulo.ArticuloCantidad.toString(), fontSize = obtenerEstiloBodySmall(), saltoLinea = true, textAlign = TextAlign.Center, isCargando = isCargando)
                             Spacer(modifier = Modifier.weight(1f).padding(vertical = objetoAdaptardor.ajustarAncho(2)))
-                            AddText("P/U:", separacionDeMiles(articulo.ArticuloVenta), fontSize = obtenerEstiloBodySmall(), saltoLinea = true, textAlign = TextAlign.Center)
+                            TTextTitCuer("P/U:", separacionDeMiles(articulo.ArticuloVenta), fontSize = obtenerEstiloBodySmall(), saltoLinea = true, textAlign = TextAlign.Center, isCargando = isCargando)
                             Spacer(modifier = Modifier.weight(1f).padding(vertical = objetoAdaptardor.ajustarAncho(2)))
-                            AddText("SubTotal:", separacionDeMiles(articulo.ArticuloVenta*articulo.ArticuloCantidad), fontSize = obtenerEstiloBodySmall(), saltoLinea = true, textAlign = TextAlign.Center)
+                            TTextTitCuer("SubTotal:", separacionDeMiles(articulo.ArticuloVenta*articulo.ArticuloCantidad), fontSize = obtenerEstiloBodySmall(), saltoLinea = true, textAlign = TextAlign.Center, isCargando = isCargando)
                         }
                         HorizontalDivider(thickness = 1.dp, color = Color.LightGray)
                         Row {
-                            AddText("Precio:", articulo.ArticuloTipoPrecio, fontSize = obtenerEstiloBodySmall(), saltoLinea = true, textAlign = TextAlign.Center)
+                            TTextTitCuer("Precio:", articulo.ArticuloTipoPrecio, fontSize = obtenerEstiloBodySmall(), saltoLinea = true, textAlign = TextAlign.Center, isCargando = isCargando)
                             Spacer(modifier = Modifier.weight(1f).padding(vertical = objetoAdaptardor.ajustarAncho(2)))
-                            AddText("Descuento(${articulo.ArticuloDescuentoPorcentage}%):", separacionDeMiles(articulo.ArticuloDescuentoMonto), fontSize = obtenerEstiloBodySmall(), saltoLinea = true, textAlign = TextAlign.Center)
+                            TTextTitCuer("Descuento(${articulo.ArticuloDescuentoPorcentage}%):", separacionDeMiles(articulo.ArticuloDescuentoMonto), fontSize = obtenerEstiloBodySmall(), saltoLinea = true, textAlign = TextAlign.Center, isCargando = isCargando)
                             Spacer(modifier = Modifier.weight(1f).padding(vertical = objetoAdaptardor.ajustarAncho(2)))
-                            AddText("Gravado:", separacionDeMiles(articulo.ArticuloVentaGravado), fontSize = obtenerEstiloBodySmall(), saltoLinea = true, textAlign = TextAlign.Center)
+                            TTextTitCuer("Gravado:", separacionDeMiles(articulo.ArticuloVentaGravado), fontSize = obtenerEstiloBodySmall(), saltoLinea = true, textAlign = TextAlign.Center, isCargando = isCargando)
                         }
                         HorizontalDivider(thickness = 1.dp, color = Color.LightGray)
                     }
@@ -613,11 +566,12 @@ fun IniciarInterfazDetalleFactura(
                             enter = fadeIn(animationSpec = tween(300)),
                             exit = fadeOut(animationSpec = tween(300))
                         ) {
-                            AddText(
+                            TTextTitCuer(
                                 "Imp(${articulo.ArticuloIvaPorcentage}%):",
                                 separacionDeMiles(articulo.ArticuloIvaMonto),
                                 fontSize = obtenerEstiloBodySmall(),
-                                textAlign = TextAlign.Center
+                                textAlign = TextAlign.Center,
+                                isCargando = isCargando
                             )
                         }
 
@@ -626,11 +580,12 @@ fun IniciarInterfazDetalleFactura(
                             enter = fadeIn(animationSpec = tween(300)),
                             exit = fadeOut(animationSpec = tween(300))
                         ) {
-                            AddText(
+                            TTextTitCuer(
                                 "Cantidad:",
                                 articulo.ArticuloCantidad.toString(),
                                 fontSize = obtenerEstiloBodySmall(),
-                                textAlign = TextAlign.Center
+                                textAlign = TextAlign.Center,
+                                isCargando = isCargando
                             )
                         }
                     }
@@ -641,12 +596,13 @@ fun IniciarInterfazDetalleFactura(
                             .padding(vertical = objetoAdaptardor.ajustarAncho(2))
                     )
 
-                    AddText(
+                    TTextTitCuer(
                         "Total:",
                         separacionDeMiles(articulo.ArticuloVentaTotal),
                         fontSize = obtenerEstiloBodyBig(),
                         color = Color(0xFF244BC0),
-                        textAlign = TextAlign.Center
+                        textAlign = TextAlign.Center,
+                        isCargando = isCargando
                     )
                 }
 
@@ -847,7 +803,7 @@ fun IniciarInterfazDetalleFactura(
                                     verticalAlignment = Alignment.CenterVertically,
                                     horizontalArrangement = Arrangement.Center
                                 ) {
-                                    AddText("Fecha:", formatearFechaTexto(detallesDocumento.fecha))
+                                    TTextTitCuer("Fecha:", formatearFechaTexto(detallesDocumento.fecha), isCargando = isCargando)
                                     Spacer(modifier = Modifier.weight(1f))
                                     AnimatedVisibility(
                                         visible = (!isCargando),
@@ -877,11 +833,11 @@ fun IniciarInterfazDetalleFactura(
                                     }
                                 }
                                 HorizontalDivider()
-                                AddText("Nombre Factura:", datosCliente.clientenombrecomercial)
+                                TTextTitCuer("Nombre Factura:", datosCliente.clientenombrecomercial, isCargando = isCargando)
                                 HorizontalDivider()
-                                AddText("Número:", detallesDocumento.numero)
+                                TTextTitCuer("Número:", detallesDocumento.numero, isCargando = isCargando)
                                 HorizontalDivider()
-                                AddText("Referencia:", detallesDocumento.referencia)
+                                TTextTitCuer("Referencia:", detallesDocumento.referencia, isCargando = isCargando)
                                 AnimatedVisibility(
                                     visible = expandedDetFactura,
                                     enter = expandVertically(animationSpec = tween(300)) + fadeIn(),
@@ -900,20 +856,20 @@ fun IniciarInterfazDetalleFactura(
                                             verticalAlignment = Alignment.CenterVertically,
                                             horizontalArrangement = Arrangement.Center
                                         ) {
-                                            AddText("Moneda:", detallesDocumento.monedacodigo)
+                                            TTextTitCuer("Moneda:", detallesDocumento.monedacodigo, isCargando = isCargando)
                                             Spacer(modifier = Modifier.weight(1f))
-                                            AddText("Forma de Pago:", listaFormaPago.find { it.clave == detallesDocumento.formapagocodigo}?.valor?:"null")
+                                            TTextTitCuer("Forma de Pago:", listaFormaPago.find { it.clave == detallesDocumento.formapagocodigo}?.valor?:"null", isCargando = isCargando)
                                         }
                                         HorizontalDivider()
-                                        AddText("Usuario:", detallesDocumento.usuariocodigo)
+                                        TTextTitCuer("Usuario:", detallesDocumento.usuariocodigo, isCargando = isCargando)
                                         HorizontalDivider()
-                                        AddText("Agente:", detallesDocumento.agentecodigo)
+                                        TTextTitCuer("Agente:", detallesDocumento.agentecodigo, isCargando = isCargando)
                                         HorizontalDivider()
-                                        AddText("Referido:", detallesDocumento.refereridocodigo)
+                                        TTextTitCuer("Referido:", detallesDocumento.refereridocodigo, isCargando = isCargando)
                                         HorizontalDivider()
-                                        AddText("Medio de Pago:", detallesDocumento.mediopagodetalle)
+                                        TTextTitCuer("Medio de Pago:", detallesDocumento.mediopagodetalle, isCargando = isCargando)
                                         HorizontalDivider()
-                                        AddText("Detalle:", detallesDocumento.detalle)
+                                        TTextTitCuer("Detalle:", detallesDocumento.detalle, isCargando = isCargando)
 
                                     }
                                 }
@@ -975,19 +931,19 @@ fun IniciarInterfazDetalleFactura(
                                     thickness = objetoAdaptardor.ajustarAltura(2),
                                     color = Color.Black
                                 )
-                                AddText("Código:", datosCliente.id_cliente)
+                                TTextTitCuer("Código:", datosCliente.id_cliente, isCargando = isCargando)
                                 HorizontalDivider()
-                                AddText("Nombre Comercial:", datosCliente.clientenombrecomercial)
+                                TTextTitCuer("Nombre Comercial:", datosCliente.clientenombrecomercial, isCargando = isCargando)
                                 HorizontalDivider()
-                                AddText("Nombre Jurídico:", datosCliente.nombre)
+                                TTextTitCuer("Nombre Jurídico:", datosCliente.nombre, isCargando = isCargando)
                                 HorizontalDivider()
                                 Row(
                                     verticalAlignment = Alignment.CenterVertically,
                                     horizontalArrangement = Arrangement.Center
                                 ) {
-                                    AddText("N.Cédula:", datosCliente.cedula)
+                                    TTextTitCuer("N.Cédula:", datosCliente.cedula, isCargando = isCargando)
                                     Spacer(modifier = Modifier.weight(1f))
-                                    AddText("Tipo:", listaTipoCedula.find { it.clave == datosCliente.tipoidentificacion}?.valor?:"null")
+                                    TTextTitCuer("Tipo:", listaTipoCedula.find { it.clave == datosCliente.tipoidentificacion}?.valor?:"null", isCargando = isCargando)
                                 }
                                 AnimatedVisibility(
                                     visible = expandedDetCliente,
@@ -1003,15 +959,15 @@ fun IniciarInterfazDetalleFactura(
                                         )
                                     ) {
                                         HorizontalDivider()
-                                        AddText("Correo Factura:", datosCliente.emailfactura)
+                                        TTextTitCuer("Correo Factura:", datosCliente.emailfactura, isCargando = isCargando)
                                         HorizontalDivider()
-                                        AddText("Correo Cliente:", datosCliente.email)
+                                        TTextTitCuer("Correo Cliente:", datosCliente.email, isCargando = isCargando)
                                         HorizontalDivider()
-                                        AddText("Correo Cobro:", datosCliente.emailcobro)
+                                        TTextTitCuer("Correo Cobro:", datosCliente.emailcobro, isCargando = isCargando)
                                         HorizontalDivider()
-                                        AddText("Telefono(s):", datosCliente.telefonos)
+                                        TTextTitCuer("Telefono(s):", datosCliente.telefonos, isCargando = isCargando)
                                         HorizontalDivider()
-                                        AddText("Dirección:", datosCliente.direccion)
+                                        TTextTitCuer("Dirección:", datosCliente.direccion, isCargando = isCargando)
                                     }
                                 }
                                 BButton(

@@ -1,4 +1,4 @@
-package com.soportereal.invefacon.interfaces.pantallas_principales.ajustes
+package com.soportereal.invefacon.interfaces.pantallas_principales.ajustes.impresora
 
 import android.Manifest
 import android.annotation.SuppressLint

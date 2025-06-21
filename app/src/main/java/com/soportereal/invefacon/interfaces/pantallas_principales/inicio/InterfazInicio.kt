@@ -118,6 +118,9 @@ fun IniciarInterfazInicio(
     var iniciarMenuConfirmacionSalidaModulo by remember { mutableStateOf(false) }
     guardarParametroSiNoExiste(contexto, "isImpresionActiva$codUsuario$nombreEmpresa", "0")
     guardarParametroSiNoExiste(contexto, "cantidadCaracPorLineaImpre", "32")
+    guardarParametroSiNoExiste(contexto, "precioVenta$nombreEmpresa", "1")
+    guardarParametroSiNoExiste(contexto, "bodega$nombreEmpresa", "0")
+    guardarParametroSiNoExiste(contexto, "datosTiempoReal$nombreEmpresa", "Si")
 
     LaunchedEffect (Unit) {
         validarVersionApp(contexto)

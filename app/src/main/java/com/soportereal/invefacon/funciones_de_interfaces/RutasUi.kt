@@ -40,8 +40,9 @@ import com.soportereal.invefacon.interfaces.modulos.ventas.IniciarInterfazDetall
 import com.soportereal.invefacon.interfaces.modulos.ventas.IniciarInterfazVentas
 import com.soportereal.invefacon.interfaces.pantallas_principales.IniciarInterfazMenuPrincipalCompact
 import com.soportereal.invefacon.interfaces.pantallas_principales.PantallaCarga
+import com.soportereal.invefacon.interfaces.pantallas_principales.ajustes.estacion.IniciarInterfazConfEstacion
 import com.soportereal.invefacon.interfaces.pantallas_principales.ajustes.IniciarInterfazAjustes
-import com.soportereal.invefacon.interfaces.pantallas_principales.ajustes.IniciarInterfazAjustesImpresora
+import com.soportereal.invefacon.interfaces.pantallas_principales.ajustes.impresora.IniciarInterfazAjustesImpresora
 import com.soportereal.invefacon.interfaces.pantallas_principales.inicio.IniciarInterfazInicio
 import com.soportereal.invefacon.interfaces.pantallas_principales.salir.IniciarInterfazSalir
 
@@ -74,6 +75,9 @@ sealed class RutasPatallas(val ruta: String){
 
     // Ajustes
     data object  AjustImpresora : RutasPatallas("Ajust/Impresora")
+
+    // Configuracion de Estacion
+    data object ConfiEstacion : RutasPatallas("Ajus/ConfEstacion")
 }
 
 sealed class RutasPantallasMenuPrincipal(
@@ -637,6 +641,7 @@ fun NavHostPantallasMenuPrincipal(
         navigation(
             startDestination = PantallaAjustes.ruta, route = "Ajustes"){
 
+            //Inicio
             composable(
                 PantallaAjustes.ruta,
                 enterTransition = { slideInHorizontally(
@@ -651,6 +656,7 @@ fun NavHostPantallasMenuPrincipal(
                 )
             }
 
+            // Impresora
             composable(
                 RutasPatallas.AjustImpresora.ruta,
                 enterTransition = { slideInHorizontally(
@@ -663,6 +669,22 @@ fun NavHostPantallasMenuPrincipal(
                 IniciarInterfazAjustesImpresora(
                     navController = navControllerPantallasMenuPrincipal,
                     nombreEmpresa, codUsuario
+                )
+            }
+
+            // Estacion
+            composable(
+                RutasPatallas.ConfiEstacion.ruta,
+                enterTransition = { slideInHorizontally(
+                    animationSpec = tween(durationMillis = 500, easing = FastOutSlowInEasing)
+                ) { it } },
+                exitTransition = { slideOutHorizontally(
+                    animationSpec = tween(durationMillis = 500, easing = FastOutSlowInEasing)
+                ) { -it } }
+            ) {
+                IniciarInterfazConfEstacion(
+                    navController = navControllerPantallasMenuPrincipal,
+                    nombreEmpresa = nombreEmpresa
                 )
             }
         }

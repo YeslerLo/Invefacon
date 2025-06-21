@@ -41,8 +41,11 @@ import com.soportereal.invefacon.R
 import com.soportereal.invefacon.funciones_de_interfaces.FuncionesParaAdaptarContenido
 import com.soportereal.invefacon.funciones_de_interfaces.RutasPatallas
 import com.soportereal.invefacon.funciones_de_interfaces.TText
+import com.soportereal.invefacon.funciones_de_interfaces.mostrarMensajeError
 import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloDisplayBig
 import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloHeadBig
+import com.soportereal.invefacon.funciones_de_interfaces.tienePermiso
+import com.soportereal.invefacon.interfaces.pantallas_principales.ajustes.impresora.OpcionesInterfazAjsutes
 
 @SuppressLint("ConfigurationScreenWidthHeight")
 @Composable
@@ -115,7 +118,13 @@ fun IniciarInterfazAjustes(
                 OpcionesInterfazAjsutes.opciones.forEach { opcion ->
                     Button(
                         onClick = {
-                            navController.navigate(RutasPatallas.AjustImpresora.ruta)
+                            if (opcion.permisoValidar.isNotEmpty()){
+                                if (!tienePermiso(opcion.permisoValidar)){
+                                    mostrarMensajeError("No cuenta con el permiso ${opcion.permisoValidar} para acceder al Ajuste de ${opcion.titulo}.")
+                                    return@Button
+                                }
+                            }
+                            navController.navigate(opcion.ruta)
                         },
                         colors = ButtonDefaults.buttonColors(
                             containerColor = Color.White,
