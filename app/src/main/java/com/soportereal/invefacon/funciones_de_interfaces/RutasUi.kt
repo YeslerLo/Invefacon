@@ -684,7 +684,8 @@ fun NavHostPantallasMenuPrincipal(
             ) {
                 IniciarInterfazConfEstacion(
                     navController = navControllerPantallasMenuPrincipal,
-                    nombreEmpresa = nombreEmpresa
+                    nombreEmpresa = nombreEmpresa,
+                    token = token
                 )
             }
         }

@@ -21,22 +21,23 @@ import androidx.compose.material.icons.filled.ArrowBackIosNew
 import androidx.compose.material.icons.filled.Business
 import androidx.compose.material.icons.filled.Inventory
 import androidx.compose.material.icons.filled.LocalOffer
-import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PointOfSale
+import androidx.compose.material.icons.filled.Print
 import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.Font
@@ -54,23 +55,29 @@ import com.soportereal.invefacon.funciones_de_interfaces.BBasicTextField
 import com.soportereal.invefacon.funciones_de_interfaces.BButton
 import com.soportereal.invefacon.funciones_de_interfaces.FuncionesParaAdaptarContenido
 import com.soportereal.invefacon.funciones_de_interfaces.ParClaveValor
+import com.soportereal.invefacon.funciones_de_interfaces.ProcGenSocket
 import com.soportereal.invefacon.funciones_de_interfaces.TText
 import com.soportereal.invefacon.funciones_de_interfaces.TTextTitCuer
 import com.soportereal.invefacon.funciones_de_interfaces.actualizarParametro
 import com.soportereal.invefacon.funciones_de_interfaces.mostrarMensajeError
 import com.soportereal.invefacon.funciones_de_interfaces.mostrarMensajeExito
 import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloBodyBig
-import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloBodySmall
 import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloDisplayBig
 import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloHeadBig
 import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloTitleBig
 import com.soportereal.invefacon.funciones_de_interfaces.obtenerParametroLocal
+import com.soportereal.invefacon.funciones_de_interfaces.validarExitoRestpuestaServidor
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
 
 
 @Composable
 fun IniciarInterfazConfEstacion (
     navController: NavController,
-    nombreEmpresa : String
+    nombreEmpresa : String,
+    token : String
 ) {
     val fontAksharPrincipal = FontFamily(Font(R.font.akshar_medium))
     val configuration = LocalConfiguration.current
@@ -95,8 +102,100 @@ fun IniciarInterfazConfEstacion (
           )
         )
     }
+    val gestorProcGenSocket = ProcGenSocket()
+    var impreFactura by remember { mutableStateOf(obtenerParametroLocal(context, "imprfactu$nombreEmpresa", valorPorDefecto = "Local")) }
+    var impreProforma by remember { mutableStateOf(obtenerParametroLocal(context, "imprProf$nombreEmpresa", valorPorDefecto = "Local")) }
+    var impreCredito by remember { mutableStateOf(obtenerParametroLocal(context, "imprCred$nombreEmpresa", valorPorDefecto = "Local")) }
+    var impreRecibos by remember { mutableStateOf(obtenerParametroLocal(context, "imprRecib$nombreEmpresa", valorPorDefecto = "Local")) }
+    var listaImpresoras by remember {  mutableStateOf<List<ParClaveValor>>(emptyList()) }
+    var listaBodegas by remember {  mutableStateOf<List<ParClaveValor>>(emptyList()) }
+    var socketJob by remember { mutableStateOf<Job?>(null) }
+    val cortinaSocket= CoroutineScope(Dispatchers.IO)
+    val objectoProcesadorDatosApi = ProcesarDatosEstacion(token)
+
+    LaunchedEffect(Unit) {
+        val listaImpresorasTemp = mutableListOf<ParClaveValor>()
+        val listaBodegasTemp = mutableListOf<ParClaveValor>()
+        listaImpresorasTemp.add(ParClaveValor("Local", "Local"))
+        socketJob = cortinaSocket.launch {
+            val result = objectoProcesadorDatosApi.obtenerBodegas()
+            if (result== null) return@launch
+            if (!validarExitoRestpuestaServidor(result)) return@launch
+            val resultado = result.getJSONObject("resultado")
+            val data = resultado.getJSONArray("data")
+            for (i in 0 until data.length()){
+                val bodega = data.getJSONObject(i)
+                val codigo = bodega.getString("Cod_Bodega")
+                val nombre = bodega.getString("Descripcion")
+                listaBodegasTemp.add(ParClaveValor(clave = codigo, valor = "$codigo-$nombre"))
+            }
+            listaBodegas = listaBodegasTemp
+            gestorProcGenSocket.obtenerImpresorasRemotas(
+                context = context,
+                datosRetornados = {
+                    val listaTemp = it
+                    listaTemp.forEach { impresora ->
+                        listaImpresorasTemp.add(ParClaveValor(clave = impresora[0], valor = impresora[0]+"-"+impresora[1]))
+                    }
+                    listaImpresoras = listaImpresorasTemp
+                },
+                onErrorOrFin = {
+                    socketJob?.cancel()
+                }
+            )
+        }
+    }
 
 
+    @Composable
+    fun BxOpcionesEstacion(
+        titulo : String,
+        icono : ImageVector,
+        variable : String,
+        opciones :  List<ParClaveValor> = emptyList(),
+        onChange : (String) -> Unit
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(objetoAdaptardor.ajustarAncho(8))
+        ){
+            Icon(
+                imageVector = icono,
+                contentDescription = null
+            )
+            TText(
+                text = "$titulo: ",
+                fontSize = obtenerEstiloTitleBig(),
+                textAlign = TextAlign.Start
+            )
+            BBasicTextField(
+                value = variable,
+                onValueChange = {
+                   onChange(it)
+                },
+                objetoAdaptardor = objetoAdaptardor,
+                opciones = opciones,
+                modifier = Modifier
+                    .width(objetoAdaptardor.ajustarAncho(90))
+                    .border(
+                        1.dp,
+                        color = Color.Gray,
+                        RoundedCornerShape(
+                            objetoAdaptardor.ajustarAltura(
+                                10
+                            )
+                        )
+                    ),
+                backgroundColor = Color.White,
+                utilizarMedidas = false,
+                fontSize = obtenerEstiloTitleBig(),
+                placeholder = "Código...",
+                mostrarLeadingIcon = false,
+                soloPermitirValoresNumericos = true
+            )
+        }
+        HorizontalDivider()
+    }
 
     ConstraintLayout(
         modifier = Modifier
@@ -201,14 +300,14 @@ fun IniciarInterfazConfEstacion (
                 BButton(
                     text = "Guardar",
                     onClick = {
-
                         actualizarParametro(context, "datosTiempoReal$nombreEmpresa", datosTiempoReal)
-                        datosTiempoReal = obtenerParametroLocal(context, "datosTiempoReal$nombreEmpresa")
                         actualizarParametro(context, "precioVenta$nombreEmpresa", tipoPrecioVenta)
-                        tipoPrecioVenta = obtenerParametroLocal(context, "precioVenta$nombreEmpresa")
+                        actualizarParametro(context, "imprfactu$nombreEmpresa", impreFactura)
+                        actualizarParametro(context, "imprProf$nombreEmpresa", impreProforma)
+                        actualizarParametro(context, "imprCred$nombreEmpresa", impreCredito)
+                        actualizarParametro(context, "imprRecib$nombreEmpresa", impreRecibos)
                         if (codBodega.isNotEmpty()){
                             actualizarParametro(context, "bodega$nombreEmpresa", codBodega)
-                            codBodega = obtenerParametroLocal(context, "bodega$nombreEmpresa")
                             mostrarMensajeExito("Configuración Guardada!")
                         }else{
                             mostrarMensajeError("Ingrese un Código de Bodega Válido.")
@@ -224,124 +323,55 @@ fun IniciarInterfazConfEstacion (
                 thickness = objetoAdaptardor.ajustarAltura(2),
                 color = Color.Black
             )
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(objetoAdaptardor.ajustarAncho(8))
-            ){
-                Icon(
-                    imageVector = Icons.Filled.Inventory,
-                    contentDescription = null
-                )
-                TText(
-                    text = "Bodega de Inventario: ",
-                    fontSize = obtenerEstiloTitleBig(),
-                    textAlign = TextAlign.Start
-                )
-                BBasicTextField(
-                    value = codBodega,
-                    onValueChange = {
-                        codBodega = it
-                    },
-                    objetoAdaptardor = objetoAdaptardor,
-                    modifier = Modifier
-                        .width(objetoAdaptardor.ajustarAncho(80))
-                        .border(
-                            1.dp,
-                            color = Color.Gray,
-                            RoundedCornerShape(
-                                objetoAdaptardor.ajustarAltura(
-                                    10
-                                )
-                            )
-                        ),
-                    backgroundColor = Color.White,
-                    utilizarMedidas = false,
-                    fontSize = obtenerEstiloTitleBig(),
-                    placeholder = "Código...",
-                    mostrarLeadingIcon = false,
-                    soloPermitirValoresNumericos = true
-                )
-            }
-            HorizontalDivider()
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(objetoAdaptardor.ajustarAncho(8))
-            ){
-                Icon(
-                    imageVector = Icons.Filled.LocalOffer,
-                    contentDescription = null
-                )
-                TText(
-                    text = "Tipo Precio Venta: ",
-                    fontSize = obtenerEstiloTitleBig(),
-                    textAlign = TextAlign.Start
-                )
-                BBasicTextField(
-                    value = tipoPrecioVenta,
-                    onValueChange = {
-                        tipoPrecioVenta = it
-                    },
-                    opciones = listaPrecios,
-                    objetoAdaptardor = objetoAdaptardor,
-                    modifier = Modifier
-                        .width(objetoAdaptardor.ajustarAncho(80))
-                        .border(
-                            1.dp,
-                            color = Color.Gray,
-                            RoundedCornerShape(
-                                objetoAdaptardor.ajustarAltura(
-                                    10
-                                )
-                            )
-                        ),
-                    backgroundColor = Color.White,
-                    utilizarMedidas = false,
-                    fontSize = obtenerEstiloTitleBig(),
-                    placeholder = "Tipo Precio...",
-                    mostrarLeadingIcon = false,
-                    soloPermitirValoresNumericos = true
-                )
-            }
-            HorizontalDivider()
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(objetoAdaptardor.ajustarAncho(8))
-            ){
-                Icon(
-                    imageVector = Icons.Filled.Timer,
-                    contentDescription = null
-                )
-                TText(
-                    text = "Mantener Datos Tiempo real: ",
-                    fontSize = obtenerEstiloTitleBig(),
-                    textAlign = TextAlign.Start
-                )
-                BBasicTextField(
-                    value = datosTiempoReal,
-                    onValueChange = {
-                        datosTiempoReal = it
-                    },
-                    opciones = listaBoleanos,
-                    objetoAdaptardor = objetoAdaptardor,
-                    modifier = Modifier
-                        .width(objetoAdaptardor.ajustarAncho(80))
-                        .border(
-                            1.dp,
-                            color = Color.Gray,
-                            RoundedCornerShape(
-                                objetoAdaptardor.ajustarAltura(
-                                    10
-                                )
-                            )
-                        ),
-                    backgroundColor = Color.White,
-                    utilizarMedidas = false,
-                    fontSize = obtenerEstiloTitleBig(),
-                    placeholder = "Tipo Precio...",
-                    mostrarLeadingIcon = false,
-                    soloPermitirValoresNumericos = true
-                )
-            }
+            BxOpcionesEstacion(
+                titulo = "Bodega de Inventario",
+                icono = Icons.Filled.Inventory,
+                opciones = listaBodegas,
+                variable = codBodega,
+                onChange = {codBodega = it}
+            )
+            BxOpcionesEstacion(
+                titulo = "Tipo Precio Venta",
+                icono = Icons.Filled.LocalOffer,
+                variable = tipoPrecioVenta,
+                opciones = listaPrecios,
+                onChange = {tipoPrecioVenta = it}
+            )
+            BxOpcionesEstacion(
+                titulo = "Mantener Datos Tiempo real",
+                icono = Icons.Filled.Timer,
+                variable = datosTiempoReal,
+                opciones = listaBoleanos,
+                onChange = {datosTiempoReal = it}
+            )
+            BxOpcionesEstacion(
+                titulo = "Impresora Factura",
+                icono =Icons.Filled.Print,
+                variable = impreFactura,
+                opciones = listaImpresoras,
+                onChange = {impreFactura = it}
+            )
+            BxOpcionesEstacion(
+                titulo = "Impresora Proforma",
+                icono =Icons.Filled.Print,
+                variable = impreProforma,
+                opciones = listaImpresoras,
+                onChange = {impreProforma= it}
+            )
+            BxOpcionesEstacion(
+                titulo = "Impresora Crédito",
+                icono =Icons.Filled.Print,
+                variable = impreCredito,
+                opciones = listaImpresoras,
+                onChange = {impreCredito = it}
+            )
+            BxOpcionesEstacion(
+                titulo = "Impresora Recibos",
+                icono =Icons.Filled.Print,
+                variable = impreRecibos,
+                opciones = listaImpresoras,
+                onChange = {impreRecibos = it}
+            )
         }
     }
 }
@@ -350,5 +380,5 @@ fun IniciarInterfazConfEstacion (
 @Composable
 private fun Preview(){
     val nav = rememberNavController()
-    IniciarInterfazConfEstacion(nav,"DEMOFERRE")
+    IniciarInterfazConfEstacion(nav,"DEMOFERRE", "")
 }

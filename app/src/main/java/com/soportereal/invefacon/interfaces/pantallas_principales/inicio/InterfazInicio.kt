@@ -121,6 +121,10 @@ fun IniciarInterfazInicio(
     guardarParametroSiNoExiste(contexto, "precioVenta$nombreEmpresa", "1")
     guardarParametroSiNoExiste(contexto, "bodega$nombreEmpresa", "0")
     guardarParametroSiNoExiste(contexto, "datosTiempoReal$nombreEmpresa", "Si")
+    guardarParametroSiNoExiste(contexto, "imprfactu$nombreEmpresa", "Local")
+    guardarParametroSiNoExiste(contexto, "imprProf$nombreEmpresa", "Local")
+    guardarParametroSiNoExiste(contexto, "imprCred$nombreEmpresa", "Local")
+    guardarParametroSiNoExiste(contexto, "imprRecib$nombreEmpresa", "Local")
 
     LaunchedEffect (Unit) {
         validarVersionApp(contexto)

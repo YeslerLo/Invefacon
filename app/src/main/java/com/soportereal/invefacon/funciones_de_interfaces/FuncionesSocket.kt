@@ -148,6 +148,73 @@ fun validarRespuestaSocket(datos: String, onFin: ()->Unit) {
     }
 }
 
+fun deserializarListaSocket(input: String, codigoRespuesta: String): List<List<String>> {
+    println(input)
+    val regex = Regex("""\|\>\>(.*?)\<\<\|""")
+    val resultados = regex.findAll(input).map { it.groupValues[1] }
+
+    val contenidoValido = resultados.firstOrNull { contenido ->
+        contenido.length >= 17 && contenido.substring(14, 17) == codigoRespuesta
+    } ?: return emptyList()
+
+    val datos = if (contenidoValido.length > 18) contenidoValido.substring(18) else return emptyList()
+
+    return datos.split("Ý")
+        .filter { it.isNotBlank() }
+        .map { tupla ->
+            tupla.split("ß").filter { it.isNotBlank() }
+        }
+}
+
+
+
+class ProcGenSocket () {
+
+    suspend fun obtenerImpresorasRemotas(
+        context : Context,
+        onErrorOrFin: (Boolean) -> Unit= {},
+        datosRetornados : (List<List<String>>) -> Unit
+    ){
+        val caracter = '\u00DF'
+        // Generar mensajes MODCONF000.00.MODCONF001ß*ßEND
+        val mensajeSocket = generarConsultaSocket(
+            context = context,
+            proceso = "MODSEGU000",
+            subProceso = "MODSEGU009",
+            cuerpo = "00362${caracter}MOD${caracter}DEMOFERRE${caracter}VENTAS${caracter}11.72 10-06-2025${caracter}",
+            agregarBd = false,
+            generarIdProceso = false
+        ) + generarConsultaSocket(
+            context = context,
+            proceso = "MODCONF000",
+            subProceso = "MODCONF001",
+            cuerpo = "*$caracter",
+            agregarBd = false,
+            generarIdProceso = false
+        )
+        gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(true)
+        conectarSocket(
+            context = context,
+            mensaje = mensajeSocket,
+            alRecibirMensaje = { msg ->
+                withContext(Dispatchers.Main) {
+                    val listaImpresora = deserializarListaSocket(msg, "334")
+                    datosRetornados(listaImpresora)
+                    validarRespuestaSocket(datos = msg, onFin = {onErrorOrFin(true)})
+                }
+            },
+            onError = { errorMsg ->
+                withContext(Dispatchers.Main) {
+                    mostrarMensajeError(errorMsg)
+                    gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
+                    onErrorOrFin(true)
+                }
+            }
+        )
+    }
+}
+
+
 
 
 

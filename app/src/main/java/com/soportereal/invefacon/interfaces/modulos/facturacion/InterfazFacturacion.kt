@@ -140,6 +140,7 @@ import com.soportereal.invefacon.funciones_de_interfaces.FuncionesParaAdaptarCon
 import com.soportereal.invefacon.funciones_de_interfaces.GestorTablaArticulos
 import com.soportereal.invefacon.funciones_de_interfaces.MenuConfirmacion
 import com.soportereal.invefacon.funciones_de_interfaces.ParClaveValor
+import com.soportereal.invefacon.funciones_de_interfaces.ProcGenSocket
 import com.soportereal.invefacon.funciones_de_interfaces.TText
 import com.soportereal.invefacon.funciones_de_interfaces.TextFieldMultifuncional
 import com.soportereal.invefacon.funciones_de_interfaces.actualizarParametro
@@ -212,6 +213,7 @@ fun IniciarInterfazFacturacion(
     val dpAltoPantalla = configuration.screenHeightDp
     val dpFontPantalla= configuration.fontScale
     val objetoAdaptardor= FuncionesParaAdaptarContenido(dpAltoPantalla, dpAnchoPantalla, dpFontPantalla)
+    val gestorProcGenSocket = ProcGenSocket()
     var expandedClientes by remember { mutableStateOf(false) }
 //    var expandedArticulos by remember { mutableStateOf(false) }
     var expandedTotales by remember { mutableStateOf(false) }
@@ -350,6 +352,8 @@ fun IniciarInterfazFacturacion(
     }
     var estadoProformaInicial by remember { mutableStateOf("") }
     var agregarFormapago by remember { mutableStateOf(false) }
+    var socketJob by remember { mutableStateOf<Job?>(null) }
+    val cortinaSocket= CoroutineScope(Dispatchers.IO)
     var tipoPago by remember { mutableStateOf("") }
     var tasaCambioDolar by remember { mutableDoubleStateOf(0.00) }
     var tipoFormaProcesar by remember { mutableStateOf("factura") }
@@ -4289,6 +4293,17 @@ fun IniciarInterfazFacturacion(
                                 BButton(
                                     text = if (estadoProforma =="2") if(valorImpresionActiva=="1") "     Reimprimir     "  else "     Reimpresión Inactiva     " else "     Procesar     ",
                                     onClick = {
+                                        socketJob = cortinaSocket.launch {
+                                            gestorProcGenSocket.obtenerImpresorasRemotas(
+                                                context = context,
+                                                onErrorOrFin = {
+                                                    socketJob?.cancel()
+                                                },
+                                                datosRetornados = {
+                                                    println(it)
+                                                }
+                                            )
+                                        }
                                         if (valorImpresionActiva=="0" && estadoProforma =="2") return@BButton mostrarMensajeError("Impresión inactiva. Si desea imprimir, cambie el estado del parámetro en ajustes.")
                                         if (estadoProforma =="2"){
                                             agregarColaImpresion(isReimpresion = true)

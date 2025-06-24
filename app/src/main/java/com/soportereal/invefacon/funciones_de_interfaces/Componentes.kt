@@ -336,7 +336,7 @@ internal fun BBasicTextField(
                     ) {
                         Row {
                             Checkbox(
-                                checked = value == opcion.valor,
+                                checked = value == opcion.clave,
                                 onCheckedChange = { valor ->
                                     onValueChange(opcion.clave)
                                     expanded = false
