@@ -220,7 +220,6 @@ fun IniciarInterfazVentas(
         isBuscandoFacturas = true
         if(!isPaginacion) listaFacturas = emptyList()
         if(!isPaginacion) paginaActualLazyColumn = 1
-        delay(500)
         apiConsultaFacturas?.cancel()
         apiConsultaFacturas= cortinaConsultaApiFacturas.launch{
             val result = objectoProcesadorDatosApi.obtenerFacturas(

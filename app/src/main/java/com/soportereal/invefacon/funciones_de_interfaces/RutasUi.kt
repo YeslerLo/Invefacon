@@ -117,6 +117,7 @@ fun NavegacionPantallas(
     guardarParametroSiNoExiste(contexto, "nombreEmpresa", "0")
     guardarParametroSiNoExiste(contexto, "codUsuario", "0")
     guardarParametroSiNoExiste(contexto, "bdActual", "")
+    guardarParametroSiNoExiste(contexto, "codUsuarioActual", "")
     guardarParametroSiNoExiste(contexto, "puertoActual", "0")
 
     Box(

@@ -26,7 +26,8 @@ suspend fun conectarSocket(
     mensaje: String,
     alRecibirMensaje: suspend (String) -> Unit,
     onError: suspend (String) -> Unit,
-    timeOut : Long = 13_000
+    timeOut : Long = 13_000,
+    crearConexion: Boolean = true
 ) {
     var socket: Socket? = null
     var flujoEntrada: InputStream? = null
@@ -50,9 +51,26 @@ suspend fun conectarSocket(
         flujoSalida = withContext(Dispatchers.IO) {
             socket.getOutputStream()
         }
-
+        println("MSG PRIMARIO: $mensaje")
+        var mensajeTemp = mensaje
+        if (crearConexion){
+            val caracter = '\u00DF'
+            val baseDatos = obtenerParametroLocal(context, "bdActual")
+            val codUsuario =  obtenerParametroLocal(context, "codUsuarioActual")
+            // Generar mensajes
+            val mensajeConexion = generarConsultaSocket(
+                context = context,
+                proceso = "MODSEGU000",
+                subProceso = "MODSEGU009",
+                cuerpo = "$codUsuario${caracter}MOD${caracter}$baseDatos${caracter}VENTAS${caracter}11.94 23-06-2025${caracter}",
+                agregarBd = false,
+                generarIdProceso = false
+            )
+            mensajeTemp = mensajeConexion + mensaje
+        }
+        println("INPUT SOCKET: $mensajeTemp")
         // Enviar mensaje inicial codificado en ISO-8859-1
-        val bytes = mensaje.toByteArray(Charsets.ISO_8859_1)
+        val bytes = mensajeTemp.toByteArray(Charsets.ISO_8859_1)
         withContext(Dispatchers.IO) {
             flujoSalida.write(bytes)
             flujoSalida.flush()
@@ -78,6 +96,7 @@ suspend fun conectarSocket(
             }
 
             val fragmento = String(buffer, 0, leido, Charsets.ISO_8859_1)
+            println("OUTPUT SOCKET: $fragmento")
             alRecibirMensaje(fragmento)
         }
     } catch (e: Exception) {
@@ -138,7 +157,7 @@ fun validarRespuestaSocket(datos: String, onFin: ()->Unit) {
         val codigoRespuesta = it.substring(14,17)
         val mensajeRespuesta = it.substring(18, it.length)
         when(codigoRespuesta){
-            "ERR" -> mostrarMensajeError(mensajeRespuesta)
+            "ERR" -> mostrarMensajeError("SCK: $mensajeRespuesta")
             "EVE"-> mostrarMensajeExito(mensajeRespuesta)
             "FPC" -> {
                 gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
@@ -166,8 +185,6 @@ fun deserializarListaSocket(input: String, codigoRespuesta: String): List<List<S
         }
 }
 
-
-
 class ProcGenSocket () {
 
     suspend fun obtenerImpresorasRemotas(
@@ -178,13 +195,6 @@ class ProcGenSocket () {
         val caracter = '\u00DF'
         // Generar mensajes MODCONF000.00.MODCONF001ß*ßEND
         val mensajeSocket = generarConsultaSocket(
-            context = context,
-            proceso = "MODSEGU000",
-            subProceso = "MODSEGU009",
-            cuerpo = "00362${caracter}MOD${caracter}DEMOFERRE${caracter}VENTAS${caracter}11.72 10-06-2025${caracter}",
-            agregarBd = false,
-            generarIdProceso = false
-        ) + generarConsultaSocket(
             context = context,
             proceso = "MODCONF000",
             subProceso = "MODCONF001",

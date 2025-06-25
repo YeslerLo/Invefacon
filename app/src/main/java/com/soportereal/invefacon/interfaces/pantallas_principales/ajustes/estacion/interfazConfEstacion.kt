@@ -67,6 +67,7 @@ import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloHeadBig
 import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloTitleBig
 import com.soportereal.invefacon.funciones_de_interfaces.obtenerParametroLocal
 import com.soportereal.invefacon.funciones_de_interfaces.validarExitoRestpuestaServidor
+import com.soportereal.invefacon.interfaces.pantallas_principales.gestorEstadoPantallaCarga
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -84,8 +85,7 @@ fun IniciarInterfazConfEstacion (
     val dpAnchoPantalla = configuration.screenWidthDp
     val dpAltoPantalla = configuration.screenHeightDp
     val dpFontPantalla = configuration.fontScale
-    val objetoAdaptardor =
-        FuncionesParaAdaptarContenido(dpAltoPantalla, dpAnchoPantalla, dpFontPantalla)
+    val objetoAdaptardor = FuncionesParaAdaptarContenido(dpAltoPantalla, dpAnchoPantalla, dpFontPantalla)
     val context = LocalContext.current
     var codBodega by remember { mutableStateOf(obtenerParametroLocal(context, "bodega$nombreEmpresa")) }
     var datosTiempoReal by remember { mutableStateOf(obtenerParametroLocal(context, "datosTiempoReal$nombreEmpresa" ,"Si")) }
@@ -118,6 +118,7 @@ fun IniciarInterfazConfEstacion (
         val listaBodegasTemp = mutableListOf<ParClaveValor>()
         listaImpresorasTemp.add(ParClaveValor("Local", "Local"))
         socketJob = cortinaSocket.launch {
+            gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(true)
             val result = objectoProcesadorDatosApi.obtenerBodegas()
             if (result== null) return@launch
             if (!validarExitoRestpuestaServidor(result)) return@launch
@@ -129,7 +130,9 @@ fun IniciarInterfazConfEstacion (
                 val nombre = bodega.getString("Descripcion")
                 listaBodegasTemp.add(ParClaveValor(clave = codigo, valor = "$codigo-$nombre"))
             }
+            if(listaBodegasTemp.isEmpty()) listaBodegasTemp.add(ParClaveValor("0", "0"))
             listaBodegas = listaBodegasTemp
+
             gestorProcGenSocket.obtenerImpresorasRemotas(
                 context = context,
                 datosRetornados = {
@@ -144,6 +147,7 @@ fun IniciarInterfazConfEstacion (
                 }
             )
         }
+        gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
     }
 
 

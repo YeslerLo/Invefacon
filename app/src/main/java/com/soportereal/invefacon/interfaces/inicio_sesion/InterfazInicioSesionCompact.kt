@@ -768,6 +768,7 @@ fun IniciarInterfazInicioSesionCompact(
                                         codUsuario= datos.getString("Codigo")
                                         actualizarParametro(contexto, "puertoActual",datos.getString("Puerto"))
                                         actualizarParametro(contexto, "bdActual",datos.getString("Empresa"))
+                                        actualizarParametro(contexto, "codUsuarioActual",datos.getString("Codigo"))
                                         isInicioSesionAprobado=true
 
                                     }

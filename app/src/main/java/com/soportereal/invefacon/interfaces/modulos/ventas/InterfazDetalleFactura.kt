@@ -16,6 +16,7 @@ import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -51,6 +52,7 @@ import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.PersonPin
 import androidx.compose.material.icons.filled.Print
+import androidx.compose.material.icons.filled.Receipt
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -85,13 +87,13 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import coil.compose.SubcomposeAsyncImage
 import com.soportereal.invefacon.R
+import com.soportereal.invefacon.funciones_de_interfaces.BBasicTextField
 import com.soportereal.invefacon.funciones_de_interfaces.BButton
 import com.soportereal.invefacon.funciones_de_interfaces.FuncionesParaAdaptarContenido
 import com.soportereal.invefacon.funciones_de_interfaces.MenuConfirmacion
@@ -108,6 +110,7 @@ import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloBodySmall
 import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloDisplayBig
 import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloHeadSmall
 import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloLabelBig
+import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloTitleBig
 import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloTitleSmall
 import com.soportereal.invefacon.funciones_de_interfaces.obtenerParametroLocal
 import com.soportereal.invefacon.funciones_de_interfaces.separacionDeMiles
@@ -189,8 +192,13 @@ fun IniciarInterfazDetalleFactura(
     val valorImpresionActiva by remember { mutableStateOf( obtenerParametroLocal(context, "isImpresionActiva$codUsuario$nombreEmpresa")) }
     var socketJob by remember { mutableStateOf<Job?>(null) }
     val cortinaSocket= CoroutineScope(Dispatchers.IO)
-    var iniciarMenuConfNotCredComple by remember { mutableStateOf(false) }
+    var iniciarMenuConfNotComple by remember { mutableStateOf(false) }
     var iniciarMenuOpciones by remember { mutableStateOf(false) }
+    var iniciarMenuAplicarNotas by remember { mutableStateOf(false) }
+    var listaMotivosNotas by remember {  mutableStateOf<List<ParClaveValor>>(emptyList()) }
+    var isNotaCredito by remember { mutableStateOf(false) }
+    var codMotivoNota by remember { mutableStateOf("") }
+    var detalleNota by remember { mutableStateOf("") }
 
     if (valorImpresionActiva == "1") {
         gestorImpresora.PedirPermisos(context)
@@ -737,8 +745,7 @@ fun IniciarInterfazDetalleFactura(
                             BButton(
                                 text = "Opciones",
                                 onClick = {
-                                    return@BButton mostrarMensajeError("Esta opción está en desarrollo...")
-
+                                    iniciarMenuOpciones = true
                                 },
                                 objetoAdaptardor = objetoAdaptardor,
                                 modifier = Modifier.weight(1f).padding(horizontal = objetoAdaptardor.ajustarAncho(8)),
@@ -1390,35 +1397,11 @@ fun IniciarInterfazDetalleFactura(
                             modifier = Modifier.fillMaxWidth()
                         )
                         BButton(
-                            text = "Nota de Crédito Manual",
-                            onClick = {
-                            },
-                            textSize = obtenerEstiloBodyBig(),
-                            modifier = Modifier.fillMaxWidth(),
-                            objetoAdaptardor = objetoAdaptardor
-                        )
-                        BButton(
                             text = "Nota de Crédito Completa",
                             onClick = {
                                 iniciarMenuOpciones = false
-                                iniciarMenuConfNotCredComple = true
-                            },
-                            textSize = obtenerEstiloBodyBig(),
-                            modifier = Modifier.fillMaxWidth(),
-                            objetoAdaptardor = objetoAdaptardor
-                        )
-                        BButton(
-                            text = "Nota de Crédito Financiera",
-                            onClick = {
-
-                            },
-                            textSize = obtenerEstiloBodyBig(),
-                            modifier = Modifier.fillMaxWidth(),
-                            objetoAdaptardor = objetoAdaptardor
-                        )
-                        BButton(
-                            text = "Nota de Débito Manual",
-                            onClick = {
+                                isNotaCredito = true
+                                iniciarMenuAplicarNotas = true
                             },
                             textSize = obtenerEstiloBodyBig(),
                             modifier = Modifier.fillMaxWidth(),
@@ -1427,14 +1410,9 @@ fun IniciarInterfazDetalleFactura(
                         BButton(
                             text = "Nota de Débito Completa",
                             onClick = {
-                            },
-                            textSize = obtenerEstiloBodyBig(),
-                            modifier = Modifier.fillMaxWidth(),
-                            objetoAdaptardor = objetoAdaptardor
-                        )
-                        BButton(
-                            text = "Nota de Débito Finaciera",
-                            onClick = {
+                                iniciarMenuOpciones = false
+                                isNotaCredito = false
+                                iniciarMenuAplicarNotas = true
                             },
                             textSize = obtenerEstiloBodyBig(),
                             modifier = Modifier.fillMaxWidth(),
@@ -1457,27 +1435,221 @@ fun IniciarInterfazDetalleFactura(
         }
     }
 
-    MenuConfirmacion(
-        txBtAceptar = "Aplicar",
-        txBtDenegar = "Cancelar",
-        onAceptar = {
-            iniciarMenuConfNotCredComple = false
+    if (iniciarMenuAplicarNotas) {
+        var isMenuVisible by remember { mutableStateOf(false) }
+
+        LaunchedEffect(Unit) {
+            val listaMotivosTemp = mutableStateListOf<ParClaveValor>()
+            detalleNota = ""
             socketJob = cortinaSocket.launch {
-                objectoProcesadorDatosApi.aplicarNotaCreditoCompleta(
+                objectoProcesadorDatosApi.obtenerMotivosNotas(
                     context = context,
-                    numeroDocumento = detallesDocumento.numero,
+                    datosRetornados = {
+                        val lista = it
+                        lista.forEach { motivo ->
+                            val codigo = motivo[0]
+                            val descripcion = motivo[1]
+                            listaMotivosTemp.add(ParClaveValor(clave = codigo, valor = "$codigo-$descripcion" ))
+                        }
+                        listaMotivosNotas = listaMotivosTemp
+                        if (listaMotivosTemp.isNotEmpty()) codMotivoNota = listaMotivosTemp.first().clave
+                    },
                     onErrorOrFin = {
                         socketJob?.cancel()
                     }
                 )
             }
+            delay(100)
+            isMenuVisible = true
+        }
+
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black.copy(alpha = 0.3f))
+                .clickable(enabled = false) {},
+            contentAlignment = Alignment.Center
+        ) {
+            AnimatedVisibility(
+                visible = isMenuVisible,
+                enter = fadeIn(animationSpec = tween(500)) + slideInVertically(initialOffsetY = { it }),
+                exit = fadeOut(animationSpec = tween(500)) + slideOutVertically(targetOffsetY = { it })
+            ) {
+                Surface(
+                    modifier = Modifier
+                        .wrapContentWidth()
+                        .wrapContentHeight()
+                        .padding(objetoAdaptardor.ajustarAltura(16))
+                        .align(Alignment.Center),
+                    shape = RoundedCornerShape(objetoAdaptardor.ajustarAltura(12)),
+                    color = Color.White,
+                    shadowElevation = 8.dp
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .padding(16.dp)
+                            .wrapContentSize(),
+                        verticalArrangement = Arrangement.spacedBy(objetoAdaptardor.ajustarAltura(8))
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(
+                                objetoAdaptardor.ajustarAltura(8),
+                                alignment = Alignment.CenterHorizontally
+                            ),
+                            modifier = Modifier. fillMaxWidth()
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.Receipt,
+                                contentDescription = ""
+                            )
+                            TText(
+                                text = "Nota de ${if(isNotaCredito) "Crédito" else "Débito"} Completa",
+                                fontSize = obtenerEstiloHeadSmall(),
+                                textAlign = TextAlign.Center
+                            )
+
+                        }
+                        HorizontalDivider(
+                            thickness = objetoAdaptardor.ajustarAltura(2),
+                            color = Color.Black
+                        )
+                        TText(
+                            text = "Detalles de Nota",
+                            fontSize = obtenerEstiloTitleBig(),
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        TTextTitCuer("Documento:", detallesDocumento.numero)
+                        HorizontalDivider()
+                        TTextTitCuer("Nombre Factura:", datosCliente.clientenombrecomercial)
+                        HorizontalDivider()
+                        TTextTitCuer("Cantidad Artículos:", listaArticulos.size.toString())
+                        HorizontalDivider()
+                        Row (
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center
+                        ){
+                            TText(
+                                text = "Motivo:  ",
+                                fontSize = obtenerEstiloBodyBig()
+                            )
+                            BBasicTextField(
+                                value = listaMotivosNotas.find { it.clave == codMotivoNota }?.valor?: "null",
+                                onValueChange = {
+                                    codMotivoNota = it
+                                },
+                                objetoAdaptardor = objetoAdaptardor,
+                                opciones = listaMotivosNotas,
+                                modifier = Modifier
+                                    .border(
+                                        1.dp,
+                                        color = Color.Gray,
+                                        RoundedCornerShape(
+                                            objetoAdaptardor.ajustarAltura(
+                                                10
+                                            )
+                                        )
+                                    ),
+                                backgroundColor = Color.White,
+                                utilizarMedidas = false,
+                                fontSize = obtenerEstiloBodyBig(),
+                                placeholder = "Motivo...",
+                                mostrarLeadingIcon = false,
+                                soloPermitirValoresNumericos = true
+                            )
+                        }
+                        HorizontalDivider()
+                        Row (
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center
+                        ){
+                            TText(
+                                text = "Detalle:  ",
+                                fontSize = obtenerEstiloBodyBig()
+                            )
+                            BBasicTextField(
+                                value = detalleNota,
+                                onValueChange = {
+                                    detalleNota = it
+                                },
+                                objetoAdaptardor = objetoAdaptardor,
+                                modifier = Modifier
+                                    .border(
+                                        1.dp,
+                                        color = Color.Gray,
+                                        RoundedCornerShape(
+                                            objetoAdaptardor.ajustarAltura(
+                                                10
+                                            )
+                                        )
+                                    ),
+                                backgroundColor = Color.White,
+                                utilizarMedidas = false,
+                                fontSize = obtenerEstiloBodyBig(),
+                                placeholder = "Detalle...",
+                                mostrarLeadingIcon = false,
+                                cantidadLineas = 10
+                            )
+                        }
+                        HorizontalDivider()
+                        TTextTitCuer("Total:", separacionDeMiles(totales.Total), fontSize = obtenerEstiloTitleSmall())
+                        HorizontalDivider()
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(objetoAdaptardor.ajustarAncho(8))
+                        ){
+                            BButton(
+                                text = "Cancelar",
+                                onClick = {
+                                    iniciarMenuAplicarNotas = false
+                                },
+                                objetoAdaptardor = objetoAdaptardor,
+                                modifier = Modifier.weight(1f)
+                            )
+                            BButton(
+                                text = "Aplicar",
+                                onClick = {
+                                    if (detalleNota.isEmpty()) return@BButton mostrarMensajeError("Debe agregar un detalle a la Nota.")
+                                    iniciarMenuAplicarNotas = false
+                                    iniciarMenuConfNotComple = true
+                                },
+                                objetoAdaptardor = objetoAdaptardor,
+                                modifier = Modifier.weight(1f),
+                                backgroundColor = Color.Red
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    MenuConfirmacion(
+        txBtAceptar = "Aplicar",
+        txBtDenegar = "Cancelar",
+        onAceptar = {
+            iniciarMenuConfNotComple = false
+            socketJob = cortinaSocket.launch {
+                objectoProcesadorDatosApi.aplicarNotaCredDebiCompleta(
+                    context = context,
+                    numeroDocumento = detallesDocumento.numero,
+                    codMotivo = codMotivoNota,
+                    detalle = detalleNota,
+                    onErrorOrFin = {
+                        socketJob?.cancel()
+                    },
+                    isNotaCredito = isNotaCredito,
+                    codUsuario = codUsuario
+                )
+            }
         },
         onDenegar = {
-            iniciarMenuConfNotCredComple = false
+            iniciarMenuConfNotComple = false
         },
-        mostrarMenu = iniciarMenuConfNotCredComple,
-        titulo = "Nota de Crédito Automática Completa",
-        subTitulo = "¿Desea aplicar una Nota de Crédito Automática Completa a esta Factura?"
+        mostrarMenu = iniciarMenuConfNotComple,
+        titulo = "Nota de ${if(isNotaCredito) "Crédito" else "Débito"} Completa",
+        subTitulo = "¿Desea aplicar una Nota de ${if(isNotaCredito) "Crédito" else "Débito"} Completa a esta Factura?"
     )
 }
 

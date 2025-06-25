@@ -3,6 +3,7 @@ package com.soportereal.invefacon.interfaces.modulos.ventas
 import android.content.Context
 import com.soportereal.invefacon.funciones_de_interfaces.FuncionesHttp
 import com.soportereal.invefacon.funciones_de_interfaces.conectarSocket
+import com.soportereal.invefacon.funciones_de_interfaces.deserializarListaSocket
 import com.soportereal.invefacon.funciones_de_interfaces.generarConsultaSocket
 import com.soportereal.invefacon.funciones_de_interfaces.mostrarMensajeError
 import com.soportereal.invefacon.funciones_de_interfaces.validarRespuestaSocket
@@ -66,21 +67,22 @@ class ProcesarDatosModuloVentas(apiToken: String) {
         )
     }
 
-    suspend fun aplicarNotaCreditoCompleta(context : Context, numeroDocumento: String, onErrorOrFin: (Boolean) -> Unit){
+    suspend fun aplicarNotaCredDebiCompleta(
+        context : Context,
+        numeroDocumento: String,
+        codMotivo : String,
+        detalle : String,
+        codUsuario : String,
+        isNotaCredito : Boolean = true,
+        onErrorOrFin: (Boolean) -> Unit
+    ){
         val caracter = '\u00DF'
         // Generar mensajes
         val mensajeSocket = generarConsultaSocket(
             context = context,
-            proceso = "MODSEGU000",
-            subProceso = "MODSEGU009",
-            cuerpo = "00362${caracter}MOD${caracter}DEMOFERRE${caracter}VENTAS${caracter}11.72 10-06-2025${caracter}",
-            agregarBd = false,
-            generarIdProceso = false
-        ) + generarConsultaSocket(
-            context = context,
             proceso = "MODVENT000",
-            subProceso = "MODVENT079",
-            cuerpo = "00006${caracter}$numeroDocumento${caracter}venta${caracter}${caracter}"
+            subProceso = "MODVENT0${if (isNotaCredito)"79" else "09"}",
+            cuerpo = "$codUsuario${caracter}$numeroDocumento${caracter}venta${caracter}$caracter$codMotivo$caracter$detalle$caracter"
         )
         gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(true)
         conectarSocket(
@@ -98,6 +100,40 @@ class ProcesarDatosModuloVentas(apiToken: String) {
                     onErrorOrFin(false)
                 }
             }
+        )
+    }
+
+    suspend fun obtenerMotivosNotas (
+        context : Context,
+        onErrorOrFin: (Boolean) -> Unit= {},
+        datosRetornados : (List<List<String>>) -> Unit
+    ) {
+        val caracter = '\u00DF'
+        val mensajeSocket = generarConsultaSocket(
+            context = context,
+            proceso = "MODVENTA00",
+            subProceso = "MODVENT097",
+            cuerpo = "TNV$caracter"
+        )
+        gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(true)
+        conectarSocket(
+            context = context,
+            mensaje = mensajeSocket,
+            alRecibirMensaje = { msg ->
+                withContext(Dispatchers.Main) {
+                    val listaTemp = deserializarListaSocket(msg, "TNV")
+                    datosRetornados(listaTemp)
+                    validarRespuestaSocket(datos = msg, onFin = {onErrorOrFin(false)})
+                }
+            },
+            onError = { errorMsg ->
+                withContext(Dispatchers.Main) {
+                    mostrarMensajeError(errorMsg)
+                    gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
+                    onErrorOrFin(false)
+                }
+            },
+            crearConexion = false
         )
     }
 

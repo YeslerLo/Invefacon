@@ -4293,17 +4293,6 @@ fun IniciarInterfazFacturacion(
                                 BButton(
                                     text = if (estadoProforma =="2") if(valorImpresionActiva=="1") "     Reimprimir     "  else "     Reimpresión Inactiva     " else "     Procesar     ",
                                     onClick = {
-                                        socketJob = cortinaSocket.launch {
-                                            gestorProcGenSocket.obtenerImpresorasRemotas(
-                                                context = context,
-                                                onErrorOrFin = {
-                                                    socketJob?.cancel()
-                                                },
-                                                datosRetornados = {
-                                                    println(it)
-                                                }
-                                            )
-                                        }
                                         if (valorImpresionActiva=="0" && estadoProforma =="2") return@BButton mostrarMensajeError("Impresión inactiva. Si desea imprimir, cambie el estado del parámetro en ajustes.")
                                         if (estadoProforma =="2"){
                                             agregarColaImpresion(isReimpresion = true)
