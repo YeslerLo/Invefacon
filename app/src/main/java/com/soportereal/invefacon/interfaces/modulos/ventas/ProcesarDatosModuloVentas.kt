@@ -6,6 +6,7 @@ import com.soportereal.invefacon.funciones_de_interfaces.conectarSocket
 import com.soportereal.invefacon.funciones_de_interfaces.deserializarListaSocket
 import com.soportereal.invefacon.funciones_de_interfaces.generarConsultaSocket
 import com.soportereal.invefacon.funciones_de_interfaces.mostrarMensajeError
+import com.soportereal.invefacon.funciones_de_interfaces.obtenerConsecutivoSocket
 import com.soportereal.invefacon.funciones_de_interfaces.validarRespuestaSocket
 import com.soportereal.invefacon.interfaces.pantallas_principales.gestorEstadoPantallaCarga
 import kotlinx.coroutines.Dispatchers
@@ -74,47 +75,42 @@ class ProcesarDatosModuloVentas(apiToken: String) {
         detalle : String,
         codUsuario : String,
         isNotaCredito : Boolean = true,
-        onErrorOrFin: (Boolean) -> Unit
-    ){
-        val caracter = '\u00DF'
+        onExitoOrFin: (Boolean) -> Unit,
+        consecutivo : (String) -> Unit
+    ) {
         // Generar mensajes
         val mensajeSocket = generarConsultaSocket(
             context = context,
             proceso = "MODVENT000",
             subProceso = "MODVENT0${if (isNotaCredito)"79" else "09"}",
-            cuerpo = "$codUsuario${caracter}$numeroDocumento${caracter}venta${caracter}$caracter$codMotivo$caracter$detalle$caracter"
+            cuerpo = listOf(codUsuario,numeroDocumento,"venta","",codMotivo, detalle)
         )
+
         gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(true)
         conectarSocket(
             context = context,
             mensaje = mensajeSocket,
-            alRecibirMensaje = { msg ->
-                withContext(Dispatchers.Main) {
-                    validarRespuestaSocket(datos = msg, onFin = {onErrorOrFin(false)})
-                }
+            onExitoOrFin = {
+                onExitoOrFin(it)
             },
-            onError = { errorMsg ->
-                withContext(Dispatchers.Main) {
-                    mostrarMensajeError(errorMsg)
-                    gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
-                    onErrorOrFin(false)
-                }
+            alRecibirMensaje = {
+                obtenerConsecutivoSocket(datos = it, consecutivoRetornar = {consec-> consecutivo(consec)})
             }
         )
     }
 
     suspend fun obtenerMotivosNotas (
         context : Context,
-        onErrorOrFin: (Boolean) -> Unit= {},
+        onExitoOrFin: (Boolean) -> Unit= {},
         datosRetornados : (List<List<String>>) -> Unit
     ) {
-        val caracter = '\u00DF'
         val mensajeSocket = generarConsultaSocket(
             context = context,
             proceso = "MODVENTA00",
             subProceso = "MODVENT097",
-            cuerpo = "TNV$caracter"
+            cuerpo = listOf("TNV")
         )
+
         gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(true)
         conectarSocket(
             context = context,
@@ -123,15 +119,10 @@ class ProcesarDatosModuloVentas(apiToken: String) {
                 withContext(Dispatchers.Main) {
                     val listaTemp = deserializarListaSocket(msg, "TNV")
                     datosRetornados(listaTemp)
-                    validarRespuestaSocket(datos = msg, onFin = {onErrorOrFin(false)})
                 }
             },
-            onError = { errorMsg ->
-                withContext(Dispatchers.Main) {
-                    mostrarMensajeError(errorMsg)
-                    gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
-                    onErrorOrFin(false)
-                }
+            onExitoOrFin = {
+                onExitoOrFin(it)
             },
             crearConexion = false
         )
@@ -174,7 +165,6 @@ data class ClienteVentas(
     val telefonos: String = ""
 )
 
-
 data class DetalleDocumentoVentas(
     val numero: String = "",
     val fecha: String = "2022-11-24 12:02:20.260",
@@ -188,7 +178,6 @@ data class DetalleDocumentoVentas(
     val mediopagodetalle: String = "",
     val detalle: String = ""
 )
-
 
 data class ArticuloVenta(
     val Cod_Articulo: String = "",
@@ -207,7 +196,6 @@ data class ArticuloVenta(
     val ArticuloIvaMonto : Double = 0.0,
     val ArticuloVentaTotal:  Double = 0.0
 )
-
 
 data class TotalesVentas(
     val TotalVenta : Double = 0.0,

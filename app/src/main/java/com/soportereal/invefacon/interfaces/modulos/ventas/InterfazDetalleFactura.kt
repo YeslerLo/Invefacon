@@ -103,6 +103,7 @@ import com.soportereal.invefacon.funciones_de_interfaces.TTextTitCuer
 import com.soportereal.invefacon.funciones_de_interfaces.deserializarFacturaHecha
 import com.soportereal.invefacon.funciones_de_interfaces.formatearFechaTexto
 import com.soportereal.invefacon.funciones_de_interfaces.gestorImpresora
+import com.soportereal.invefacon.funciones_de_interfaces.imprimirFactura
 import com.soportereal.invefacon.funciones_de_interfaces.mostrarMensajeError
 import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloBodyBig
 import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloBodyMedium
@@ -117,7 +118,6 @@ import com.soportereal.invefacon.funciones_de_interfaces.separacionDeMiles
 import com.soportereal.invefacon.funciones_de_interfaces.validarExitoRestpuestaServidor
 import com.soportereal.invefacon.interfaces.modulos.facturacion.Factura
 import com.soportereal.invefacon.interfaces.modulos.facturacion.ProcesarDatosModuloFacturacion
-import com.soportereal.invefacon.interfaces.modulos.facturacion.imprimirFactura
 import com.soportereal.invefacon.interfaces.pantallas_principales.estadoRespuestaApi
 import com.soportereal.invefacon.interfaces.pantallas_principales.gestorEstadoPantallaCarga
 import kotlinx.coroutines.CoroutineScope
@@ -126,7 +126,6 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-
 
 @RequiresApi(Build.VERSION_CODES.S)
 @Composable
@@ -199,6 +198,8 @@ fun IniciarInterfazDetalleFactura(
     var isNotaCredito by remember { mutableStateOf(false) }
     var codMotivoNota by remember { mutableStateOf("") }
     var detalleNota by remember { mutableStateOf("") }
+    var consecutivoNota by remember { mutableStateOf("") }
+    var isReimpresion by remember { mutableStateOf(true) }
 
     if (valorImpresionActiva == "1") {
         gestorImpresora.PedirPermisos(context)
@@ -222,6 +223,36 @@ fun IniciarInterfazDetalleFactura(
             listaFormaPago.add(formaPagoTemp)
         }
         if (listaFormaPago.isEmpty()) listaFormaPago.add(ParClaveValor(clave = "0", valor = "0-No definido"))
+    }
+
+    suspend fun obtenerDatosFactura(consecutivo : String, tipo: String){
+        if (valorImpresionActiva == "0") return
+        isImprimiendo = true
+        iniciarPantallaEstadoImpresion = true
+        delay(1000)
+        if (!gestorImpresora.validarConexion(context)){
+            exitoImpresion = false
+            isImprimiendo = false
+            imprimir = false
+            obtenerDatosFacturaEmitida = false
+            return
+        }
+        val result = objectoProcesadorDatosApiFacturacion.obtenerFactura(consecutivo)
+        consecutivoNota = ""
+
+        if (result == null) return
+
+        if (validarExitoRestpuestaServidor(result)) {
+            datosFacturaEmitida = deserializarFacturaHecha(result)
+            listaImpresion.add(ParClaveValor("0", tipo))
+            imprimir = true
+        }else{
+            mostrarMensajeError(result.getString("message"))
+            iniciarPantallaEstadoImpresion = true
+            exitoImpresion = false
+            isImprimiendo = false
+            imprimir = false
+        }
     }
 
     LaunchedEffect(Unit) {
@@ -329,36 +360,6 @@ fun IniciarInterfazDetalleFactura(
 
     }
 
-    LaunchedEffect (obtenerDatosFacturaEmitida) {
-        if (!obtenerDatosFacturaEmitida) return@LaunchedEffect
-        isImprimiendo = true
-        iniciarPantallaEstadoImpresion = true
-        delay(1000)
-        if (!gestorImpresora.validarConexion(context)){
-            exitoImpresion = false
-            isImprimiendo = false
-            imprimir = false
-            obtenerDatosFacturaEmitida = false
-            return@LaunchedEffect
-        }
-        val result = objectoProcesadorDatosApiFacturacion.obtenerFactura(numeroFactura)
-
-        if (result == null) return@LaunchedEffect
-
-        if (validarExitoRestpuestaServidor(result)) {
-            datosFacturaEmitida = deserializarFacturaHecha(result)
-            imprimir = true
-        }else{
-            mostrarMensajeError(result.getString("message"))
-            iniciarPantallaEstadoImpresion = true
-            exitoImpresion = false
-            isImprimiendo = false
-            imprimir = false
-
-        }
-        obtenerDatosFacturaEmitida = false
-    }
-
     LaunchedEffect (imprimir) {
         if (!imprimir) return@LaunchedEffect
         isImprimiendo = true
@@ -380,8 +381,14 @@ fun IniciarInterfazDetalleFactura(
                 return@LaunchedEffect
             }
         }
-        listaImpresion.add(ParClaveValor("0", "3"))
-        exitoImpresion = imprimirFactura(datosFacturaEmitida, context, nombreEmpresa, listaImpresion.first(),"#$codUsuario $nombreUsuario")
+        exitoImpresion = imprimirFactura(
+            factura = datosFacturaEmitida,
+            context = context,
+            nombreEmpresa = nombreEmpresa,
+            tipoDoc = listaImpresion.first().valor,
+            numeroEnCola = listaImpresion.first().clave,
+            usuario = "#$codUsuario $nombreUsuario"
+        )
         delay(3500)
         isImprimiendo = false
         if (!exitoImpresion){
@@ -544,17 +551,25 @@ fun IniciarInterfazDetalleFactura(
                     Column {
                         Row{
                             TTextTitCuer("Cantidad:", articulo.ArticuloCantidad.toString(), fontSize = obtenerEstiloBodySmall(), saltoLinea = true, textAlign = TextAlign.Center, isCargando = isCargando)
-                            Spacer(modifier = Modifier.weight(1f).padding(vertical = objetoAdaptardor.ajustarAncho(2)))
+                            Spacer(modifier = Modifier
+                                .weight(1f)
+                                .padding(vertical = objetoAdaptardor.ajustarAncho(2)))
                             TTextTitCuer("P/U:", separacionDeMiles(articulo.ArticuloVenta), fontSize = obtenerEstiloBodySmall(), saltoLinea = true, textAlign = TextAlign.Center, isCargando = isCargando)
-                            Spacer(modifier = Modifier.weight(1f).padding(vertical = objetoAdaptardor.ajustarAncho(2)))
+                            Spacer(modifier = Modifier
+                                .weight(1f)
+                                .padding(vertical = objetoAdaptardor.ajustarAncho(2)))
                             TTextTitCuer("SubTotal:", separacionDeMiles(articulo.ArticuloVenta*articulo.ArticuloCantidad), fontSize = obtenerEstiloBodySmall(), saltoLinea = true, textAlign = TextAlign.Center, isCargando = isCargando)
                         }
                         HorizontalDivider(thickness = 1.dp, color = Color.LightGray)
                         Row {
                             TTextTitCuer("Precio:", articulo.ArticuloTipoPrecio, fontSize = obtenerEstiloBodySmall(), saltoLinea = true, textAlign = TextAlign.Center, isCargando = isCargando)
-                            Spacer(modifier = Modifier.weight(1f).padding(vertical = objetoAdaptardor.ajustarAncho(2)))
+                            Spacer(modifier = Modifier
+                                .weight(1f)
+                                .padding(vertical = objetoAdaptardor.ajustarAncho(2)))
                             TTextTitCuer("Descuento(${articulo.ArticuloDescuentoPorcentage}%):", separacionDeMiles(articulo.ArticuloDescuentoMonto), fontSize = obtenerEstiloBodySmall(), saltoLinea = true, textAlign = TextAlign.Center, isCargando = isCargando)
-                            Spacer(modifier = Modifier.weight(1f).padding(vertical = objetoAdaptardor.ajustarAncho(2)))
+                            Spacer(modifier = Modifier
+                                .weight(1f)
+                                .padding(vertical = objetoAdaptardor.ajustarAncho(2)))
                             TTextTitCuer("Gravado:", separacionDeMiles(articulo.ArticuloVentaGravado), fontSize = obtenerEstiloBodySmall(), saltoLinea = true, textAlign = TextAlign.Center, isCargando = isCargando)
                         }
                         HorizontalDivider(thickness = 1.dp, color = Color.LightGray)
@@ -564,7 +579,10 @@ fun IniciarInterfazDetalleFactura(
                     modifier = Modifier
                         .fillMaxWidth()
                         .animateContentSize(
-                            animationSpec = tween(durationMillis = 500, easing = FastOutSlowInEasing)
+                            animationSpec = tween(
+                                durationMillis = 500,
+                                easing = FastOutSlowInEasing
+                            )
                         ),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -618,7 +636,6 @@ fun IniciarInterfazDetalleFactura(
         }
         HorizontalDivider(thickness = 5.dp, color = Color.LightGray)
     }
-
 
     Box(
         modifier = Modifier
@@ -699,7 +716,11 @@ fun IniciarInterfazDetalleFactura(
                     Spacer(modifier = Modifier.weight(1f))
                     IconButton(
                         onClick = {
-                            obtenerDatosFacturaEmitida = true
+                            if (detallesDocumento.estado != "2") return@IconButton mostrarMensajeError("EL DOCUMENTO NO SE ENCUENTRA PROCESADO.")
+                            coroutineScope.launch {
+                                if (valorImpresionActiva == "0") return@launch mostrarMensajeError("La impresión esta desactivada.")
+                                obtenerDatosFactura(numeroFactura, "3")
+                            }
                         },
                         modifier = Modifier.padding(0.dp)
                     ) {
@@ -739,7 +760,9 @@ fun IniciarInterfazDetalleFactura(
                                     return@BButton mostrarMensajeError("Esta opción está en desarrollo...")
                                 },
                                 objetoAdaptardor = objetoAdaptardor,
-                                modifier = Modifier.weight(1f).padding(horizontal = objetoAdaptardor.ajustarAncho(8)),
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .padding(horizontal = objetoAdaptardor.ajustarAncho(8)),
                                 textSize = obtenerEstiloBodyBig()
                             )
                             BButton(
@@ -748,7 +771,9 @@ fun IniciarInterfazDetalleFactura(
                                     iniciarMenuOpciones = true
                                 },
                                 objetoAdaptardor = objetoAdaptardor,
-                                modifier = Modifier.weight(1f).padding(horizontal = objetoAdaptardor.ajustarAncho(8)),
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .padding(horizontal = objetoAdaptardor.ajustarAncho(8)),
                                 textSize = obtenerEstiloBodyBig()
                             )
                             BButton(
@@ -757,7 +782,9 @@ fun IniciarInterfazDetalleFactura(
                                     return@BButton mostrarMensajeError("Esta opción está en desarrollo...")
                                 },
                                 objetoAdaptardor = objetoAdaptardor,
-                                modifier = Modifier.weight(1f).padding(horizontal = objetoAdaptardor.ajustarAncho(8)),
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .padding(horizontal = objetoAdaptardor.ajustarAncho(8)),
                                 textSize = obtenerEstiloBodyBig()
                             )
                         }
@@ -1280,28 +1307,6 @@ fun IniciarInterfazDetalleFactura(
                                         modifier = Modifier.fillMaxWidth()
                                     )
                                 }
-                                AnimatedVisibility(
-                                    visible = exitoImpresion && listaImpresion.isNotEmpty(),
-                                    enter = fadeIn(animationSpec = tween(500)) + slideInVertically(initialOffsetY = { it }),
-                                    exit = fadeOut(animationSpec = tween(500)) + slideOutVertically(targetOffsetY = { it })
-                                ) {
-                                    Row(
-                                        horizontalArrangement = Arrangement.spacedBy(
-                                            objetoAdaptardor.ajustarAncho(8)
-                                        )
-                                    ) {
-                                        BButton(
-                                            text = "Imprimir Copia ${listaImpresion.first().clave}",
-                                            onClick = {
-                                                imprimir = true
-                                            },
-                                            textSize = obtenerEstiloBodyBig(),
-                                            objetoAdaptardor = objetoAdaptardor,
-                                            modifier = Modifier.weight(1f),
-                                            backgroundColor = Color(0xFFF44336)
-                                        )
-                                    }
-                                }
                             }
                         }
 
@@ -1328,7 +1333,10 @@ fun IniciarInterfazDetalleFactura(
                                 BButton(
                                     text = "Reintentar",
                                     onClick = {
-                                        obtenerDatosFacturaEmitida = true
+                                        coroutineScope.launch {
+                                            if (valorImpresionActiva == "0") return@launch mostrarMensajeError("La impresión esta desactivada.")
+                                            obtenerDatosFactura(numeroFactura, if (isReimpresion)"3" else if (isNotaCredito) "5" else "6")
+                                        }
                                     },
                                     textSize = obtenerEstiloBodyBig(),
                                     objetoAdaptardor = objetoAdaptardor,
@@ -1454,8 +1462,8 @@ fun IniciarInterfazDetalleFactura(
                         listaMotivosNotas = listaMotivosTemp
                         if (listaMotivosTemp.isNotEmpty()) codMotivoNota = listaMotivosTemp.first().clave
                     },
-                    onErrorOrFin = {
-                        socketJob?.cancel()
+                    onExitoOrFin = {
+                        if (!it) socketJob?.cancel()
                     }
                 )
             }
@@ -1636,11 +1644,29 @@ fun IniciarInterfazDetalleFactura(
                     numeroDocumento = detallesDocumento.numero,
                     codMotivo = codMotivoNota,
                     detalle = detalleNota,
-                    onErrorOrFin = {
+                    onExitoOrFin = {
+                        println(it)
+                        if (!it) {
+                            socketJob?.cancel()
+                            return@aplicarNotaCredDebiCompleta
+                        }
+                        coroutineScope.launch {
+                            if (consecutivoNota.isEmpty()) {
+                                mostrarMensajeError("EL CONSECUTIVO DE LA NOTA ESTA VACIO, ERROR EN IMPRESION.")
+                            }else{
+                                isReimpresion = false
+                                obtenerDatosFactura(consecutivo = consecutivoNota, tipo = if(isNotaCredito) "5" else "6")
+                            }
+                        }
                         socketJob?.cancel()
+                        return@aplicarNotaCredDebiCompleta
                     },
                     isNotaCredito = isNotaCredito,
-                    codUsuario = codUsuario
+                    codUsuario = codUsuario,
+                    consecutivo = {
+                        println(it)
+                        consecutivoNota = it
+                    }
                 )
             }
         },

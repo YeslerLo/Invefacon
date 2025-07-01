@@ -142,8 +142,10 @@ fun IniciarInterfazConfEstacion (
                     }
                     listaImpresoras = listaImpresorasTemp
                 },
-                onErrorOrFin = {
-                    socketJob?.cancel()
+                onExitoOrFin = {
+                    if (!it) {
+                        socketJob?.cancel()
+                    }
                 }
             )
         }

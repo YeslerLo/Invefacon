@@ -101,6 +101,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -147,6 +148,7 @@ import com.soportereal.invefacon.funciones_de_interfaces.actualizarParametro
 import com.soportereal.invefacon.funciones_de_interfaces.deserializarFacturaHecha
 import com.soportereal.invefacon.funciones_de_interfaces.gestorImpresora
 import com.soportereal.invefacon.funciones_de_interfaces.guardarParametroSiNoExiste
+import com.soportereal.invefacon.funciones_de_interfaces.imprimirFactura
 import com.soportereal.invefacon.funciones_de_interfaces.listaParametros
 import com.soportereal.invefacon.funciones_de_interfaces.listaPermisos
 import com.soportereal.invefacon.funciones_de_interfaces.mostrarMensajeError
@@ -194,7 +196,6 @@ import java.math.BigDecimal
 import java.math.RoundingMode
 import java.util.concurrent.atomic.AtomicInteger
 
-@RequiresApi(Build.VERSION_CODES.S)
 @SuppressLint("ConfigurationScreenWidthHeight")
 @Composable
 fun IniciarInterfazFacturacion(
@@ -215,10 +216,9 @@ fun IniciarInterfazFacturacion(
     val objetoAdaptardor= FuncionesParaAdaptarContenido(dpAltoPantalla, dpAnchoPantalla, dpFontPantalla)
     val gestorProcGenSocket = ProcGenSocket()
     var expandedClientes by remember { mutableStateOf(false) }
-//    var expandedArticulos by remember { mutableStateOf(false) }
     var expandedTotales by remember { mutableStateOf(false) }
     val listaArticulosSeleccionados = remember { mutableStateListOf<ArticuloFacturacion>() }
-    var listaPagos = remember { mutableStateListOf<Pago>() }
+    val listaPagos = remember { mutableStateListOf<Pago>() }
     val listaMediosPago = remember { mutableStateListOf<ParClaveValor>() }
     val listaImpresion = remember { mutableStateListOf<ParClaveValor>() }
     var listaArticulosProforma by remember {  mutableStateOf<List<ArticuloFacturacion>>(emptyList()) }
@@ -315,13 +315,12 @@ fun IniciarInterfazFacturacion(
     var nuevoPorcentajeDescuento by remember { mutableStateOf("0") }
     var iniciarMenuConfExoneracion by remember { mutableStateOf(false) }
     var iniciarMenuConfPagoCredito by remember { mutableStateOf(false) }
-    var iniciarMenuConfPagoCompleto by remember { mutableStateOf(false) }
     var iniciarMenuConfComoProforma by remember { mutableStateOf(false) }
     var iniciarMenuActuNombreProforma by remember { mutableStateOf(false) }
     var iniciarMenuConfEliminarArt by remember { mutableStateOf(false) }
     var exonerar by remember { mutableStateOf(false) }
     var iniciarMenuConfQuitarExoneracion by remember { mutableStateOf(false) }
-    var iniciarMenuSeleccionarMedioPago by remember { mutableStateOf(false) }
+    var iniciarMenuFacturarContado by remember { mutableStateOf(false) }
     var iniciarMenuProcesar by remember { mutableStateOf(false) }
     var quitarExoneracion by remember { mutableStateOf(false) }
     var guardarProforma by remember { mutableStateOf(false) }
@@ -354,16 +353,13 @@ fun IniciarInterfazFacturacion(
     var agregarFormapago by remember { mutableStateOf(false) }
     var socketJob by remember { mutableStateOf<Job?>(null) }
     val cortinaSocket= CoroutineScope(Dispatchers.IO)
-    var tipoPago by remember { mutableStateOf("") }
     var tasaCambioDolar by remember { mutableDoubleStateOf(0.00) }
     var tipoFormaProcesar by remember { mutableStateOf("factura") }
     var correoProformaTemp by remember { mutableStateOf("") }
     var iniciarPantallaEstadoImpresion by remember { mutableStateOf(false) }
     var isImprimiendo by remember { mutableStateOf(false) }
     var exitoImpresion by remember { mutableStateOf(true) }
-    var imprimir by remember { mutableStateOf(false) }
     var datosFacturaEmitida by remember { mutableStateOf(Factura()) }
-    var obtenerDatosFacturaEmitida by remember { mutableStateOf(false) }
     var consecutivoFactura by remember { mutableStateOf("") }
     val valorImpresionActiva by remember { mutableStateOf( obtenerParametroLocal(context, "isImpresionActiva$codUsuario$nombreEmpresa")) }
     var iniciarMenuOpcionesCliente by remember { mutableStateOf(false) }
@@ -402,6 +398,7 @@ fun IniciarInterfazFacturacion(
     )
 
     fun agregarColaImpresion(isContado: Boolean = true, isReimpresion: Boolean = false, isProforma: Boolean = false) {
+        listaImpresion.clear()
         val parametroEmpresa = if (isContado) "99" else "98"
         val cantidadCopias = if (isReimpresion || isProforma) 0 else obtenerValorParametroEmpresa(parametroEmpresa, "0").toInt()
 
@@ -412,33 +409,125 @@ fun IniciarInterfazFacturacion(
                 index == 0 -> "1"
                 else -> "2"
             }
-            ParClaveValor(index.toString(), valor)
+            ParClaveValor(clave = index.toString(), valor = valor) // CLAVE = POSION EN COLA   VALOR = TIPO DE DOCUMENTO
         }
 
         listaImpresion.addAll(items)
     }
 
-    fun pagarCompleto(){
-        tipoPago = "contado"
-        listaPagos.forEach {
-            it.funcion = "eliminar"
+    suspend fun imprimir() {
+        val isConectado = gestorImpresora.validarConexion(context)
+        delay(1000)
+        if (!isConectado){
+            var isReconectada = false
+            for (i in 1..2){
+                if (isReconectada) continue
+                gestorImpresora.reconectar(context)
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(context, "Reconectando impresora...", Toast.LENGTH_SHORT).show()
+                }
+                delay(12000)
+                isReconectada = gestorImpresora.validarConexion(context)
+                delay(1000)
+            }
+            if (!isReconectada){
+                exitoImpresion = false
+                isImprimiendo = false
+                estadoProforma = "2"
+                return
+            }
         }
-        if (listaMediosPago.isEmpty()) return mostrarMensajeError("No existen Medios de Pago.")
-        agregarColaImpresion()
-        listaPagos.add(Pago(
-            Documento = numeroProforma,
-            CodigoMoneda = codMonedaProforma,
-            Monto = total.toString(),
-            CuentaContable = listaMediosPago.first().clave
-        ))
-        isSoloAgregarFormaPago = false
-        agregarFormapago = true
+        exitoImpresion = imprimirFactura(
+            factura = datosFacturaEmitida,
+            context = context,
+            nombreEmpresa = nombreEmpresa,
+            tipoDoc = listaImpresion.first().valor,
+            numeroEnCola = listaImpresion.first().clave,
+            usuario = "#$codUsuario $nombreUsuario"
+        )
+        delay(3500)
+        isImprimiendo = false
+        if (!exitoImpresion){
+            estadoProforma = "2"
+            return
+        }
+        listaImpresion.removeAt(0)
+        if (listaImpresion.isNotEmpty()) return
+        delay(2000)
+        iniciarPantallaEstadoImpresion= false
+        numeroProforma = ""
+        actualizarDatosProforma = true
     }
 
-    fun pagarACredito(){
-        tipoPago = "credito"
-        agregarColaImpresion(false)
-        guardarProforma = true
+    suspend fun obtenerDatosFactura() {
+        if(valorImpresionActiva == "0" || listaImpresion.isEmpty()){
+            if (tipoFormaProcesar == "proforma") mostrarMensajeExito("La Proforma se ha emitido exitosamente con el consecutivo: $consecutivoFactura")
+            numeroProforma = ""
+            actualizarDatosProforma = true
+            return
+        }
+        isImprimiendo = true
+        iniciarPantallaEstadoImpresion = true
+        val result = objectoProcesadorDatosApi.obtenerFactura(consecutivoFactura)
+        if (result == null) return
+        if (validarExitoRestpuestaServidor(result)) {
+            datosFacturaEmitida = deserializarFacturaHecha(result)
+            imprimir()
+        }else{
+            mostrarMensajeError(result.getString("message"))
+            iniciarPantallaEstadoImpresion = true
+            exitoImpresion = false
+            isImprimiendo = false
+        }
+    }
+
+    suspend fun procesarProforma(listaPagos: SnapshotStateList<Pago>, isContado: Boolean) {
+        val isTarjeta = listaPagos.filter { it.Monto.ifEmpty { "0.00" }.toDouble() > 0.00 }.size > 1
+        socketJob = cortinaSocket.launch {
+            objectoProcesadorDatosApi.procesarProforma(
+                context = context,
+                codUsuario = codUsuario,
+                numero = numeroProforma,
+                codFormaPago = if(isContado) "01" else "02",
+                codMedioPago = if(isContado) if(isTarjeta) "02" else "01" else "00",
+                codCliente = clienteId,
+                nombreFactura = nombreFactura,
+                montoMedioPago1 = listaPagos[0].Monto,
+                cuentaMedioPago1 = listaPagos[0].CuentaContable,
+                monedaMedioPago1 = listaPagos[0].CodigoMoneda,
+                montoMedioPago2 = listaPagos[1].Monto,
+                cuentaMedioPago2 = listaPagos[1].CuentaContable,
+                monedaMedioPago2 = listaPagos[1].CodigoMoneda,
+                onExitoOrFin = {
+                    if (!it){
+                        socketJob?.cancel()
+                        return@procesarProforma
+                    }
+                    agregarColaImpresion(isContado = isContado)
+                    obtenerDatosFactura()
+                    socketJob?.cancel()
+                    return@procesarProforma
+                },
+                consecutivo = {
+                    consecutivoFactura = it
+                }
+            )
+        }
+    }
+
+    suspend fun pagarACredito() {
+        val listaPagosTemp = mutableStateListOf<Pago>()
+        listaPagosTemp.add(Pago(
+            CodigoMoneda = codMonedaProforma,
+            Monto = total.toString() ,
+            CuentaContable = "110301"
+        ))
+        listaPagosTemp.add(Pago(
+            CodigoMoneda = codMonedaProforma,
+            Monto = "0",
+            CuentaContable = ""
+        ))
+        procesarProforma(listaPagos = listaPagosTemp, isContado = false)
     }
 
     fun deserializarArticulo(datos : String) : ArticuloFacturacion {
@@ -495,7 +584,7 @@ fun IniciarInterfazFacturacion(
         return articulo
     }
 
-    suspend fun agregaEditaArticulo(articulo :  ArticuloLineaProforma){
+    suspend fun agregaEditaArticulo(articulo :  ArticuloLineaProforma)  {
         gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(true)
         val result = objectoProcesadorDatosApi.agregarActualizarLinea(articulo)
         if (result != null){
@@ -1078,9 +1167,9 @@ fun IniciarInterfazFacturacion(
         if (!guardarProforma) return@LaunchedEffect
         gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(true)
         try {
-            var result = objectoProcesadorDatosApi.guardarProforma(
+            val result = objectoProcesadorDatosApi.guardarProforma(
                 numero = numeroProforma,
-                tipoPago = tipoPago,
+                tipoPago = "",
                 tipo = tipoFormaProcesar,
                 correo = correoProformaTemp
             )
@@ -1095,115 +1184,12 @@ fun IniciarInterfazFacturacion(
 
             val data = result.getJSONObject("data")
             consecutivoFactura = data.getString("consecutivo")
-
-            if(valorImpresionActiva == "0" || listaImpresion.isEmpty()){
-                if (tipoFormaProcesar == "proforma") mostrarMensajeExito("La Proforma se ha emitido exitosamente con el consecutivo: $consecutivoFactura") else mostrarMensajeExito("La factura se ha emitido exitosamente!")
-                numeroProforma = ""
-                actualizarDatosProforma = true
-                return@LaunchedEffect
-            }
-            datosFacturaEmitida = Factura()
-            result = objectoProcesadorDatosApi.obtenerFactura(consecutivoFactura)
-
-            if (result == null) return@LaunchedEffect
-
-            if (validarExitoRestpuestaServidor(result)) {
-                datosFacturaEmitida = deserializarFacturaHecha(result)
-                imprimir = true
-            }else{
-                mostrarMensajeError(result.getString("message"))
-                iniciarPantallaEstadoImpresion = true
-                exitoImpresion = false
-                isImprimiendo = false
-                imprimir = false
-            }
+            obtenerDatosFactura()
         } finally {
             gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
             correoProformaTemp = ""
             guardarProforma = false
         }
-    }
-
-    LaunchedEffect (imprimir) {
-        if (!imprimir) return@LaunchedEffect
-        isImprimiendo = true
-        iniciarPantallaEstadoImpresion = true
-        val isConectado = gestorImpresora.validarConexion(context)
-        delay(1000)
-        if (!isConectado){
-            gestorImpresora.reconectar(context)
-            withContext(Dispatchers.Main) {
-                Toast.makeText(context, "Reconectando impresora...", Toast.LENGTH_SHORT).show()
-            }
-            delay(12000)
-            val isReconectada = gestorImpresora.validarConexion(context)
-            delay(1000)
-            if (!isReconectada){
-                exitoImpresion = false
-                isImprimiendo = false
-                estadoProforma = "2"
-                imprimir = false
-                return@LaunchedEffect
-            }
-        }
-        exitoImpresion = imprimirFactura(datosFacturaEmitida, context, nombreEmpresa, listaImpresion.first(), "#$codUsuario $nombreUsuario")
-        delay(3500)
-        isImprimiendo = false
-        if (!exitoImpresion){
-            estadoProforma = "2"
-            imprimir = false
-            return@LaunchedEffect
-        }
-        listaImpresion.removeAt(0)
-        if (listaImpresion.isNotEmpty()) {
-            imprimir = false
-            return@LaunchedEffect
-        }
-        delay(2000)
-        iniciarPantallaEstadoImpresion= false
-        numeroProforma = ""
-        actualizarDatosProforma = true
-        imprimir = false
-    }
-
-    LaunchedEffect (obtenerDatosFacturaEmitida) {
-        if (!obtenerDatosFacturaEmitida) return@LaunchedEffect
-        isImprimiendo = true
-        iniciarPantallaEstadoImpresion = true
-        val isConetado = gestorImpresora.validarConexion(context)
-        delay(1000)
-        if (!isConetado){
-            gestorImpresora.reconectar(context)
-            withContext(Dispatchers.Main) {
-                Toast.makeText(context, "Reconectando impresora...", Toast.LENGTH_SHORT).show()
-            }
-            delay(12000)
-            val isReconectada = gestorImpresora.validarConexion(context)
-            if (!isReconectada){
-                exitoImpresion = false
-                isImprimiendo = false
-                imprimir = false
-                obtenerDatosFacturaEmitida = false
-                return@LaunchedEffect
-            }
-
-        }
-        val result = objectoProcesadorDatosApi.obtenerFactura(consecutivoFactura)
-
-        if (result == null) return@LaunchedEffect
-
-        if (validarExitoRestpuestaServidor(result)) {
-            datosFacturaEmitida = deserializarFacturaHecha(result)
-            imprimir = true
-        }else{
-            mostrarMensajeError(result.getString("message"))
-            iniciarPantallaEstadoImpresion = true
-            exitoImpresion = false
-            isImprimiendo = false
-            imprimir = false
-
-        }
-        obtenerDatosFacturaEmitida = false
     }
 
     LaunchedEffect (agregarNuevoCliente) {
@@ -1265,7 +1251,7 @@ fun IniciarInterfazFacturacion(
     }
 
     LaunchedEffect (guardarDetalleFactura) {
-        if (!guardarDetalleFactura) return@LaunchedEffect
+        if (estadoProforma == "2" || !guardarDetalleFactura) return@LaunchedEffect
         gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(true)
         val result = objectoProcesadorDatosApi.guardarDestalleFactura(detalleProforma, numeroProforma)
         if (result == null) return@LaunchedEffect
@@ -1275,7 +1261,7 @@ fun IniciarInterfazFacturacion(
     }
 
     LaunchedEffect (guardarOrdenCompra) {
-        if (!guardarOrdenCompra) return@LaunchedEffect
+        if (estadoProforma == "2" || !guardarOrdenCompra) return@LaunchedEffect
         gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(true)
         val result = objectoProcesadorDatosApi.guardarOrdenCompra(ordenCompra, numeroProforma)
         if (result == null) return@LaunchedEffect
@@ -1315,7 +1301,7 @@ fun IniciarInterfazFacturacion(
             iniciarMenuCambiarPrecio ||
             iniciarMenuAplicarDescuento ||
             iniciarMenuProcesar ||
-            iniciarMenuSeleccionarMedioPago ||
+            iniciarMenuFacturarContado ||
             iniciarMenuConfComoProforma ||
             iniciarMenuAgregaEditaCliente ||
             iniciarMenuOpcionesCliente
@@ -1323,7 +1309,7 @@ fun IniciarInterfazFacturacion(
             iniciarMenuOpcionesCliente = false
             iniciarMenuAgregaEditaCliente = false
             iniciarMenuConfComoProforma= false
-            iniciarMenuSeleccionarMedioPago = false
+            iniciarMenuFacturarContado = false
             iniciarMenuProcesar = false
             iniciarMenuCambiarMoneda = false
             iniciarMenuCambiarPrecio = false
@@ -1660,7 +1646,6 @@ fun IniciarInterfazFacturacion(
                     )
                 }
             }
-
         }
     }
 
@@ -4297,7 +4282,9 @@ fun IniciarInterfazFacturacion(
                                         if (estadoProforma =="2"){
                                             agregarColaImpresion(isReimpresion = true)
                                             consecutivoFactura = numeroProforma
-                                            obtenerDatosFacturaEmitida = true
+                                            coroutineScope.launch {
+                                                obtenerDatosFactura()
+                                            }
                                             return@BButton
                                         }
                                         if (listaArticulosProforma.isEmpty()) return@BButton mostrarMensajeError("Por favor, agregue al menos un Artículo para continuar.")
@@ -4578,7 +4565,7 @@ fun IniciarInterfazFacturacion(
                 agregaEditaArticulo(it)
             }
         },
-        bodega = when{
+        bodega = when {
             articuloActual.articuloBodegaCodigo.isEmpty()-> {
                 articuloActual.listaBodegas.find { it.clave == obtenerParametroLocal(context, "bodega$nombreEmpresa") } ?: articuloActual.listaBodegas.first()
             } // SI EL ARTICULO NO TIENE CODIGO DE BODEGA SE TOMA EL CODIGO DE BODEGA QUE SE CONFIGURON EN LA ESTACION EN CASO DE QUE NO EXISTA SE TOMA LA PRIMER BODEGA
@@ -5643,29 +5630,18 @@ fun IniciarInterfazFacturacion(
                             modifier = Modifier.fillMaxWidth()
                         )
                         BButton(
-                            text = "Completo",
+                            text = "Facturar de Contado",
                             onClick = {
                                 if (estadoProforma != "2" && !tienePermiso("078")) return@BButton mostrarMensajeError("No posee permisos para emitir facturas.")
                                 iniciarMenuProcesar = false
-                                iniciarMenuConfPagoCompleto = true
+                                iniciarMenuFacturarContado = true
                             },
                             textSize = obtenerEstiloBodyBig(),
                             modifier = Modifier.fillMaxWidth(),
                             objetoAdaptardor = objetoAdaptardor
                         )
                         BButton(
-                            text = "Contado",
-                            onClick = {
-                                if (estadoProforma != "2" && !tienePermiso("078")) return@BButton mostrarMensajeError("No posee permisos para emitir facturas.")
-                                iniciarMenuProcesar = false
-                                iniciarMenuSeleccionarMedioPago = true
-                            },
-                            textSize = obtenerEstiloBodyBig(),
-                            modifier = Modifier.fillMaxWidth(),
-                            objetoAdaptardor = objetoAdaptardor
-                        )
-                        BButton(
-                            text = "Crédito",
+                            text = "Facturar de Crédito",
                             onClick = {
                                 if (codMonedaProforma != "CRC") return@BButton mostrarMensajeError("Actualmente, solo es posible procesar a crédito en moneda CRC.")
                                 if (estadoProforma != "2" && !tienePermiso("078")) return@BButton mostrarMensajeError("No posee permisos para emitir facturas.")
@@ -5704,12 +5680,12 @@ fun IniciarInterfazFacturacion(
 
     }
 
-    if (iniciarMenuSeleccionarMedioPago) {
+    if (iniciarMenuFacturarContado) {
         var isMenuVisible by remember { mutableStateOf(false) }
         var isModificado by remember { mutableStateOf(false) }
         var vuelto by remember { mutableDoubleStateOf(0.00) }
         var totalPagado by remember { mutableDoubleStateOf(0.00) }
-        val listaPagosTemp = listaPagos
+        val listaPagosTemp = remember { mutableStateListOf<Pago>() }
 
         fun calcularVuelto(){
             try{
@@ -5729,7 +5705,38 @@ fun IniciarInterfazFacturacion(
             }
         }
 
+        fun pagarCompleto(isEfectivo : Boolean){
+            var tipo = if (isEfectivo) 0 else 1
+            var cuenta = if (isEfectivo) "110101" else "110104"
+            listaPagosTemp[tipo].Monto = total.toString()
+            listaPagosTemp[tipo].CuentaContable = cuenta
+            tipo = if (!isEfectivo) 0 else 1
+            cuenta = if (!isEfectivo) "110101" else "110104"
+            listaPagosTemp[tipo].Monto = "0.00"
+            listaPagosTemp[tipo].CuentaContable = cuenta
+            agregarColaImpresion()
+            iniciarMenuFacturarContado = false
+            coroutineScope.launch {
+                procesarProforma(listaPagos = listaPagosTemp, isContado = true)
+            }
+
+        }
+
         LaunchedEffect(Unit) {
+            listaPagosTemp.add(Pago(
+                Documento = numeroProforma,
+                CodigoMoneda = codMonedaProforma,
+                Monto = "0" ,
+                CuentaContable = listaMediosPago.find { it.clave == "110101" }?.clave?:"null",
+                codMedioPago = "01"
+            ))
+            listaPagosTemp.add(Pago(
+                Documento = numeroProforma,
+                CodigoMoneda = codMonedaProforma,
+                Monto = "0",
+                CuentaContable = listaMediosPago.find { it.clave == "110104" }?.clave?:"null",
+                codMedioPago = "02"
+            ))
             calcularVuelto()
             delay(100)
             isMenuVisible = true
@@ -5763,7 +5770,7 @@ fun IniciarInterfazFacturacion(
                         verticalArrangement = Arrangement.spacedBy(objetoAdaptardor.ajustarAltura(8))
                     ) {
                         TText(
-                            text = "Medios de Pago",
+                            text = "Pago de Factura",
                             fontSize = obtenerEstiloHeadSmall(),
                             textAlign = TextAlign.Center,
                             modifier = Modifier.fillMaxWidth()
@@ -5791,17 +5798,11 @@ fun IniciarInterfazFacturacion(
                                 textAlign = TextAlign.Center,
                                 modifier = Modifier.weight(1.2f)
                             )
-
-                            TText(
-                                text = "",
-                                textAlign = TextAlign.Center,
-                                modifier = Modifier.weight(0.25f)
-                            )
                         }
 
                         LazyColumn {
                             item {
-                                listaPagosTemp.filter { it.funcion != "eliminar" }.forEachIndexed { index, pago ->
+                                listaPagosTemp.forEachIndexed { index, pago ->
                                     var isArticuloVisible by remember { mutableStateOf(false) }
 
                                     LaunchedEffect(isArticuloVisible) {
@@ -5880,52 +5881,31 @@ fun IniciarInterfazFacturacion(
                                                         calcularVuelto()
                                                         isModificado = true
                                                     },
+                                                    mostrarTrailingIcon = false,
                                                     mostrarLeadingIcon = false,
                                                     objetoAdaptardor = objetoAdaptardor,
                                                     utilizarMedidas = false,
                                                     modifier = Modifier
-                                                        .wrapContentHeight()
+                                                        .fillMaxWidth()
                                                         .border(
                                                             1.dp,
                                                             color = Color.Gray,
-                                                            RoundedCornerShape(
-                                                                objetoAdaptardor.ajustarAltura(
-                                                                    8
-                                                                )
-                                                            )
+                                                            RoundedCornerShape(objetoAdaptardor.ajustarAltura(8))
                                                         ),
                                                     backgroundColor = Color.White,
                                                     textColor = Color.Black,
                                                     fontSize = obtenerEstiloBodyBig(),
-                                                    textAlign = TextAlign.End,
-                                                    placeholder = "0.00",
+                                                    textAlign = TextAlign.Center,
+                                                    placeholder = "",
                                                     placeholderColor = Color.Black,
-                                                    soloPermitirValoresNumericos = true, 
+                                                    soloPermitirValoresNumericos = true,
                                                     darFormatoMiles = true,
-                                                    cantidadLineas = 1
-                                                )
-                                            }
-
-                                            IconButton(
-                                                onClick = {
-                                                    if(pago.Id != "0"){
-                                                        pago.funcion = "eliminar"
-                                                        isModificado = true
+                                                    cantidadLineas = 1,
+                                                    onFocus = {
+                                                        pago.Monto = ""
+                                                        if ( (total-totalPagado) > 0 ) pago.Monto = (total-totalPagado).toString()
                                                         calcularVuelto()
-                                                        return@IconButton
                                                     }
-                                                    listaPagosTemp.remove(pago)
-                                                    calcularVuelto()
-                                                },
-                                                modifier = Modifier.size(objetoAdaptardor.ajustarAltura(22))
-                                            ) {
-                                                Icon(
-                                                    imageVector = Icons.Filled.Delete,
-                                                    contentDescription = "Eliminar",
-                                                    tint = Color(0xFFEB4242),
-                                                    modifier = Modifier
-                                                        .size(objetoAdaptardor.ajustarAltura(22))
-                                                        .weight(0.25f)
                                                 )
                                             }
                                         }
@@ -5936,25 +5916,26 @@ fun IniciarInterfazFacturacion(
                             }
                         }
 
-                        BButton(
-                            text = "Agregar medio de pago",
-                            onClick = {
-                                listaPagosTemp.add(Pago(
-                                    Documento = numeroProforma,
-                                    CodigoMoneda = codMonedaProforma,
-                                    Monto = if( (total-totalPagado) < 0 ) "0.00" else (total-totalPagado).toString(),
-                                    CuentaContable = listaMediosPago.first().clave
-                                ))
-                                calcularVuelto()
-                            },
-                            objetoAdaptardor = objetoAdaptardor,
-                            textSize = obtenerEstiloBodyBig(),
-                            modifier = Modifier.fillMaxWidth(),
-                            contenteColor = Color(0xFF244BC0),
-                            backgroundColor = Color.White,
-                            mostrarIcono = true,
-                            conSombra = false
-                        )
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(objetoAdaptardor.ajustarAncho(8))
+                        ) {
+                            BButton(
+                                text = "Tarjeta",
+                                onClick = {
+                                    pagarCompleto(isEfectivo = false)
+                                },
+                                objetoAdaptardor = objetoAdaptardor,
+                                modifier = Modifier.weight(1f)
+                            )
+                            BButton(
+                                text = "Efectivo",
+                                onClick = {
+                                    pagarCompleto(isEfectivo = true)
+                                },
+                                objetoAdaptardor = objetoAdaptardor,
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
 
                         Row(
                             horizontalArrangement = Arrangement.spacedBy(objetoAdaptardor.ajustarAncho(8))
@@ -6018,38 +5999,22 @@ fun IniciarInterfazFacturacion(
                             horizontalArrangement = Arrangement.spacedBy(objetoAdaptardor.ajustarAncho(8))
                         ) {
                             BButton(
-                                text = "Facturar",
+                                text = "Aceptar",
                                 onClick = {
-                                    val pagosInvalidos = listaPagosTemp.filter { (it.Monto.isEmpty() || it.Monto.toDouble() == 0.0) && it.Id == "0" }
-                                    listaPagosTemp.removeAll(pagosInvalidos)
-                                    if (listaPagosTemp.size>0){
-                                        tipoPago = "contado"
-                                        listaPagos = listaPagosTemp
-                                        agregarFormapago = true
-                                        isSoloAgregarFormaPago = false
-                                    }else{
-                                        mostrarMensajeError("Por favor, agregue al menos una forma de pago para continuar.")
+                                    if (vuelto < 0) return@BButton mostrarMensajeError("Pago Incompleto...")
+                                    iniciarMenuFacturarContado = false
+                                    coroutineScope.launch {
+                                        procesarProforma(listaPagos = listaPagosTemp, isContado = true)
                                     }
-                                    agregarColaImpresion()
-                                    iniciarMenuSeleccionarMedioPago = false
                                 },
                                 objetoAdaptardor = objetoAdaptardor,
                                 modifier = Modifier.weight(1f),
-                                backgroundColor = Color.Red
+                                backgroundColor = Color(0xFF4CAF50)
                             )
                             BButton(
-                                text = if (listaPagosTemp.size == 0 ) "Salir" else "Guardar",
+                                text = "Salir",
                                 onClick = {
-                                    val pagosInvalidos = listaPagosTemp.filter { (it.Monto.isEmpty() || it.Monto.toDouble() == 0.0) && it.Id == "0" }
-                                    listaPagosTemp.removeAll(pagosInvalidos)
-                                    if (isModificado || listaPagos.any { (it.Monto.isEmpty() || it.Monto.toDouble() == 0.0) && it.Id != "0" } ){
-                                        listaPagos = listaPagosTemp
-                                        isSoloAgregarFormaPago = true
-                                        agregarFormapago = true
-                                    }else{
-                                        mostrarMensajeExito("Las formas de pago se han guardado exitosamente.")
-                                    }
-                                    iniciarMenuSeleccionarMedioPago = false
+                                    iniciarMenuFacturarContado = false
                                 },
                                 objetoAdaptardor = objetoAdaptardor,
                                 modifier = Modifier.weight(1f)
@@ -6363,7 +6328,9 @@ fun IniciarInterfazFacturacion(
                                         BButton(
                                             text = "Imprimir Copia ${listaImpresion.first().clave}",
                                             onClick = {
-                                                imprimir = true
+                                                coroutineScope.launch {
+                                                    imprimir()
+                                                }
                                             },
                                             textSize = obtenerEstiloBodyBig(),
                                             objetoAdaptardor = objetoAdaptardor,
@@ -6400,7 +6367,9 @@ fun IniciarInterfazFacturacion(
                                 BButton(
                                     text = "Reintentar",
                                     onClick = {
-                                        obtenerDatosFacturaEmitida = true
+                                        coroutineScope.launch {
+                                            obtenerDatosFactura()
+                                        }
                                     },
                                     textSize = obtenerEstiloBodyBig(),
                                     objetoAdaptardor = objetoAdaptardor,
@@ -7144,26 +7113,12 @@ fun IniciarInterfazFacturacion(
     )
 
     MenuConfirmacion(
-        txBtAceptar = "Pagar",
-        txBtDenegar = "Cancelar",
-        onAceptar = {
-            pagarCompleto()
-            iniciarMenuConfPagoCompleto = false
-        },
-        onDenegar = {
-            iniciarMenuConfPagoCompleto = false
-            iniciarMenuProcesar = true
-        },
-        mostrarMenu = iniciarMenuConfPagoCompleto,
-        titulo = "Pagar Completo",
-        subTitulo = "¿Desea pagar Completo?"
-    )
-
-    MenuConfirmacion(
         txBtAceptar = "Facturar",
         txBtDenegar = "Cancelar",
         onAceptar = {
-            pagarACredito()
+            coroutineScope.launch {
+                pagarACredito()
+            }
             iniciarMenuConfPagoCredito = false
         },
         onDenegar = {
@@ -7173,6 +7128,24 @@ fun IniciarInterfazFacturacion(
         mostrarMenu = iniciarMenuConfPagoCredito,
         titulo = "Facturar a Crédito",
         subTitulo = "¿Desea Facturar a Crédito?"
+    )
+
+    MenuConfirmacion(
+        txBtAceptar = "Facturar",
+        txBtDenegar = "Cancelar",
+        onAceptar = {
+            coroutineScope.launch {
+                pagarACredito()
+            }
+            iniciarMenuConfPagoCredito = false
+        },
+        onDenegar = {
+            iniciarMenuConfPagoCredito = false
+            iniciarMenuProcesar = true
+        },
+        mostrarMenu = iniciarMenuConfPagoCredito,
+        titulo = "Facturar a Crédito",
+        subTitulo = "¿Desea Facturar de Contado?"
     )
 
     MenuConfirmacion(
@@ -7223,7 +7196,6 @@ fun IniciarInterfazFacturacion(
     )
 }
 
-@RequiresApi(Build.VERSION_CODES.S)
 @Composable
 @Preview
 private fun Preview(){

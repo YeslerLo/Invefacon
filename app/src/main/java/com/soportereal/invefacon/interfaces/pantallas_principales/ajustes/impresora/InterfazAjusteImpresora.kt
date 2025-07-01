@@ -112,6 +112,11 @@ fun IniciarInterfazAjustesImpresora (
     gestorImpresora.PedirPermisos(context)
     val coroutineScope = rememberCoroutineScope()
 
+    LaunchedEffect(Unit) {
+        if (valorImpresionActiva != "1") return@LaunchedEffect Toast.makeText(context, "La impresión está inactiva.", Toast.LENGTH_SHORT).show()
+        gestorImpresora.buscar(context)
+    }
+
 
     ConstraintLayout(
         modifier = Modifier
@@ -423,6 +428,10 @@ fun IniciarInterfazAjustesImpresora (
                                         actualizarParametro(context, "isImpresionActiva$codUsuario$nombreEmpresa", if(valorImpresionActiva == "0") "1" else "0")
                                         valorImpresionActiva = obtenerParametroLocal(context, "isImpresionActiva$codUsuario$nombreEmpresa")
                                         isImpresionActiva = valorImpresionActiva == "1"
+                                        if (!isImpresionActiva){
+                                            gestorImpresora.deconectar(context = context)
+                                            gestorImpresora.listaImpresoras = emptyList()
+                                        }
                                     },colors = SwitchDefaults.colors(
                                         checkedTrackColor = Color(0xFF1D3FA4)
                                     )

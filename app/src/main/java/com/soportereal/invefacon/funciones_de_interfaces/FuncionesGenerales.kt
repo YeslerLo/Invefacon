@@ -2,7 +2,6 @@ package com.soportereal.invefacon.funciones_de_interfaces
 
 import android.Manifest
 import android.annotation.SuppressLint
-import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothManager
 import android.content.Context
 import android.content.Intent
@@ -17,7 +16,6 @@ import android.view.inputmethod.InputMethodManager
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.annotation.RequiresApi
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -350,9 +348,7 @@ class ImpresoraViewModel : ViewModel() {
     var conexion: DeviceConnection? = null
     var nombre : String = "Desconocido"
     var listaImpresoras by mutableStateOf<List<BluetoothConnection>>(emptyList())
-        private set
     var isConectada by mutableStateOf(false)
-    private var bluetoothAdapter: BluetoothAdapter? = null
     private var isPermisosOtorgados by mutableStateOf(false)
 
     // Parámetros predeterminados para la impresora
@@ -361,43 +357,46 @@ class ImpresoraViewModel : ViewModel() {
     private var cantidadCaracPorLinea by mutableIntStateOf(32 )// Número de caracteres por línea
     private val charset = EscPosCharsetEncoding("windows-1252", 16) // Codificación
 
-    @RequiresApi(Build.VERSION_CODES.S)
     @Composable
     fun PedirPermisos(context: Context) {
-        val isPermisosOtorgadosTemp by remember {
-            mutableStateOf(
-                ContextCompat.checkSelfPermission(
-                    context,
-                    Manifest.permission.BLUETOOTH_CONNECT
-                ) == PackageManager.PERMISSION_GRANTED
-            )
-        }
-
-        isPermisosOtorgados = isPermisosOtorgadosTemp
-
-        val permisosLauncher = rememberLauncherForActivityResult(
-            ActivityResultContracts.RequestMultiplePermissions()
-        ) { permisos ->
-            isPermisosOtorgados = permisos[Manifest.permission.BLUETOOTH_CONNECT] == true
-
-            if (!isPermisosOtorgados) {
-                Toast.makeText(
-                    context,
-                    "Permiso denegado: no se puede usar la impresora por Bluetooth.",
-                    Toast.LENGTH_LONG
-                ).show()
-            }
-        }
-
-        LaunchedEffect(Unit) {
-            if (!isPermisosOtorgados) {
-                permisosLauncher.launch(
-                    arrayOf(
-                        Manifest.permission.BLUETOOTH_CONNECT,
-                        Manifest.permission.BLUETOOTH_SCAN
-                    )
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            val isPermisosOtorgadosTemp by remember {
+                mutableStateOf(
+                    ContextCompat.checkSelfPermission(
+                        context,
+                        Manifest.permission.BLUETOOTH_CONNECT
+                    ) == PackageManager.PERMISSION_GRANTED
                 )
             }
+
+            isPermisosOtorgados = isPermisosOtorgadosTemp
+
+            val permisosLauncher = rememberLauncherForActivityResult(
+                ActivityResultContracts.RequestMultiplePermissions()
+            ) { permisos ->
+                isPermisosOtorgados = permisos[Manifest.permission.BLUETOOTH_CONNECT] == true
+
+                if (!isPermisosOtorgados) {
+                    Toast.makeText(
+                        context,
+                        "Permiso denegado: no se puede usar la impresora por Bluetooth.",
+                        Toast.LENGTH_LONG
+                    ).show()
+                }
+            }
+
+            LaunchedEffect(Unit) {
+                if (!isPermisosOtorgados) {
+                    permisosLauncher.launch(
+                        arrayOf(
+                            Manifest.permission.BLUETOOTH_CONNECT,
+                            Manifest.permission.BLUETOOTH_SCAN
+                        )
+                    )
+                }
+            }
+        } else {
+            isPermisosOtorgados = true // No requiere permisos en versiones anteriores
         }
     }
 
@@ -414,16 +413,18 @@ class ImpresoraViewModel : ViewModel() {
         }
     }
 
-    @RequiresApi(Build.VERSION_CODES.S)
-    fun ValidarPermisos(context: Context){
-        isPermisosOtorgados = ContextCompat.checkSelfPermission(
-            context,
-            Manifest.permission.BLUETOOTH_CONNECT
-        ) == PackageManager.PERMISSION_GRANTED
+    fun ValidarPermisos(context: Context) {
+        isPermisosOtorgados = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.BLUETOOTH_CONNECT
+            ) == PackageManager.PERMISSION_GRANTED
+        } else {
+            true // En versiones anteriores no se requiere este permiso
+        }
     }
 
     @SuppressLint("MissingPermission")
-    @RequiresApi(Build.VERSION_CODES.S)
     fun buscar(context: Context) {
         ValidarPermisos(context)
         viewModelScope.launch(Dispatchers.IO) {
@@ -477,7 +478,6 @@ class ImpresoraViewModel : ViewModel() {
         }
     }
 
-    @RequiresApi(Build.VERSION_CODES.S)
     suspend fun validarConexion(context: Context): Boolean {
         ValidarPermisos(context)
 
@@ -497,7 +497,6 @@ class ImpresoraViewModel : ViewModel() {
         return conectado
     }
 
-    @RequiresApi(Build.VERSION_CODES.S)
     fun conectar(context: Context, mac: String, name: String) {
         ValidarPermisos(context)
         if (!isPermisosOtorgados) return
@@ -528,7 +527,6 @@ class ImpresoraViewModel : ViewModel() {
     }
 
     // Función para imprimir texto
-    @RequiresApi(Build.VERSION_CODES.S)
     suspend fun imprimir(text: String, context: Context): Boolean {
         ValidarPermisos(context)
         if (!isPermisosOtorgados) return false
@@ -559,7 +557,6 @@ class ImpresoraViewModel : ViewModel() {
         }
     }
 
-    @RequiresApi(Build.VERSION_CODES.S)
     @SuppressLint("SuspiciousIndentation")
     fun probar(context: Context, nombreEmpresa: String){
         ValidarPermisos(context)
@@ -606,7 +603,6 @@ class ImpresoraViewModel : ViewModel() {
         }
     }
 
-    @RequiresApi(Build.VERSION_CODES.S)
     fun reconectar(context: Context) {
         viewModelScope.launch(Dispatchers.IO) {
             if (!isPermisosOtorgados) return@launch
@@ -648,7 +644,6 @@ class ImpresoraViewModel : ViewModel() {
     }
 
     // Función para desconectar la impresora
-    @RequiresApi(Build.VERSION_CODES.S)
     fun deconectar(context: Context) {
         ValidarPermisos(context)
         if (!isPermisosOtorgados) return
@@ -662,6 +657,106 @@ class ImpresoraViewModel : ViewModel() {
             }
         }
     }
+}
+
+
+suspend fun imprimirFactura(
+    factura: Factura,
+    context: Context,
+    nombreEmpresa : String,
+    tipoDoc : String, // 1-ORIGINAL 2-COPIA 3-REIMPRESION 4-PRORFORMA 5-NOTA CREDITO 6-NOTA DEBITO
+    numeroEnCola : String,
+    usuario: String
+) : Boolean {
+    var facturaTexto = ""
+    try {
+        val rutaImagen = obtenerParametroLocal(context, clave = "$nombreEmpresa.jpg")
+        val imagenHex = imagenAHexadecimal(rutaImagen, gestorImpresora.impresora) ?: "0"
+        facturaTexto = if (imagenHex != "0") {
+            "[C]<img>$imagenHex</img>\n"
+        } else {
+            ""
+        }
+    }catch (e:Exception){
+        Toast.makeText(context, "Error en impresión de Logo", Toast.LENGTH_SHORT).show()
+    }
+    facturaTexto += "\n"
+    facturaTexto += addTextBig(factura.empresa.nombre, "C", context = context)
+    facturaTexto += addText("IDENTIFICACION: "+factura.empresa.cedula, "C", context = context)
+    facturaTexto += addTextTall("DOC: ${factura.ventaMadre.Numero}", "C", context = context)
+    if (tipoDoc in listOf("5", "6")) facturaTexto += addTextTall("REF: ${factura.ventaMadre.Referencia}", "C", context = context)
+    val tipoDocumento = if(tipoDoc == "2") "COPIA $numeroEnCola" else if(tipoDoc == "3") "REIMPRESION" else "ORIGINAL"
+    facturaTexto += addTextTall(
+        when(tipoDoc){
+            "4"-> ""
+            "5" -> "NOTA CREDITO ELECTRONICA ${factura.descripcionMedioPago.uppercase(Locale.ROOT)} $tipoDocumento"
+            "6" -> "NOTA DEBITO ELECTRONICA ${factura.descripcionMedioPago.uppercase(Locale.ROOT)} $tipoDocumento"
+            else -> "FACTURA ELECTRONICA ${factura.descripcionMedioPago.uppercase(Locale.ROOT)} $tipoDocumento"
+        },
+        "C",
+        destacar = true,
+        context = context
+    )
+    if (tipoDoc != "4"){
+        facturaTexto += addText("CLAVE: ${factura.clave.substring(0, 25)}", "C", context = context)
+        facturaTexto += addText("       ${factura.clave.substring(25, 50)}", "C", context = context)
+    }else{
+        facturaTexto += addTextBig("PROFORMA", "C", context = context)
+    }
+
+    facturaTexto += addText("FECHA: ${factura.ventaMadre.Fecha}", "L", context = context)
+    if (obtenerValorParametroEmpresa("20", "0") == "1" && tipoDoc != "4") facturaTexto += addTextTall("FORMA PAGO: ${factura.descrpcionFormaPago.uppercase(Locale.ROOT)}", "C", context = context)
+    if (factura.cliente.Cedula.isNotEmpty())facturaTexto += addText("CEDULA: ${factura.cliente.Cedula} COD: ${factura.cliente.Id_Cliente} ", "L", context = context)
+    facturaTexto += addText("NOMBRE: ${factura.cliente.Nombre}", "L", context = context)
+    if (factura.cliente.EmailFactura.isNotEmpty()) facturaTexto += addText("EMAIL: ${factura.cliente.EmailFactura}", "L", context = context)
+    if (factura.cliente.Telefonos.isNotEmpty()) facturaTexto += addText("TELEFONO: ${factura.cliente.Telefonos}", "L", context = context)
+    if (factura.cliente.Direccion.isNotEmpty()) facturaTexto += addText("DIRECCION: ${factura.cliente.Direccion}", "L", context = context)
+    facturaTexto += addTextTall("DETALLE", "C", context = context)
+    facturaTexto += agregarDobleLinea(context = context, justification = "C")
+    facturaTexto += addText(if (obtenerValorParametroEmpresa("307", "0") == "1") "CABYS" else "", "L", context = context, destacar = true)
+    facturaTexto += addText("CANTIDAD ${if (obtenerValorParametroEmpresa("15", "0") == "1") "#CODIGO" else ""} DESCRIPCION", "L", context = context, destacar = true)
+    facturaTexto += addText("P/U / IMP(%) / DES(%) / T.GRAV", "R", context = context)
+    facturaTexto += agregarLinea(context = context)
+    val listaIvas = mutableListOf<ParClaveValor>()
+    for (i in 0 until factura.ventaHija.size) {
+        val articulo = factura.ventaHija[i]
+        facturaTexto += addText(if (obtenerValorParametroEmpresa("307", "0") == "1")  articulo.ArticuloCabys else "", "L", context = context)
+        facturaTexto += addText("${articulo.ArticuloCantidad.toDouble()} ${if (obtenerValorParametroEmpresa("15", "0") == "1") "#${articulo.ArticuloCodigo} " else ""}"+articulo.nombreArticulo, "L", destacar = true, context = context)
+        facturaTexto += addText("${separacionDeMiles(isString = true, montoString = articulo.ArticuloVenta)} / ${articulo.ArticuloIvaPorcentage}% / ${articulo.ArticuloDescuentoPorcentage}% / ${separacionDeMiles(isString = true, montoString = articulo.ArticuloVentaGravado)}", "R", context = context)
+        facturaTexto += agregarLinea(context = context)
+        val ivaTemp = listaIvas.find { it.clave == articulo.ArticuloIvaPorcentage.toString() }
+        if ( ivaTemp != null){
+            ivaTemp.valor = (ivaTemp.valor.toDouble() + articulo.ArticuloIvaMonto.toDouble()).toString()
+            ivaTemp.venta = (ivaTemp.venta.toDouble() + articulo.ArticuloVentaGravado.toDouble()).toString()
+        }else{
+            listaIvas.add(ParClaveValor(clave = articulo.ArticuloIvaPorcentage.toString(), valor = articulo.ArticuloIvaMonto, venta = articulo.ArticuloVentaGravado))
+        }
+    }
+    if (obtenerValorParametroEmpresa("192", "0") == "1"){
+        facturaTexto += agregarDobleLinea(context = context, justification = "C")
+        facturaTexto += addText("SUBTOTAL: [R]${separacionDeMiles(isString = true, montoString = (factura.ventaMadre.TotalVenta.toDouble()+factura.ventaMadre.TotalDescuento.toDouble()).toString())}", "R", context = context)
+        if (obtenerValorParametroEmpresa("26", "0") == "1") facturaTexto += addText("DESCUENTO: [R]${separacionDeMiles(isString = true, montoString = factura.ventaMadre.TotalDescuento)}", "R", context = context)
+        facturaTexto += addText("MERC GRAVADA: [R]${ separacionDeMiles(isString = true, montoString = factura.ventaMadre.TotalMercGravado)}", "R", context = context)
+        facturaTexto += addText("IVA: [R]${separacionDeMiles(isString = true, montoString = factura.ventaMadre.TotalIva)}", "R", context = context)
+        facturaTexto += agregarLinea(ajustarATexto = true, text = "  ${factura.ventaMadre.MonedaCodigo} TOTAL ${factura.ventaMadre.Total}", justification = "R", context = context)
+        facturaTexto += addTextTall("  ${factura.ventaMadre.MonedaCodigo} TOTAL ${separacionDeMiles(isString = true, montoString = factura.ventaMadre.Total)}", "R", destacar = true, context = context)
+    }
+    if (obtenerValorParametroEmpresa("47", "0") == "1"){
+        facturaTexto += addText("***RESUMEN IVA***", "C", context = context)
+        facturaTexto += addText("IVA%  /  VENTA  /  IVA", "C", context = context, conLiena = true)
+        for(iva in listaIvas){
+            facturaTexto += addText("${iva.clave}% / ${separacionDeMiles(montoString = iva.venta, isString = true)} / ${separacionDeMiles(montoString = iva.valor, isString = true)}", "C", context = context)
+        }
+    }
+    facturaTexto += "\n"
+    if (tipoDoc != "4") facturaTexto += addText("CAJA: ${factura.ventaMadre.CajaNumero} VEND: ${factura.nombreAgente}", "C", context = context)
+    if (tipoDoc != "4") facturaTexto += addText(factura.ventaMadre.MedioPagoDetalle.replace("\r", "").uppercase(Locale.ROOT), "C", context = context, conLiena = true)
+    if (tipoDoc != "4") facturaTexto += addText(obtenerValorParametroEmpresa("137", "GRACIAS POR SU COMPRA!"), "C", context = context)
+    if (tipoDoc != "4") facturaTexto += addText(factura.leyenda, "C", context = context)
+    facturaTexto += addText("Usu: $usuario", "C", context = context)
+    facturaTexto += addText("INVEFACON ANDROID V.${context.getString(R.string.app_version)}", "C", context = context, destacar = true)
+    val isImpreso = gestorImpresora.imprimir(text = facturaTexto, context)
+    return isImpreso
 }
 
 fun addTextBig(text: String, justification: String, context: Context) : String {
