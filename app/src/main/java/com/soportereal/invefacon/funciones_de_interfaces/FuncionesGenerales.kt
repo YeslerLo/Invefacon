@@ -11,6 +11,8 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Build
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
 import android.view.inputmethod.InputMethodManager
 import android.widget.Toast
@@ -607,6 +609,7 @@ class ImpresoraViewModel : ViewModel() {
         viewModelScope.launch(Dispatchers.IO) {
             if (!isPermisosOtorgados) return@launch
             val isConectado = estaImpresoraConectadaRealmente()
+            delay(500)
             if (isConectado) return@launch
             val lastDeviceAddress = obtenerParametroLocal(context, "macImpresora")
             buscar(context)
@@ -678,14 +681,14 @@ suspend fun imprimirFactura(
             ""
         }
     }catch (e:Exception){
-        Toast.makeText(context, "Error en impresión de Logo", Toast.LENGTH_SHORT).show()
+        mostrarToastSeguro(context,"Error en impresión de Logo")
     }
     facturaTexto += "\n"
     facturaTexto += addTextBig(factura.empresa.nombre, "C", context = context)
     facturaTexto += addText("IDENTIFICACION: "+factura.empresa.cedula, "C", context = context)
     facturaTexto += addTextTall("DOC: ${factura.ventaMadre.Numero}", "C", context = context)
     if (tipoDoc in listOf("5", "6")) facturaTexto += addTextTall("REF: ${factura.ventaMadre.Referencia}", "C", context = context)
-    val tipoDocumento = if(tipoDoc == "2") "COPIA $numeroEnCola" else if(tipoDoc == "3") "REIMPRESION" else "ORIGINAL"
+    val tipoDocumento = if(tipoDoc == "2" || tipoDoc == "3") "COPIA"  else "ORIGINAL"
     facturaTexto += addTextTall(
         when(tipoDoc){
             "4"-> ""
@@ -1082,6 +1085,12 @@ class EstadoDialogActualizacion : ViewModel() {
 }
 
 val gestorDialogActualizacion = EstadoDialogActualizacion()
+
+fun mostrarToastSeguro(context: Context, mensaje: String) {
+    Handler(Looper.getMainLooper()).post {
+        Toast.makeText(context, mensaje, Toast.LENGTH_SHORT).show()
+    }
+}
 
 
 

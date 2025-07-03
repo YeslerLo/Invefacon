@@ -15,14 +15,18 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentWidth
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Apartment
 import androidx.compose.material.icons.filled.ArrowBackIosNew
 import androidx.compose.material.icons.filled.Business
 import androidx.compose.material.icons.filled.Inventory
 import androidx.compose.material.icons.filled.LocalOffer
 import androidx.compose.material.icons.filled.PointOfSale
 import androidx.compose.material.icons.filled.Print
+import androidx.compose.material.icons.filled.Store
 import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -103,10 +107,12 @@ fun IniciarInterfazConfEstacion (
         )
     }
     val gestorProcGenSocket = ProcGenSocket()
-    var impreFactura by remember { mutableStateOf(obtenerParametroLocal(context, "imprfactu$nombreEmpresa", valorPorDefecto = "Local")) }
-    var impreProforma by remember { mutableStateOf(obtenerParametroLocal(context, "imprProf$nombreEmpresa", valorPorDefecto = "Local")) }
-    var impreCredito by remember { mutableStateOf(obtenerParametroLocal(context, "imprCred$nombreEmpresa", valorPorDefecto = "Local")) }
-    var impreRecibos by remember { mutableStateOf(obtenerParametroLocal(context, "imprRecib$nombreEmpresa", valorPorDefecto = "Local")) }
+    var impreFactura by remember { mutableStateOf(obtenerParametroLocal(context, "imprfactu$nombreEmpresa", valorPorDefecto = "Local").substring(0,5)) }
+    var impreProforma by remember { mutableStateOf(obtenerParametroLocal(context, "imprProf$nombreEmpresa", valorPorDefecto = "Local").substring(0,5)) }
+    var impreCredito by remember { mutableStateOf(obtenerParametroLocal(context, "imprCred$nombreEmpresa", valorPorDefecto = "Local").substring(0,5)) }
+    var impreRecibos by remember { mutableStateOf(obtenerParametroLocal(context, "imprRecib$nombreEmpresa", valorPorDefecto = "Local").substring(0,5)) }
+    var caja by remember { mutableStateOf(obtenerParametroLocal(context, "caja$nombreEmpresa", valorPorDefecto = "0")) }
+    var oficina by remember { mutableStateOf(obtenerParametroLocal(context, "oficina$nombreEmpresa", valorPorDefecto = "001")) }
     var listaImpresoras by remember {  mutableStateOf<List<ParClaveValor>>(emptyList()) }
     var listaBodegas by remember {  mutableStateOf<List<ParClaveValor>>(emptyList()) }
     var socketJob by remember { mutableStateOf<Job?>(null) }
@@ -182,7 +188,7 @@ fun IniciarInterfazConfEstacion (
                 objetoAdaptardor = objetoAdaptardor,
                 opciones = opciones,
                 modifier = Modifier
-                    .width(objetoAdaptardor.ajustarAncho(90))
+                    .wrapContentWidth()
                     .border(
                         1.dp,
                         color = Color.Gray,
@@ -308,10 +314,21 @@ fun IniciarInterfazConfEstacion (
                     onClick = {
                         actualizarParametro(context, "datosTiempoReal$nombreEmpresa", datosTiempoReal)
                         actualizarParametro(context, "precioVenta$nombreEmpresa", tipoPrecioVenta)
-                        actualizarParametro(context, "imprfactu$nombreEmpresa", impreFactura)
-                        actualizarParametro(context, "imprProf$nombreEmpresa", impreProforma)
-                        actualizarParametro(context, "imprCred$nombreEmpresa", impreCredito)
-                        actualizarParametro(context, "imprRecib$nombreEmpresa", impreRecibos)
+                        actualizarParametro(context, "imprfactu$nombreEmpresa", listaImpresoras.find { it.clave == impreFactura }?.valor?:"Local")
+                        actualizarParametro(context, "imprProf$nombreEmpresa", listaImpresoras.find { it.clave == impreProforma }?.valor?:"Local")
+                        actualizarParametro(context, "imprCred$nombreEmpresa", listaImpresoras.find { it.clave == impreCredito }?.valor?:"Local")
+                        actualizarParametro(context, "imprRecib$nombreEmpresa", listaImpresoras.find { it.clave == impreRecibos }?.valor?:"Local")
+                        if (oficina.length>3 || oficina.isEmpty()){
+                            mostrarMensajeError("EL CODIGO DE OFCINA DEBE CONTENER COMO MAXIMO 3 CARACTERES Y COMO MINIMO 1")
+                        }else{
+                            actualizarParametro(context, "oficina$nombreEmpresa", oficina)
+                        }
+
+                        if (caja.length>3 || caja.isEmpty()){
+                            mostrarMensajeError("EL CODIGO DE CAJA DEBE CONTENER COMO MAXIMO 3 CARACTERES Y COMO MINIMO 1")
+                        }else{
+                            actualizarParametro(context, "caja$nombreEmpresa", caja)
+                        }
                         if (codBodega.isNotEmpty()){
                             actualizarParametro(context, "bodega$nombreEmpresa", codBodega)
                             mostrarMensajeExito("Configuración Guardada!")
@@ -329,55 +346,78 @@ fun IniciarInterfazConfEstacion (
                 thickness = objetoAdaptardor.ajustarAltura(2),
                 color = Color.Black
             )
-            BxOpcionesEstacion(
-                titulo = "Bodega de Inventario",
-                icono = Icons.Filled.Inventory,
-                opciones = listaBodegas,
-                variable = codBodega,
-                onChange = {codBodega = it}
-            )
-            BxOpcionesEstacion(
-                titulo = "Tipo Precio Venta",
-                icono = Icons.Filled.LocalOffer,
-                variable = tipoPrecioVenta,
-                opciones = listaPrecios,
-                onChange = {tipoPrecioVenta = it}
-            )
-            BxOpcionesEstacion(
-                titulo = "Mantener Datos Tiempo real",
-                icono = Icons.Filled.Timer,
-                variable = datosTiempoReal,
-                opciones = listaBoleanos,
-                onChange = {datosTiempoReal = it}
-            )
-            BxOpcionesEstacion(
-                titulo = "Impresora Factura",
-                icono =Icons.Filled.Print,
-                variable = impreFactura,
-                opciones = listaImpresoras,
-                onChange = {impreFactura = it}
-            )
-            BxOpcionesEstacion(
-                titulo = "Impresora Proforma",
-                icono =Icons.Filled.Print,
-                variable = impreProforma,
-                opciones = listaImpresoras,
-                onChange = {impreProforma= it}
-            )
-            BxOpcionesEstacion(
-                titulo = "Impresora Crédito",
-                icono =Icons.Filled.Print,
-                variable = impreCredito,
-                opciones = listaImpresoras,
-                onChange = {impreCredito = it}
-            )
-            BxOpcionesEstacion(
-                titulo = "Impresora Recibos",
-                icono =Icons.Filled.Print,
-                variable = impreRecibos,
-                opciones = listaImpresoras,
-                onChange = {impreRecibos = it}
-            )
+            LazyColumn {
+                item {
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(objetoAdaptardor.ajustarAltura(8))
+                    ) {
+                        BxOpcionesEstacion(
+                            titulo = "Oficina",
+                            icono = Icons.Filled.Apartment,
+                            variable = oficina,
+                            onChange = {oficina = it}
+                        )
+                        BxOpcionesEstacion(
+                            titulo = "Caja",
+                            icono = Icons.Filled.Store,
+                            variable = caja,
+                            onChange = {caja = it}
+                        )
+                        BxOpcionesEstacion(
+                            titulo = "Bodega de Inventario",
+                            icono = Icons.Filled.Inventory,
+                            opciones = listaBodegas,
+                            variable = codBodega,
+                            onChange = {codBodega = it}
+                        )
+                        BxOpcionesEstacion(
+                            titulo = "Tipo Precio Venta",
+                            icono = Icons.Filled.LocalOffer,
+                            variable = tipoPrecioVenta,
+                            opciones = listaPrecios,
+                            onChange = {tipoPrecioVenta = it}
+                        )
+                        BxOpcionesEstacion(
+                            titulo = "Mantener Datos Tiempo real",
+                            icono = Icons.Filled.Timer,
+                            variable = datosTiempoReal,
+                            opciones = listaBoleanos,
+                            onChange = {datosTiempoReal = it}
+                        )
+                        BxOpcionesEstacion(
+                            titulo = "Impresora Factura",
+                            icono =Icons.Filled.Print,
+                            variable = impreFactura,
+                            opciones = listaImpresoras,
+                            onChange = {impreFactura = it}
+                        )
+                        BxOpcionesEstacion(
+                            titulo = "Impresora Proforma",
+                            icono =Icons.Filled.Print,
+                            variable = impreProforma,
+                            opciones = listaImpresoras,
+                            onChange = {impreProforma= it}
+                        )
+                        BxOpcionesEstacion(
+                            titulo = "Impresora Crédito",
+                            icono =Icons.Filled.Print,
+                            variable = impreCredito,
+                            opciones = listaImpresoras,
+                            onChange = {impreCredito = it}
+                        )
+                        BxOpcionesEstacion(
+                            titulo = "Impresora Recibos",
+                            icono =Icons.Filled.Print,
+                            variable = impreRecibos,
+                            opciones = listaImpresoras,
+                            onChange = {impreRecibos = it}
+                        )
+                        Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(30)))
+                    }
+
+                }
+            }
+
         }
     }
 }

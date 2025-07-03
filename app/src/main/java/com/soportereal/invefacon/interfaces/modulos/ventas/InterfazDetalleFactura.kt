@@ -105,6 +105,7 @@ import com.soportereal.invefacon.funciones_de_interfaces.formatearFechaTexto
 import com.soportereal.invefacon.funciones_de_interfaces.gestorImpresora
 import com.soportereal.invefacon.funciones_de_interfaces.imprimirFactura
 import com.soportereal.invefacon.funciones_de_interfaces.mostrarMensajeError
+import com.soportereal.invefacon.funciones_de_interfaces.mostrarMensajeExito
 import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloBodyBig
 import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloBodyMedium
 import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloBodySmall
@@ -1645,7 +1646,6 @@ fun IniciarInterfazDetalleFactura(
                     codMotivo = codMotivoNota,
                     detalle = detalleNota,
                     onExitoOrFin = {
-                        println(it)
                         if (!it) {
                             socketJob?.cancel()
                             return@aplicarNotaCredDebiCompleta
@@ -1654,6 +1654,7 @@ fun IniciarInterfazDetalleFactura(
                             if (consecutivoNota.isEmpty()) {
                                 mostrarMensajeError("EL CONSECUTIVO DE LA NOTA ESTA VACIO, ERROR EN IMPRESION.")
                             }else{
+                                mostrarMensajeExito("LA NOTA DE ${if(isNotaCredito) "CREDITO" else "DEBITO"} FUE PROCESADA CON EXITO!")
                                 isReimpresion = false
                                 obtenerDatosFactura(consecutivo = consecutivoNota, tipo = if(isNotaCredito) "5" else "6")
                             }

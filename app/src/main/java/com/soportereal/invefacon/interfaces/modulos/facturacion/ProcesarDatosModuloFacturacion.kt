@@ -273,7 +273,7 @@ class ProcesarDatosModuloFacturacion(apiToken: String)
         return objetoFuncionesHttpInvefacon.metodoPost(apiBody, "facturacion/ActualizarNombreProforma.php")
     }
 
-    suspend fun procesarProforma(
+    suspend fun procesarProformaComoFactura(
         context: Context,
         codUsuario : String,
         numero: String,
@@ -291,11 +291,17 @@ class ProcesarDatosModuloFacturacion(apiToken: String)
         cuentaMedioPago3 : String = "",
         monedaMedioPago3 : String = "CRC",
         impresora : String = "",
-        formato : String = "FIPVIVI002",
         detallePago : String =  "",
         onExitoOrFin: suspend (Boolean) -> Unit,
         consecutivo : (String) -> Unit
     ) {
+        var formato = "FIPVIVI102"
+        var numeroImpresora = "000"
+        val nombreEmpresa = obtenerParametroLocal(context, "bdActual")
+        if (impresora.isNotEmpty()){
+            numeroImpresora = impresora.substring(0, 5)
+            formato = impresora.substring(5, impresora.length)
+        }
         val mensajeSocket = generarConsultaSocket(
             context =context,
             proceso = "MODFACT000",
@@ -307,9 +313,9 @@ class ProcesarDatosModuloFacturacion(apiToken: String)
                 codMedioPago,
                 codCliente,
                 nombreFactura,
-                "1", // CAJA,
+                obtenerParametroLocal(context, "caja$nombreEmpresa", valorPorDefecto = "0"),
                 obtenerValorParametroEmpresa("75","1.00"),
-                "001", // OFICINA
+                obtenerParametroLocal(context, "oficina$nombreEmpresa", valorPorDefecto = "001"),
                 // MEDIO PAGO 1
                 montoMedioPago1,
                 cuentaMedioPago1,
@@ -323,7 +329,7 @@ class ProcesarDatosModuloFacturacion(apiToken: String)
                 cuentaMedioPago3,
                 monedaMedioPago3,
                 // IMPRESORA
-                impresora,
+                numeroImpresora,
                 formato,
                 detallePago,
                 "", // FECHA FACTURA,
@@ -337,6 +343,69 @@ class ProcesarDatosModuloFacturacion(apiToken: String)
             alRecibirMensaje = {
                 obtenerConsecutivoSocket(datos = it, consecutivoRetornar = {consec-> consecutivo(consec)})
             },
+            onExitoOrFin = {
+                onExitoOrFin(it)
+            }
+        )
+    }
+
+    suspend fun procesarProforma(
+        numero: String,
+        impresora: String,
+        context: Context,
+        correo: String,
+        onExitoOrFin: suspend (Boolean) -> Unit,
+        consecutivo : (String) -> Unit
+    ) {
+        var formato = "FIPVIVI102"
+        var numeroImpresora = "000"
+        if (impresora.isNotEmpty()){
+            numeroImpresora = impresora.substring(0, 5)
+            formato = impresora.substring(5, impresora.length)
+        }
+
+        val mensajeSocket = generarConsultaSocket(
+            context = context,
+            proceso = "MODFACT000",
+            subProceso = "MODFACT028",
+            cuerpo = listOf(
+                numero,
+                numeroImpresora,
+                formato,
+                "001",
+                "1",
+                correo
+            )
+        )
+        conectarSocket(
+            context = context,
+            mensaje = mensajeSocket,
+            alRecibirMensaje = {
+                obtenerConsecutivoSocket(datos = it, consecutivoRetornar = {consec-> consecutivo(consec)})
+            },
+            onExitoOrFin = {
+                onExitoOrFin(it)
+            }
+        )
+    }
+
+    suspend fun guardarProforma(
+        numero: String,
+        context: Context,
+        onExitoOrFin: suspend (Boolean) -> Unit
+    ) {
+
+        val mensajeSocket = generarConsultaSocket(
+            context = context,
+            proceso = "MODFACT000",
+            subProceso = "MODFACT071",
+            cuerpo = listOf(
+                numero
+            )
+        )
+        conectarSocket(
+            context = context,
+            mensaje = mensajeSocket,
             onExitoOrFin = {
                 onExitoOrFin(it)
             }

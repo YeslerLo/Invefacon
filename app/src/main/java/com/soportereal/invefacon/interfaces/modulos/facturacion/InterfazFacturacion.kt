@@ -1,10 +1,8 @@
 package com.soportereal.invefacon.interfaces.modulos.facturacion
 
 import android.annotation.SuppressLint
-import android.os.Build
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
-import androidx.annotation.RequiresApi
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
@@ -154,6 +152,7 @@ import com.soportereal.invefacon.funciones_de_interfaces.listaPermisos
 import com.soportereal.invefacon.funciones_de_interfaces.mostrarMensajeError
 import com.soportereal.invefacon.funciones_de_interfaces.mostrarMensajeExito
 import com.soportereal.invefacon.funciones_de_interfaces.mostrarTeclado
+import com.soportereal.invefacon.funciones_de_interfaces.mostrarToastSeguro
 import com.soportereal.invefacon.funciones_de_interfaces.obtenerDatosClienteByCedula
 import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloBodyBig
 import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloBodyMedium
@@ -250,7 +249,7 @@ fun IniciarInterfazFacturacion(
     var numeroProforma by remember { mutableStateOf("") }
     var tipoDocumento by remember { mutableStateOf("") }
     var clienteId by remember { mutableStateOf("") }
-    var estadoProforma by remember { mutableStateOf("") }
+    var estadoProforma by remember { mutableStateOf("2") }
     var isCrearProforma by remember { mutableStateOf(false) }
     var detalleProforma by remember { mutableStateOf("") }
     var ordenCompra by remember { mutableStateOf("") }
@@ -416,20 +415,16 @@ fun IniciarInterfazFacturacion(
     }
 
     suspend fun imprimir() {
+        isImprimiendo = true
+        iniciarPantallaEstadoImpresion = true
         val isConectado = gestorImpresora.validarConexion(context)
-        delay(1000)
+        delay(2000)
         if (!isConectado){
-            var isReconectada = false
-            for (i in 1..2){
-                if (isReconectada) continue
-                gestorImpresora.reconectar(context)
-                withContext(Dispatchers.Main) {
-                    Toast.makeText(context, "Reconectando impresora...", Toast.LENGTH_SHORT).show()
-                }
-                delay(12000)
-                isReconectada = gestorImpresora.validarConexion(context)
-                delay(1000)
-            }
+            gestorImpresora.reconectar(context)
+            mostrarToastSeguro(context, "Reconectando impresora...")
+            delay(12000)
+            val isReconectada = gestorImpresora.validarConexion(context)
+            delay(1000)
             if (!isReconectada){
                 exitoImpresion = false
                 isImprimiendo = false
@@ -461,7 +456,6 @@ fun IniciarInterfazFacturacion(
 
     suspend fun obtenerDatosFactura() {
         if(valorImpresionActiva == "0" || listaImpresion.isEmpty()){
-            if (tipoFormaProcesar == "proforma") mostrarMensajeExito("La Proforma se ha emitido exitosamente con el consecutivo: $consecutivoFactura")
             numeroProforma = ""
             actualizarDatosProforma = true
             return
@@ -469,7 +463,7 @@ fun IniciarInterfazFacturacion(
         isImprimiendo = true
         iniciarPantallaEstadoImpresion = true
         val result = objectoProcesadorDatosApi.obtenerFactura(consecutivoFactura)
-        if (result == null) return
+        if (result == null) return mostrarMensajeError("LA RESPUESTA ES NULL AL OBTENER LOS DATOS DE FACTURA")
         if (validarExitoRestpuestaServidor(result)) {
             datosFacturaEmitida = deserializarFacturaHecha(result)
             imprimir()
@@ -481,10 +475,10 @@ fun IniciarInterfazFacturacion(
         }
     }
 
-    suspend fun procesarProforma(listaPagos: SnapshotStateList<Pago>, isContado: Boolean) {
+    suspend fun procesarProformaComoFactura(listaPagos: SnapshotStateList<Pago>, isContado: Boolean, impresora : String = "") {
         val isTarjeta = listaPagos.filter { it.Monto.ifEmpty { "0.00" }.toDouble() > 0.00 }.size > 1
         socketJob = cortinaSocket.launch {
-            objectoProcesadorDatosApi.procesarProforma(
+            objectoProcesadorDatosApi.procesarProformaComoFactura(
                 context = context,
                 codUsuario = codUsuario,
                 numero = numeroProforma,
@@ -498,15 +492,27 @@ fun IniciarInterfazFacturacion(
                 montoMedioPago2 = listaPagos[1].Monto,
                 cuentaMedioPago2 = listaPagos[1].CuentaContable,
                 monedaMedioPago2 = listaPagos[1].CodigoMoneda,
+                impresora = impresora,
                 onExitoOrFin = {
                     if (!it){
                         socketJob?.cancel()
-                        return@procesarProforma
+                        return@procesarProformaComoFactura
                     }
-                    agregarColaImpresion(isContado = isContado)
-                    obtenerDatosFactura()
+                    if (consecutivoFactura.isEmpty()) {
+                        mostrarMensajeError("NO SE HA LOGRADO OBTENER EL CONSECUTIVO DE FACTURA")
+                        socketJob?.cancel()
+                        return@procesarProformaComoFactura
+                    }
+                    mostrarMensajeExito("LA FACTURA SE HA EMITIDO CON EXITO!")
+                    if (impresora.isEmpty()){
+                        agregarColaImpresion(isContado = isContado)
+                        obtenerDatosFactura()
+                    }else{
+                        numeroProforma = ""
+                        actualizarDatosProforma = true
+                    }
                     socketJob?.cancel()
-                    return@procesarProforma
+                    return@procesarProformaComoFactura
                 },
                 consecutivo = {
                     consecutivoFactura = it
@@ -515,7 +521,7 @@ fun IniciarInterfazFacturacion(
         }
     }
 
-    suspend fun pagarACredito() {
+    suspend fun pagarACredito(impresora : String) {
         val listaPagosTemp = mutableStateListOf<Pago>()
         listaPagosTemp.add(Pago(
             CodigoMoneda = codMonedaProforma,
@@ -527,7 +533,7 @@ fun IniciarInterfazFacturacion(
             Monto = "0",
             CuentaContable = ""
         ))
-        procesarProforma(listaPagos = listaPagosTemp, isContado = false)
+        procesarProformaComoFactura(listaPagos = listaPagosTemp, isContado = false, impresora = impresora)
     }
 
     fun deserializarArticulo(datos : String) : ArticuloFacturacion {
@@ -599,7 +605,7 @@ fun IniciarInterfazFacturacion(
         }
     }
 
-    suspend fun filtrarBusquedaArticulos(){
+    suspend fun filtrarBusquedaArticulos() {
         if(datosIngresadosBarraBusquedaArticulos.isNotEmpty()){
             listaArticulosEncontrados = emptyList()
             gestorTablaArticulos.actualizarInputBusqueda(datosIngresadosBarraBusquedaArticulos)
@@ -619,7 +625,7 @@ fun IniciarInterfazFacturacion(
 
     }
 
-    suspend fun descargarArticulos(){
+    suspend fun descargarArticulos() {
         errorCargarProforma = false
         apiConsultaArticulos?.cancel()
         apiConsultaArticulos= cortinaConsultaApiArticulos.launch{
@@ -656,7 +662,7 @@ fun IniciarInterfazFacturacion(
 
     }
 
-    suspend fun cambiarTipoPrecio(tipoPrecio: String, lienas: String){
+    suspend fun cambiarTipoPrecio(tipoPrecio: String, lienas: String) {
         gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(true)
         val result = objectoProcesadorDatosApi.cambiarTipoPrecio(
             numero =  numeroProforma,
@@ -667,8 +673,41 @@ fun IniciarInterfazFacturacion(
         if (result == null) return
         estadoRespuestaApi.cambiarEstadoRespuestaApi(mostrarRespuesta = true, datosRespuesta = result)
         gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
+        listaArticulosSeleccionados.clear()
         if(!validarExitoRestpuestaServidor(result)) return
         soloActualizarArticulos = true
+    }
+
+    suspend fun procProforma(impresora : String = "", correo : String, imprimir : Boolean = true){
+        consecutivoFactura = ""
+        objectoProcesadorDatosApi.procesarProforma(
+            context = context,
+            numero = numeroProforma,
+            impresora = impresora,
+            correo = correo,
+            onExitoOrFin = {
+                if (!it) return@procesarProforma
+                if (numeroProforma[0] != 'U') consecutivoFactura = numeroProforma
+                if (consecutivoFactura.isEmpty()) return@procesarProforma mostrarMensajeError("SCK: NO SE LOGRO OBTENER EL CONSECUTIVO DE LA PROFORMA.")
+                mostrarMensajeExito("LA PROFORMA FUE PROCESADA CON EXITO!")
+                objectoProcesadorDatosApi.guardarProforma(
+                    context = context,
+                    numero = consecutivoFactura,
+                    onExitoOrFin = {
+                        if (impresora.isEmpty() && imprimir){
+                            agregarColaImpresion(isProforma = true)
+                            obtenerDatosFactura()
+                        }else{
+                            numeroProforma = ""
+                            actualizarDatosProforma = true
+                        }
+                    }
+                )
+            },
+            consecutivo = {
+                consecutivoFactura = it
+            }
+        )
     }
 
     if (valorImpresionActiva == "1") {
@@ -1100,6 +1139,7 @@ fun IniciarInterfazFacturacion(
                 put(articulo.articuloLineaId)
             }
         }
+        println(lineas)
         val result = objectoProcesadorDatosApi.aplicarDescuento(numero = numeroProforma, descuento = nuevoPorcentajeDescuento, lineas = lineas.toString())
         if (result != null){
             estadoRespuestaApi.cambiarEstadoRespuestaApi(mostrarRespuesta = true, datosRespuesta = result)
@@ -4579,6 +4619,7 @@ fun IniciarInterfazFacturacion(
             else -> articuloActual.codPrecioVenta // SI EL ARTICULO TIENE PRECIO DE VENTA SE ASUME ESE
         }
     )
+
     if (iniciarMenuSeleccionarCliente) {
         var isMenuVisible by remember { mutableStateOf(false) }
         val focusRequester = remember { FocusRequester() }
@@ -5558,7 +5599,6 @@ fun IniciarInterfazFacturacion(
                                             )
                                         }
                                     }
-                                    listaArticulosSeleccionados.clear()
                                     iniciarMenuAplicarDescuento = false
                                     iniciarMenuCambiarPrecio = false
                                 },
@@ -5687,7 +5727,10 @@ fun IniciarInterfazFacturacion(
         var totalPagado by remember { mutableDoubleStateOf(0.00) }
         val listaPagosTemp = remember { mutableStateListOf<Pago>() }
 
-        fun calcularVuelto(){
+        var impreFactura by remember { mutableStateOf(obtenerParametroLocal(context, "imprfactu$nombreEmpresa", valorPorDefecto = "Local")) }
+        var listaImpresoras by remember {  mutableStateOf<List<ParClaveValor>>(emptyList()) }
+
+        fun calcularVuelto() {
             try{
                 var totalPagadoTemp = 0.00
                 listaPagosTemp.filter { it.funcion != "eliminar" }.forEach { pago ->
@@ -5705,7 +5748,7 @@ fun IniciarInterfazFacturacion(
             }
         }
 
-        fun pagarCompleto(isEfectivo : Boolean){
+        fun pagarCompleto(isEfectivo : Boolean) {
             var tipo = if (isEfectivo) 0 else 1
             var cuenta = if (isEfectivo) "110101" else "110104"
             listaPagosTemp[tipo].Monto = total.toString()
@@ -5717,9 +5760,32 @@ fun IniciarInterfazFacturacion(
             agregarColaImpresion()
             iniciarMenuFacturarContado = false
             coroutineScope.launch {
-                procesarProforma(listaPagos = listaPagosTemp, isContado = true)
+                procesarProformaComoFactura(
+                    listaPagos = listaPagosTemp,
+                    isContado = true,
+                    impresora = if (impreFactura == "Local") "" else impreFactura.replace("-", "")
+                )
             }
 
+        }
+
+        LaunchedEffect(Unit) {
+            val listaImpresorasTemp = mutableListOf<ParClaveValor>()
+            listaImpresorasTemp.add(ParClaveValor("Local", "Local"))
+            gestorProcGenSocket.obtenerImpresorasRemotas(
+                context = context,
+                datosRetornados = {
+                    val listaTemp = it
+                    listaTemp.forEach { impresora ->
+                        listaImpresorasTemp.add(ParClaveValor(clave = impresora[0], valor = impresora[0]+"-"+impresora[1]))
+                    }
+                    listaImpresoras = listaImpresorasTemp
+                },
+                onExitoOrFin = {
+                    return@obtenerImpresorasRemotas
+                }
+            )
+            gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
         }
 
         LaunchedEffect(Unit) {
@@ -5890,7 +5956,11 @@ fun IniciarInterfazFacturacion(
                                                         .border(
                                                             1.dp,
                                                             color = Color.Gray,
-                                                            RoundedCornerShape(objetoAdaptardor.ajustarAltura(8))
+                                                            RoundedCornerShape(
+                                                                objetoAdaptardor.ajustarAltura(
+                                                                    8
+                                                                )
+                                                            )
                                                         ),
                                                     backgroundColor = Color.White,
                                                     textColor = Color.Black,
@@ -5935,6 +6005,42 @@ fun IniciarInterfazFacturacion(
                                 objetoAdaptardor = objetoAdaptardor,
                                 modifier = Modifier.weight(1f)
                             )
+                        }
+
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(objetoAdaptardor.ajustarAncho(8))
+                        ){
+                            TText(
+                                text = "Impresora: ",
+                                fontSize = obtenerEstiloTitleSmall(),
+                                textAlign = TextAlign.Center
+                            )
+                            BBasicTextField(
+                                value = impreFactura,
+                                onValueChange = { clave ->
+                                    impreFactura = listaImpresoras.find { it.clave == clave }?.valor?:"Local"
+                                },
+                                opciones = listaImpresoras,
+                                objetoAdaptardor = objetoAdaptardor,
+                                utilizarMedidas = false,
+                                modifier = Modifier
+                                    .wrapContentWidth()
+                                    .border(
+                                        1.dp,
+                                        color = Color.Gray,
+                                        RoundedCornerShape(
+                                            objetoAdaptardor.ajustarAltura(
+                                                10
+                                            )
+                                        )
+                                    ),
+                                backgroundColor = Color.White,
+                                fontSize = obtenerEstiloBodyBig(),
+                                mostrarLeadingIcon = false,
+                                placeholder = "Impresora..."
+                            )
+
                         }
 
                         Row(
@@ -6004,7 +6110,11 @@ fun IniciarInterfazFacturacion(
                                     if (vuelto < 0) return@BButton mostrarMensajeError("Pago Incompleto...")
                                     iniciarMenuFacturarContado = false
                                     coroutineScope.launch {
-                                        procesarProforma(listaPagos = listaPagosTemp, isContado = true)
+                                        procesarProformaComoFactura(
+                                            listaPagos = listaPagosTemp,
+                                            isContado = true,
+                                            impresora = if (impreFactura == "Local") "" else impreFactura.replace("-", "")
+                                        )
                                     }
                                 },
                                 objetoAdaptardor = objetoAdaptardor,
@@ -6026,9 +6136,177 @@ fun IniciarInterfazFacturacion(
         }
     }
 
+    if (iniciarMenuConfPagoCredito) {
+        var isMenuVisible by remember { mutableStateOf(false) }
+        val listaPagosTemp = remember { mutableStateListOf<Pago>() }
+        var impreCredito by remember { mutableStateOf(obtenerParametroLocal(context, "imprCred$nombreEmpresa", valorPorDefecto = "Local")) }
+        var listaImpresoras by remember {  mutableStateOf<List<ParClaveValor>>(emptyList()) }
+
+        LaunchedEffect(Unit) {
+            val listaImpresorasTemp = mutableListOf<ParClaveValor>()
+            listaImpresorasTemp.add(ParClaveValor("Local", "Local"))
+            gestorProcGenSocket.obtenerImpresorasRemotas(
+                context = context,
+                datosRetornados = {
+                    val listaTemp = it
+                    listaTemp.forEach { impresora ->
+                        listaImpresorasTemp.add(ParClaveValor(clave = impresora[0], valor = impresora[0]+"-"+impresora[1]))
+                    }
+                    listaImpresoras = listaImpresorasTemp
+                },
+                onExitoOrFin = {
+                    return@obtenerImpresorasRemotas
+                }
+            )
+            gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
+            delay(100)
+            isMenuVisible = true
+        }
+
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black.copy(alpha = 0.3f))
+                .clickable(enabled = false) {},
+            contentAlignment = Alignment.Center
+        ) {
+            AnimatedVisibility(
+                visible = isMenuVisible,
+                enter = fadeIn(animationSpec = tween(500)) + slideInVertically(initialOffsetY = { it }),
+                exit = fadeOut(animationSpec = tween(500)) + slideOutVertically(targetOffsetY = { it })
+            ) {
+                Surface(
+                    modifier = Modifier
+                        .wrapContentSize()
+                        .padding(objetoAdaptardor.ajustarAltura(16))
+                        .align(Alignment.Center),
+                    shape = RoundedCornerShape(objetoAdaptardor.ajustarAltura(12)),
+                    color = Color.White,
+                    shadowElevation = 8.dp
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .padding(16.dp)
+                            .wrapContentSize(),
+                        verticalArrangement = Arrangement.spacedBy(objetoAdaptardor.ajustarAltura(8))
+                    ) {
+                        TText(
+                            text = "Facturar a Crédito",
+                            fontSize = obtenerEstiloHeadSmall(),
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(objetoAdaptardor.ajustarAncho(8))
+                        ){
+                            TText(
+                                text = "Impresora: ",
+                                fontSize = obtenerEstiloTitleSmall(),
+                                textAlign = TextAlign.Center
+                            )
+                            BBasicTextField(
+                                value = impreCredito,
+                                onValueChange = { clave ->
+                                    impreCredito = listaImpresoras.find { it.clave == clave }?.valor?:"Local"
+                                },
+                                opciones = listaImpresoras,
+                                objetoAdaptardor = objetoAdaptardor,
+                                utilizarMedidas = false,
+                                modifier = Modifier
+                                    .wrapContentWidth()
+                                    .border(
+                                        1.dp,
+                                        color = Color.Gray,
+                                        RoundedCornerShape(
+                                            objetoAdaptardor.ajustarAltura(
+                                                10
+                                            )
+                                        )
+                                    ),
+                                backgroundColor = Color.White,
+                                fontSize = obtenerEstiloBodyBig(),
+                                mostrarLeadingIcon = false,
+                                placeholder = "Impresora..."
+                            )
+
+                        }
+
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(objetoAdaptardor.ajustarAncho(8))
+                        ) {
+                            TText(
+                                text = "Monto Total:",
+                                modifier = Modifier.weight(1f),
+                                fontSize = obtenerEstiloTitleSmall(),
+                                textAlign = TextAlign.Start
+                            )
+
+                            TText(
+                                text = simboloMoneda + separacionDeMiles(montoDouble = total) + " $codMonedaProforma",
+                                modifier = Modifier.weight(1f),
+                                fontSize = obtenerEstiloTitleSmall(),
+                                textAlign = TextAlign.End
+                            )
+                        }
+
+                        HorizontalDivider(thickness = 1.dp, color = Color.Black)
+
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(objetoAdaptardor.ajustarAncho(8))
+                        ) {
+                            BButton(
+                                text = "Aceptar",
+                                onClick = {
+                                    coroutineScope.launch {
+                                        pagarACredito(impresora = if (impreCredito == "Local") "" else impreCredito.replace("-", ""))
+                                    }
+                                    iniciarMenuConfPagoCredito = false
+                                },
+                                objetoAdaptardor = objetoAdaptardor,
+                                modifier = Modifier.weight(1f),
+                                backgroundColor = Color(0xFF4CAF50)
+                            )
+                            BButton(
+                                text = "Salir",
+                                onClick = {
+                                    iniciarMenuConfPagoCredito = false
+                                },
+                                objetoAdaptardor = objetoAdaptardor,
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     if (iniciarMenuConfComoProforma) {
 
         var isMenuVisible by remember { mutableStateOf(false) }
+        var impreProforma by remember { mutableStateOf(obtenerParametroLocal(context, "imprProf$nombreEmpresa", valorPorDefecto = "Local")) }
+        var listaImpresoras by remember {  mutableStateOf<List<ParClaveValor>>(emptyList()) }
+
+        LaunchedEffect(Unit) {
+            val listaImpresorasTemp = mutableListOf<ParClaveValor>()
+            listaImpresorasTemp.add(ParClaveValor("Local", "Local"))
+            gestorProcGenSocket.obtenerImpresorasRemotas(
+                context = context,
+                datosRetornados = {
+                    val listaTemp = it
+                    listaTemp.forEach { impresora ->
+                        listaImpresorasTemp.add(ParClaveValor(clave = impresora[0], valor = impresora[0]+"-"+impresora[1]))
+                    }
+                    listaImpresoras = listaImpresorasTemp
+                },
+                onExitoOrFin = {
+                    return@obtenerImpresorasRemotas
+                }
+            )
+            gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
+        }
 
         LaunchedEffect(Unit) {
             delay(100)
@@ -6093,15 +6371,54 @@ fun IniciarInterfazFacturacion(
                                 .wrapContentHeight(),
                             fontSize = obtenerEstiloBodyMedium()
                         )
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(objetoAdaptardor.ajustarAncho(8))
+                        ){
+                            TText(
+                                text = "Impresora: ",
+                                fontSize = obtenerEstiloTitleSmall(),
+                                textAlign = TextAlign.Center
+                            )
+                            BBasicTextField(
+                                value = impreProforma,
+                                onValueChange = { clave ->
+                                   impreProforma = listaImpresoras.find { it.clave == clave }?.valor?:"Local"
+                                },
+                                opciones = listaImpresoras,
+                                objetoAdaptardor = objetoAdaptardor,
+                                utilizarMedidas = false,
+                                modifier = Modifier
+                                    .wrapContentWidth()
+                                    .border(
+                                        1.dp,
+                                        color = Color.Gray,
+                                        RoundedCornerShape(
+                                            objetoAdaptardor.ajustarAltura(
+                                                10
+                                            )
+                                        )
+                                    ),
+                                backgroundColor = Color.White,
+                                fontSize = obtenerEstiloBodyBig(),
+                                mostrarLeadingIcon = false,
+                                placeholder = "Impresora..."
+                            )
+
+                        }
                         Row (
                             horizontalArrangement = Arrangement.spacedBy(objetoAdaptardor.ajustarAncho(8))
                         ) {
                             BButton(
                                 text = "Procesar",
                                 onClick = {
-                                    tipoFormaProcesar = "proforma"
-                                    guardarProforma = true
                                     iniciarMenuConfComoProforma = false
+                                    coroutineScope.launch {
+                                        procProforma(
+                                            imprimir = false,
+                                            correo = correoProformaTemp
+                                        )
+                                    }
                                 },
                                 objetoAdaptardor = objetoAdaptardor,
                                 modifier = Modifier.weight(1f)
@@ -6110,10 +6427,13 @@ fun IniciarInterfazFacturacion(
                             BButton(
                                 text = "Proce/Impri",
                                 onClick = {
-                                    agregarColaImpresion(isProforma = true)
-                                    tipoFormaProcesar = "proforma"
-                                    guardarProforma = true
                                     iniciarMenuConfComoProforma = false
+                                    coroutineScope.launch {
+                                        procProforma (
+                                            impresora = if (impreProforma == "Local") "" else impreProforma.replace("-",""),
+                                            correo = correoProformaTemp
+                                        )
+                                    }
                                 },
                                 objetoAdaptardor = objetoAdaptardor,
                                 modifier = Modifier.weight(1f),
@@ -6297,24 +6617,27 @@ fun IniciarInterfazFacturacion(
                                     )
                                 }
                             }else{
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.Center
-                                ){
-                                    Icon(
-                                        imageVector = if(exitoImpresion) Icons.Default.CheckCircle else Icons.Default.Error,
-                                        contentDescription = "",
-                                        tint = if(exitoImpresion) Color(0xFF4CAF50) else Color(0xFFF44336),
-                                        modifier = Modifier
-                                            .size(objetoAdaptardor.ajustarAltura(50))
-                                            .padding(4.dp)
-                                    )
-                                    TText(
-                                        text = if(exitoImpresion) "Reimpresión exitosa!" else "Error en la Reimpresión!",
-                                        fontSize = obtenerEstiloTitleSmall(),
-                                        modifier = Modifier.fillMaxWidth()
-                                    )
+                                if (listaImpresion.isEmpty()){
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.Center
+                                    ){
+                                        Icon(
+                                            imageVector = if(exitoImpresion) Icons.Default.CheckCircle else Icons.Default.Error,
+                                            contentDescription = "",
+                                            tint = if(exitoImpresion) Color(0xFF4CAF50) else Color(0xFFF44336),
+                                            modifier = Modifier
+                                                .size(objetoAdaptardor.ajustarAltura(50))
+                                                .padding(4.dp)
+                                        )
+                                        TText(
+                                            text = if(exitoImpresion) "Reimpresión exitosa!" else "Error en la Reimpresión!",
+                                            fontSize = obtenerEstiloTitleSmall(),
+                                            modifier = Modifier.fillMaxWidth()
+                                        )
+                                    }
                                 }
+
                                 AnimatedVisibility(
                                     visible = exitoImpresion && listaImpresion.isNotEmpty(),
                                     enter = fadeIn(animationSpec = tween(500)) + slideInVertically(initialOffsetY = { it }),
@@ -7110,42 +7433,6 @@ fun IniciarInterfazFacturacion(
         mostrarMenu = iniciarMenuConfExoneracion,
         titulo = "Exonerar Proforma.",
         subTitulo = "¿Está seguro que desea exonerar esta Proforma?"
-    )
-
-    MenuConfirmacion(
-        txBtAceptar = "Facturar",
-        txBtDenegar = "Cancelar",
-        onAceptar = {
-            coroutineScope.launch {
-                pagarACredito()
-            }
-            iniciarMenuConfPagoCredito = false
-        },
-        onDenegar = {
-            iniciarMenuConfPagoCredito = false
-            iniciarMenuProcesar = true
-        },
-        mostrarMenu = iniciarMenuConfPagoCredito,
-        titulo = "Facturar a Crédito",
-        subTitulo = "¿Desea Facturar a Crédito?"
-    )
-
-    MenuConfirmacion(
-        txBtAceptar = "Facturar",
-        txBtDenegar = "Cancelar",
-        onAceptar = {
-            coroutineScope.launch {
-                pagarACredito()
-            }
-            iniciarMenuConfPagoCredito = false
-        },
-        onDenegar = {
-            iniciarMenuConfPagoCredito = false
-            iniciarMenuProcesar = true
-        },
-        mostrarMenu = iniciarMenuConfPagoCredito,
-        titulo = "Facturar a Crédito",
-        subTitulo = "¿Desea Facturar de Contado?"
     )
 
     MenuConfirmacion(

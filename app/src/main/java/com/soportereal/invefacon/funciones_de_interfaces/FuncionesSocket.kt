@@ -40,6 +40,7 @@ suspend fun conectarSocket(
 
 
     try {
+        gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(true)
         socket = withContext(Dispatchers.IO) {
             try {
                 Socket(host, puerto)
@@ -59,7 +60,6 @@ suspend fun conectarSocket(
         var mensajeTemp = mensaje
         val baseDatos = obtenerParametroLocal(context, "bdActual")
         val codUsuario =  obtenerParametroLocal(context, "codUsuarioActual")
-        val mostraMsgExito = obtenerParametroLocal(context, "isImpresionActiva$codUsuario$baseDatos") == "0"
         if (crearConexion) {
             // Generar mensajes
             val mensajeConexion = generarConsultaSocket(
@@ -88,6 +88,7 @@ suspend fun conectarSocket(
                     flujoEntrada.read(buffer)
                 }
             }
+            var finalizarSocket = false
 
             if (leido == null) {
                 mostrarMensajeError("Tiempo de espera agotado: no se recibió respuesta del Socket")
@@ -104,13 +105,11 @@ suspend fun conectarSocket(
             }
 
             val fragmento = String(buffer, 0, leido, Charsets.ISO_8859_1)
-            println("OUTPUT SOCKET: $fragmento")
             alRecibirMensaje(fragmento)
             // LA FUNCION DE onExitoOrFin() ES PODER RETORNAR UN TRUE Y UN FALSE
             // SI ES FALSE, NO HUBO NINGUNA RESPUESTA DE EXITO Y FINALIZO LA RESPUESTA, ESTO SIRVE PARA PODER DETECTAR SI LA EJECUION DEL SOCKET ES EXITOSA
             // SI ES TRUE LA RESPUESTA ES EXITOSA Y FINALIZO LA RESPUESTA
             validarRespuestaSocket(
-                mostraMsgExito = mostraMsgExito,
                 datos = fragmento,
                 onExitoOrFin = { codEstado -> // SOLO RETORNA CODIGOS DE RESPUESTA EVE, ERR Y FPC
                     historialCodEstado += codEstado // SE CONCATENA EL CODIGO
@@ -120,6 +119,7 @@ suspend fun conectarSocket(
 
                     if (historialCodEstado == "FPC") { // Y  SE AUSUME QUE ES EXITO O SI SOLO ES FPC YA QUE NO HUBO NINGUN ERROR Y FINALIZCO EL PROCESO
                         onExitoOrFin(true)
+                        finalizarSocket = true
                     }
 
                     if (expreValiEstadoError.containsMatchIn(historialCodEstado)){
@@ -127,6 +127,7 @@ suspend fun conectarSocket(
                     }
                 }
             )
+            if (finalizarSocket) break
         }
     } catch (e: Exception) {
         mostrarMensajeError(e.message ?: "Error desconocido")
@@ -185,10 +186,11 @@ fun generarIdProceso(): String {
     return cadenaFinal
 }
 
-suspend fun validarRespuestaSocket(datos: String, onExitoOrFin: suspend (String)->Unit, mostraMsgExito : Boolean) {
+suspend fun validarRespuestaSocket(datos: String, onExitoOrFin: suspend (String)->Unit) {
     val regex = Regex("""\|\>\>(.*?)\<\<\|""")
     val resultados = regex.findAll(datos).map { it.groupValues[1] }.toList()
     resultados.forEach {
+        println("OUTPUT SOCKET: $it")
         if (it.length<17) return@forEach
         val codigoRespuesta = it.substring(14,17)
         val mensajeRespuesta = it.substring(18, it.length)
@@ -198,7 +200,7 @@ suspend fun validarRespuestaSocket(datos: String, onExitoOrFin: suspend (String)
                 onExitoOrFin("ERR")
             }
             "EVE"-> {
-                if (mostraMsgExito) mostrarMensajeExito("SCK: $mensajeRespuesta")
+                mostrarMensajeExito("SCK: $mensajeRespuesta")
                 onExitoOrFin("EVE")
             }
             "FPC" -> {
@@ -224,6 +226,9 @@ suspend fun obtenerConsecutivoSocket(datos: String, consecutivoRetornar: suspend
                 consecutivoRetornar(consecutivo.split("ß")[0])
             }
             "FTD" -> {
+                consecutivoRetornar(consecutivo.split("ß")[0])
+            }
+            "FTP" -> {
                 consecutivoRetornar(consecutivo.split("ß")[0])
             }
         }

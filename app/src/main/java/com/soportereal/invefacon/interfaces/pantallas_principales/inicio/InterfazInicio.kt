@@ -125,6 +125,8 @@ fun IniciarInterfazInicio(
     guardarParametroSiNoExiste(contexto, "imprProf$nombreEmpresa", "Local")
     guardarParametroSiNoExiste(contexto, "imprCred$nombreEmpresa", "Local")
     guardarParametroSiNoExiste(contexto, "imprRecib$nombreEmpresa", "Local")
+    guardarParametroSiNoExiste(contexto, "oficina$nombreEmpresa", "001")
+    guardarParametroSiNoExiste(contexto, "caja$nombreEmpresa", "0")
 
     LaunchedEffect (Unit) {
         validarVersionApp(contexto)
