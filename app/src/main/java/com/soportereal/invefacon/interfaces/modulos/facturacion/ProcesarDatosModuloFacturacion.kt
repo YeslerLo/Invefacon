@@ -411,6 +411,15 @@ class ProcesarDatosModuloFacturacion(apiToken: String)
             }
         )
     }
+
+    suspend fun obtenerRutasImagenesArticulo(codigo : String, empresa: String) : JSONObject? {
+        val apiBody = MultipartBody.Builder().setType(MultipartBody.FORM)
+            .addFormDataPart("codigo", codigo)
+            .addFormDataPart("empresa", empresa)
+            .build()
+        return objetoFuncionesHttpInvefacon.metodoPost(apiBody, "facturacion/ObtenerRutasImagenesArticulos.php")
+    }
+
 }
 
 data class ArticuloFacturacion(
@@ -622,6 +631,12 @@ data class Cliente(
     val PorcentajeInteres: String = "0"
 )
 
+data class DatosImagenArticuloFacturacion(
+    val ruta : String = "",
+    val detalle : String = "",
+    val descripcion: String = ""
+)
+
 data class Factura(
     val ventaMadre: VentaMadre = VentaMadre(),
     val ventaHija: List<VentaHija> = listOf(),
@@ -646,6 +661,3 @@ data class Pago(
     var Total: String = "",
     var codMedioPago: String = ""
 )
-
-
-

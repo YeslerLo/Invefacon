@@ -662,13 +662,12 @@ class ImpresoraViewModel : ViewModel() {
     }
 }
 
-
 suspend fun imprimirFactura(
     factura: Factura,
     context: Context,
     nombreEmpresa : String,
-    tipoDoc : String, // 1-ORIGINAL 2-COPIA 3-REIMPRESION 4-PRORFORMA 5-NOTA CREDITO 6-NOTA DEBITO
-    numeroEnCola : String,
+    tipoDoc : String, //00-PRORFORMA 01-FACTURA 02-NOTA DEBITO 03-NOTA CREDITO
+    isCopia : Boolean,
     usuario: String
 ) : Boolean {
     var facturaTexto = ""
@@ -688,19 +687,19 @@ suspend fun imprimirFactura(
     facturaTexto += addText("IDENTIFICACION: "+factura.empresa.cedula, "C", context = context)
     facturaTexto += addTextTall("DOC: ${factura.ventaMadre.Numero}", "C", context = context)
     if (tipoDoc in listOf("5", "6")) facturaTexto += addTextTall("REF: ${factura.ventaMadre.Referencia}", "C", context = context)
-    val tipoDocumento = if(tipoDoc == "2" || tipoDoc == "3") "COPIA"  else "ORIGINAL"
+    val estadoDocumerto = if(isCopia) "COPIA"  else "ORIGINAL"
     facturaTexto += addTextTall(
         when(tipoDoc){
-            "4"-> ""
-            "5" -> "NOTA CREDITO ELECTRONICA ${factura.descripcionMedioPago.uppercase(Locale.ROOT)} $tipoDocumento"
-            "6" -> "NOTA DEBITO ELECTRONICA ${factura.descripcionMedioPago.uppercase(Locale.ROOT)} $tipoDocumento"
-            else -> "FACTURA ELECTRONICA ${factura.descripcionMedioPago.uppercase(Locale.ROOT)} $tipoDocumento"
+            "01"-> "FACTURA ELECTRONICA ${factura.descripcionMedioPago.uppercase(Locale.ROOT)} $estadoDocumerto"
+            "02" -> "NOTA DEBITO ELECTRONICA ${factura.descripcionMedioPago.uppercase(Locale.ROOT)} $estadoDocumerto"
+            "03" -> "NOTA CREDITO ELECTRONICA ${factura.descripcionMedioPago.uppercase(Locale.ROOT)} $estadoDocumerto"
+            else -> ""
         },
         "C",
         destacar = true,
         context = context
     )
-    if (tipoDoc != "4"){
+    if (tipoDoc != "00"){
         facturaTexto += addText("CLAVE: ${factura.clave.substring(0, 25)}", "C", context = context)
         facturaTexto += addText("       ${factura.clave.substring(25, 50)}", "C", context = context)
     }else{
@@ -708,13 +707,13 @@ suspend fun imprimirFactura(
     }
 
     facturaTexto += addText("FECHA: ${factura.ventaMadre.Fecha}", "L", context = context)
-    if (obtenerValorParametroEmpresa("20", "0") == "1" && tipoDoc != "4") facturaTexto += addTextTall("FORMA PAGO: ${factura.descrpcionFormaPago.uppercase(Locale.ROOT)}", "C", context = context)
+    if (obtenerValorParametroEmpresa("20", "0") == "1" && tipoDoc != "00") facturaTexto += addTextTall("FORMA PAGO: ${factura.descrpcionFormaPago.uppercase(Locale.ROOT)}", "C", context = context, destacar = true)
     if (factura.cliente.Cedula.isNotEmpty())facturaTexto += addText("CEDULA: ${factura.cliente.Cedula} COD: ${factura.cliente.Id_Cliente} ", "L", context = context)
     facturaTexto += addText("NOMBRE: ${factura.cliente.Nombre}", "L", context = context)
     if (factura.cliente.EmailFactura.isNotEmpty()) facturaTexto += addText("EMAIL: ${factura.cliente.EmailFactura}", "L", context = context)
     if (factura.cliente.Telefonos.isNotEmpty()) facturaTexto += addText("TELEFONO: ${factura.cliente.Telefonos}", "L", context = context)
     if (factura.cliente.Direccion.isNotEmpty()) facturaTexto += addText("DIRECCION: ${factura.cliente.Direccion}", "L", context = context)
-    facturaTexto += addTextTall("DETALLE", "C", context = context)
+    facturaTexto += addTextBig("DETALLE", "C", context = context)
     facturaTexto += agregarDobleLinea(context = context, justification = "C")
     facturaTexto += addText(if (obtenerValorParametroEmpresa("307", "0") == "1") "CABYS" else "", "L", context = context, destacar = true)
     facturaTexto += addText("CANTIDAD ${if (obtenerValorParametroEmpresa("15", "0") == "1") "#CODIGO" else ""} DESCRIPCION", "L", context = context, destacar = true)
@@ -735,7 +734,7 @@ suspend fun imprimirFactura(
             listaIvas.add(ParClaveValor(clave = articulo.ArticuloIvaPorcentage.toString(), valor = articulo.ArticuloIvaMonto, venta = articulo.ArticuloVentaGravado))
         }
     }
-    if (obtenerValorParametroEmpresa("192", "0") == "1"){
+    if (obtenerValorParametroEmpresa("192", "0") == "1") {
         facturaTexto += agregarDobleLinea(context = context, justification = "C")
         facturaTexto += addText("SUBTOTAL: [R]${separacionDeMiles(isString = true, montoString = (factura.ventaMadre.TotalVenta.toDouble()+factura.ventaMadre.TotalDescuento.toDouble()).toString())}", "R", context = context)
         if (obtenerValorParametroEmpresa("26", "0") == "1") facturaTexto += addText("DESCUENTO: [R]${separacionDeMiles(isString = true, montoString = factura.ventaMadre.TotalDescuento)}", "R", context = context)
@@ -744,18 +743,20 @@ suspend fun imprimirFactura(
         facturaTexto += agregarLinea(ajustarATexto = true, text = "  ${factura.ventaMadre.MonedaCodigo} TOTAL ${factura.ventaMadre.Total}", justification = "R", context = context)
         facturaTexto += addTextTall("  ${factura.ventaMadre.MonedaCodigo} TOTAL ${separacionDeMiles(isString = true, montoString = factura.ventaMadre.Total)}", "R", destacar = true, context = context)
     }
-    if (obtenerValorParametroEmpresa("47", "0") == "1"){
+    if (obtenerValorParametroEmpresa("47", "0") == "1") {
         facturaTexto += addText("***RESUMEN IVA***", "C", context = context)
         facturaTexto += addText("IVA%  /  VENTA  /  IVA", "C", context = context, conLiena = true)
-        for(iva in listaIvas){
+        for(iva in listaIvas) {
             facturaTexto += addText("${iva.clave}% / ${separacionDeMiles(montoString = iva.venta, isString = true)} / ${separacionDeMiles(montoString = iva.valor, isString = true)}", "C", context = context)
         }
     }
     facturaTexto += "\n"
-    if (tipoDoc != "4") facturaTexto += addText("CAJA: ${factura.ventaMadre.CajaNumero} VEND: ${factura.nombreAgente}", "C", context = context)
-    if (tipoDoc != "4") facturaTexto += addText(factura.ventaMadre.MedioPagoDetalle.replace("\r", "").uppercase(Locale.ROOT), "C", context = context, conLiena = true)
-    if (tipoDoc != "4") facturaTexto += addText(obtenerValorParametroEmpresa("137", "GRACIAS POR SU COMPRA!"), "C", context = context)
-    if (tipoDoc != "4") facturaTexto += addText(factura.leyenda, "C", context = context)
+    if (tipoDoc != "00"){
+        facturaTexto += addText("CAJA: ${factura.ventaMadre.CajaNumero} VEND: ${factura.nombreAgente}", "C", context = context)
+        facturaTexto += addText(factura.ventaMadre.MedioPagoDetalle.replace("\r", "").uppercase(Locale.ROOT), "C", context = context, conLiena = true)
+        facturaTexto += addText(obtenerValorParametroEmpresa("137", "GRACIAS POR SU COMPRA!"), "C", context = context)
+        facturaTexto += addText(factura.leyenda, "C", context = context)
+    }
     facturaTexto += addText("Usu: $usuario", "C", context = context)
     facturaTexto += addText("INVEFACON ANDROID V.${context.getString(R.string.app_version)}", "C", context = context, destacar = true)
     val isImpreso = gestorImpresora.imprimir(text = facturaTexto, context)

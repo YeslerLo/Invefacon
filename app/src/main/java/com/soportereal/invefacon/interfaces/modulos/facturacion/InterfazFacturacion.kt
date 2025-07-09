@@ -3,6 +3,7 @@ package com.soportereal.invefacon.interfaces.modulos.facturacion
 import android.annotation.SuppressLint
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
@@ -16,7 +17,9 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -46,8 +49,11 @@ import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.AccountBox
 import androidx.compose.material.icons.filled.ArrowBackIosNew
 import androidx.compose.material.icons.filled.AttachMoney
@@ -141,6 +147,7 @@ import com.soportereal.invefacon.funciones_de_interfaces.MenuConfirmacion
 import com.soportereal.invefacon.funciones_de_interfaces.ParClaveValor
 import com.soportereal.invefacon.funciones_de_interfaces.ProcGenSocket
 import com.soportereal.invefacon.funciones_de_interfaces.TText
+import com.soportereal.invefacon.funciones_de_interfaces.TTextTitCuer
 import com.soportereal.invefacon.funciones_de_interfaces.TextFieldMultifuncional
 import com.soportereal.invefacon.funciones_de_interfaces.actualizarParametro
 import com.soportereal.invefacon.funciones_de_interfaces.deserializarFacturaHecha
@@ -183,17 +190,12 @@ import com.soportereal.invefacon.interfaces.pantallas_principales.gestorEstadoPa
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import org.json.JSONArray
 import org.json.JSONObject
 import java.math.BigDecimal
 import java.math.RoundingMode
-import java.util.concurrent.atomic.AtomicInteger
 
 @SuppressLint("ConfigurationScreenWidthHeight")
 @Composable
@@ -207,6 +209,7 @@ fun IniciarInterfazFacturacion(
     val context = LocalContext.current
     val gestorTablaArticulos: GestorTablaArticulos = viewModel()
     val fontAksharPrincipal = FontFamily(Font(R.font.akshar_medium))
+    val fontAksharRegular = FontFamily(Font(R.font.akshar_regular))
     val focusManager = LocalFocusManager.current
     val configuration = LocalConfiguration.current
     val dpAnchoPantalla = configuration.screenWidthDp
@@ -308,8 +311,6 @@ fun IniciarInterfazFacturacion(
     var iniciarMenuCambiarPrecio by remember { mutableStateOf(false) }
     var cambiarMoneda by remember { mutableStateOf(false) }
     var nuevoTipoPrecio by remember { mutableStateOf("") }
-    var isFormaPagoAgregada by remember { mutableStateOf(false) }
-    var isSoloAgregarFormaPago by remember { mutableStateOf(false) }
     var aplicarDescuento by remember { mutableStateOf(false) }
     var nuevoPorcentajeDescuento by remember { mutableStateOf("0") }
     var iniciarMenuConfExoneracion by remember { mutableStateOf(false) }
@@ -322,7 +323,6 @@ fun IniciarInterfazFacturacion(
     var iniciarMenuFacturarContado by remember { mutableStateOf(false) }
     var iniciarMenuProcesar by remember { mutableStateOf(false) }
     var quitarExoneracion by remember { mutableStateOf(false) }
-    var guardarProforma by remember { mutableStateOf(false) }
     val listaMonedas by remember {
         mutableStateOf(
             listOf(
@@ -349,11 +349,9 @@ fun IniciarInterfazFacturacion(
         )
     }
     var estadoProformaInicial by remember { mutableStateOf("") }
-    var agregarFormapago by remember { mutableStateOf(false) }
     var socketJob by remember { mutableStateOf<Job?>(null) }
     val cortinaSocket= CoroutineScope(Dispatchers.IO)
     var tasaCambioDolar by remember { mutableDoubleStateOf(0.00) }
-    var tipoFormaProcesar by remember { mutableStateOf("factura") }
     var correoProformaTemp by remember { mutableStateOf("") }
     var iniciarPantallaEstadoImpresion by remember { mutableStateOf(false) }
     var isImprimiendo by remember { mutableStateOf(false) }
@@ -372,6 +370,7 @@ fun IniciarInterfazFacturacion(
     var actualizarNombreProforma by remember { mutableStateOf(false) }
     var nombreProformaTemp by remember { mutableStateOf("") }
     var iniciarBusquedaClienteByCedula by remember { mutableStateOf(false) }
+    var mostrarMasImegenesArticulo by remember { mutableStateOf(false) }
     val listaArticulos by gestorTablaArticulos.articulos.collectAsState()
     val coroutineScope = rememberCoroutineScope()
     val coroutineScopeSecundaria = rememberCoroutineScope()
@@ -396,23 +395,7 @@ fun IniciarInterfazFacturacion(
         end = Offset(shimmerTranslate + 800f, 0f)
     )
 
-    fun agregarColaImpresion(isContado: Boolean = true, isReimpresion: Boolean = false, isProforma: Boolean = false) {
-        listaImpresion.clear()
-        val parametroEmpresa = if (isContado) "99" else "98"
-        val cantidadCopias = if (isReimpresion || isProforma) 0 else obtenerValorParametroEmpresa(parametroEmpresa, "0").toInt()
 
-        val items = (0..cantidadCopias).map { index ->
-            val valor = when {
-                isProforma -> "4"
-                isReimpresion -> "3"
-                index == 0 -> "1"
-                else -> "2"
-            }
-            ParClaveValor(clave = index.toString(), valor = valor) // CLAVE = POSION EN COLA   VALOR = TIPO DE DOCUMENTO
-        }
-
-        listaImpresion.addAll(items)
-    }
 
     suspend fun imprimir() {
         isImprimiendo = true
@@ -436,8 +419,8 @@ fun IniciarInterfazFacturacion(
             factura = datosFacturaEmitida,
             context = context,
             nombreEmpresa = nombreEmpresa,
-            tipoDoc = listaImpresion.first().valor,
-            numeroEnCola = listaImpresion.first().clave,
+            tipoDoc = listaImpresion.first().tipoDocumento,
+            isCopia = listaImpresion.first().isCopia,
             usuario = "#$codUsuario $nombreUsuario"
         )
         delay(3500)
@@ -454,7 +437,7 @@ fun IniciarInterfazFacturacion(
         actualizarDatosProforma = true
     }
 
-    suspend fun obtenerDatosFactura() {
+    suspend fun obtenerDatosFactura()   {
         if(valorImpresionActiva == "0" || listaImpresion.isEmpty()){
             numeroProforma = ""
             actualizarDatosProforma = true
@@ -468,11 +451,28 @@ fun IniciarInterfazFacturacion(
             datosFacturaEmitida = deserializarFacturaHecha(result)
             imprimir()
         }else{
+            println(result)
             mostrarMensajeError(result.getString("message"))
             iniciarPantallaEstadoImpresion = true
             exitoImpresion = false
             isImprimiendo = false
         }
+    }
+
+    suspend fun agregarColaImpresion(isContado: Boolean = true, isReimpresion: Boolean = false, isProforma: Boolean = false) {
+        listaImpresion.clear()
+        val parametroEmpresa = if (isContado) "99" else "98"
+        val cantidadCopias = if (isReimpresion || isProforma) 0 else obtenerValorParametroEmpresa(parametroEmpresa, "0").toInt()
+
+        val items = (0..cantidadCopias).map { index ->
+            val valor = when {
+                isProforma -> "00"
+                else -> "01"
+            }
+            ParClaveValor(tipoDocumento = valor, isCopia = isReimpresion || index > 0)
+        }
+        listaImpresion.addAll(items)
+        obtenerDatosFactura()
     }
 
     suspend fun procesarProformaComoFactura(listaPagos: SnapshotStateList<Pago>, isContado: Boolean, impresora : String = "") {
@@ -506,7 +506,6 @@ fun IniciarInterfazFacturacion(
                     mostrarMensajeExito("LA FACTURA SE HA EMITIDO CON EXITO!")
                     if (impresora.isEmpty()){
                         agregarColaImpresion(isContado = isContado)
-                        obtenerDatosFactura()
                     }else{
                         numeroProforma = ""
                         actualizarDatosProforma = true
@@ -696,7 +695,6 @@ fun IniciarInterfazFacturacion(
                     onExitoOrFin = {
                         if (impresora.isEmpty() && imprimir){
                             agregarColaImpresion(isProforma = true)
-                            obtenerDatosFactura()
                         }else{
                             numeroProforma = ""
                             actualizarDatosProforma = true
@@ -1155,83 +1153,6 @@ fun IniciarInterfazFacturacion(
 
     }
 
-    LaunchedEffect (agregarFormapago) {
-        if (!agregarFormapago) return@LaunchedEffect
-        isFormaPagoAgregada = false
-        gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(true)
-
-        val cantidadPagosEnviados = AtomicInteger(0)
-
-        coroutineScope {
-            listaPagos.map { pago ->
-                async {
-                    cantidadPagosEnviados.incrementAndGet()
-
-                    if ( ((pago.Monto.isEmpty() || pago.Monto.toDouble() == 0.0) && pago.Id != "0") || pago.funcion == "eliminar"){
-                        pago.Monto = "eliminar"
-                    }
-                    pago.TipoCambio= if ( pago.CodigoMoneda != "CRC" ) tasaCambio.toString() else "1"
-                    val result = objectoProcesadorDatosApi.agregarFormaPago(pago = pago)
-
-                    if (result != null) {
-
-                        estadoRespuestaApi.cambiarEstadoRespuestaApi(
-                            mostrarRespuesta = isSoloAgregarFormaPago,
-                            mostrarSoloRespuestaError = !isSoloAgregarFormaPago,
-                            datosRespuesta = result
-                        )
-
-                        if (validarExitoRestpuestaServidor(result)) {
-                            cantidadPagosEnviados.decrementAndGet()
-                            listaPagos.removeIf { it.Monto == "eliminar" }
-                        }
-                    }
-                }
-            }
-        }.awaitAll()
-        if (cantidadPagosEnviados.get() == 0) {
-            actualizarDatosProforma = isSoloAgregarFormaPago
-            guardarProforma = !isSoloAgregarFormaPago
-        }
-        else{
-            gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
-            actualizarDatosProforma = true
-        }
-        if (listaPagos.size==0) mostrarMensajeExito("Las formas de pago se han guardado exitosamente.")
-        gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
-        isSoloAgregarFormaPago = false
-        agregarFormapago = false
-    }
-
-    LaunchedEffect (guardarProforma) {
-        if (!guardarProforma) return@LaunchedEffect
-        gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(true)
-        try {
-            val result = objectoProcesadorDatosApi.guardarProforma(
-                numero = numeroProforma,
-                tipoPago = "",
-                tipo = tipoFormaProcesar,
-                correo = correoProformaTemp
-            )
-
-            if (result == null) return@LaunchedEffect
-
-            if (!validarExitoRestpuestaServidor(result)){
-                estadoRespuestaApi.cambiarEstadoRespuestaApi(mostrarSoloRespuestaError = true, datosRespuesta = result)
-                actualizarDatosProforma = true
-                return@LaunchedEffect
-            }
-
-            val data = result.getJSONObject("data")
-            consecutivoFactura = data.getString("consecutivo")
-            obtenerDatosFactura()
-        } finally {
-            gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
-            correoProformaTemp = ""
-            guardarProforma = false
-        }
-    }
-
     LaunchedEffect (agregarNuevoCliente) {
         if (!agregarNuevoCliente) return@LaunchedEffect
         gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(true)
@@ -1389,7 +1310,6 @@ fun IniciarInterfazFacturacion(
         val impuestoFactor = BigDecimal.ONE + BigDecimal.valueOf(articulo.impuesto).divide(BigDecimal(100))
         val precioIva = precioArticulo.multiply(impuestoFactor)
         var expandedBodegas by remember { mutableStateOf(false) }
-
         Card(
             modifier = Modifier
                 .fillMaxWidth()
@@ -1438,7 +1358,16 @@ fun IniciarInterfazFacturacion(
                         .padding(
                             start = objetoAdaptardor.ajustarAncho(8),
                             top = objetoAdaptardor.ajustarAltura(8)
-                        ),
+                        )
+                        .pointerInput(Unit) {
+                            detectTapGestures(onTap = {
+                                focusManager.clearFocus()
+                            })
+                        }
+                        .clickable {
+                            articuloActual = articulo
+                            mostrarMasImegenesArticulo = true
+                        },
                     contentAlignment = Alignment.Center
                 ) {
                     SubcomposeAsyncImage(
@@ -4320,10 +4249,9 @@ fun IniciarInterfazFacturacion(
                                     onClick = {
                                         if (valorImpresionActiva=="0" && estadoProforma =="2") return@BButton mostrarMensajeError("Impresión inactiva. Si desea imprimir, cambie el estado del parámetro en ajustes.")
                                         if (estadoProforma =="2"){
-                                            agregarColaImpresion(isReimpresion = true)
                                             consecutivoFactura = numeroProforma
                                             coroutineScope.launch {
-                                                obtenerDatosFactura()
+                                                agregarColaImpresion(isReimpresion = true)
                                             }
                                             return@BButton
                                         }
@@ -4619,6 +4547,218 @@ fun IniciarInterfazFacturacion(
             else -> articuloActual.codPrecioVenta // SI EL ARTICULO TIENE PRECIO DE VENTA SE ASUME ESE
         }
     )
+
+    if (mostrarMasImegenesArticulo){
+        var isMenuVisible by remember { mutableStateOf(false) }
+        var listaImagenes by remember { mutableStateOf(emptyList<DatosImagenArticuloFacturacion>()) }
+        var imagenActualIndex by remember { mutableIntStateOf(0) }
+        var imagenActual by remember { mutableStateOf(DatosImagenArticuloFacturacion() ) }
+
+        LaunchedEffect(Unit) {
+            focusManager.clearFocus()
+            gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(true)
+            val result = objectoProcesadorDatosApi.obtenerRutasImagenesArticulo(codigo = articuloActual.codigo, empresa = nombreEmpresa)
+            if (result == null) return@LaunchedEffect gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
+            val listaTemp = mutableListOf<DatosImagenArticuloFacturacion>()
+            if (validarExitoRestpuestaServidor(result)) {
+                val data = result.getJSONArray("data")
+                for ( i in 0 until data.length()){
+                    val dataTemp = data.getJSONObject(i)
+                    val datosImagen = DatosImagenArticuloFacturacion(
+                        ruta = dataTemp.getString("ruta"),
+                        descripcion = dataTemp.getString("descripcion"),
+                        detalle = dataTemp.getString("detalle")
+                    )
+                    listaTemp.add(datosImagen)
+                }
+                listaImagenes =listaTemp
+                if (listaImagenes.isNotEmpty()) imagenActual = listaImagenes.first()
+            }
+            gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
+            delay(100)
+            isMenuVisible = true
+        }
+
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black.copy(alpha = 0.3f)),
+            contentAlignment = Alignment.Center
+        ) {
+            AnimatedVisibility(
+                visible = isMenuVisible,
+                enter = fadeIn(animationSpec = tween(500)) + slideInVertically(initialOffsetY = { it }),
+                exit = fadeOut(animationSpec = tween(500)) + slideOutVertically(targetOffsetY = { it })
+            ) {
+                Surface(
+                    modifier = Modifier
+                        .wrapContentWidth()
+                        .wrapContentHeight()
+                        .padding(objetoAdaptardor.ajustarAltura(32))
+                        .align(Alignment.Center),
+                    shape = RoundedCornerShape(objetoAdaptardor.ajustarAltura(12)),
+                    color = Color.White,
+                    shadowElevation = 8.dp
+                ) {
+                    IconButton(
+                        onClick = {
+                            mostrarMasImegenesArticulo = false
+                        },
+                        modifier = Modifier.align(Alignment.TopEnd).padding(objetoAdaptardor.ajustarAltura(8))
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.Close,
+                            contentDescription = "Cerrar",
+                            tint = Color.Gray,
+                            modifier = Modifier.size(objetoAdaptardor.ajustarAltura(30))
+                        )
+                    }
+                    Column(
+                        modifier = Modifier
+                            .padding(objetoAdaptardor.ajustarAltura(16)),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        TText(
+                            text = "Imagenes del Artículo",
+                            fontSize = obtenerEstiloTitleBig()
+                        )
+                        TTextTitCuer(
+                            titulo = "#"+articuloActual.codigo+" ",
+                            contenido = articuloActual.descripcion,
+                            fontSize = obtenerEstiloTitleSmall(),
+                            modifier = Modifier.fillMaxWidth(),
+                            textAlign = TextAlign.Center,
+                            color = Color.DarkGray
+                        )
+                        HorizontalDivider(color = Color.Black, modifier = Modifier.height(objetoAdaptardor.ajustarAltura(2)))
+                        Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(16)))
+                        Box(
+                            modifier = Modifier
+                                .wrapContentSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            // Imagen con animación
+                            AnimatedContent(
+                                targetState = imagenActual.ruta,
+                                transitionSpec = {
+                                    (slideInHorizontally { width -> width } + fadeIn()).togetherWith(
+                                        slideOutHorizontally { width -> -width } + fadeOut())
+                                }, label = ""
+                            ) { imagenUrl ->
+                                SubcomposeAsyncImage(
+                                    model = imagenUrl,
+                                    contentDescription = "Imagen Articulo",
+                                    modifier = Modifier
+                                        .size(objetoAdaptardor.ajustarAltura(300))
+                                        .clip(RoundedCornerShape(8.dp)),
+                                    contentScale = ContentScale.FillBounds,
+                                    loading = {
+                                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center){
+                                            CircularProgressIndicator(
+                                                color = Color(0xFF244BC0),
+                                                modifier = Modifier.size(objetoAdaptardor.ajustarAltura(20))
+                                            )
+                                        }
+                                    },
+                                    error = {
+                                        Image(
+                                            modifier = Modifier
+                                                .fillMaxSize(),
+                                            painter = painterResource(id = R.drawable.sin_imagen),
+                                            contentDescription = "Descripción de la imagen",
+                                            contentScale = ContentScale.FillBounds
+                                        )
+                                    }
+                                )
+                            }
+
+                            // Flecha izquierda
+                            if (imagenActualIndex > 0) {
+                                IconButton(
+                                    onClick = {
+                                        imagenActualIndex--
+                                        imagenActual = listaImagenes[imagenActualIndex]
+                                    },
+                                    modifier = Modifier
+                                        .align(Alignment.CenterStart)
+                                        .background(Color.Black.copy(alpha = 0.3f), shape = CircleShape)
+                                        .size(objetoAdaptardor.ajustarAltura(40))
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                        contentDescription = "Anterior",
+                                        tint = Color.White
+                                    )
+                                }
+                            }
+
+                            // Flecha derecha
+                            if (imagenActualIndex < listaImagenes.lastIndex) {
+                                IconButton(
+                                    onClick = {
+                                        imagenActualIndex++
+                                        imagenActual = listaImagenes[imagenActualIndex]
+                                    },
+                                    modifier = Modifier
+                                        .align(Alignment.CenterEnd)
+                                        .background(Color.Black.copy(alpha = 0.3f), shape = CircleShape)
+                                        .size(objetoAdaptardor.ajustarAltura(40))
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                                        contentDescription = "Siguiente",
+                                        tint = Color.White
+                                    )
+                                }
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(16)))
+
+                        // Miniaturas opcionales
+                        Row(
+                            horizontalArrangement = Arrangement.Center,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            listaImagenes.forEachIndexed { index, url ->
+                                Box(
+                                    modifier = Modifier
+                                        .padding(horizontal = 4.dp)
+                                        .size(if (index == imagenActualIndex) 12.dp else 8.dp)
+                                        .clip(CircleShape)
+                                        .background(if (index == imagenActualIndex) Color.Black else Color.LightGray)
+                                        .clickable {
+                                            imagenActualIndex = index
+                                            imagenActual = listaImagenes[imagenActualIndex]
+                                        }
+                                )
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(objetoAdaptardor.ajustarAltura(16)))
+
+                        HorizontalDivider(color = Color.Black, modifier = Modifier.height(objetoAdaptardor.ajustarAltura(2)))
+
+                        TTextTitCuer(
+                            titulo = "Descripción:",
+                            contenido = imagenActual.descripcion.ifEmpty { "Sin Descripción..." },
+                            fontSize = obtenerEstiloBodyBig(),
+                            modifier = Modifier.fillMaxWidth(),
+                            textAlign = TextAlign.Start
+                        )
+                        HorizontalDivider()
+                        TTextTitCuer(
+                            titulo = "Detalle:",
+                            contenido = imagenActual.detalle.ifEmpty { "Sin Detalle..." },
+                            fontSize = obtenerEstiloBodyBig(),
+                            modifier = Modifier.fillMaxWidth(),
+                            textAlign = TextAlign.Start
+                        )
+                    }
+                }
+            }
+        }
+    }
 
     if (iniciarMenuSeleccionarCliente) {
         var isMenuVisible by remember { mutableStateOf(false) }
@@ -5726,9 +5866,11 @@ fun IniciarInterfazFacturacion(
         var vuelto by remember { mutableDoubleStateOf(0.00) }
         var totalPagado by remember { mutableDoubleStateOf(0.00) }
         val listaPagosTemp = remember { mutableStateListOf<Pago>() }
-
         var impreFactura by remember { mutableStateOf(obtenerParametroLocal(context, "imprfactu$nombreEmpresa", valorPorDefecto = "Local")) }
         var listaImpresoras by remember {  mutableStateOf<List<ParClaveValor>>(emptyList()) }
+        var isMenuConfVisible by remember { mutableStateOf(false) }
+        var medioPago by remember { mutableStateOf("") } // 1 - COMPL EFECTIVO  2 - COMPL TARJETA 3 - NORMAL
+
 
         fun calcularVuelto() {
             try{
@@ -5750,14 +5892,17 @@ fun IniciarInterfazFacturacion(
 
         fun pagarCompleto(isEfectivo : Boolean) {
             var tipo = if (isEfectivo) 0 else 1
-            var cuenta = if (isEfectivo) "110101" else "110104"
+            val cuentaEfectivo = obtenerValorParametroEmpresa("83", valorAuxiliar = "")
+            val cuentaTarjeta  = obtenerValorParametroEmpresa("84", valorAuxiliar = "")
+            if (cuentaEfectivo.isEmpty()) return mostrarMensajeError("NO SE LOGRO OBTENER LA CUENTA DE EFECTIVO PRM 83")
+            if (cuentaTarjeta.isEmpty()) return mostrarMensajeError("NO SE LOGRO OBTENER LA CUENTA DE TARJETA PRM 84")
+            var cuenta = if (isEfectivo) cuentaEfectivo else cuentaTarjeta
             listaPagosTemp[tipo].Monto = total.toString()
             listaPagosTemp[tipo].CuentaContable = cuenta
             tipo = if (!isEfectivo) 0 else 1
-            cuenta = if (!isEfectivo) "110101" else "110104"
+            cuenta = if (!isEfectivo) cuentaEfectivo else cuentaTarjeta
             listaPagosTemp[tipo].Monto = "0.00"
             listaPagosTemp[tipo].CuentaContable = cuenta
-            agregarColaImpresion()
             iniciarMenuFacturarContado = false
             coroutineScope.launch {
                 procesarProformaComoFactura(
@@ -5793,14 +5938,14 @@ fun IniciarInterfazFacturacion(
                 Documento = numeroProforma,
                 CodigoMoneda = codMonedaProforma,
                 Monto = "0" ,
-                CuentaContable = listaMediosPago.find { it.clave == "110101" }?.clave?:"null",
+                CuentaContable = listaMediosPago.find { it.clave == obtenerValorParametroEmpresa("83", valorAuxiliar = "") }?.clave?:"null",
                 codMedioPago = "01"
             ))
             listaPagosTemp.add(Pago(
                 Documento = numeroProforma,
                 CodigoMoneda = codMonedaProforma,
                 Monto = "0",
-                CuentaContable = listaMediosPago.find { it.clave == "110104" }?.clave?:"null",
+                CuentaContable = listaMediosPago.find { it.clave == obtenerValorParametroEmpresa("84", valorAuxiliar = "") }?.clave?:"null",
                 codMedioPago = "02"
             ))
             calcularVuelto()
@@ -5890,7 +6035,7 @@ fun IniciarInterfazFacturacion(
                                                 modifier = Modifier.weight(1.2f)
                                             ){
                                                 BBasicTextField(
-                                                    value = listaMediosPago.find { it.clave == pago.CuentaContable }?.valor ?: "Nada",
+                                                    value = listaMediosPago.find { it.clave == pago.CuentaContable }?.valor ?: "null",
                                                     onValueChange = {
                                                         pago.CuentaContable = it
                                                         isModificado = true
@@ -5992,7 +6137,8 @@ fun IniciarInterfazFacturacion(
                             BButton(
                                 text = "Tarjeta",
                                 onClick = {
-                                    pagarCompleto(isEfectivo = false)
+                                    medioPago = "2"
+                                    isMenuConfVisible = true
                                 },
                                 objetoAdaptardor = objetoAdaptardor,
                                 modifier = Modifier.weight(1f)
@@ -6000,7 +6146,8 @@ fun IniciarInterfazFacturacion(
                             BButton(
                                 text = "Efectivo",
                                 onClick = {
-                                    pagarCompleto(isEfectivo = true)
+                                    medioPago = "1"
+                                    isMenuConfVisible = true
                                 },
                                 objetoAdaptardor = objetoAdaptardor,
                                 modifier = Modifier.weight(1f)
@@ -6108,14 +6255,8 @@ fun IniciarInterfazFacturacion(
                                 text = "Aceptar",
                                 onClick = {
                                     if (vuelto < 0) return@BButton mostrarMensajeError("Pago Incompleto...")
-                                    iniciarMenuFacturarContado = false
-                                    coroutineScope.launch {
-                                        procesarProformaComoFactura(
-                                            listaPagos = listaPagosTemp,
-                                            isContado = true,
-                                            impresora = if (impreFactura == "Local") "" else impreFactura.replace("-", "")
-                                        )
-                                    }
+                                    medioPago = "3"
+                                    isMenuConfVisible = true
                                 },
                                 objetoAdaptardor = objetoAdaptardor,
                                 modifier = Modifier.weight(1f),
@@ -6134,11 +6275,38 @@ fun IniciarInterfazFacturacion(
                 }
             }
         }
+
+        MenuConfirmacion(
+            txBtAceptar = "Facturar",
+            txBtDenegar = "Cancelar",
+            onAceptar = {
+                when(medioPago){
+                    "1" -> pagarCompleto(isEfectivo = true) // EFECTIVO COMPLETO
+                    "2" -> pagarCompleto(isEfectivo = false) // TARJETA COMPLETO
+                    "3" -> {
+                        iniciarMenuFacturarContado = false
+                        coroutineScope.launch {
+                            procesarProformaComoFactura(
+                                listaPagos = listaPagosTemp,
+                                isContado = true,
+                                impresora = if (impreFactura == "Local") "" else impreFactura.replace("-", "")
+                            )
+                        }
+                    }
+                }
+                isMenuConfVisible = false
+            },
+            onDenegar = {
+                isMenuConfVisible = false
+            },
+            mostrarMenu = isMenuConfVisible,
+            titulo = "Factuar de Contado",
+            subTitulo = "¿Está seguro que desea emitir esta Factura?"
+        )
     }
 
     if (iniciarMenuConfPagoCredito) {
         var isMenuVisible by remember { mutableStateOf(false) }
-        val listaPagosTemp = remember { mutableStateListOf<Pago>() }
         var impreCredito by remember { mutableStateOf(obtenerParametroLocal(context, "imprCred$nombreEmpresa", valorPorDefecto = "Local")) }
         var listaImpresoras by remember {  mutableStateOf<List<ParClaveValor>>(emptyList()) }
 
@@ -6309,6 +6477,7 @@ fun IniciarInterfazFacturacion(
         }
 
         LaunchedEffect(Unit) {
+            correoProformaTemp = ""
             delay(100)
             isMenuVisible = true
         }
@@ -6611,13 +6780,13 @@ fun IniciarInterfazFacturacion(
                                             .padding(4.dp)
                                     )
                                     TText(
-                                        text = if(estadoProformaInicial == "2") "Reimprimiendo..." else "Imprimiendo...",
+                                        text = "Imprimiendo...",
                                         fontSize = obtenerEstiloTitleSmall(),
                                         modifier = Modifier.fillMaxWidth()
                                     )
                                 }
                             }else{
-                                if (listaImpresion.isEmpty()){
+                                if (listaImpresion.isEmpty() || !exitoImpresion){
                                     Row(
                                         verticalAlignment = Alignment.CenterVertically,
                                         horizontalArrangement = Arrangement.Center
@@ -6631,7 +6800,7 @@ fun IniciarInterfazFacturacion(
                                                 .padding(4.dp)
                                         )
                                         TText(
-                                            text = if(exitoImpresion) "Reimpresión exitosa!" else "Error en la Reimpresión!",
+                                            text = if(exitoImpresion) "Impresión exitosa!" else "Error en la Impresión!",
                                             fontSize = obtenerEstiloTitleSmall(),
                                             modifier = Modifier.fillMaxWidth()
                                         )
@@ -6649,7 +6818,7 @@ fun IniciarInterfazFacturacion(
                                         )
                                     ) {
                                         BButton(
-                                            text = "Imprimir Copia ${listaImpresion.first().clave}",
+                                            text = "Imprimir Copia",
                                             onClick = {
                                                 coroutineScope.launch {
                                                     imprimir()
@@ -7416,6 +7585,7 @@ fun IniciarInterfazFacturacion(
             }
         }
     }
+
 
     MenuConfirmacion(
         txBtAceptar = "Exonerar",

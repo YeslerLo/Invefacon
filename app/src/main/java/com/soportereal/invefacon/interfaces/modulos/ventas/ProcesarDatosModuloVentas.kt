@@ -7,6 +7,7 @@ import com.soportereal.invefacon.funciones_de_interfaces.deserializarListaSocket
 import com.soportereal.invefacon.funciones_de_interfaces.generarConsultaSocket
 import com.soportereal.invefacon.funciones_de_interfaces.mostrarMensajeError
 import com.soportereal.invefacon.funciones_de_interfaces.obtenerConsecutivoSocket
+import com.soportereal.invefacon.funciones_de_interfaces.obtenerValorParametroEmpresa
 import com.soportereal.invefacon.funciones_de_interfaces.validarRespuestaSocket
 import com.soportereal.invefacon.interfaces.pantallas_principales.gestorEstadoPantallaCarga
 import kotlinx.coroutines.Dispatchers
@@ -74,6 +75,7 @@ class ProcesarDatosModuloVentas(apiToken: String) {
         codMotivo : String,
         detalle : String,
         codUsuario : String,
+        impresora : String,
         isNotaCredito : Boolean = true,
         onExitoOrFin: (Boolean) -> Unit,
         consecutivo : (String) -> Unit
@@ -83,7 +85,7 @@ class ProcesarDatosModuloVentas(apiToken: String) {
             context = context,
             proceso = "MODVENT000",
             subProceso = "MODVENT0${if (isNotaCredito)"79" else "09"}",
-            cuerpo = listOf(codUsuario,numeroDocumento,"venta","",codMotivo, detalle)
+            cuerpo = listOf(codUsuario,numeroDocumento,"venta",impresora,codMotivo, detalle)
         )
 
         gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(true)
@@ -125,6 +127,57 @@ class ProcesarDatosModuloVentas(apiToken: String) {
                 onExitoOrFin(it)
             },
             crearConexion = false
+        )
+    }
+
+    suspend fun anularDocumento(
+        context: Context,
+        numero: String,
+        onExitoOrFin: suspend (Boolean) -> Unit,
+    ){
+        val mensajeSocket = generarConsultaSocket(
+            context = context,
+            proceso = "MODFACT000",
+            subProceso = "MODVENT020",
+            cuerpo = listOf(numero, "venta")
+        )
+        conectarSocket(
+            context = context,
+            mensaje = mensajeSocket,
+            onExitoOrFin = {
+                onExitoOrFin(it)
+            }
+        )
+    }
+
+    suspend fun reEnviarXml(
+        context: Context,
+        numero: String,
+        emailCopia : String,
+        onExitoOrFin: suspend (Boolean) -> Unit,
+    ){
+        val emailEmisor = obtenerValorParametroEmpresa("106", "")
+        val nombreEmisor = obtenerValorParametroEmpresa("54", "")
+        val cedulaEmisor = obtenerValorParametroEmpresa("66", "")
+
+        if (emailEmisor.isEmpty() || nombreEmisor.isEmpty() || cedulaEmisor.isEmpty() ){
+            mostrarMensajeError("NO SE LOGRO ENCONTRAR LOS DATOS DEL EMISOR [$emailEmisor,$nombreEmisor,$cedulaEmisor]")
+            onExitoOrFin(false)
+            return
+        }
+
+        val mensajeSocket = generarConsultaSocket(
+            context = context,
+            proceso = "MODCLIE000",
+            subProceso = "MODCLIE038",
+            cuerpo = listOf(numero, emailEmisor,nombreEmisor,cedulaEmisor,emailCopia)
+        )
+        conectarSocket(
+            context = context,
+            mensaje = mensajeSocket,
+            onExitoOrFin = {
+                onExitoOrFin(it)
+            }
         )
     }
 
@@ -176,7 +229,8 @@ data class DetalleDocumentoVentas(
     val monedacodigo: String = "",
     val formapagocodigo: String = "",
     val mediopagodetalle: String = "",
-    val detalle: String = ""
+    val detalle: String = "",
+    val tipoDocumento : String = "01"
 )
 
 data class ArticuloVenta(

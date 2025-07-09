@@ -1,9 +1,6 @@
 package com.soportereal.invefacon.interfaces.modulos.ventas
 
-import android.os.Build
-import android.widget.Toast
 import androidx.activity.compose.BackHandler
-import androidx.annotation.RequiresApi
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.FastOutSlowInEasing
@@ -46,6 +43,7 @@ import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Circle
 import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Error
 import androidx.compose.material.icons.filled.Inventory
 import androidx.compose.material.icons.filled.KeyboardArrowDown
@@ -98,6 +96,7 @@ import com.soportereal.invefacon.funciones_de_interfaces.BButton
 import com.soportereal.invefacon.funciones_de_interfaces.FuncionesParaAdaptarContenido
 import com.soportereal.invefacon.funciones_de_interfaces.MenuConfirmacion
 import com.soportereal.invefacon.funciones_de_interfaces.ParClaveValor
+import com.soportereal.invefacon.funciones_de_interfaces.ProcGenSocket
 import com.soportereal.invefacon.funciones_de_interfaces.TText
 import com.soportereal.invefacon.funciones_de_interfaces.TTextTitCuer
 import com.soportereal.invefacon.funciones_de_interfaces.deserializarFacturaHecha
@@ -106,13 +105,16 @@ import com.soportereal.invefacon.funciones_de_interfaces.gestorImpresora
 import com.soportereal.invefacon.funciones_de_interfaces.imprimirFactura
 import com.soportereal.invefacon.funciones_de_interfaces.mostrarMensajeError
 import com.soportereal.invefacon.funciones_de_interfaces.mostrarMensajeExito
+import com.soportereal.invefacon.funciones_de_interfaces.mostrarToastSeguro
 import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloBodyBig
 import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloBodyMedium
 import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloBodySmall
 import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloDisplayBig
+import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloDisplayMedium
 import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloHeadSmall
 import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloLabelBig
 import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloTitleBig
+import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloTitleMedium
 import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloTitleSmall
 import com.soportereal.invefacon.funciones_de_interfaces.obtenerParametroLocal
 import com.soportereal.invefacon.funciones_de_interfaces.separacionDeMiles
@@ -126,9 +128,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
-@RequiresApi(Build.VERSION_CODES.S)
 @Composable
 fun IniciarInterfazDetalleFactura(
     token: String,
@@ -180,11 +180,9 @@ fun IniciarInterfazDetalleFactura(
     var expandedTotales by remember { mutableStateOf(false) }
     val listaIvas = remember { mutableStateListOf<ParClaveValor>() }
     var isCargando by remember { mutableStateOf(true) }
-    var obtenerDatosFacturaEmitida by remember { mutableStateOf(false) }
     var isImprimiendo by remember { mutableStateOf(false) }
     var iniciarPantallaEstadoImpresion by remember { mutableStateOf(false) }
     var exitoImpresion by remember { mutableStateOf(false) }
-    var imprimir by remember { mutableStateOf(false) }
     val context = LocalContext.current
     var datosFacturaEmitida by remember { mutableStateOf(Factura()) }
     val listaImpresion = remember { mutableStateListOf<ParClaveValor>() }
@@ -193,6 +191,7 @@ fun IniciarInterfazDetalleFactura(
     var socketJob by remember { mutableStateOf<Job?>(null) }
     val cortinaSocket= CoroutineScope(Dispatchers.IO)
     var iniciarMenuConfNotComple by remember { mutableStateOf(false) }
+    var iniciarMenuConfAnulacion by remember { mutableStateOf(false) }
     var iniciarMenuOpciones by remember { mutableStateOf(false) }
     var iniciarMenuAplicarNotas by remember { mutableStateOf(false) }
     var listaMotivosNotas by remember {  mutableStateOf<List<ParClaveValor>>(emptyList()) }
@@ -200,7 +199,22 @@ fun IniciarInterfazDetalleFactura(
     var codMotivoNota by remember { mutableStateOf("") }
     var detalleNota by remember { mutableStateOf("") }
     var consecutivoNota by remember { mutableStateOf("") }
-    var isReimpresion by remember { mutableStateOf(true) }
+    var codImpresora by remember { mutableStateOf("Local") }
+    val listaTiposDocumentos by remember {
+        mutableStateOf(
+            listOf(
+                ParClaveValor("01", "Factura"),
+                ParClaveValor("02", "Nota de Débito"),
+                ParClaveValor("03", "Nota de Crédito"),
+                ParClaveValor("04", "Tiquete"),
+                ParClaveValor("09", "Exportación")
+            )
+        )
+    }
+    val gestorProcGenSocket = ProcGenSocket()
+    var consecutivoImprimir by remember { mutableStateOf(numeroFactura) }
+    var correoTemp by remember { mutableStateOf("") }
+    var iniciarMenuReEnviarXml by remember { mutableStateOf(false) }
 
     if (valorImpresionActiva == "1") {
         gestorImpresora.PedirPermisos(context)
@@ -226,45 +240,70 @@ fun IniciarInterfazDetalleFactura(
         if (listaFormaPago.isEmpty()) listaFormaPago.add(ParClaveValor(clave = "0", valor = "0-No definido"))
     }
 
-    suspend fun obtenerDatosFactura(consecutivo : String, tipo: String){
-        if (valorImpresionActiva == "0") return
+    suspend fun imprimir() {
+        isImprimiendo = true
+        iniciarPantallaEstadoImpresion = true
+        val isConectado = gestorImpresora.validarConexion(context)
+        delay(2000)
+        if (!isConectado){
+            gestorImpresora.reconectar(context)
+            mostrarToastSeguro(context, "Reconectando impresora...")
+            delay(12000)
+            val isReconectada = gestorImpresora.validarConexion(context)
+            delay(1000)
+            if (!isReconectada){
+                exitoImpresion = false
+                isImprimiendo = false
+                return
+            }
+        }
+        exitoImpresion = imprimirFactura(
+            factura = datosFacturaEmitida,
+            context = context,
+            nombreEmpresa = nombreEmpresa,
+            tipoDoc = listaImpresion.first().tipoDocumento,
+            isCopia = listaImpresion.first().isCopia,
+            usuario = "#$codUsuario $nombreUsuario"
+        )
+        delay(3500)
+        isImprimiendo = false
+        if (!exitoImpresion) return
+        listaImpresion.removeAt(0)
+        if (listaImpresion.isNotEmpty()) return
+        delay(2000)
+        iniciarPantallaEstadoImpresion= false
+    }
+
+    suspend fun obtenerDatosFactura() {
+        if (valorImpresionActiva == "0") return  mostrarMensajeError("La impresión esta desactivada.")
         isImprimiendo = true
         iniciarPantallaEstadoImpresion = true
         delay(1000)
-        if (!gestorImpresora.validarConexion(context)){
-            exitoImpresion = false
-            isImprimiendo = false
-            imprimir = false
-            obtenerDatosFacturaEmitida = false
-            return
-        }
-        val result = objectoProcesadorDatosApiFacturacion.obtenerFactura(consecutivo)
+        val result = objectoProcesadorDatosApiFacturacion.obtenerFactura(consecutivoImprimir)
         consecutivoNota = ""
 
         if (result == null) return
 
         if (validarExitoRestpuestaServidor(result)) {
             datosFacturaEmitida = deserializarFacturaHecha(result)
-            listaImpresion.add(ParClaveValor("0", tipo))
-            imprimir = true
+            imprimir()
         }else{
             mostrarMensajeError(result.getString("message"))
             iniciarPantallaEstadoImpresion = true
             exitoImpresion = false
             isImprimiendo = false
-            imprimir = false
         }
     }
 
-    LaunchedEffect(Unit) {
+    suspend fun refrescar() {
         gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(true)
         isCargando = true
         obtenerFormaPago()
         val result = objectoProcesadorDatosApi.obtenerDatosFactura(numeroFactura)
-        if (result == null) return@LaunchedEffect
+        if (result == null) return
         if (!validarExitoRestpuestaServidor(result)){
             estadoRespuestaApi.cambiarEstadoRespuestaApi(mostrarSoloRespuestaError = true, datosRespuesta = result)
-            return@LaunchedEffect
+            return
         }
         val data = result.getJSONObject("data")
         val datosClienteArray = data.getJSONArray("datoscliente")
@@ -284,8 +323,6 @@ fun IniciarInterfazDetalleFactura(
                 telefonos = obj.getString("telefonos")
             )
 
-
-
         val detallesDocumentoArray = data.getJSONArray("detallesdocumento")
         obj = detallesDocumentoArray.getJSONObject(0)
         detallesDocumento =
@@ -300,11 +337,10 @@ fun IniciarInterfazDetalleFactura(
                 monedacodigo = obj.getString("monedacodigo"),
                 formapagocodigo = obj.getString("formapagocodigo"),
                 mediopagodetalle = obj.getString("mediopagodetalle"),
-                detalle = obj.getString("detalle")
+                detalle = obj.getString("detalle"),
+                tipoDocumento = obj.getString("TipoDocumento")
             )
         simboloMoneda =  if(detallesDocumento.monedacodigo == "CRC") "\u20A1 " else "\u0024 "
-
-
 
         val detalleVentaArray = data.getJSONArray("detalleventa")
 
@@ -358,52 +394,10 @@ fun IniciarInterfazDetalleFactura(
         delay(500)
         gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
         isCargando = false
-
     }
 
-    LaunchedEffect (imprimir) {
-        if (!imprimir) return@LaunchedEffect
-        isImprimiendo = true
-        iniciarPantallaEstadoImpresion = true
-        val isConectado = gestorImpresora.validarConexion(context)
-        delay(1000)
-        if (!isConectado){
-            gestorImpresora.reconectar(context)
-            withContext(Dispatchers.Main) {
-                Toast.makeText(context, "Reconectando impresora...", Toast.LENGTH_SHORT).show()
-            }
-            delay(12000)
-            val isConectada = gestorImpresora.validarConexion(context)
-            delay(1000)
-            if (!isConectada){
-                exitoImpresion = false
-                isImprimiendo = false
-                imprimir = false
-                return@LaunchedEffect
-            }
-        }
-        exitoImpresion = imprimirFactura(
-            factura = datosFacturaEmitida,
-            context = context,
-            nombreEmpresa = nombreEmpresa,
-            tipoDoc = listaImpresion.first().valor,
-            numeroEnCola = listaImpresion.first().clave,
-            usuario = "#$codUsuario $nombreUsuario"
-        )
-        delay(3500)
-        isImprimiendo = false
-        if (!exitoImpresion){
-            imprimir = false
-            return@LaunchedEffect
-        }
-        listaImpresion.removeAt(0)
-        if (listaImpresion.isNotEmpty()) {
-            imprimir = false
-            return@LaunchedEffect
-        }
-        delay(2000)
-        iniciarPantallaEstadoImpresion= false
-        imprimir = false
+    LaunchedEffect(Unit) {
+        refrescar()
     }
 
     BackHandler {
@@ -705,7 +699,7 @@ fun IniciarInterfazDetalleFactura(
                     )
                     Spacer(modifier = Modifier.width(objetoAdaptardor.ajustarAncho(8)))
                     Text(
-                        "Detalles de Factura",
+                        listaTiposDocumentos.find { it.clave == detallesDocumento.tipoDocumento }?.valor?:"DOC DESCONOCIDO",
                         fontFamily = fontAksharPrincipal,
                         fontWeight = FontWeight.SemiBold,
                         fontSize = obtenerEstiloDisplayBig(),
@@ -719,8 +713,9 @@ fun IniciarInterfazDetalleFactura(
                         onClick = {
                             if (detallesDocumento.estado != "2") return@IconButton mostrarMensajeError("EL DOCUMENTO NO SE ENCUENTRA PROCESADO.")
                             coroutineScope.launch {
-                                if (valorImpresionActiva == "0") return@launch mostrarMensajeError("La impresión esta desactivada.")
-                                obtenerDatosFactura(numeroFactura, "3")
+                                consecutivoImprimir = numeroFactura
+                                listaImpresion.add(ParClaveValor(tipoDocumento = detallesDocumento.tipoDocumento, isCopia = true))
+                                obtenerDatosFactura()
                             }
                         },
                         modifier = Modifier.padding(0.dp)
@@ -758,7 +753,7 @@ fun IniciarInterfazDetalleFactura(
                             BButton(
                                 text = "Re-Enviar XML",
                                 onClick = {
-                                    return@BButton mostrarMensajeError("Esta opción está en desarrollo...")
+                                    iniciarMenuReEnviarXml = true
                                 },
                                 objetoAdaptardor = objetoAdaptardor,
                                 modifier = Modifier
@@ -780,7 +775,9 @@ fun IniciarInterfazDetalleFactura(
                             BButton(
                                 text = "Refrescar",
                                 onClick = {
-                                    return@BButton mostrarMensajeError("Esta opción está en desarrollo...")
+                                    coroutineScope.launch {
+                                        refrescar()
+                                    }
                                 },
                                 objetoAdaptardor = objetoAdaptardor,
                                 modifier = Modifier
@@ -1284,7 +1281,7 @@ fun IniciarInterfazDetalleFactura(
                                             .padding(4.dp)
                                     )
                                     TText(
-                                        text = "Reimprimiendo...",
+                                        text = "Imprimiendo...",
                                         fontSize = obtenerEstiloTitleSmall(),
                                         modifier = Modifier.fillMaxWidth()
                                     )
@@ -1303,15 +1300,13 @@ fun IniciarInterfazDetalleFactura(
                                             .padding(4.dp)
                                     )
                                     TText(
-                                        text = if(exitoImpresion) "Reimpresión exitosa!" else "Error en Reimpresión.",
+                                        text = if(exitoImpresion) "Impresión exitosa!" else "Error en Impresión.",
                                         fontSize = obtenerEstiloTitleSmall(),
                                         modifier = Modifier.fillMaxWidth()
                                     )
                                 }
                             }
                         }
-
-
 
                         AnimatedVisibility(
                             visible = !exitoImpresion && !isImprimiendo,
@@ -1336,7 +1331,7 @@ fun IniciarInterfazDetalleFactura(
                                     onClick = {
                                         coroutineScope.launch {
                                             if (valorImpresionActiva == "0") return@launch mostrarMensajeError("La impresión esta desactivada.")
-                                            obtenerDatosFactura(numeroFactura, if (isReimpresion)"3" else if (isNotaCredito) "5" else "6")
+                                            obtenerDatosFactura()
                                         }
                                     },
                                     textSize = obtenerEstiloBodyBig(),
@@ -1408,6 +1403,8 @@ fun IniciarInterfazDetalleFactura(
                         BButton(
                             text = "Nota de Crédito Completa",
                             onClick = {
+                                if (detallesDocumento.tipoDocumento != "01") return@BButton mostrarMensajeError("SOLO PUEDE APLICAR NOTAS DE CREDITO A FACTURAS")
+                                if (detallesDocumento.estado != "2") return@BButton mostrarMensajeError("SOLO PUEDE APLICAR NOTAS DE CREDITO A DOCUMENTOS PROCESADOS")
                                 iniciarMenuOpciones = false
                                 isNotaCredito = true
                                 iniciarMenuAplicarNotas = true
@@ -1419,9 +1416,23 @@ fun IniciarInterfazDetalleFactura(
                         BButton(
                             text = "Nota de Débito Completa",
                             onClick = {
+                                if (detallesDocumento.tipoDocumento != "01") return@BButton mostrarMensajeError("SOLO PUEDE APLICAR NOTAS DE DEBITO A FACTURAS")
+                                if (detallesDocumento.estado != "2") return@BButton mostrarMensajeError("SOLO PUEDE APLICAR NOTAS DE DEBITO A DOCUMENTOS PROCESADOS")
                                 iniciarMenuOpciones = false
                                 isNotaCredito = false
                                 iniciarMenuAplicarNotas = true
+                            },
+                            textSize = obtenerEstiloBodyBig(),
+                            modifier = Modifier.fillMaxWidth(),
+                            objetoAdaptardor = objetoAdaptardor
+                        )
+                        BButton(
+                            text = "Anular",
+                            onClick = {
+                                if (detallesDocumento.estado != "5") return@BButton mostrarMensajeError("SOLO SE PUEDEN ANULAR DOCUMENTOS RECHAZADOS")
+                                if (detallesDocumento.tipoDocumento == "01" && detallesDocumento.estado == "2") return@BButton mostrarMensajeError("NO PUEDE ANULAR UNA FACTURA, DEBE APLICAR UNA NOTA")
+                                iniciarMenuOpciones = false
+                                iniciarMenuConfAnulacion = true
                             },
                             textSize = obtenerEstiloBodyBig(),
                             modifier = Modifier.fillMaxWidth(),
@@ -1446,6 +1457,8 @@ fun IniciarInterfazDetalleFactura(
 
     if (iniciarMenuAplicarNotas) {
         var isMenuVisible by remember { mutableStateOf(false) }
+        var impreNota by remember { mutableStateOf("Local") }
+        var listaImpresoras by remember {  mutableStateOf<List<ParClaveValor>>(emptyList()) }
 
         LaunchedEffect(Unit) {
             val listaMotivosTemp = mutableStateListOf<ParClaveValor>()
@@ -1468,6 +1481,22 @@ fun IniciarInterfazDetalleFactura(
                     }
                 )
             }
+            val listaImpresorasTemp = mutableListOf<ParClaveValor>()
+            listaImpresorasTemp.add(ParClaveValor("Local", "Local"))
+            gestorProcGenSocket.obtenerImpresorasRemotas(
+                context = context,
+                datosRetornados = {
+                    val listaTemp = it
+                    listaTemp.forEach { impresora ->
+                        listaImpresorasTemp.add(ParClaveValor(clave = impresora[0], valor = impresora[0]+"-"+impresora[1]))
+                    }
+                    listaImpresoras = listaImpresorasTemp
+                },
+                onExitoOrFin = {
+                    return@obtenerImpresorasRemotas
+                }
+            )
+            gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
             delay(100)
             isMenuVisible = true
         }
@@ -1602,6 +1631,43 @@ fun IniciarInterfazDetalleFactura(
                             )
                         }
                         HorizontalDivider()
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(objetoAdaptardor.ajustarAncho(8))
+                        ){
+                            TText(
+                                text = "Impresora: ",
+                                fontSize = obtenerEstiloTitleSmall(),
+                                textAlign = TextAlign.Center
+                            )
+                            BBasicTextField(
+                                value = impreNota,
+                                onValueChange = { clave ->
+                                    impreNota = listaImpresoras.find { it.clave == clave }?.valor?:"Local"
+                                    codImpresora = clave
+                                },
+                                opciones = listaImpresoras,
+                                objetoAdaptardor = objetoAdaptardor,
+                                utilizarMedidas = false,
+                                modifier = Modifier
+                                    .wrapContentWidth()
+                                    .border(
+                                        1.dp,
+                                        color = Color.Gray,
+                                        RoundedCornerShape(
+                                            objetoAdaptardor.ajustarAltura(
+                                                10
+                                            )
+                                        )
+                                    ),
+                                backgroundColor = Color.White,
+                                fontSize = obtenerEstiloBodyBig(),
+                                mostrarLeadingIcon = false,
+                                placeholder = "Impresora..."
+                            )
+
+                        }
+                        HorizontalDivider()
                         TTextTitCuer("Total:", separacionDeMiles(totales.Total), fontSize = obtenerEstiloTitleSmall())
                         HorizontalDivider()
                         Row(
@@ -1634,6 +1700,126 @@ fun IniciarInterfazDetalleFactura(
         }
     }
 
+    if (iniciarMenuReEnviarXml) {
+
+        var isMenuVisible by remember { mutableStateOf(false) }
+
+        LaunchedEffect(Unit) {
+            correoTemp = ""
+            delay(100)
+            isMenuVisible = true
+        }
+
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black.copy(alpha = 0.3f))
+                .clickable(enabled = false) {},
+            contentAlignment = Alignment.Center
+        ) {
+            AnimatedVisibility(
+                visible = isMenuVisible,
+                enter = fadeIn(animationSpec = tween(500)) + slideInVertically(initialOffsetY = { it }),
+                exit = fadeOut(animationSpec = tween(500)) + slideOutVertically(targetOffsetY = { it })
+            ) {
+                Surface(
+                    modifier = Modifier
+                        .wrapContentWidth()
+                        .wrapContentHeight()
+                        .padding(objetoAdaptardor.ajustarAltura(16))
+                        .align(Alignment.Center),
+                    shape = RoundedCornerShape(objetoAdaptardor.ajustarAltura(12)),
+                    color = Color.White,
+                    shadowElevation = 8.dp
+                ) {
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(objetoAdaptardor.ajustarAltura(6)),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier.padding(objetoAdaptardor.ajustarAltura(16))
+                    ) {
+                        Text(
+                            "Re-Enviar XML de Factura",
+                            fontFamily = fontAksharPrincipal,
+                            fontWeight = FontWeight.Medium,
+                            fontSize = obtenerEstiloDisplayMedium(),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            textAlign = TextAlign.Center,
+                            color = Color.Black
+                        )
+                        TTextTitCuer(
+                            titulo = "Correo Cliente:",
+                            contenido = datosCliente.email,
+                            fontSize = obtenerEstiloTitleSmall()
+
+                        )
+                        TText(
+                            text = "Ingrese un correo si desea enviar una copia: ",
+                            fontSize = obtenerEstiloTitleSmall(),
+                            modifier = Modifier.fillMaxWidth(),
+                            textAlign = TextAlign.Center,
+                            maxLines = 4
+                        )
+                        BBasicTextField(
+                            value = correoTemp,
+                            onValueChange =  { nuevoValor ->
+                                correoTemp = nuevoValor
+                            },
+                            utilizarMedidas = false,
+                            placeholder = "Correo electrónico",
+                            icono = Icons.Filled.Email,
+                            objetoAdaptardor = objetoAdaptardor,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .wrapContentHeight(),
+                            fontSize = obtenerEstiloBodyBig()
+                        )
+                        Row (
+                            horizontalArrangement = Arrangement.spacedBy(objetoAdaptardor.ajustarAncho(8))
+                        ) {
+                            BButton(
+                                text = "Re-Enviar",
+                                onClick = {
+                                    iniciarMenuReEnviarXml = false
+                                    socketJob = cortinaSocket.launch{
+                                        objectoProcesadorDatosApi.reEnviarXml(
+                                            context = context,
+                                            numero = detallesDocumento.numero,
+                                            emailCopia = correoTemp,
+                                            onExitoOrFin = {
+                                                if (!it){
+                                                    socketJob?.cancel()
+                                                    return@reEnviarXml
+                                                }
+                                                mostrarMensajeExito("XML RE-ENVIAOD EXITOSAMENTE!")
+                                                socketJob?.cancel()
+                                                return@reEnviarXml
+                                            }
+                                        )
+                                    }
+                                },
+                                objetoAdaptardor = objetoAdaptardor,
+                                modifier = Modifier.weight(1f),
+                                textSize = obtenerEstiloBodyBig()
+                            )
+
+                            BButton(
+                                text = "Cancelar",
+                                onClick = {
+                                    iniciarMenuReEnviarXml = false
+                                },
+                                objetoAdaptardor = objetoAdaptardor,
+                                modifier = Modifier.weight(1f),
+                                backgroundColor = Color.Red,
+                                textSize = obtenerEstiloBodyBig()
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     MenuConfirmacion(
         txBtAceptar = "Aplicar",
         txBtDenegar = "Cancelar",
@@ -1650,13 +1836,17 @@ fun IniciarInterfazDetalleFactura(
                             socketJob?.cancel()
                             return@aplicarNotaCredDebiCompleta
                         }
+                        mostrarMensajeExito("LA NOTA DE ${if(isNotaCredito) "CREDITO" else "DEBITO"} FUE PROCESADA CON EXITO!")
+                        if (codImpresora != "Local"){
+                            socketJob?.cancel()
+                            return@aplicarNotaCredDebiCompleta
+                        }
                         coroutineScope.launch {
                             if (consecutivoNota.isEmpty()) {
                                 mostrarMensajeError("EL CONSECUTIVO DE LA NOTA ESTA VACIO, ERROR EN IMPRESION.")
                             }else{
-                                mostrarMensajeExito("LA NOTA DE ${if(isNotaCredito) "CREDITO" else "DEBITO"} FUE PROCESADA CON EXITO!")
-                                isReimpresion = false
-                                obtenerDatosFactura(consecutivo = consecutivoNota, tipo = if(isNotaCredito) "5" else "6")
+                                listaImpresion.add(ParClaveValor(tipoDocumento = if(isNotaCredito) "03" else "02", isCopia = false))
+                                obtenerDatosFactura()
                             }
                         }
                         socketJob?.cancel()
@@ -1664,6 +1854,7 @@ fun IniciarInterfazDetalleFactura(
                     },
                     isNotaCredito = isNotaCredito,
                     codUsuario = codUsuario,
+                    impresora = if (codImpresora == "Local") "" else codImpresora,
                     consecutivo = {
                         println(it)
                         consecutivoNota = it
@@ -1678,10 +1869,40 @@ fun IniciarInterfazDetalleFactura(
         titulo = "Nota de ${if(isNotaCredito) "Crédito" else "Débito"} Completa",
         subTitulo = "¿Desea aplicar una Nota de ${if(isNotaCredito) "Crédito" else "Débito"} Completa a esta Factura?"
     )
+
+    MenuConfirmacion(
+        txBtAceptar = "Anular",
+        txBtDenegar = "Cancelar",
+        onAceptar = {
+            socketJob = cortinaSocket.launch{
+                objectoProcesadorDatosApi.anularDocumento(
+                    context = context,
+                    numero = detallesDocumento.numero,
+                    onExitoOrFin = {
+                        if (!it){
+                            socketJob?.cancel()
+                            return@anularDocumento
+                        }
+                        refrescar()
+                        mostrarMensajeExito("FACTURA ANULADA EXITOSAMENTE!")
+                        socketJob?.cancel()
+                        return@anularDocumento
+                    }
+                )
+            }
+            iniciarMenuConfAnulacion = false
+        },
+        onDenegar = {
+            iniciarMenuConfAnulacion = false
+        },
+        mostrarMenu = iniciarMenuConfAnulacion,
+        titulo = "Anular Factura",
+        subTitulo = "¿Desea anular esta Factura?"
+    )
+
 }
 
 
-@RequiresApi(Build.VERSION_CODES.S)
 @Composable
 @Preview(showBackground = true)
 private fun Preview(){

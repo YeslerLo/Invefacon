@@ -91,14 +91,13 @@ suspend fun conectarSocket(
             var finalizarSocket = false
 
             if (leido == null) {
-                mostrarMensajeError("Tiempo de espera agotado: no se recibió respuesta del Socket")
+                mostrarToastSeguro(context = context, mensaje = "Tiempo de espera agotado: no se recibió respuesta del Socket")
                 gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
                 onExitoOrFin(false)
                 break
             }
 
             if (leido == -1) {
-                mostrarMensajeError("Conexión cerrada por el Socket")
                 gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
                 onExitoOrFin(false)
                 break

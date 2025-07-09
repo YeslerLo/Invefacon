@@ -1007,7 +1007,8 @@ fun TTextTitCuer(
     fontSize: TextUnit = obtenerEstiloBodyBig(),
     color: Color = Color.Black, saltoLinea: Boolean = false,
     textAlign: TextAlign = TextAlign.Start,
-    isCargando : Boolean = false
+    isCargando : Boolean = false,
+    modifier: Modifier = Modifier
 ) {
     Text(
         buildAnnotatedString {
@@ -1044,7 +1045,8 @@ fun TTextTitCuer(
             }
         },
         textAlign = textAlign,
-        maxLines = 10
+        maxLines = 10,
+        modifier = modifier
     )
 
 }
@@ -1055,5 +1057,7 @@ data class ParClaveValor(
     var tipo: String = "", // ALMACENA EL TIPO PRECIO DE VENTA
     var venta : String = "", // MODULO FACTURACION EN EL CALCULO DE IVAS
     val existencia : Double = 0.00, // Para Bodegas modulo Facturacion
-    val descripcion : String = "" // Descripcion de parametro empresa
+    val descripcion : String = "", // Descripcion de parametro empresa
+    val tipoDocumento: String = "", // Saber el tipo de documento para imprimir
+    val isCopia : Boolean = false // SABER SI ES UNA COPIA O UNA ORIGINAL
 )
