@@ -336,7 +336,9 @@ fun deserializarFacturaHecha(resultadoFactura: JSONObject): Factura {
         leyenda = leyenda,
         descrpcionFormaPago = resultadoFactura.getString("descrpcionFormaPago"),
         descripcionMedioPago = resultadoFactura.getString("descripcionMedioPago"),
-        nombreAgente = resultadoFactura.getString("nombreAgente")
+        nombreAgente = resultadoFactura.getString("nombreAgente"),
+        detalleSuperior = resultadoFactura.getString("detalleSuperior"),
+        detalleInferior = resultadoFactura.getString("detalleInferior")
     )
 
     return factura
@@ -351,6 +353,7 @@ class ImpresoraViewModel : ViewModel() {
     var nombre : String = "Desconocido"
     var listaImpresoras by mutableStateOf<List<BluetoothConnection>>(emptyList())
     var isConectada by mutableStateOf(false)
+    private var isConectando by mutableStateOf(false)
     private var isPermisosOtorgados by mutableStateOf(false)
 
     // Parámetros predeterminados para la impresora
@@ -402,7 +405,7 @@ class ImpresoraViewModel : ViewModel() {
         }
     }
 
-    suspend fun estaImpresoraConectadaRealmente(): Boolean {
+    private suspend fun estaImpresoraConectadaRealmente(): Boolean {
         return withContext(Dispatchers.IO) {
             try {
                 if (impresora == null) return@withContext false
@@ -415,7 +418,7 @@ class ImpresoraViewModel : ViewModel() {
         }
     }
 
-    fun ValidarPermisos(context: Context) {
+    private fun validarPermisos(context: Context) {
         isPermisosOtorgados = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             ContextCompat.checkSelfPermission(
                 context,
@@ -428,7 +431,7 @@ class ImpresoraViewModel : ViewModel() {
 
     @SuppressLint("MissingPermission")
     fun buscar(context: Context) {
-        ValidarPermisos(context)
+        validarPermisos(context)
         viewModelScope.launch(Dispatchers.IO) {
             withContext(Dispatchers.Main) {
                 if (!isPermisosOtorgados) {
@@ -481,7 +484,7 @@ class ImpresoraViewModel : ViewModel() {
     }
 
     suspend fun validarConexion(context: Context): Boolean {
-        ValidarPermisos(context)
+        validarPermisos(context)
 
         if (!isPermisosOtorgados) {
             withContext(Dispatchers.Main) {
@@ -500,7 +503,9 @@ class ImpresoraViewModel : ViewModel() {
     }
 
     fun conectar(context: Context, mac: String, name: String) {
-        ValidarPermisos(context)
+        if (isConectando) return
+        isConectando = true
+        validarPermisos(context)
         if (!isPermisosOtorgados) return
         viewModelScope.launch(Dispatchers.IO) {
             if (conexion != null) {
@@ -526,11 +531,12 @@ class ImpresoraViewModel : ViewModel() {
                 }
             }
         }
+        isConectando = false
     }
 
     // Función para imprimir texto
     suspend fun imprimir(text: String, context: Context): Boolean {
-        ValidarPermisos(context)
+        validarPermisos(context)
         if (!isPermisosOtorgados) return false
         return withContext(Dispatchers.IO) {
             if (impresora != null) {
@@ -561,7 +567,7 @@ class ImpresoraViewModel : ViewModel() {
 
     @SuppressLint("SuspiciousIndentation")
     fun probar(context: Context, nombreEmpresa: String){
-        ValidarPermisos(context)
+        validarPermisos(context)
         if (!isPermisosOtorgados) return
         viewModelScope.launch(Dispatchers.IO) {
             var textoPrueba = ""
@@ -648,7 +654,7 @@ class ImpresoraViewModel : ViewModel() {
 
     // Función para desconectar la impresora
     fun deconectar(context: Context) {
-        ValidarPermisos(context)
+        validarPermisos(context)
         if (!isPermisosOtorgados) return
         viewModelScope.launch(Dispatchers.IO) {
             impresora?.disconnectPrinter()
@@ -683,16 +689,18 @@ suspend fun imprimirFactura(
         mostrarToastSeguro(context,"Error en impresión de Logo")
     }
     facturaTexto += "\n"
-    facturaTexto += addTextBig(factura.empresa.nombre, "C", context = context)
+    facturaTexto += addTextBig(obtenerValorParametroEmpresa("62", valorAuxiliar = ""), "C", context = context)
+    facturaTexto += addTextTall(factura.empresa.nombre, "C", destacar = true, context = context)
     facturaTexto += addText("IDENTIFICACION: "+factura.empresa.cedula, "C", context = context)
+    facturaTexto += addText(factura.detalleSuperior, "C", context = context)
     facturaTexto += addTextTall("DOC: ${factura.ventaMadre.Numero}", "C", context = context)
-    if (tipoDoc in listOf("5", "6")) facturaTexto += addTextTall("REF: ${factura.ventaMadre.Referencia}", "C", context = context)
+    if (tipoDoc in listOf("02", "03")) facturaTexto += addTextTall("REF: ${factura.ventaMadre.Referencia}", "C", context = context)
     val estadoDocumerto = if(isCopia) "COPIA"  else "ORIGINAL"
     facturaTexto += addTextTall(
         when(tipoDoc){
-            "01"-> "FACTURA ELECTRONICA ${factura.descripcionMedioPago.uppercase(Locale.ROOT)} $estadoDocumerto"
-            "02" -> "NOTA DEBITO ELECTRONICA ${factura.descripcionMedioPago.uppercase(Locale.ROOT)} $estadoDocumerto"
-            "03" -> "NOTA CREDITO ELECTRONICA ${factura.descripcionMedioPago.uppercase(Locale.ROOT)} $estadoDocumerto"
+            "01"-> "FACTURA ELECTRONICA ${ if (factura.descrpcionFormaPago == "Contado")factura.descripcionMedioPago.uppercase(Locale.ROOT) else ""} $estadoDocumerto"
+            "02" -> "NOTA DEBITO ELECTRONICA $estadoDocumerto"
+            "03" -> "NOTA CREDITO ELECTRONICA $estadoDocumerto"
             else -> ""
         },
         "C",
@@ -705,7 +713,6 @@ suspend fun imprimirFactura(
     }else{
         facturaTexto += addTextBig("PROFORMA", "C", context = context)
     }
-
     facturaTexto += addText("FECHA: ${factura.ventaMadre.Fecha}", "L", context = context)
     if (obtenerValorParametroEmpresa("20", "0") == "1" && tipoDoc != "00") facturaTexto += addTextTall("FORMA PAGO: ${factura.descrpcionFormaPago.uppercase(Locale.ROOT)}", "C", context = context, destacar = true)
     if (factura.cliente.Cedula.isNotEmpty())facturaTexto += addText("CEDULA: ${factura.cliente.Cedula} COD: ${factura.cliente.Id_Cliente} ", "L", context = context)
@@ -755,6 +762,7 @@ suspend fun imprimirFactura(
         facturaTexto += addText("CAJA: ${factura.ventaMadre.CajaNumero} VEND: ${factura.nombreAgente}", "C", context = context)
         facturaTexto += addText(factura.ventaMadre.MedioPagoDetalle.replace("\r", "").uppercase(Locale.ROOT), "C", context = context, conLiena = true)
         facturaTexto += addText(obtenerValorParametroEmpresa("137", "GRACIAS POR SU COMPRA!"), "C", context = context)
+        facturaTexto += addText(factura.detalleInferior, "C", context = context)
         facturaTexto += addText(factura.leyenda, "C", context = context)
     }
     facturaTexto += addText("Usu: $usuario", "C", context = context)

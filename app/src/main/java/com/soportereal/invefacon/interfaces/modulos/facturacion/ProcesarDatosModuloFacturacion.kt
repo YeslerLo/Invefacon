@@ -1,33 +1,16 @@
 package com.soportereal.invefacon.interfaces.modulos.facturacion
 
 import android.content.Context
-import android.os.Build
-import android.widget.Toast
-import androidx.annotation.RequiresApi
-import com.soportereal.invefacon.R
 import com.soportereal.invefacon.funciones_de_interfaces.FuncionesHttp
 import com.soportereal.invefacon.funciones_de_interfaces.ParClaveValor
-import com.soportereal.invefacon.funciones_de_interfaces.addText
-import com.soportereal.invefacon.funciones_de_interfaces.addTextBig
-import com.soportereal.invefacon.funciones_de_interfaces.addTextTall
-import com.soportereal.invefacon.funciones_de_interfaces.agregarDobleLinea
-import com.soportereal.invefacon.funciones_de_interfaces.agregarLinea
 import com.soportereal.invefacon.funciones_de_interfaces.conectarSocket
 import com.soportereal.invefacon.funciones_de_interfaces.generarConsultaSocket
-import com.soportereal.invefacon.funciones_de_interfaces.gestorImpresora
-import com.soportereal.invefacon.funciones_de_interfaces.imagenAHexadecimal
-import com.soportereal.invefacon.funciones_de_interfaces.mostrarMensajeError
 import com.soportereal.invefacon.funciones_de_interfaces.obtenerConsecutivoSocket
 import com.soportereal.invefacon.funciones_de_interfaces.obtenerParametroLocal
 import com.soportereal.invefacon.funciones_de_interfaces.obtenerValorParametroEmpresa
-import com.soportereal.invefacon.funciones_de_interfaces.separacionDeMiles
-import com.soportereal.invefacon.funciones_de_interfaces.validarRespuestaSocket
 import com.soportereal.invefacon.interfaces.pantallas_principales.gestorEstadoPantallaCarga
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import okhttp3.MultipartBody
 import org.json.JSONObject
-import java.util.Locale
 
 class ProcesarDatosModuloFacturacion(apiToken: String)
 {
@@ -121,17 +104,6 @@ class ProcesarDatosModuloFacturacion(apiToken: String)
         return objetoFuncionesHttpInvefacon.metodoPost(formBody = formBody, apiDirectorio = "facturacion/guardarproformaborrador.php")
     }
 
-    suspend fun guardarProforma(numero: String, tipoPago: String, tipo: String, correo: String): JSONObject?{
-        val formBody = MultipartBody.Builder().setType(MultipartBody.FORM)
-            .addFormDataPart("proforma", numero)
-            .addFormDataPart("tipo", tipo)
-            .addFormDataPart("procesar", "")
-            .addFormDataPart("correo", correo)
-            .addFormDataPart("tipoPago", tipoPago)
-            .build()
-        return objetoFuncionesHttpInvefacon.metodoPost(formBody = formBody, apiDirectorio = "facturacion/guardarproforma.php")
-    }
-
     suspend fun clonarProforma(numero: String): JSONObject?{
         val formBody = MultipartBody.Builder().setType(MultipartBody.FORM)
             .addFormDataPart("FacturaClona", numero)
@@ -220,19 +192,6 @@ class ProcesarDatosModuloFacturacion(apiToken: String)
             .addFormDataPart("0","")
             .build()
         return objetoFuncionesHttpInvefacon.metodoPost(formBody = formBody, apiDirectorio = "facturacion/obtenerFactura.php")
-    }
-
-    suspend fun agregarFormaPago(pago:Pago): JSONObject?{
-        val formBody = MultipartBody.Builder().setType(MultipartBody.FORM)
-            .addFormDataPart("id",pago.Id)
-            .addFormDataPart("documento",pago.Documento)
-            .addFormDataPart("cuentaContable", pago.CuentaContable)
-            .addFormDataPart("codigoMoneda", pago.CodigoMoneda)
-            .addFormDataPart("monto",pago.Monto)
-            .addFormDataPart("tipoCambio", pago.TipoCambio)
-            .addFormDataPart("funcion", pago.funcion)
-            .build()
-        return objetoFuncionesHttpInvefacon.metodoPost(formBody = formBody, apiDirectorio = "facturacion/DocumentoMedioPago.php")
     }
 
     suspend fun obtenerPermisosUsuario(codUsuario: String): JSONObject? {
@@ -466,7 +425,7 @@ data class ArticuloFacturacion(
     var articuloLineaId: String = "",
     var articuloCosto: Double = 0.0,
     var utilidad: Double = 0.0,
-    var Cod_Tarifa_Impuesto : String = "08",
+    var cod_Tarifa_Impuesto : String = "08",
     var articuloSerie : String = ""
 )
 
@@ -646,7 +605,9 @@ data class Factura(
     val leyenda: String = "",
     val descrpcionFormaPago : String = "",
     val descripcionMedioPago : String = "",
-    val nombreAgente : String = ""
+    val nombreAgente : String = "",
+    val detalleSuperior : String = "",
+    val detalleInferior : String = ""
 )
 
 data class Pago(

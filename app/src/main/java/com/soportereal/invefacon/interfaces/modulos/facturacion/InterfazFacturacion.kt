@@ -573,7 +573,7 @@ fun IniciarInterfazFacturacion(
             descuentoFijo = datosArticulo.getDouble("Descuento_Fijo"),
             codTarifaImpuesto = datosArticulo.getString("Cod_Tarifa_Impuesto"),
             impuesto = datosArticulo.getDouble("Impuesto"),
-            Cod_Tarifa_Impuesto =  datosArticulo.getString("Cod_Tarifa_Impuesto"),
+            cod_Tarifa_Impuesto =  datosArticulo.getString("Cod_Tarifa_Impuesto"),
             codEstado = datosArticulo.getString("Cod_Estado"),
             codTipoMoneda = datosArticulo.getString("Cod_Tipo_Moneda"),
             codNaturalezaArticulo = datosArticulo.getString("Cod_Naturaleza_Articulo"),
@@ -2399,7 +2399,7 @@ fun IniciarInterfazFacturacion(
                                                         articuloVentaSubTotal2 = precioProducto.toDouble(),
                                                         articuloVentaSubTotal3 = precioProducto.toDouble(),
                                                         articuloIvaPorcentage = articulo.impuesto,
-                                                        articuloIvaTarifa = articulo.Cod_Tarifa_Impuesto,
+                                                        articuloIvaTarifa = articulo.cod_Tarifa_Impuesto,
                                                         idCliente = clienteId,
                                                         articuloVentaGravado = precioProducto.toDouble(),
                                                         articuloVentaTotal = precioProducto.toDouble()
@@ -3453,7 +3453,7 @@ fun IniciarInterfazFacturacion(
                                                                         articuloTemp.unidadXMedida
                                                                     articulo.actividadEconomica =
                                                                         articuloTemp.actividadEconomica
-                                                                    articulo.Cod_Tarifa_Impuesto =
+                                                                    articulo.cod_Tarifa_Impuesto =
                                                                         articuloTemp.codTarifaImpuesto
                                                                     articulo.unidadMedida =
                                                                         articuloTemp.unidadMedida

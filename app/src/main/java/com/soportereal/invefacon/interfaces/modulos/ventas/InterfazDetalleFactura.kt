@@ -280,7 +280,6 @@ fun IniciarInterfazDetalleFactura(
         iniciarPantallaEstadoImpresion = true
         delay(1000)
         val result = objectoProcesadorDatosApiFacturacion.obtenerFactura(consecutivoImprimir)
-        consecutivoNota = ""
 
         if (result == null) return
 
@@ -715,6 +714,7 @@ fun IniciarInterfazDetalleFactura(
                             coroutineScope.launch {
                                 consecutivoImprimir = numeroFactura
                                 listaImpresion.add(ParClaveValor(tipoDocumento = detallesDocumento.tipoDocumento, isCopia = true))
+                                consecutivoImprimir = detallesDocumento.numero
                                 obtenerDatosFactura()
                             }
                         },
@@ -1791,7 +1791,7 @@ fun IniciarInterfazDetalleFactura(
                                                     socketJob?.cancel()
                                                     return@reEnviarXml
                                                 }
-                                                mostrarMensajeExito("XML RE-ENVIAOD EXITOSAMENTE!")
+                                                mostrarMensajeExito("XML RE-ENVIADO EXITOSAMENTE!")
                                                 socketJob?.cancel()
                                                 return@reEnviarXml
                                             }
@@ -1825,6 +1825,7 @@ fun IniciarInterfazDetalleFactura(
         txBtDenegar = "Cancelar",
         onAceptar = {
             iniciarMenuConfNotComple = false
+            consecutivoNota = ""
             socketJob = cortinaSocket.launch {
                 objectoProcesadorDatosApi.aplicarNotaCredDebiCompleta(
                     context = context,
@@ -1846,6 +1847,7 @@ fun IniciarInterfazDetalleFactura(
                                 mostrarMensajeError("EL CONSECUTIVO DE LA NOTA ESTA VACIO, ERROR EN IMPRESION.")
                             }else{
                                 listaImpresion.add(ParClaveValor(tipoDocumento = if(isNotaCredito) "03" else "02", isCopia = false))
+                                consecutivoImprimir = consecutivoNota
                                 obtenerDatosFactura()
                             }
                         }
@@ -1856,7 +1858,6 @@ fun IniciarInterfazDetalleFactura(
                     codUsuario = codUsuario,
                     impresora = if (codImpresora == "Local") "" else codImpresora,
                     consecutivo = {
-                        println(it)
                         consecutivoNota = it
                     }
                 )

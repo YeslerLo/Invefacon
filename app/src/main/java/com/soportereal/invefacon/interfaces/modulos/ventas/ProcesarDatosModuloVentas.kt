@@ -170,7 +170,7 @@ class ProcesarDatosModuloVentas(apiToken: String) {
             context = context,
             proceso = "MODCLIE000",
             subProceso = "MODCLIE038",
-            cuerpo = listOf(numero, emailEmisor,nombreEmisor,cedulaEmisor,emailCopia)
+            cuerpo = listOf(numero, emailEmisor,nombreEmisor,cedulaEmisor,emailCopia+"Ü")
         )
         conectarSocket(
             context = context,
