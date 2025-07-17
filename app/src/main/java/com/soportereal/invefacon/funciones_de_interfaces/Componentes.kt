@@ -155,7 +155,6 @@ internal fun BBasicTextField(
     val focusManager = LocalFocusManager.current
     val contexto = LocalContext.current
     val iconoDdmOpcionesFlechasLaterales = if (expanded) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown
-    val coroutineScope = rememberCoroutineScope()
 
     Box(
         contentAlignment = Alignment.Center

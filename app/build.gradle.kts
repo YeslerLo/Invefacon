@@ -4,6 +4,7 @@ plugins {
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.devtools.ksp)
     alias(libs.plugins.androidx.room)
+    id("kotlin-parcelize")
 }
 
 android {
@@ -102,4 +103,7 @@ dependencies {
     implementation(libs.androidx.room.runtime)
     ksp(libs.androidx.room.compiler)
     implementation(libs.androidx.room.ktx)
+
+    // GENERACION DE PDF
+    implementation (libs.itext7.core) 
 }

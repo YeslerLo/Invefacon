@@ -166,6 +166,7 @@ fun IniciarInterfazVentas(
     val listaMonedas by remember {
         mutableStateOf(
             listOf(
+                ParClaveValor("", "Todas"),
                 ParClaveValor("CRC", "CRC"),
                 ParClaveValor("USD", "USD"),
                 ParClaveValor("EUR", "EUR")
@@ -207,7 +208,7 @@ fun IniciarInterfazVentas(
             )
         )
     }
-    var listaFormaPago by rememberSaveable { mutableStateOf<List<ParClaveValor>>(emptyList()) }
+    var listaFormaPago by remember { mutableStateOf<List<ParClaveValor>>(emptyList()) }
     var expandedTotales by rememberSaveable { mutableStateOf(false) }
     val interactionSource = remember { MutableInteractionSource() }
     val lazyState= rememberLazyListState()
@@ -296,13 +297,13 @@ fun IniciarInterfazVentas(
     }
 
     LaunchedEffect(Unit) {
+        obtenerFormaPago()
         if (listaFacturas.isNotEmpty()) return@LaunchedEffect
-        estado = listaEstados.first().clave
+        estado = "2"
         moneda = listaMonedas.first().clave
         medioPago = listaMedioPago.first().clave
         tipoDocumento = listaTiposDocumentos.first().clave
-        obtenerFormaPago()
-        buscarFacturas()
+        buscarFacturas(listaFacturas.isNotEmpty())
     }
 
     LaunchedEffect(lazyState) {
@@ -427,7 +428,7 @@ fun IniciarInterfazVentas(
                     interactionSource = interactionSource,
                     indication = null
                 ) {
-                    navController.navigate(RutasPatallas.VentasDetalleFactura.ruta+"/$token"+"/$nombreEmpresa"+"/$codUsuario"+"/$nombreUsuario"+"/${factura.numero}")
+                    navController.navigate(RutasPatallas.VentasDetalleFactura.ruta + "/$token" + "/$nombreEmpresa" + "/$codUsuario" + "/$nombreUsuario" + "/${factura.numero}")
                 }
                 .padding(vertical = objetoAdaptardor.ajustarAltura(4))
                 .then(modifier)
@@ -443,7 +444,7 @@ fun IniciarInterfazVentas(
                         .clip(CircleShape) // o cualquier forma
                         .clickable(
                             onClick = {
-                                navController.navigate(RutasPatallas.VentasDetalleFactura.ruta+"/$token"+"/$nombreEmpresa"+"/$codUsuario"+"/$nombreUsuario"+"/${factura.numero}")
+                                navController.navigate(RutasPatallas.VentasDetalleFactura.ruta + "/$token" + "/$nombreEmpresa" + "/$codUsuario" + "/$nombreUsuario" + "/${factura.numero}")
                             }
                         ),
                     contentAlignment = Alignment.Center
@@ -782,7 +783,7 @@ fun IniciarInterfazVentas(
                                 horizontalArrangement = Arrangement.spacedBy(objetoAdaptardor.ajustarAncho(8))
                             ){
                                 BasicTexfiuldWithText(
-                                    variable = moneda,
+                                    variable = listaMonedas.find { it.clave == moneda }?.valor?: "Null",
                                     nuevoValor = {moneda = it},
                                     textTitle = "Moneda: ",
                                     text =  "Moneda...",
@@ -792,7 +793,7 @@ fun IniciarInterfazVentas(
                                 )
 
                                 BasicTexfiuldWithText(
-                                    variable = listaTiposDocumentos.find { it.clave == tipoDocumento }?.valor ?: "null",
+                                    variable = listaTiposDocumentos.find { it.clave == tipoDocumento }?.valor ?: "Null",
                                     nuevoValor = {tipoDocumento = it},
                                     textTitle = "Tipo:",
                                     text =  "Tipo...",

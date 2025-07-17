@@ -6300,7 +6300,7 @@ fun IniciarInterfazFacturacion(
                 isMenuConfVisible = false
             },
             mostrarMenu = isMenuConfVisible,
-            titulo = "Factuar de Contado",
+            titulo = "Facturar de Contado",
             subTitulo = "¿Está seguro que desea emitir esta Factura?"
         )
     }

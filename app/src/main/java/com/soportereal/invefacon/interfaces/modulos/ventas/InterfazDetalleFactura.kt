@@ -114,7 +114,6 @@ import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloDisplayMed
 import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloHeadSmall
 import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloLabelBig
 import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloTitleBig
-import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloTitleMedium
 import com.soportereal.invefacon.funciones_de_interfaces.obtenerEstiloTitleSmall
 import com.soportereal.invefacon.funciones_de_interfaces.obtenerParametroLocal
 import com.soportereal.invefacon.funciones_de_interfaces.separacionDeMiles
@@ -337,7 +336,11 @@ fun IniciarInterfazDetalleFactura(
                 formapagocodigo = obj.getString("formapagocodigo"),
                 mediopagodetalle = obj.getString("mediopagodetalle"),
                 detalle = obj.getString("detalle"),
-                tipoDocumento = obj.getString("TipoDocumento")
+                tipoDocumento = obj.getString("TipoDocumento"),
+                clave = obj.getString("clave"),
+                entrega = if (obj.getString("modEntregaCodigo") == "1") "LOCAL" else "EXPRESS",
+                pedido = obj.getString("detallePide"),
+                ordenCompra = obj.getString("ordenCompra")
             )
         simboloMoneda =  if(detallesDocumento.monedacodigo == "CRC") "\u20A1 " else "\u0024 "
 
@@ -360,7 +363,8 @@ fun IniciarInterfazDetalleFactura(
                 ArticuloVentaExento = obj.getString("ArticuloVentaExento"),
                 ArticuloIvaPorcentage = obj.getDouble("ArticuloIvaPorcentage"),
                 ArticuloIvaMonto = obj.getDouble("ArticuloIvaMonto"),
-                ArticuloVentaTotal = obj.getDouble("ArticuloVentaTotal")
+                ArticuloVentaTotal = obj.getDouble("ArticuloVentaTotal"),
+                cabys = obj.getString("ArticuloCabys")
             )
         }
 
@@ -388,7 +392,9 @@ fun IniciarInterfazDetalleFactura(
                 TotalServExonerado = obj.getDouble("TotalServExonerado"),
                 totaliva = obj.getDouble("totaliva"),
                 TotalIvaDevuelto = obj.getDouble("TotalIvaDevuelto"),
-                Total = obj.getDouble("Total")
+                Total = obj.getDouble("Total"),
+                totalImpuestoServi = obj.getDouble("TotalImpuestoServicio"),
+                tipoCambio = obj.getDouble("MonedaTipoCambio")
             )
         delay(500)
         gestorEstadoPantallaCarga.cambiarEstadoPantallasCarga(false)
@@ -773,11 +779,9 @@ fun IniciarInterfazDetalleFactura(
                                 textSize = obtenerEstiloBodyBig()
                             )
                             BButton(
-                                text = "Refrescar",
+                                text = "PDF",
                                 onClick = {
-                                    coroutineScope.launch {
-                                        refrescar()
-                                    }
+                                    generarFacturaPDFCompleta(context, nombreEmpresa, listaArticulos, datosCliente, detallesDocumento, totales, listaIvas)
                                 },
                                 objetoAdaptardor = objetoAdaptardor,
                                 modifier = Modifier

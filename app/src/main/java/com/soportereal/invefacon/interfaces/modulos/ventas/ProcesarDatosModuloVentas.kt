@@ -1,6 +1,7 @@
 package com.soportereal.invefacon.interfaces.modulos.ventas
 
 import android.content.Context
+import android.os.Parcelable
 import com.soportereal.invefacon.funciones_de_interfaces.FuncionesHttp
 import com.soportereal.invefacon.funciones_de_interfaces.conectarSocket
 import com.soportereal.invefacon.funciones_de_interfaces.deserializarListaSocket
@@ -12,6 +13,7 @@ import com.soportereal.invefacon.funciones_de_interfaces.validarRespuestaSocket
 import com.soportereal.invefacon.interfaces.pantallas_principales.gestorEstadoPantallaCarga
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlinx.parcelize.Parcelize
 import okhttp3.MultipartBody
 import org.json.JSONObject
 
@@ -193,16 +195,18 @@ class ProcesarDatosModuloVentas(apiToken: String) {
     }
 }
 
+@Parcelize
 data class FacturaVentas(
-    val numero : String,
-    val fecha  : String,
-    val cliente : String,
-    val impuestos : Double,
-    val total : Double,
-    val estado : String,
-    val moneda : String,
-    var isAnimado : Boolean = false
-)
+    val numero: String,
+    val fecha: String,
+    val cliente: String,
+    val impuestos: Double,
+    val total: Double,
+    val estado: String,
+    val moneda: String,
+    var isAnimado: Boolean = false
+) : Parcelable
+
 
 data class ClienteVentas(
     val id_cliente: String = "",
@@ -221,6 +225,7 @@ data class ClienteVentas(
 data class DetalleDocumentoVentas(
     val numero: String = "",
     val fecha: String = "2022-11-24 12:02:20.260",
+    val fechaVecimiento : String = "",
     val usuariocodigo: String = "",
     val agentecodigo: String = "",
     val refereridocodigo: String = "",
@@ -230,7 +235,12 @@ data class DetalleDocumentoVentas(
     val formapagocodigo: String = "",
     val mediopagodetalle: String = "",
     val detalle: String = "",
-    val tipoDocumento : String = "01"
+    val tipoDocumento : String = "01",
+    val clave : String = "",
+    val diasCredito : String = "0",
+    val pedido : String = "",
+    val entrega : String = "",
+    val ordenCompra : String = "",
 )
 
 data class ArticuloVenta(
@@ -248,7 +258,8 @@ data class ArticuloVenta(
     val ArticuloVentaExento: String = "",
     val ArticuloIvaPorcentage:  Double = 0.0,
     val ArticuloIvaMonto : Double = 0.0,
-    val ArticuloVentaTotal:  Double = 0.0
+    val ArticuloVentaTotal:  Double = 0.0,
+    val cabys : String = ""
 )
 
 data class TotalesVentas(
@@ -263,4 +274,6 @@ data class TotalesVentas(
     val totaliva : Double = 0.0,
     val TotalIvaDevuelto : Double = 0.0,
     val Total : Double = 0.0,
+    val totalImpuestoServi : Double = 0.00,
+    val tipoCambio : Double = 0.00
 )
