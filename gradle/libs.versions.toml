@@ -3,6 +3,7 @@ accompanistSystemuicontrollerVersion = "0.36.0"
 glide = "4.16.0"
 agp = "8.6.1"
 coilCompose = "2.7.0"
+itext7CoreVersion = "7.1.15"
 json = "20250517"
 kotlin = "2.0.0"
 junit = "4.13.2"
@@ -32,6 +33,7 @@ coil-compose = { module = "io.coil-kt:coil-compose", version.ref = "coilCompose"
 constraintlayout-compose = { module = "androidx.constraintlayout:constraintlayout-compose", version = "1.1.1" }
 escpos-thermalprinter-android-v330 = { module = "com.github.DantSu:ESCPOS-ThermalPrinter-Android", version.ref = "escposThermalprinterAndroidVersion" }
 glide = { module = "com.github.bumptech.glide:glide", version.ref = "glide" }
+itext7-core = { module = "com.itextpdf:itext7-core", version.ref = "itext7CoreVersion" }
 json = { module = "org.json:json", version.ref = "json" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-lifecycle-runtime-ktx = { group = "androidx.lifecycle", name = "lifecycle-runtime-ktx", version.ref = "lifecycleRuntimeKtx" }
