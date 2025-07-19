@@ -85,6 +85,7 @@ import java.io.File
 import java.io.FileOutputStream
 import java.io.InputStream
 import java.net.URL
+import java.text.Normalizer
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
@@ -668,6 +669,15 @@ class ImpresoraViewModel : ViewModel() {
     }
 }
 
+
+fun quitarTildes(texto: String): String {
+    // Normaliza el texto a forma NFD (descompone caracteres acentuados)
+    val normalizado = Normalizer.normalize(texto, Normalizer.Form.NFD)
+    // Elimina los signos diacríticos (tildes) usando una regex
+    return normalizado.replace("\\p{M}".toRegex(), "")
+}
+
+
 suspend fun imprimirFactura(
     factura: Factura,
     context: Context,
@@ -711,7 +721,7 @@ suspend fun imprimirFactura(
         facturaTexto += addText("CLAVE: ${factura.clave.substring(0, 25)}", "C", context = context)
         facturaTexto += addText("       ${factura.clave.substring(25, 50)}", "C", context = context)
     }else{
-        facturaTexto += addTextBig("PROFORMA", "C", context = context)
+        facturaTexto += addTextBig(obtenerValorParametroEmpresa("291", "PROFORMA"), "C", context = context)
     }
     facturaTexto += addText("FECHA: ${factura.ventaMadre.Fecha}", "L", context = context)
     if (obtenerValorParametroEmpresa("20", "0") == "1" && tipoDoc != "00") facturaTexto += addTextTall("FORMA PAGO: ${factura.descrpcionFormaPago.uppercase(Locale.ROOT)}", "C", context = context, destacar = true)
@@ -767,7 +777,7 @@ suspend fun imprimirFactura(
     }
     facturaTexto += addText("Usu: $usuario", "C", context = context)
     facturaTexto += addText("INVEFACON ANDROID V.${context.getString(R.string.app_version)}", "C", context = context, destacar = true)
-    val isImpreso = gestorImpresora.imprimir(text = facturaTexto, context)
+    val isImpreso = gestorImpresora.imprimir(text = quitarTildes(facturaTexto), context)
     return isImpreso
 }
 

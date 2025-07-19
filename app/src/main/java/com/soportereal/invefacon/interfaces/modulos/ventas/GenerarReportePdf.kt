@@ -4,18 +4,36 @@ import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.core.content.FileProvider
 import com.itextpdf.io.image.ImageDataFactory
-import com.itextpdf.kernel.pdf.*
+import com.itextpdf.kernel.colors.DeviceRgb
+import com.itextpdf.kernel.events.Event
+import com.itextpdf.kernel.events.IEventHandler
+import com.itextpdf.kernel.events.PdfDocumentEvent
+import com.itextpdf.kernel.pdf.PdfDocument
+import com.itextpdf.kernel.pdf.PdfWriter
+import com.itextpdf.kernel.pdf.canvas.PdfCanvas
 import com.itextpdf.kernel.pdf.canvas.draw.SolidLine
-import com.itextpdf.layout.*
+import com.itextpdf.layout.Canvas
+import com.itextpdf.layout.Document
 import com.itextpdf.layout.borders.Border
 import com.itextpdf.layout.borders.SolidBorder
-import com.itextpdf.layout.element.*
+import com.itextpdf.layout.element.AreaBreak
+import com.itextpdf.layout.element.Cell
+import com.itextpdf.layout.element.Image
+import com.itextpdf.layout.element.LineSeparator
+import com.itextpdf.layout.element.Paragraph
+import com.itextpdf.layout.element.Table
+import com.itextpdf.layout.element.Text
+import com.itextpdf.layout.property.AreaBreakType
 import com.itextpdf.layout.property.HorizontalAlignment
 import com.itextpdf.layout.property.TextAlignment
 import com.itextpdf.layout.property.VerticalAlignment
+import com.soportereal.invefacon.R
 import com.soportereal.invefacon.funciones_de_interfaces.ParClaveValor
 import com.soportereal.invefacon.funciones_de_interfaces.obtenerParametroLocal
 import com.soportereal.invefacon.funciones_de_interfaces.obtenerValorParametroEmpresa
@@ -99,7 +117,7 @@ private fun numeroALetrasConMoneda(monto: Double, moneda: String): String {
         ""
     }
 
-     return "${letrasEnteros.trim()} $textoMoneda$letrasCentimos".uppercase()
+    return "${letrasEnteros.trim()} $textoMoneda$letrasCentimos".uppercase()
 }
 
 private fun addTextValor(
@@ -109,14 +127,15 @@ private fun addTextValor(
     destacarPrimerTxt: Boolean = true,
     invertirSize : Boolean = false,
     destacarSegundoTxt: Boolean = false,
-    align: TextAlignment = TextAlignment.LEFT
+    align: TextAlignment = TextAlignment.LEFT,
+    color: DeviceRgb = DeviceRgb(0,0,0)
 ): Paragraph {
     val texto = Paragraph()
 
     if (invertirSize){
         fontSize-1
     }
-    val labelText = Text("$label ").setFontSize(fontSize)
+    val labelText = Text("$label ").setFontSize(fontSize).setFontColor(color)
     if (destacarPrimerTxt) {
         labelText.setBold()
     }
@@ -126,7 +145,7 @@ private fun addTextValor(
         fontSize-1
     }
 
-    val valorText = Text(valor).setFontSize(fontSize)
+    val valorText = Text(valor).setFontSize(fontSize).setFontColor(color)
     if (destacarSegundoTxt){
         valorText.setBold()
     }
@@ -146,22 +165,70 @@ private fun crearCelda(
     bordeArr: Boolean = false,
     bordeAbj: Boolean = false,
     align: TextAlignment = TextAlignment.LEFT,
-    vAlign: VerticalAlignment = VerticalAlignment.MIDDLE
+    vAlign: VerticalAlignment = VerticalAlignment.MIDDLE,
+    margenVertical : Boolean = false
 ): Cell {
     val cell = Cell(1, colspan)
         .setBorder(Border.NO_BORDER)
         .setTextAlignment(align)
         .setVerticalAlignment(vAlign)
+
     contenido.forEach {
         cell.add(it).setTextAlignment(align).setVerticalAlignment(vAlign)
     }
-
+    if (margenVertical) cell.setMarginLeft(1.5f).setMarginRight(1.5f)
     if (bordeIzq) cell.setBorderLeft(SolidBorder(1f))
     if (bordeDer) cell.setBorderRight(SolidBorder(1f))
     if (bordeArr) cell.setBorderTop(SolidBorder(1f))
     if (bordeAbj) cell.setBorderBottom(SolidBorder(1f))
 
     return cell
+}
+
+class PageFooterEventHandler(
+    private val doc: Document,
+    private val miTablaPieDePagina: Table // Solo pasamos la tabla que va en cada pie de página
+) : IEventHandler {
+
+    override fun handleEvent(event: Event) {
+        val docEvent = event as PdfDocumentEvent
+        val page = docEvent.page
+        val pageSize = page.pageSize
+        val pdfCanvas = PdfCanvas(page)
+        val canvas = Canvas(pdfCanvas, page.getDocument(), pageSize)
+
+        val leftMargin = doc.leftMargin
+        val rightMargin = doc.rightMargin
+        val bottomMargin = doc.bottomMargin // Tu margen inferior reservado
+
+        // ** 1. DIBUJAR NUMERACIÓN DE PÁGINA **
+        val pageNum = docEvent.document.getPageNumber(page)
+        val footerParagraph = Paragraph("Página #$pageNum").setFontSize(8f).setTextAlignment(TextAlignment.RIGHT)
+
+        // Posicionar el número de página en una posición fija dentro del margen inferior (ej. a 36f del borde)
+        canvas.showTextAligned(
+            footerParagraph,
+            pageSize.width - rightMargin,
+            56f, // Posición Y fija para el número de página
+            TextAlignment.RIGHT
+        )
+
+        // ** 2. DIBUJAR LA TABLA DE PIE DE PÁGINA **
+        // La tabla debe estar por encima del número de página y dentro del bottomMargin.
+        // Calcula la posición Y para la tabla: (Altura total del margen - Altura de la tabla - pequeño padding)
+        val tablaHeight = 28f // Usa la altura estimada fija
+        val yPositionForTable = bottomMargin - tablaHeight -40// Un poco de espacio desde el tope del margen
+
+        miTablaPieDePagina.setFixedPosition(
+            docEvent.document.getPageNumber(page), // Número de página actual
+            leftMargin, // Posición X: Margen izquierdo del documento
+            yPositionForTable, // Posición Y: Calculada para que esté dentro del margen inferior
+            pageSize.width - leftMargin - rightMargin // Ancho de la tabla
+        )
+        canvas.add(miTablaPieDePagina)
+
+        canvas.close()
+    }
 }
 
 fun generarFacturaPDFCompleta(
@@ -173,11 +240,58 @@ fun generarFacturaPDFCompleta(
     totales: TotalesVentas,
     listaIvas: SnapshotStateList<ParClaveValor>
 ) {
+    val listaTiposDocumentos by mutableStateOf(
+        listOf(
+            ParClaveValor("01", "Factura"),
+            ParClaveValor("02", "Nota de Débito"),
+            ParClaveValor("03", "Nota de Crédito"),
+            ParClaveValor("04", "Tiquete"),
+            ParClaveValor("09", "Exportación")
+        )
+    )
+
     val file = File(context.getExternalFilesDir(null), "Factura_${System.currentTimeMillis()}.pdf")
 
     val writer = PdfWriter(file)
     val pdf = PdfDocument(writer)
     val doc = Document(pdf)
+    /// Define esta tabla fuera de la función generarFacturaPDFCompleta.
+    val miTablaPieDePagina: Table = Table(floatArrayOf(1f)).useAllAvailableWidth()
+    miTablaPieDePagina.addCell(
+        crearCelda(
+            listOf(
+                addTextValor(obtenerValorParametroEmpresa("189", ""), align = TextAlignment.CENTER)
+            ),
+            colspan = 1,
+            align = TextAlignment.CENTER
+        )
+    )
+    miTablaPieDePagina.addCell(
+        crearCelda(
+            listOf(
+                addTextValor(obtenerValorParametroEmpresa("139", ""), align = TextAlignment.CENTER, destacarPrimerTxt = false)
+            ),
+            colspan = 1,
+            align = TextAlignment.CENTER,
+            bordeArr = true
+        )
+    )
+    miTablaPieDePagina.addCell(
+        crearCelda(
+            listOf(
+                addTextValor(obtenerValorParametroEmpresa("137", ""), align = TextAlignment.CENTER, fontSize = 9f)
+            ),
+            colspan = 1,
+            align = TextAlignment.CENTER
+        )
+    )
+// ... cualquier otro contenido para esta tabla
+    // Ajusta los márgenes del documento. El '80f' (o más si tu tabla es grande) es el espacio reservado.
+    doc.setMargins(12f, 12f, 74f, 12f)
+
+    // Registra el EventHandler, pasándole tu tabla de pie de página
+    val footerEventHandler = PageFooterEventHandler(doc, miTablaPieDePagina)
+    pdf.addEventHandler(PdfDocumentEvent.END_PAGE, footerEventHandler)
     val tablaEmcabezadoSuperior = Table(floatArrayOf(2f, 1f)) // proporción columnas: 2/3 y 1/3
     tablaEmcabezadoSuperior.useAllAvailableWidth()
 
@@ -207,8 +321,13 @@ fun generarFacturaPDFCompleta(
         addTextValor("E-Mail:", obtenerValorParametroEmpresa("106", ""))
     )
     celdaTextoSuperior.add(
-        Paragraph("FACTURA ELECTRÓNICA").setFontSize(14f).setBold().setTextAlignment(TextAlignment.LEFT)
+        Paragraph("${listaTiposDocumentos.find { it.clave == detallesDocumento.tipoDocumento }?.valor?.uppercase()?:"DOC DESCONOCIDO"} ELECTRÓNICA").setFontSize(14f).setBold().setTextAlignment(TextAlignment.LEFT)
     )
+    if (detallesDocumento.tipoDocumento in listOf("02", "03")){
+        celdaTextoSuperior.add(
+            Paragraph("REF: "+detallesDocumento.referencia).setFontSize(12f).setBold().setTextAlignment(TextAlignment.LEFT)
+        )
+    }
 
     tablaEmcabezadoSuperior.addCell(celdaTextoSuperior)
     val rutaImagen = obtenerParametroLocal(context, clave = "$nombreEmpresa.jpg")
@@ -222,13 +341,13 @@ fun generarFacturaPDFCompleta(
             val imageData = ImageDataFactory.create(stream.toByteArray())
             val image = Image(imageData)
                 .setAutoScale(true)
-                .scale(0.5f, 0.5f)
+                .scaleToFit(140f, 140f)
                 .setHorizontalAlignment(HorizontalAlignment.CENTER)
 
             val celdaLogo = Cell()
                 .add(image)
                 .setBorder(Border.NO_BORDER)
-                .setVerticalAlignment(VerticalAlignment.TOP)
+                .setVerticalAlignment(VerticalAlignment.MIDDLE)
                 .setTextAlignment(TextAlignment.CENTER)
 
             tablaEmcabezadoSuperior.addCell(celdaLogo)
@@ -290,9 +409,9 @@ fun generarFacturaPDFCompleta(
         crearCelda(
             contenido = listOf(
                 Paragraph()
-                .add(Text("Condición venta: ").setFontSize(8f))
-                .add(Text(detallesDocumento.formapagocodigo).setFontSize(10f).setBold())
-                .setTextAlignment(TextAlignment.LEFT)
+                    .add(Text("Condición venta: ").setFontSize(8f))
+                    .add(Text(detallesDocumento.formapagocodigo).setFontSize(10f).setBold())
+                    .setTextAlignment(TextAlignment.LEFT)
             ),
             colspan = 2, bordeIzq = true, bordeAbj = true
         )
@@ -326,6 +445,7 @@ fun generarFacturaPDFCompleta(
     doc.add(tablaDatosFactura)
 
     val tablaDatosCliente = Table(2).useAllAvailableWidth()
+    val tablaClienteQr = Table(floatArrayOf(3f, 1f)).useAllAvailableWidth()
     tablaDatosCliente.addCell(
         crearCelda(
             listOf(
@@ -371,8 +491,56 @@ fun generarFacturaPDFCompleta(
             vAlign = VerticalAlignment.BOTTOM
         )
     )
-    doc.add(Paragraph(""))
-    doc.add(tablaDatosCliente)
+
+    // 👉 Tabla contenedora que tendrá a la izquierda la imagen y a la derecha la tabla de da
+
+    // ----- Columna derecha: tabla de datos cliente -----
+    val celdaTablaCliente = Cell()
+        .add(tablaDatosCliente) // aquí agregamos la tabla interna ya construida
+        .setBorder(Border.NO_BORDER)
+        .setVerticalAlignment(VerticalAlignment.MIDDLE)
+        .setTextAlignment(TextAlignment.LEFT)
+
+    tablaClienteQr.addCell(celdaTablaCliente)
+
+// ----- Columna izquierda: imagen (QR) -----
+    val drawable = context.getDrawable(R.drawable.qrsrl)
+    if (drawable != null) {
+        val bitmap = Bitmap.createBitmap(
+            drawable.intrinsicWidth,
+            drawable.intrinsicHeight,
+            Bitmap.Config.ARGB_8888
+        )
+        val canvas = android.graphics.Canvas(bitmap)
+        drawable.setBounds(0, 0, canvas.width, canvas.height)
+        drawable.draw(canvas)
+
+        val stream = ByteArrayOutputStream()
+        bitmap.compress(Bitmap.CompressFormat.PNG, 100, stream)
+        val imageData = ImageDataFactory.create(stream.toByteArray())
+
+        val image = Image(imageData)
+            .setAutoScale(true)
+            .scaleToFit(35f, 35f)
+            .setHorizontalAlignment(HorizontalAlignment.CENTER)
+
+        val celdaImagen = Cell()
+            .add(image)
+            .setBorder(Border.NO_BORDER)
+            .setVerticalAlignment(VerticalAlignment.MIDDLE)
+            .setTextAlignment(TextAlignment.CENTER)
+
+        tablaClienteQr.addCell(celdaImagen)
+    } else {
+        // Si no hay imagen, agrega una celda vacía
+        tablaClienteQr.addCell(
+            Cell().setBorder(Border.NO_BORDER)
+        )
+    }
+
+// 👉 Agregar la tabla contenedora al documento
+    doc.add(Paragraph("")) // espacio opcional
+    doc.add(tablaClienteQr)
 
     val tablaDatosSecundarios = Table(3).useAllAvailableWidth()
     tablaDatosSecundarios.addCell(
@@ -430,6 +598,7 @@ fun generarFacturaPDFCompleta(
     )
     doc.add(Paragraph(""))
     doc.add(tablaDatosSecundarios)
+    doc.add(Paragraph(""))
 
     // Definir 11 columnas reales, sin usar colspan:
     val columnasArticulos = floatArrayOf(
@@ -446,7 +615,7 @@ fun generarFacturaPDFCompleta(
         3f   // Total
     )
 
-    val tablaArticulos = Table(columnasArticulos).useAllAvailableWidth()
+    var tablaArticulos = Table(columnasArticulos).useAllAvailableWidth()
 
     // Encabezado sin colspan
     fun celdaEncabezado(titulo: String, align: TextAlignment = TextAlignment.CENTER): Cell {
@@ -457,21 +626,55 @@ fun generarFacturaPDFCompleta(
             .setBorderTop(SolidBorder(1f))
     }
 
-// Añadir las 11 columnas del encabezado
-    tablaArticulos.addCell(celdaEncabezado("Cant", TextAlignment.LEFT).setBorderLeft(SolidBorder(1f)))
-    tablaArticulos.addCell(celdaEncabezado("Código", TextAlignment.LEFT))
-    tablaArticulos.addCell(celdaEncabezado("Nombre", TextAlignment.LEFT))
-    tablaArticulos.addCell(celdaEncabezado("Precio/U", TextAlignment.RIGHT))
-    tablaArticulos.addCell(celdaEncabezado("Desc", TextAlignment.RIGHT))
-    tablaArticulos.addCell(celdaEncabezado("Gravado", TextAlignment.RIGHT))
-    tablaArticulos.addCell(celdaEncabezado("Exonerado", TextAlignment.RIGHT))
-    tablaArticulos.addCell(celdaEncabezado("Exento", TextAlignment.RIGHT))
-    tablaArticulos.addCell(celdaEncabezado("IVA", TextAlignment.RIGHT))
-    tablaArticulos.addCell(celdaEncabezado("Monto IVA", TextAlignment.RIGHT))
-    tablaArticulos.addCell(celdaEncabezado("Total", TextAlignment.RIGHT).setBorderRight(SolidBorder(1f)))
+    // Función para crear el encabezado de la tabla de artículos (la usaremos varias veces)
+    fun createArticulosHeaderCells() {
+        tablaArticulos.addCell(celdaEncabezado("Cant", TextAlignment.LEFT).setBorderLeft(SolidBorder(1f)))
+        tablaArticulos.addCell(celdaEncabezado("Código", TextAlignment.LEFT))
+        tablaArticulos.addCell(celdaEncabezado("Nombre", TextAlignment.LEFT))
+        tablaArticulos.addCell(celdaEncabezado("Precio/U", TextAlignment.RIGHT))
+        tablaArticulos.addCell(celdaEncabezado("Desc", TextAlignment.RIGHT))
+        tablaArticulos.addCell(celdaEncabezado("Gravado", TextAlignment.RIGHT))
+        tablaArticulos.addCell(celdaEncabezado("Exonerado", TextAlignment.RIGHT))
+        tablaArticulos.addCell(celdaEncabezado("Exento", TextAlignment.RIGHT))
+        tablaArticulos.addCell(celdaEncabezado("IVA", TextAlignment.RIGHT))
+        tablaArticulos.addCell(celdaEncabezado("Monto IVA", TextAlignment.RIGHT))
+        tablaArticulos.addCell(celdaEncabezado("Total", TextAlignment.RIGHT).setBorderRight(SolidBorder(1f)))
+    }
+    createArticulosHeaderCells()
 
-// Filas de detalle: añade exactamente 11 celdas, una por columna
-    listaArticulos.forEach { art ->
+    var cantidadLienasArticulosEnPagina = 0 // Contador para las filas de *artículos* en la página actual (sin contar el encabezado)
+    var cantidadMaximaArticulosPagina = 14 // Inicia con 14 artículos para la primera página
+    val lineasTotales = 5 // Las 5 líneas que ocupan los totales
+
+
+// Bucle para añadir artículos
+    listaArticulos.forEachIndexed { index, art ->
+
+        // Lógica para determinar si necesitamos un salto de página ANTES de añadir el artículo actual
+        val isLastItem = (listaArticulos.size - 1 == index)
+        val spaceNeededForNextArticle = 1 // Cada artículo ocupa 1 línea
+        val totalLinesCurrentlyOnPage = cantidadLienasArticulosEnPagina // Solo artículos
+        val remainingSpaceOnPage = cantidadMaximaArticulosPagina - totalLinesCurrentlyOnPage
+
+        // Si es el último artículo Y no hay espacio para los totales en esta página,
+        // O si ya llenamos la cantidad máxima de artículos para esta página.
+        if ((isLastItem && remainingSpaceOnPage < lineasTotales + spaceNeededForNextArticle) || (totalLinesCurrentlyOnPage >= cantidadMaximaArticulosPagina)) {
+            // Añade la tabla actual al documento antes de forzar el salto de página
+            doc.add(tablaArticulos)
+            doc.add(Paragraph("")) // Espacio si es necesario, o elimínalo si no lo quieres
+
+            // Forzar un salto de página
+            doc.add(AreaBreak(AreaBreakType.NEXT_PAGE))
+
+            // Reiniciar la tabla para la nueva página y añadir su encabezado
+            tablaArticulos = Table(columnasArticulos).useAllAvailableWidth()
+            createArticulosHeaderCells() // Añade el encabezado a la nueva tabla
+
+            cantidadLienasArticulosEnPagina = 0 // Reiniciar el contador de artículos para la nueva página
+            cantidadMaximaArticulosPagina = 22 // Para las páginas siguientes, soporta 22 artículos
+        }
+
+        // Añade el artículo a la tabla actual
         tablaArticulos.addCell(crearCelda(listOf(addTextValor(art.ArticuloCantidad.toString(), destacarPrimerTxt = false, align = TextAlignment.LEFT)), 1))
         tablaArticulos.addCell(crearCelda(listOf(addTextValor(art.Descripcion + " Cabys: " + art.cabys, align = TextAlignment.LEFT, fontSize = 8.2f)), 10))
         for (i in 0 until 3){
@@ -489,11 +692,14 @@ fun generarFacturaPDFCompleta(
         tablaArticulos.addCell(crearCelda(listOf(addTextValor(art.ArticuloIvaPorcentage.toInt().toString(), destacarPrimerTxt = false, align = TextAlignment.RIGHT)), 1))
         tablaArticulos.addCell(crearCelda(listOf(addTextValor(separacionDeMiles(art.ArticuloIvaMonto), destacarPrimerTxt = false, align = TextAlignment.RIGHT)), 1))
         tablaArticulos.addCell(crearCelda(listOf(addTextValor(separacionDeMiles(art.ArticuloVentaTotal), destacarPrimerTxt = false, align = TextAlignment.RIGHT)), 1))
+
+        cantidadLienasArticulosEnPagina++
     }
 
-    // Añadir al documento
-    doc.add(Paragraph(""))
-    doc.add(tablaArticulos)
+    if (tablaArticulos.numberOfRows > 1) { // 1 porque ya tiene el encabezado
+        doc.add(tablaArticulos)
+    }
+
     val linea = LineSeparator(SolidLine())
     linea.setMarginTop(1f)
     linea.setMarginBottom(1f)
@@ -614,13 +820,66 @@ fun generarFacturaPDFCompleta(
     )
     tablaTotales.addCell(
         crearCelda(
-            listOf(addTextValor(detallesDocumento.detalle.ifEmpty { "Detalle 1" }, destacarPrimerTxt = false ,align = TextAlignment.LEFT)),
+            listOf(
+                addTextValor(detallesDocumento.detalle, align = TextAlignment.LEFT, fontSize = 9f),
+                addTextValor(obtenerValorParametroEmpresa("140", ""), align = TextAlignment.LEFT, destacarPrimerTxt = false),
+                addTextValor(obtenerValorParametroEmpresa("141", ""), align = TextAlignment.LEFT, destacarPrimerTxt = false, color = DeviceRgb(80, 80, 80), fontSize = 7f)
+            ),
             colspan = 6,
             align = TextAlignment.LEFT
         )
     )
     doc.add(tablaTotales)
-
+    doc.add(Paragraph(""))
+    doc.add(Paragraph(""))
+    doc.add(Paragraph(""))
+    doc.add(Paragraph(""))
+    val tablaFirmaCuentas = Table(floatArrayOf(1f, 2f)).useAllAvailableWidth()
+    tablaFirmaCuentas.addCell(
+        crearCelda(
+            listOf(
+                addTextValor("", align = TextAlignment.CENTER)
+            ),
+            colspan = 1
+        )
+    )
+    tablaFirmaCuentas.addCell(
+        crearCelda(
+            listOf(
+                addTextValor("CUENTAS DE BANCO PARA TRANSFERENCIAS:", align = TextAlignment.LEFT),
+                addTextValor(obtenerValorParametroEmpresa("133", ""), align = TextAlignment.LEFT, destacarPrimerTxt = false),
+                addTextValor(obtenerValorParametroEmpresa("134", ""), align = TextAlignment.LEFT, destacarPrimerTxt = false),
+                addTextValor(obtenerValorParametroEmpresa("135", ""), align = TextAlignment.LEFT, destacarPrimerTxt = false)
+            ),
+            align = TextAlignment.LEFT,
+            colspan = 2,
+            bordeArr = true,
+            bordeDer = true,
+            bordeAbj = true,
+            bordeIzq = true
+        )
+    )
+    tablaFirmaCuentas.addCell(
+        crearCelda(
+            listOf(
+                addTextValor("Recibido /Firma y Cédula", align = TextAlignment.CENTER)
+            ),
+            colspan = 1,
+            bordeArr = true,
+            margenVertical = true,
+            vAlign = VerticalAlignment.TOP,
+            align = TextAlignment.CENTER
+        )
+    )
+    tablaFirmaCuentas.addCell(
+        crearCelda(
+            listOf(
+                addTextValor("", align = TextAlignment.CENTER)
+            ),
+            colspan = 2
+        )
+    )
+    doc.add(tablaFirmaCuentas)
 
     doc.close()
 
